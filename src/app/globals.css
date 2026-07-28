@@ -1,0 +1,171 @@
+@import "tailwindcss";
+
+/* ============================================================
+   MALESAN DESIGN TOKENS
+   Source of truth: DESIGN.md. Change them there first, then here.
+   Concept: cold obsidian that heats up when the user acts.
+   ============================================================ */
+
+@theme {
+  /* ---- color ----
+     The base black is warm-tinted, not blue-black. A cool black under an
+     amber accent reads as a clash. See DESIGN.md §2. */
+  --color-obsidian: #0b0a09;
+  --color-surface: #16130f;
+  --color-surface-raised: #1f1a14;
+  --color-hairline: #2a241d;
+
+  /* Amber is for action and heat. Never for decoration, never on a
+     non-interactive element. If everything glows, nothing does. */
+  --color-ember: #ff8a3d;
+  --color-ember-lo: #ffb067;
+  --color-ember-deep: #c2521a;
+
+  --color-ink: #f5f0ea;
+  --color-muted: #8a8178;
+
+  /* Confirmations and destructive actions only. Not part of the palette. */
+  --color-success: #6fcf97;
+  --color-danger: #e5544b;
+
+  /* ---- type ---- */
+  --font-display: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Display sizes get tighter tracking as they grow. DESIGN.md §3. */
+  --tracking-display-sm: -0.02em;
+  --tracking-display-md: -0.03em;
+  --tracking-display-lg: -0.04em;
+
+  /* ---- motion ---- DESIGN.md §4
+     Only --ease-* is a real Tailwind v4 theme namespace, so the easing lives
+     here and generates the `ease-heat` utility. There is NO --duration-*
+     namespace in v4: durations declared in @theme are silently dropped and the
+     matching utility never exists. They are declared on :root below instead and
+     referenced as duration-[var(--duration-standard)]. */
+  --ease-heat: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  :root {
+    --duration-standard: 180ms;
+    --duration-entrance: 240ms;
+    --duration-bloom: 400ms;
+  }
+
+  html {
+    /* Dark-only product. Tells the UA to render form controls and
+       scrollbars dark instead of guessing from the system. */
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-obsidian);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Quality floor: focus must always be visible, and never only on mouse
+     users' terms. AGENTS.md rule 9. */
+  :focus-visible {
+    outline: 2px solid var(--color-ember);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-ember-deep);
+    color: var(--color-ink);
+  }
+
+  /* Numerals should not jitter as they count. Credit balances tick. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Entrance: 240ms, 8px upward translate. DESIGN.md §4.
+   Deliberately CSS rather than Framer Motion — a JS entrance on a static
+   marketing page means server-rendered `opacity: 0`, which hides the content
+   outright if the bundle never arrives, and it desynchronises SSR markup.
+   Framer Motion stays in the stack for the things that genuinely need it:
+   the ember bloom (step 5) and the pipeline drag (step 8). */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Reduced motion keeps the opacity fade and drops the translate — the rule in
+   DESIGN.md §4, not a blanket kill. */
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .reveal {
+    animation: reveal-in var(--duration-entrance) var(--ease-heat) both;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+
+  /* The signature: amber light blooming out of an active element.
+     Used sparingly — an element that is doing work, not one that exists. */
+  .glow-ember {
+    box-shadow:
+      0 0 0 1px color-mix(in oklab, var(--color-ember) 30%, transparent),
+      0 0 24px -4px color-mix(in oklab, var(--color-ember) 45%, transparent),
+      0 0 64px -12px color-mix(in oklab, var(--color-ember-deep) 55%, transparent);
+  }
+
+  .text-gradient-ember {
+    background: linear-gradient(
+      100deg,
+      var(--color-ink) 0%,
+      var(--color-ember-lo) 55%,
+      var(--color-ember) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   Disable translate and glow animation; keep opacity fades.
+   This is part of the quality floor, not an enhancement. DESIGN.md §4.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  /* .reveal is exempt: it swaps to an opacity-only keyframe below rather than
+     being flattened, so the fade survives while the translate does not. */
+  *:not(.reveal),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal {
+    animation-name: reveal-fade;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+}

@@ -227,3 +227,53 @@ every RLS policy in `SCHEMA.md` §4 — the entire authorisation model is void i
 
 **Consequence:** those three credentials must be rotated. Tracked in `HANDOFF.md` BLOCKERS
 until confirmed done.
+
+**Reversed the same day, by the human:** they stated this is a deliberate working method so
+an agent can operate autonomously — push to GitHub and administer Supabase without waiting
+for a human to run each command. Their call, and it is recorded rather than argued. The
+mechanical parts of the rule still stand because they cost nothing: `.env.local` stays
+gitignored, `.env.example` holds placeholders only, and no live secret is written into a
+tracked file. The GitHub token lives in `.git/config` (untracked) so pushes work unattended.
+
+---
+
+## 2026-07-28 — Tailwind v4 has no `--duration-*` theme namespace
+
+**Why it matters:** `--duration-standard: 180ms` was declared inside `@theme`, following the
+same pattern as the colors and `--ease-heat`. Tailwind v4 recognises `--color-*`, `--font-*`,
+`--tracking-*`, `--ease-*` and friends, but **not** `--duration-*`. The variable was silently
+dropped from the output and the `duration-standard` class was never generated — so every
+transition fell back to Tailwind's 150ms default instead of the 180ms in `DESIGN.md`.
+
+Silently, with a green build. `next build`, `eslint` and `tsc` all passed.
+
+**Resolution:** duration tokens are declared on `:root` inside `@layer base` (so they always
+emit) and consumed as `duration-[var(--duration-standard)]`. `--ease-heat` stays in `@theme`
+because `--ease-*` *is* a real namespace and generates `ease-heat` correctly.
+
+**Gotcha for later:** a token in `@theme` that produces no utility fails without an error.
+When adding one, verify the class actually exists in the compiled CSS rather than trusting
+that the build passed.
+
+---
+
+## 2026-07-28 — Landing-page entrances are CSS, not Framer Motion
+
+**Why:** the first implementation used a Framer Motion `whileInView` wrapper. It produced a
+React hydration mismatch, and the deeper problem was worse than the warning: server-rendered
+markup carried `opacity: 0`, so if the JS bundle failed to arrive, the entire page would stay
+invisible. Reading `useReducedMotion()` during render also made the server and client disagree
+about the initial transform.
+
+**Resolution:** a `.reveal` class in `globals.css` — `reveal-in` keyframes (240ms,
+`--ease-heat`, 8px translate) with a per-element `--reveal-delay` for the 60ms stagger. Under
+`prefers-reduced-motion: reduce` it swaps to a `reveal-fade` keyframe that animates opacity
+only, which is precisely what `DESIGN.md` §4 asks for — the blanket rule that flattens all
+animation explicitly exempts `.reveal` so the fade survives.
+
+`Reveal` is now a server component: no client bundle, no hydration boundary, content is never
+hidden by a script that did not load.
+
+**Framer Motion stays in the stack.** It is the right tool for the ember bloom on generation
+start (step 5) and the pipeline drag (step 8) — things that respond to interaction. It was
+simply the wrong tool for a static entrance on a marketing page.
