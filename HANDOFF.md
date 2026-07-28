@@ -83,6 +83,12 @@ JWT claim, and the rows were then inspected as superuser. All test users were de
   not composite frames here, so every visual claim rests on computed styles. The focus ring
   and the 180ms transitions remain structurally verified but visually unconfirmed.
 - `npm install` still blocks the `sharp` and `unrs-resolver` postinstall scripts.
+- **The migrations are not in this repo.** They were applied through the Supabase MCP tools,
+  so they live only in `supabase_migrations.schema_migrations` on the hosted project. Nothing
+  is lost — `supabase db pull` reconstructs them — but it contradicts `AGENTS.md` §0 ("the
+  repo is the single source of truth"), and right now the schema cannot be rebuilt from a
+  clone. **Run `supabase db pull` into `supabase/migrations/` and commit it at the start of
+  step 3**, before adding the credit functions on top.
 
 ## NEXT ACTION — START HERE
 
