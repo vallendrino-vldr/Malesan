@@ -11,7 +11,7 @@ report** → wait for the human to say "lanjut". Do not chain two steps in one t
 |---|---|---|---|
 | 0 | Spec files | All nine files exist and are accurate | ✅ **done** — 2026-07-28 |
 | 1 | Next.js scaffold, design tokens, landing page | Landing renders, tokens applied, responsive to 360px | ✅ **done** — 2026-07-28 |
-| 2 | Supabase Google OAuth, `profiles`, RLS | Sign in/out works, profile row auto-created, RLS verified | ⬜ next |
+| 2 | Supabase Google OAuth, `profiles`, RLS | Sign in/out works, profile row auto-created, RLS verified | 🟡 **DB + code done, blocked** — Google provider not enabled in Supabase, so sign-in is unproven end to end |
 | 3 | Credit system | `spend_credits` is race-safe under parallel calls, ledger correct, daily refill works | ⬜ |
 | 4 | Gemini server layer | Key rotation, 429 backoff, quota guard, streaming, BYOK path | ⬜ |
 | 5 | Ide Hari Ini + Idea Engine | Zero-input generation works end to end, credits deducted correctly | ⬜ |

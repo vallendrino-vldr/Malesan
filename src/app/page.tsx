@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 
 const MODULES = [
@@ -61,9 +62,12 @@ export default function Home() {
         <span className="font-display text-lg font-extrabold tracking-display-sm text-ink">
           malesan
         </span>
-        <span className="rounded-full border border-hairline bg-surface px-3 py-1 font-mono text-[11px] text-muted">
-          lagi dibangun
-        </span>
+        <Link
+          href="/masuk"
+          className="rounded-full border border-hairline bg-surface px-4 py-1.5 font-display text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"
+        >
+          Masuk
+        </Link>
       </header>
 
       <main className="relative z-10 flex-1">
@@ -93,12 +97,12 @@ export default function Home() {
 
           <Reveal index={3}>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href="#modul"
+              <Link
+                href="/masuk"
                 className="glow-ember inline-flex items-center justify-center rounded-xl bg-ember px-6 py-3.5 font-display text-[15px] font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo"
               >
                 Males mikir. Kasih ide.
-              </a>
+              </Link>
               <a
                 href="#beda"
                 className="inline-flex items-center justify-center rounded-xl border border-hairline bg-surface px-6 py-3.5 font-display text-[15px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"

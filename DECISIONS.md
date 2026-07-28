@@ -277,3 +277,67 @@ hidden by a script that did not load.
 **Framer Motion stays in the stack.** It is the right tool for the ember bloom on generation
 start (step 5) and the pipeline drag (step 8) — things that respond to interaction. It was
 simply the wrong tool for a static entrance on a marketing page.
+
+---
+
+## 2026-07-28 — Referral codes are 8 characters from an unambiguous alphabet
+
+**Why:** `profiles.referral_code` is `not null unique` with no default and the master spec
+never said how to generate one. `gen_referral_code()` draws 8 characters from
+`ABCDEFGHJKMNPQRSTUVWXYZ23456789` — I, L, O, 0 and 1 are excluded because referral codes get
+typed by hand and read off screenshots, and every ambiguous glyph is a support ticket.
+
+About 8.5×10¹¹ combinations. `handle_new_user()` retries up to 10 times on
+`unique_violation`, so collisions are handled rather than merely improbable, and it returns
+early when the profile already exists so a replayed signup is idempotent.
+
+---
+
+## 2026-07-28 — The profiles column guard is `SECURITY INVOKER`, and that is load-bearing
+
+**Why:** it discriminates on `current_user`. A client update through PostgREST runs as
+`authenticated` and gets its privileged columns reverted; an update from inside a
+`SECURITY DEFINER` function like `spend_credits` runs as `postgres` and passes through. That
+is exactly the boundary `AGENTS.md` rule 2 describes, expressed in one condition.
+
+**The bug this replaced, recorded because it is the kind that ships:** the first version was
+`SECURITY DEFINER`. Inside a `SECURITY DEFINER` function `current_user` is the function owner,
+not the caller — so `current_user in ('authenticated','anon')` was false on every invocation
+and the guard never fired once. An ordinary user could set `credits_free = 999999` and
+`role = 'admin'` on their own row, and once `role` was `admin`, `is_admin()` returned true and
+the SELECT/UPDATE policies opened across every user's row.
+
+Nothing detected this: no error, no warning, no failing build. It surfaced only because the
+RLS verification was performed as a real attack, which is what `ROADMAP.md` demands and why
+that wording exists.
+
+**Rejected alternative:** `auth.role()`. It reads the JWT claim, which still reports
+`authenticated` inside a `SECURITY DEFINER` function — the guard would then silently revert
+the credit deduction `spend_credits` had just performed.
+
+**Related constraint:** `FORCE ROW LEVEL SECURITY` must never be enabled on `profiles`.
+`is_admin()` reads `profiles` from inside a policy defined on `profiles`, and avoids infinite
+recursion only because the `SECURITY DEFINER` owner bypasses RLS.
+
+---
+
+## 2026-07-28 — `middleware.ts` renamed to `proxy.ts` (Next.js 16)
+
+**Why:** Next.js 16 deprecated the `middleware` file convention in favour of `proxy`. The old
+name still compiles and even shows up in the build output, but in dev it fails with "Cannot
+find the middleware module" and **every matched route 404s** — including `/app`, which made
+the auth gate look broken rather than misconfigured.
+
+`src/proxy.ts` now exports a default `proxy` function. Do not rename it back.
+
+---
+
+## 2026-07-28 — The app uses the legacy `anon` JWT, not the new publishable key
+
+**Why:** `AGENTS.md` fixes the environment variable as `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and
+the spec was written against the anon-key model. The project also has a modern
+`sb_publishable_…` key, which is independently rotatable and is what Supabase now recommends.
+
+Sticking to the spec for now rather than silently diverging. **Proposal, not yet approved:**
+migrate to the publishable key and rename the variable, ideally before launch — rotating an
+anon JWT means rotating the project's JWT secret, which invalidates every live session.

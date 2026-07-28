@@ -3,8 +3,16 @@
 Target: Supabase (Postgres). Everything here is implemented as **migrations**, not as
 hand-edits in the Supabase dashboard. Status of implementation is tracked in `ROADMAP.md`.
 
-> **Status:** specified, **not yet migrated.** No tables exist yet. Step 2 creates `profiles`
-> and its RLS; step 3 creates the credit tables and functions.
+> **Status as of 2026-07-28 (step 2):** `profiles` is **live** on project
+> `hjdctzrvnhvarxoxixrn`, with RLS enabled and verified by attack. Everything else in this
+> file is still specification only. Step 3 creates the credit tables and functions.
+>
+> Applied migrations, in order:
+> 1. `create_profiles_table`
+> 2. `auth_helpers_and_signup_trigger` — `is_admin()`, `gen_referral_code()`, `handle_new_user()`
+> 3. `profiles_rls_and_column_guard`
+> 4. `fix_column_guard_must_be_security_invoker` — **security fix, read it before touching the guard**
+> 5. `harden_function_execute_grants`
 
 ---
 
@@ -218,9 +226,67 @@ RLS is **enabled on every table with user data. No exceptions.**
 
 ## 5. Open schema questions
 
-- `profiles.referral_code` is `not null unique` with no default — generation strategy must be
-  decided when the signup trigger is written (step 2). Candidate: short base32 of the uuid,
-  collision-retried in the trigger.
+- ~~`profiles.referral_code` generation strategy~~ — **resolved at step 2.**
+  `gen_referral_code()` returns 8 characters from `ABCDEFGHJKMNPQRSTUVWXYZ23456789`
+  (I, L, O, 0 and 1 excluded — these codes get typed by hand and read off screenshots).
+  `handle_new_user()` retries up to 10 times on `unique_violation`, and returns early if the
+  profile already exists so a replayed signup is idempotent.
 - Credit pack IDR pricing needs a home. `PRD.md` requires it be admin-editable and not
   hardcoded — likely a small `credit_packs` table added at step 11. Not in the base schema
   above because the master prompt did not specify it; **raise as a proposal before adding.**
+
+---
+
+## 6. The column guard — read this before editing anything
+
+The `profiles` UPDATE policy lets a user write their own row, because they legitimately own
+`display_name` and `onboarding_completed`. An RLS policy cannot express *"but not these
+columns"*, so a `BEFORE UPDATE` trigger reverts the protected ones:
+
+- always reverted: `credits_free`, `credits_paid`, `last_refill_date`, `is_pro`,
+  `free_trial_used`, `id`, `email`, `referral_code`, `referred_by`, `created_at`
+- reverted unless `is_admin()`: `role`, `is_banned`, `ban_reason`
+
+**`protect_profile_columns()` must stay `SECURITY INVOKER`.** It discriminates on
+`current_user`:
+
+| Caller | `current_user` | Result |
+|---|---|---|
+| Client via PostgREST | `authenticated` | protected columns reverted |
+| Inside `spend_credits` etc. (`SECURITY DEFINER`) | `postgres` | passes through |
+
+The first version was written `SECURITY DEFINER`. Inside such a function `current_user` is the
+function *owner*, so the condition was false on every call and the guard never fired once. A
+plain authenticated user could run
+
+```sql
+update profiles set credits_free = 999999, role = 'admin' where id = <self>;
+```
+
+and it stuck — and once `role = 'admin'`, `is_admin()` returned true, which opened the SELECT
+and UPDATE policies across **every** user's row. Total compromise from one keyword. This was
+caught only because the RLS check was performed as an actual attack rather than by reading the
+policy and assuming.
+
+Do not reach for `auth.role()` instead: it reads the JWT claim, which still says
+`authenticated` inside a `SECURITY DEFINER` function, so the guard would silently undo the
+credit deduction `spend_credits` had just made.
+
+Equally: **never enable `FORCE ROW LEVEL SECURITY` on `profiles`.** `is_admin()` reads
+`profiles` from inside a policy defined on `profiles`; it avoids infinite recursion only
+because a `SECURITY DEFINER` owner bypasses RLS.
+
+### Verified at step 2, as an attacker
+
+| Attempt | Result |
+|---|---|
+| Read another user's row | 0 rows |
+| Read as signed-out `anon` | 0 rows |
+| `credits_free = 999999` on own row | reverted to 5 |
+| `role = 'admin'` on own row | reverted to `user` |
+| Rewrite own `email` / `referral_code` | reverted |
+| `update` another user's `display_name` | no effect |
+| `insert` a forged profile with 100000 credits | blocked (no INSERT policy) |
+| `display_name` + `onboarding_completed` on own row | **succeeded**, as intended |
+| Admin reads all rows / bans a user | succeeded |
+| Admin grants themselves credits directly | **reverted** — must go through `grant_credits` |
