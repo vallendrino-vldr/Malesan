@@ -113,12 +113,27 @@ JWT claim, and the rows were then inspected as superuser. All test users were de
 
 - 🔴 **Enable Google as an auth provider in Supabase.** The only thing between here and a
   finished step 2. Cannot be done through the MCP tools — it needs the dashboard.
-  1. Google Cloud Console → create an OAuth 2.0 Client ID (Web application).
-  2. Authorised redirect URI: `https://hjdctzrvnhvarxoxixrn.supabase.co/auth/v1/callback`
-  3. Supabase Dashboard → Authentication → Providers → Google → paste client ID + secret,
+
+  **No credit card is required, and no billing account is needed.** Google Cloud Console
+  pushes a "Start free trial — $300 credits" banner on first visit; it is optional and
+  unrelated. Billing is optional for creating a project and an OAuth 2.0 client ID. The same
+  applies to the Gemini keys needed at step 4: `aistudio.google.com` issues free-tier keys
+  with a Google account and no card. If a future agent or the human hits this wall again,
+  it is the trial banner being mistaken for a requirement.
+
+  1. console.cloud.google.com → dismiss the trial banner → New Project (`malesan`).
+  2. APIs & Services → OAuth consent screen → External → fill app name and support emails.
+  3. APIs & Services → Credentials → Create Credentials → OAuth client ID → Web application.
+  4. Authorised redirect URI: `https://hjdctzrvnhvarxoxixrn.supabase.co/auth/v1/callback`
+  5. Supabase Dashboard → Authentication → Providers → Google → paste client ID + secret,
      enable.
-  4. Supabase → Authentication → URL Configuration → add `http://localhost:3000/**` to
+  6. Supabase → Authentication → URL Configuration → add `http://localhost:3000/**` to
      Redirect URLs for local development.
+
+  **Gotcha:** the consent screen starts in "Testing" mode, where only addresses listed under
+  *Test users* can sign in. Fine for now — add the developer's own address. Before launch,
+  click **Publish app**; the scopes here (`email`, `profile`, `openid`) are non-sensitive, so
+  no Google verification review is required.
 - **Domain not confirmed.** `malesan.app` is unverified. Nothing hardcodes it; `metadataBase`
   is deliberately absent from `layout.tsx`.
 - **Two Google Cloud projects with Gemini keys** — step 4. Must be two *separate* projects.
