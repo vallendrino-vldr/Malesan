@@ -341,3 +341,70 @@ the spec was written against the anon-key model. The project also has a modern
 Sticking to the spec for now rather than silently diverging. **Proposal, not yet approved:**
 migrate to the publishable key and rename the variable, ideally before launch — rotating an
 anon JWT means rotating the project's JWT secret, which invalidates every live session.
+
+---
+
+## 2026-07-28 — `SECURITY DEFINER` caller checks must use `auth.role()`, not `current_user`
+
+**Why:** the first version of `spend_credits`, `claim_daily_refill` and `grant_credits`
+guarded with `current_user = 'authenticated'`. These functions are `SECURITY DEFINER`, where
+`current_user` is always the owner (`postgres`) — so the condition could never be true and
+the guards never ran.
+
+This is the **exact inverse** of the `protect_profile_columns` bug recorded above. Both traps
+are real and they point opposite ways:
+
+| Function kind | `current_user` is | Identify the caller with |
+|---|---|---|
+| `SECURITY INVOKER` | the caller | `current_user` |
+| `SECURITY DEFINER` | the owner | `auth.role()` |
+
+`auth.role()` reads the role claim out of `request.jwt.claims`, a session GUC, so it survives
+into a `SECURITY DEFINER` body.
+
+**No hole was actually open** — `EXECUTE` on all three is granted to `service_role` alone. It
+was fixed anyway, because a guard that silently does nothing is worse than no guard: the next
+reader trusts it and builds on it.
+
+---
+
+## 2026-07-28 — Credit functions are `service_role` only, not a client API
+
+**Why:** `EXECUTE` is revoked from `anon` and `authenticated` on all three. Server routes call
+them with the service-role client *after* establishing who the user is. Exposing
+`spend_credits` to the client would let a user burn their own credits without generating
+anything, and `grant_credits` would be an open till.
+
+**Consequence:** every generation route must verify the session itself, then call
+`spend_credits` server-side. There is no path where the browser touches a credit.
+
+---
+
+## 2026-07-28 — `claim_daily_refill` writes a ledger row even when the delta is negative
+
+**Why:** a user sitting above the 10-credit ceiling (from an admin grant, say) *loses* the
+excess at the next refill, because the rule is "set to, not add to". Recording that as a
+negative ledger row is ugly, but an unexplained drop in a balance is far worse — the ledger's
+purpose is that any balance can be reconstructed from it.
+
+Observed in testing: `credits_free` 37 → 10 wrote `delta = -27, reason = 'daily_refill'`.
+
+---
+
+## 2026-07-28 — `credit_ledger.balance_after` holds the TOTAL balance, not the bucket balance
+
+**Why:** the spec did not say which. A spend that crosses both buckets writes two rows, and
+storing per-bucket balances would make neither row show the user's actual balance. Total is
+what an admin or a user actually wants to read. The intermediate row of a cross-bucket spend
+therefore shows a mid-operation total; read the later row for the settled figure.
+
+---
+
+## 2026-07-28 — Admins bypass credit checks and write no ledger row
+
+**Why:** `PRD.md` §5 states admin accounts bypass credit checks entirely. `spend_credits`
+returns the current balance untouched for an admin. No ledger row is written because no
+credits moved, and the ledger is a record of movements, not of intentions.
+
+**Consequence:** admin usage is invisible in the credit ledger. If admin activity ever needs
+auditing, that belongs in `audit_log` (step 12), not here.

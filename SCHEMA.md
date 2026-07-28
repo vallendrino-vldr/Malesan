@@ -7,12 +7,18 @@ hand-edits in the Supabase dashboard. Status of implementation is tracked in `RO
 > `hjdctzrvnhvarxoxixrn`, with RLS enabled and verified by attack. Everything else in this
 > file is still specification only. Step 3 creates the credit tables and functions.
 >
+> **Step 3 update:** `credit_ledger` and the three credit functions are live and verified,
+> including the concurrent double-spend test.
+>
 > Applied migrations, in order:
 > 1. `create_profiles_table`
 > 2. `auth_helpers_and_signup_trigger` — `is_admin()`, `gen_referral_code()`, `handle_new_user()`
 > 3. `profiles_rls_and_column_guard`
 > 4. `fix_column_guard_must_be_security_invoker` — **security fix, read it before touching the guard**
 > 5. `harden_function_execute_grants`
+> 6. `credit_ledger_table`
+> 7. `credit_functions` — `spend_credits`, `claim_daily_refill`, `grant_credits`
+> 8. `fix_credit_fn_caller_checks_use_auth_role` — **security fix, see §7**
 
 ---
 
@@ -290,3 +296,67 @@ because a `SECURITY DEFINER` owner bypasses RLS.
 | `display_name` + `onboarding_completed` on own row | **succeeded**, as intended |
 | Admin reads all rows / bans a user | succeeded |
 | Admin grants themselves credits directly | **reverted** — must go through `grant_credits` |
+
+---
+
+## 7. `current_user` vs `auth.role()` — the two inverse traps
+
+Both of these were live bugs in this repo. They point in opposite directions, and getting
+either backwards produces a guard that silently does nothing.
+
+| Function kind | What `current_user` is | Use this to identify the caller |
+|---|---|---|
+| `SECURITY INVOKER` | the caller | **`current_user`** |
+| `SECURITY DEFINER` | the function owner (`postgres`) | **`auth.role()`** |
+
+- `protect_profile_columns()` is `SECURITY INVOKER` → it checks `current_user`. Written as
+  `SECURITY DEFINER` it never fired, and any user could make themselves an admin (§6).
+- `spend_credits`, `claim_daily_refill` and `grant_credits` are `SECURITY DEFINER` → they
+  check `auth.role()`. Written with `current_user` those checks were dead code. No hole was
+  actually open, because `EXECUTE` is granted to `service_role` alone — but a guard that
+  quietly does nothing is worse than no guard, because the next reader trusts it.
+
+`auth.role()` reads the role claim from `request.jwt.claims`, a session GUC, so it still
+reports the true caller from inside a `SECURITY DEFINER` body.
+
+---
+
+## 8. Credit functions — verified behaviour
+
+`EXECUTE` on all three is granted to **`service_role` only**. They are not a public API.
+Server routes call them with the service-role client *after* establishing who the user is.
+Exposing `spend_credits` to `authenticated` would let a client burn its own credits without
+generating anything; exposing `grant_credits` would be far worse.
+
+### The race test — mandatory, and it is the point of the whole step
+
+`scripts/race-test.mjs` fires genuinely parallel HTTP requests at `spend_credits`. **Re-run it
+after any change to that function.** A sequential test passes even with the lock removed,
+which is exactly why it must be concurrent.
+
+Results as run at step 3:
+
+| Scenario | Expected | Observed |
+|---|---|---|
+| free=1, paid=0, spend 1, **12 parallel** | 1 wins | **1 won**, 11 `INSUFFICIENT_CREDITS`, 0 anomalies |
+| free=1, paid=4, spend 2, **20 parallel** | 2 win | **2 won**, 18 rejected, 0 anomalies |
+
+The cross-bucket case also proves the split: the winning spend took 1 free + 1 paid and wrote
+**two** ledger rows; the second took 2 from paid and wrote one. Final state `free=0, paid=1`,
+`sum(delta) = -4`, and the last `balance_after` matched the real balance.
+
+### Other verified behaviour
+
+| Behaviour | Result |
+|---|---|
+| `claim_daily_refill` from `credits_free = 37` | set to **10**, not 47 — proves "set to, not add to" |
+| `claim_daily_refill` called twice in one day | second call is a no-op, one ledger row only |
+| Refill ledger row when the balance drops | `delta = -27` recorded honestly rather than hidden |
+| `grant_credits(350, 'paid')` | balance 11 → 361, one ledger row |
+| Admin spends 999 holding 3 credits | succeeds, balance unchanged, **no ledger row** (nothing moved) |
+| `authenticated` calls `grant_credits` | denied |
+| `authenticated` calls `spend_credits` / `claim_daily_refill` | denied |
+| `authenticated` inserts directly into `credit_ledger` | denied |
+
+After all four attacks the balance was untouched and `credit_ledger` contained zero forged
+rows.
