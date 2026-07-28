@@ -360,3 +360,49 @@ The cross-bucket case also proves the split: the winning spend took 1 free + 1 p
 
 After all four attacks the balance was untouched and `credit_ledger` contained zero forged
 rows.
+
+---
+
+## 9. Step 4 additions — `gemini_usage` and `user_api_keys`
+
+### `gemini_usage` — an addition to the master spec, approved 2026-07-28
+
+`AGENTS.md` §3 mandates a quota guard ("below 20% pool remaining, serve paid and BYOK users
+only") but the master spec never said where usage is counted. Gemini does not report remaining
+quota, and Vercel serverless has no shared memory between requests — so without a table the
+guard is guesswork. The human approved adding one.
+
+```sql
+create table gemini_usage (
+  usage_date    date not null default current_date,
+  key_index     int  not null,        -- 1 or 2: which key, therefore which GCP project
+  model         text not null,
+  request_count int  not null default 0,
+  error_count   int  not null default 0,
+  token_count   bigint not null default 0,
+  updated_at    timestamptz not null default now(),
+  primary key (usage_date, key_index, model)
+);
+```
+
+Written **only** by `record_gemini_usage(p_key_index, p_model, p_tokens, p_is_error)`, which
+upserts so concurrent generations cannot lose counts to a read-modify-write race. Read by
+`gemini_pool_used_today()`. Both are `service_role` only. RLS: admin read.
+
+**`usage_date` is a UTC date, which is not the quota day.** Gemini's free-tier quota resets at
+midnight Pacific, roughly 14:00 WIB, so the counter and the real quota window are offset by
+several hours. The guard is deliberately conservative rather than exact. This is also the
+data source for the admin "API key pool health" screen at step 12.
+
+### `user_api_keys` — BYOK
+
+Verbatim from §2. RLS allows the owner to see *that* a key exists and to delete it; there is
+**no INSERT or UPDATE policy**, because keys are written only by the server route that
+performs the encryption, using the service-role client. The ciphertext is never returned to
+the browser — not even to its owner, who would learn nothing they did not already type.
+
+`key_encrypted` is AES-256-GCM as `iv.tag.ciphertext` (base64url), keyed by `ENCRYPTION_KEY`.
+GCM rather than CBC because it authenticates: a tampered ciphertext fails to decrypt instead
+of silently yielding garbage that then gets sent to Google as an API key. **If
+`ENCRYPTION_KEY` is lost or rotated, every stored key becomes undecryptable** and users must
+re-enter theirs. There is no recovery path, by design.

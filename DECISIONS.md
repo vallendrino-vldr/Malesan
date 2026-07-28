@@ -408,3 +408,77 @@ credits moved, and the ledger is a record of movements, not of intentions.
 
 **Consequence:** admin usage is invisible in the credit ledger. If admin activity ever needs
 auditing, that belongs in `audit_log` (step 12), not here.
+
+---
+
+## 2026-07-28 — Gemini model IDs: `gemini-3.1-flash-lite` (free) and `gemini-3.6-flash` (pro)
+
+**Why, measured rather than assumed.** Every candidate was called for real before choosing:
+
+| Model | Result |
+|---|---|
+| `gemini-3.1-flash-lite` | 200 in **1.1s** — chosen for `GEMINI_MODEL_FREE` |
+| `gemini-flash-lite-latest` | 200 in 1.3s |
+| `gemini-3.5-flash-lite` | 200 in **29.1s** — newer and far slower |
+| `gemini-2.5-flash-lite` | **404** |
+| `gemini-3.6-flash` | 200 in **3.3s** — chosen for `GEMINI_MODEL_PRO` |
+| `gemini-flash-latest` | 200 in 4.0s |
+| `gemini-3.5-flash` | **503** |
+| `gemini-2.5-flash` | **404** |
+
+**Two lessons worth keeping.** First, `ListModels` is not a availability check — it advertised
+both 2.5 models that then returned 404. Always call a model before trusting it. Second, newer
+is not faster: 3.5-flash-lite was 26× slower than 3.1-flash-lite, which would destroy the
+"feels instant" requirement in `DESIGN.md` §5 on the tier most users see.
+
+**Pinned, not `-latest`.** The aliases resolve fine today, but a silent upgrade to something
+like 3.5-flash-lite would multiply latency without a deploy. `AGENTS.md` rule 5 already makes
+swapping a one-line env change, so pinning costs nothing.
+
+---
+
+## 2026-07-28 — Gemini structured output is used; defensive parsing is kept as a fallback
+
+**Why:** this resolves the "decide the JSON-mode strategy at step 4, not step 7" proposal.
+Passing `responseMimeType: application/json` plus a `responseSchema` was verified to return
+valid, schema-conforming JSON in natural Indonesian on `gemini-3.6-flash`. That removes most
+of the risk `PROMPTS.md` §1 was written to defend against.
+
+`parseJson()` is kept anyway — it strips markdown fences and extracts the first JSON object —
+because not every prompt can express a schema, and a model can still ignore one. Cheap
+insurance, not duplicated effort.
+
+---
+
+## 2026-07-28 — Key rotation happens before backoff, not after
+
+**Why:** a second key from a *different* Google Cloud project has its own quota. On a 429 the
+cheapest correct move is to try the other key immediately; sleeping first would waste a key
+that was never rate-limited. So the retry loop iterates all keys, *then* backs off 1s, 2s, 4s,
+8s between rounds.
+
+A 429'd key is put on a 60s cooldown and moved to the back of the order rather than removed —
+if every key is cooling, it is better to try them all than to fail without an attempt.
+
+**Caveat:** the cooldown map is per-process, so on serverless each instance keeps its own.
+Worst case is one wasted 429 per cold instance. The durable count the guard reads lives in
+Postgres.
+
+---
+
+## 2026-07-28 — A broken usage counter must not engage the quota guard
+
+**Why:** `getPoolStatus()` returns "plenty remaining" if `gemini_usage` cannot be read. The
+alternative — failing closed — would mean a metrics table outage takes the product offline for
+every free user. Failing open degrades to the pre-guard behaviour, which is the status quo,
+not an outage. `recordUsage()` swallows its errors for the same reason: undercounting is
+recoverable, failing a generation the user already paid for is not.
+
+---
+
+## 2026-07-28 — BYOK users bypass both the quota guard and key rotation
+
+**Why:** they are not spending our quota, so blocking them would be arbitrary. Their key is a
+pool of exactly one and is never rotated onto our keys — that would be billing theft in
+reverse. Their 429s are their own ceiling and do not put anything on cooldown. BYOK calls are
+recorded with `key_index = 0` so they never pollute our pool accounting.

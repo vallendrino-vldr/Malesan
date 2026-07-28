@@ -1,203 +1,192 @@
 # HANDOFF
 
-Last updated: 2026-07-28T14:20:00Z
+Last updated: 2026-07-28T16:10:00Z
 Last agent: Claude Code
-Last commit: `85f69ba` — feat: step 3 — credit ledger and atomic credit functions
-Current step: 3 of 13 — **complete**. Step 2 also closed in this session.
+Last commit: `<pending — filled in immediately after the step 4 commit>`
+Current step: 4 of 13 — **complete**
 
 ## WHAT I JUST DID
 
-**Step 2 closed.** The human enabled Google as a Supabase auth provider and signed in for
-real. A profile row was created automatically: `vadlyvldr@gmail.com`, display name `VLDR`,
-avatar present, referral code `PM2VVTFF`, 5 free credits, `role = user`. The trigger, the
-OAuth callback and the metadata mapping all work against a real Google account, not a
-synthetic one.
+**Migration** `gemini_usage_and_byok_keys`:
+- `gemini_usage` (per day / key / model) with `record_gemini_usage()` (upsert, race-safe) and
+  `gemini_pool_used_today()`. Both `service_role` only, RLS admin-read. **This table is an
+  addition to the master spec, approved by the human** — see `SCHEMA.md` §9.
+- `user_api_keys` for BYOK, verbatim from `SCHEMA.md`, with no INSERT/UPDATE policy.
 
-**Step 3 — the credit system.** Three migrations:
-1. `credit_ledger_table` — table, index on `(user_id, created_at desc)`, RLS with a
-   select-only policy and **no** insert/update/delete policy at all.
-2. `credit_functions` — `spend_credits`, `claim_daily_refill`, `grant_credits`, with
-   `EXECUTE` granted to `service_role` only.
-3. `fix_credit_fn_caller_checks_use_auth_role` — **security fix**, see GOTCHAS.
+**`src/lib/gemini/`** — all four files marked `server-only`, so importing any of them from a
+client component is a build error rather than a code-review question:
+- `keys.ts` — pool, per-call rotation offset, 60s cooldown on a 429'd key.
+- `client.ts` — `generate`, `generateStream`, `parseJson`, `modelFor`. Rotation before
+  backoff; 1s/2s/4s/8s between rounds; 4xx fails fast because retrying cannot fix it.
+- `quota.ts` — `getPoolStatus`, `checkPoolAdmission`, `recordUsage`. Fails **open**.
+- `crypto.ts` — AES-256-GCM for BYOK keys, `iv.tag.ciphertext` base64url.
 
-Also: `scripts/race-test.mjs` committed so the race test is repeatable, and
-`src/lib/supabase/database.types.ts` extended with `credit_ledger` and the three functions.
+**`.env.local`** — both Gemini keys, chosen model IDs, plus generated `ENCRYPTION_KEY`,
+`CRON_SECRET` and `GEMINI_DAILY_CAP_PER_KEY=1000`. Still gitignored.
 
 ## WHAT WORKS — VERIFIED, NOT ASSUMED
 
-**The race test — the point of the whole step.** `scripts/race-test.mjs` fires genuinely
-parallel HTTP requests through PostgREST. A sequential test would pass even with the lock
-removed, which is exactly why it is concurrent.
+Every model was **called**, not read off `ListModels`:
 
-| Scenario | Expected | Observed |
-|---|---|---|
-| free=1, paid=0, spend 1, **12 parallel** | 1 wins | **1 won**, 11 `INSUFFICIENT_CREDITS`, 0 anomalies |
-| free=1, paid=4, spend 2, **20 parallel** | 2 win | **2 won**, 18 rejected, 0 anomalies |
-
-The cross-bucket case also proved the split: the winner took 1 free + 1 paid and wrote **two**
-ledger rows; the second took 2 from paid and wrote one. Final `free=0, paid=1`,
-`sum(delta) = -4`, last `balance_after` matched the real balance. Returned balances were
-`3` then `1` — cleanly serialised from 5.
-
-**Everything else, each actually executed:**
-
-| Behaviour | Result |
+| Model | Result |
 |---|---|
-| `claim_daily_refill` from `credits_free = 37` | set to **10**, not 47 |
-| `claim_daily_refill` twice in one day | second is a no-op, one ledger row only |
-| Refill that reduces a balance | `delta = -27` recorded rather than hidden |
-| `grant_credits(350, 'paid')` | 11 → 361, one ledger row |
-| Admin spends 999 holding 3 | succeeds, balance unchanged, **no ledger row** |
-| `authenticated` calls `grant_credits` | denied |
-| `authenticated` calls `spend_credits` / `claim_daily_refill` | denied |
-| `authenticated` inserts into `credit_ledger` directly | denied |
+| `gemini-3.1-flash-lite` | 200 in **1.1s** → `GEMINI_MODEL_FREE` |
+| `gemini-3.5-flash-lite` | 200 in **29.1s** — newer, 26× slower |
+| `gemini-2.5-flash-lite` | **404** despite being listed |
+| `gemini-3.6-flash` | 200 in **3.3s** → `GEMINI_MODEL_PRO` |
+| `gemini-3.5-flash` | **503** |
+| `gemini-2.5-flash` | **404** despite being listed |
 
-After all four attacks the balance was untouched and `credit_ledger` held zero forged rows.
+Then the wrapper itself, through a temporary route since deleted:
 
-- `npm run lint`, `npm run typecheck`, `npm run build` all clean.
-- All synthetic test users deleted. The database now holds exactly one profile: the human's.
+| Check | Result |
+|---|---|
+| Structured JSON output (`responseSchema`) | valid schema-conforming JSON, natural Indonesian, 1.6–2.1s |
+| Streaming | 2 chunks, **first chunk 729ms**, 34 chars |
+| `parseJson` repair on a fenced ```` ```json ```` blob | parsed |
+| BYOK encrypt → decrypt round trip | true; ciphertext does not contain the plaintext |
+| Usage recorded | `gemini_usage` incremented on every call |
+| **Key rotation actually happened** | usage landed on **both** keys: key 1 → 7 requests/326 tokens, key 2 → 1 request/38 tokens |
+| Quota guard at 14.7% remaining | `guardEngaged: true` |
+| ↳ free user | **denied**, with the Indonesian top-up message |
+| ↳ pro user | allowed |
+| ↳ BYOK user | allowed |
+
+- `npm run lint`, `typecheck`, `build` all clean. Smoke route deleted; synthetic guard row
+  deleted. Database holds one real profile and genuine usage counts only.
+
+**One real bug caught by that testing:** `generateStream` returned **zero chunks** for a
+response `curl` could see perfectly well. The read loop split SSE frames on `\n\n` and left
+the tail in a buffer that was never drained after the stream ended — and a short reply
+usually arrives as a single chunk with no trailing blank line, so the common case was the
+broken one. Fixed by draining on close and normalising CRLF.
 
 ## WHAT IS BROKEN OR UNFINISHED
 
-- **`/app` has never been seen rendering real data.** The human signed in from their own
-  browser; the automation browser has no session, so it only ever sees the redirect to
-  `/masuk`. The page compiles and the query is RLS-correct, but nobody has confirmed the four
-  stat tiles actually display. **Sign-out is likewise untested.**
-- Still true since step 1: **no page has been looked at visually.** The browser pane will not
-  composite frames in this environment, so every visual claim rests on computed styles and
-  compiled CSS. The focus ring and the 180ms transitions remain structurally verified but
-  visually unconfirmed.
-- **`claim_daily_refill` is not wired to anything.** `SCHEMA.md` says it is "called on session
-  load"; nothing calls it yet. A user's free credits will never refill until step 5 hooks it
-  into the app.
-- **The migrations are still not in this repo** — they live only in
-  `supabase_migrations.schema_migrations` on the hosted project. `supabase db pull`
-  reconstructs them. This contradicts `AGENTS.md` §0 and should be fixed at the start of
-  step 4.
-- No ban enforcement. No disposable-email blocking. No rate limiting (`rate_limits` table
-  does not exist yet). None of these has a roadmap step.
-- New advisor warning: "Leaked Password Protection Disabled". **Not applicable** — this
-  project has no password auth at all, only Google OAuth. Safe to ignore permanently.
+- **Nobody knows whether the two Gemini keys are from two different Google Cloud projects.**
+  The whole two-key design rests on this and the keys do not reveal it. If they share a
+  project they share a quota and `GEMINI_DAILY_CAP_PER_KEY` is double-counting capacity.
+  The human was asked to check in AI Studio; unanswered.
+- **`GEMINI_DAILY_CAP_PER_KEY=1000` is a guess.** Gemini never reports remaining quota. Retune
+  it the first time real 429s appear in `gemini_usage.error_count`.
+- **The 429 backoff path has never actually fired.** No real rate limit was hit, so rotation
+  under 429 and the 1s/2s/4s/8s ladder are verified by construction, not by execution.
+  Rotation *between* calls was observed; rotation *because of* a 429 was not.
+- `claim_daily_refill` is still wired to nothing. Free credits never come back. This is a bug,
+  not a proposal — fold it into step 5.
+- `/app` has still never been seen rendering real data, and sign-out is still untested.
+- **No page has been looked at visually, at any point in this build.** The browser pane will
+  not composite frames here.
+- Migrations still live only on the hosted project, not in this repo.
+- No rate limiting, no ban enforcement, no disposable-email blocking.
+
+## THE REVIEW PASS (every fourth step — this is it)
+
+**What would make a creator choose this over ChatGPT?** Right now: almost nothing, and that is
+the honest answer. The infrastructure is genuinely good — atomic credits, real RLS, key
+rotation, streaming at 0.7s — but a user cannot yet do a single thing. The three things that
+are supposed to differentiate it (Creator DNA, daily trends, performance ratings) are all
+still unbuilt, while the landing page already promises them.
+
+**The single weakest part of the product right now:** `IDE_HARI_INI` is the front door, and on
+day one it will have empty Creator DNA and an empty `trends` table. In that state its prompt
+degrades to a generic "give me content ideas" — which is exactly what ChatGPT does for free,
+except ChatGPT does not charge a credit. The differentiator is not the model, the UI, or the
+credits; it is the context injected into the prompt. **Everything that matters is downstream
+of `trends` having rows and Creator DNA having answers.** Step 9 (the trend cron) is currently
+scheduled *four steps after* the module that depends on it. That ordering should be
+reconsidered before step 5 rather than after.
+
+**Second concern: the economics are unproven.** At 1 credit per Ide Hari Ini and 10 free
+credits a day, one free user can consume 10 Gemini calls daily. With an assumed 1000/day/key
+cap, roughly 200 daily active free users exhaust the pool before anyone pays. The quota guard
+handles the symptom; nothing yet tests whether the free tier is affordable at all. Worth
+modelling before launch, not after.
 
 ## NEXT ACTION — START HERE
 
 1. Read `AGENTS.md`, then this file, then `ROADMAP.md`.
-2. Quick wins before starting step 4: run `supabase db pull` into `supabase/migrations/` and
-   commit it, and ask the human to confirm `/app` renders and sign-out works.
-3. **Step 4 — the Gemini server layer.** Needs the human first (see BLOCKERS). It covers:
-   - two keys from two *separate* Google Cloud projects, with rotation;
-   - HTTP 429 handling with exponential backoff (1s, 2s, 4s, 8s);
-   - the quota guard: below 20% pool remaining, serve paid and BYOK users only. **Nothing
-     currently measures pool usage** — Gemini does not expose remaining quota, so a local
-     counter has to be built here or the guard is guesswork;
-   - streaming, established now rather than retrofitted;
-   - the BYOK path, decrypting `user_api_keys.key_encrypted` with `ENCRYPTION_KEY`.
-   - **Decide the JSON-mode strategy here, not at step 7.** If Gemini structured output is
-     used, most of the defensive parsing in `PROMPTS.md` becomes unnecessary. Deciding late
-     means writing the parsing layer twice.
-4. Step 4 is also a **review-pass step** (every fourth). Read the whole repo with fresh eyes
-   and write a candid assessment: what would make a creator choose this over the free
-   alternatives, and what is the single weakest part right now.
+2. **Step 5 — Ide Hari Ini + Idea Engine.** The first real product surface.
+   - `generations` and `creator_dna` tables (both already specified in `SCHEMA.md` §2).
+   - Server route: verify session → `checkPoolAdmission` → `spend_credits` **server-side with
+     the service-role client** → `generateStream` → persist to `generations`.
+   - **Wire `claim_daily_refill` into session load.** Until this happens the free tier is
+     broken.
+   - Stream the output token by token. Everything is in place for it.
+   - If a generation fails to parse, **do not charge the credit** (`PROMPTS.md` §1). Nothing
+     currently records a failed attempt — see PROPOSALS.
+3. Settle the trend-ordering question in the review pass above before building the prompt.
 
 ## BLOCKERS — NEEDS THE HUMAN
 
-- 🔴 **Two Gemini API keys, from two separate Google Cloud projects.** Quota is enforced per
-  *project*, not per key — two keys in one project buy nothing. **No credit card is needed:**
-  `aistudio.google.com` issues free-tier keys with just a Google account. Put them in
-  `.env.local` as `GEMINI_API_KEY_1` and `GEMINI_API_KEY_2`.
-- 🔴 **Current Gemini model IDs** for `GEMINI_MODEL_FREE` (Flash-Lite tier) and
-  `GEMINI_MODEL_PRO` (Flash tier). Confirm the live IDs at step 4 rather than trusting
-  anything written earlier — Google renames these often.
-- **`ENCRYPTION_KEY`** for BYOK key storage. If it is ever lost or changed, every stored BYOK
-  key becomes undecryptable.
-- **`CRON_SECRET`** before step 9.
-- **Domain not confirmed.** `malesan.app` is unverified. Nothing hardcodes it; `metadataBase`
-  is deliberately absent from `layout.tsx`.
+- **Confirm the two Gemini keys are in two separate Google Cloud projects** (AI Studio → API
+  Keys shows the project per key). If not, create a second project and reissue one key.
+- **Confirm `/app` renders and sign-out works** — one look in the browser you signed in with.
+- **Domain not confirmed.** `malesan.app` is unverified; `metadataBase` is deliberately absent.
 - **Credit pack IDR pricing** — step 11.
 - **Vercel Hobby is not licensed for commercial use.** Resolve before a monetized launch.
-- **Before launch, publish the Google consent screen.** It is in "Testing" mode, so only
-  listed test users can sign in. The scopes (`email`, `profile`, `openid`) are non-sensitive,
-  so no Google verification review is required.
-- Credential rotation was raised and the human declined it as a deliberate working method.
-  Recorded in `DECISIONS.md`. Do not raise it again.
+- **Publish the Google consent screen before launch.** It is in "Testing" mode, so only listed
+  test users can sign in. Scopes are non-sensitive, so no verification review is needed.
+- Credential rotation was raised and declined as a deliberate working method. Recorded in
+  `DECISIONS.md`. Do not raise it again.
 
 ## PROPOSALS — NOT IMPLEMENTED, AWAITING APPROVAL
 
-- **Wire `claim_daily_refill` into the session path.** It exists, is tested, and is called by
-  nothing. Until it runs, free credits never come back and the entire free tier is broken.
-  This is arguably a bug rather than a proposal, but no step owns it — fold it into step 5.
-- **Ban enforcement has no owner.** `is_banned` exists and admins can set it, but nothing
-  reads it: a banned user signs in and generates normally. ~20 lines in the `/app` layout and
-  each generation route. Without it, the step 12 ban button does nothing.
-- **`rate_limits` is specified but not built.** `PRD.md` §7 requires max 10 generations per
-  minute per user, enforced server-side. Step 4 or 5 is the natural home; right now nothing
-  stops a script from draining the whole Gemini pool through one account.
-- **A `credit_packs` table** (~6 columns + one admin screen) — `PRD.md` forbids hardcoding
-  pack prices but nothing holds them.
-- **A `generation_failures` log, or a `status` column on `generations`** — `PROMPTS.md` says a
-  failed JSON parse must not charge the user, but nothing records the attempt, so the admin
-  "API key pool health" screen cannot show a real failure rate.
-- **i18n still has no home in the roadmap.** Every string written so far is hardcoded
-  Indonesian. Adopt a message catalogue at step 5 or accept that the promised ID/EN toggle
-  will not ship.
-- **Migrate to the `sb_publishable_…` key** and rename the env var. Rotating the legacy anon
-  JWT means rotating the project JWT secret and invalidating every live session.
-- **The weakest point in the product, unchanged:** `IDE_HARI_INI` is the front door and the
-  whole differentiator, yet a new user reaches it with empty Creator DNA and, on launch day,
-  an empty `trends` table. In that state it returns what ChatGPT returns for free — while the
-  landing page has already promised "kenal gaya lo" and "tau hari ini". Seed `trends` before
-  launch and add a three-second "lo bikin konten apa?" at first run. **Decide before step 5.**
+- **Move the trend cron (step 9) before step 5**, or seed `trends` manually. See the review
+  pass — the front door is generic without it, and generic is the one thing this product
+  cannot afford to be.
+- **`rate_limits` is specified but not built.** `PRD.md` §7 requires 10 generations/minute/user
+  server-side. Right now one script can drain the entire Gemini pool through one account.
+  Natural home is step 5, alongside the first real generation route.
+- **A `generation_failures` log, or a `status` column on `generations`.** A failed parse must
+  not charge the user, but nothing records that an attempt happened — so the admin pool-health
+  screen cannot show a real failure rate and prompt regressions stay invisible.
+- **Ban enforcement has no owner.** `is_banned` exists; nothing reads it. ~20 lines.
+- **A `credit_packs` table** — `PRD.md` forbids hardcoding pack prices but nothing holds them.
+- **i18n has no home.** Every string so far is hardcoded Indonesian.
+- **Migrate to the `sb_publishable_…` key** and rename the env var.
 
 ## GOTCHAS FOR THE NEXT AGENT
 
-- **`current_user` vs `auth.role()` — two inverse traps, both of which were live bugs here.**
+- **`ListModels` is not an availability check.** `gemini-2.5-flash` and `gemini-2.5-flash-lite`
+  were both listed and both returned 404. **Call a model before trusting it.**
+- **Newer is not faster.** `gemini-3.5-flash-lite` took 29s where `3.1-flash-lite` took 1.1s.
+  Model IDs are pinned, not `-latest`, so a silent upgrade cannot multiply latency.
+- **SSE parsing must drain its buffer when the stream closes.** A short reply arrives as one
+  chunk with no trailing blank line; splitting on `\n\n` alone silently yields nothing.
+- **`current_user` vs `auth.role()` — two inverse traps, both live bugs in this repo.**
 
   | Function kind | `current_user` is | Identify the caller with |
   |---|---|---|
   | `SECURITY INVOKER` | the caller | `current_user` |
-  | `SECURITY DEFINER` | the owner (`postgres`) | `auth.role()` |
+  | `SECURITY DEFINER` | the owner | `auth.role()` |
 
-  `protect_profile_columns()` is INVOKER and checks `current_user`; written as DEFINER the
-  guard never fired and any user could make themselves admin. The credit functions are
-  DEFINER and check `auth.role()`; written with `current_user` those checks were dead code.
+  Written the wrong way round, `protect_profile_columns` let any user make themselves admin.
   Full write-up in `SCHEMA.md` §6–§7.
 - **Re-run `node scripts/race-test.mjs` after any change to `spend_credits`.** A sequential
-  test passes even with the `FOR UPDATE` removed. The script prints the SQL needed to create
-  its throwaway user; it does not create it itself.
-- **`credit_ledger` has no INSERT/UPDATE/DELETE policy, deliberately.** Only `SECURITY
-  DEFINER` functions write to it, and they bypass RLS. That absence is what makes
-  "append-only" true rather than merely intended.
-- **`balance_after` is the TOTAL balance, not the bucket balance.** A cross-bucket spend
-  writes two rows; the first shows a mid-operation total. Read the later row.
-- **Admin spends write no ledger row** — nothing moved, so there is nothing to record. Admin
-  activity auditing belongs in `audit_log` at step 12.
-- **Never enable `FORCE ROW LEVEL SECURITY` on `profiles`.** `is_admin()` reads `profiles`
-  from inside a policy on `profiles`; it avoids infinite recursion only because a
-  `SECURITY DEFINER` owner bypasses RLS.
-- **`is_admin()` must keep `EXECUTE` for `authenticated`.** The linter flags it; that is a
-  false positive. Policy expressions run as the querying role.
-- **`rls_auto_enable()` is a Supabase platform function, not ours.** Its two linter warnings
-  are false positives — an `event_trigger` function cannot be called over RPC.
-- **Next.js 16 renamed `middleware.ts` to `proxy.ts`.** The old name still builds but in dev
-  throws "Cannot find the middleware module" and every matched route 404s.
+  test passes even with the `FOR UPDATE` removed.
+- **The quota guard fails open on purpose.** A broken `gemini_usage` must not take the product
+  offline for free users. `recordUsage` swallows errors for the same reason.
+- **BYOK is `key_index = 0`** so it never pollutes pool accounting, is never rotated onto our
+  keys, and never triggers a cooldown.
+- **`gemini_usage.usage_date` is a UTC date, not the quota day.** Gemini resets ~14:00 WIB.
+- **A folder named `_foo` in `src/app` is a private folder** and is not routable. A route
+  placed in one silently 404s.
+- **Next.js 16 renamed `middleware.ts` to `proxy.ts`.** The old name builds but 404s every
+  matched route in dev.
+- **Never enable `FORCE ROW LEVEL SECURITY` on `profiles`** — `is_admin()` would recurse.
+- **`is_admin()` must keep `EXECUTE` for `authenticated`** — the linter flags it; false
+  positive. `rls_auto_enable()` is a Supabase platform function, also a false positive.
 - **Regenerate `src/lib/supabase/database.types.ts` after every migration.**
-- **Tailwind v4 has no `--duration-*` theme namespace.** A duration in `@theme` is dropped
-  silently with a green build. Durations live on `:root`; usage is
-  `duration-[var(--duration-standard)]`.
-- **Do not put Framer Motion entrances on server-rendered pages** — hydration mismatch, and
-  `opacity: 0` in the SSR HTML means a blank page if the bundle fails. Use the CSS `.reveal`
-  class. Framer Motion is reserved for steps 5 and 8.
-- **`--color-border` is named `--color-hairline` in CSS.** Use `border-hairline`.
-- **This project has its own git repo** at `Documents/malesan`, remote
-  `github.com/vallendrino-vldr/Malesan`, nested inside an unrelated repo rooted at the user's
-  home folder (remote `duitkita`, no `.gitignore`). **Never `git add -A` from a parent
-  directory**; check `git rev-parse --show-toplevel` first.
+- **Tailwind v4 has no `--duration-*` theme namespace** — a duration in `@theme` vanishes with
+  a green build. Use `duration-[var(--duration-standard)]`.
+- **No Framer Motion entrances on server-rendered pages** — hydration mismatch and `opacity:0`
+  in SSR HTML. Use the CSS `.reveal` class.
+- **`--color-border` is `--color-hairline` in CSS.** Use `border-hairline`.
+- **This repo is nested inside an unrelated repo rooted at the user's home folder.** Never
+  `git add -A` from a parent directory; check `git rev-parse --show-toplevel`.
 - **A second Supabase project, `duitkitav2`, exists in the same org.** Always pass
   `project_id = hjdctzrvnhvarxoxixrn`.
-- `gh` (GitHub CLI) is **not installed**. Auth is a token in `.git/config`, untracked.
-- **Two different language settings.** UI language and `creator_dna.output_language` are
-  separate.
-- **Gemini quota resets ~14:00 WIB**, not local midnight, and is per Google Cloud *project*.
-- **The quality floor is not step 13.** 360px, focus states, reduced motion, keyboard
-  reachability ship with every component.
-- **`DECISIONS.md` is append-only.** Reversals are new entries, never edits.
+- `gh` is **not installed**. Auth is a token in `.git/config`, untracked.
+- **`claim_daily_refill` sets `credits_free = 10`, it does not add 10.** Signup grants 5.
+- **`DECISIONS.md` is append-only.**

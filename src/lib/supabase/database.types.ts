@@ -130,9 +130,89 @@ export type Database = {
           },
         ];
       };
+      gemini_usage: {
+        Row: {
+          usage_date: string;
+          key_index: number;
+          model: string;
+          request_count: number;
+          error_count: number;
+          token_count: number;
+          updated_at: string;
+        };
+        Insert: {
+          usage_date?: string;
+          key_index: number;
+          model: string;
+          request_count?: number;
+          error_count?: number;
+          token_count?: number;
+          updated_at?: string;
+        };
+        Update: {
+          usage_date?: string;
+          key_index?: number;
+          model?: string;
+          request_count?: number;
+          error_count?: number;
+          token_count?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      user_api_keys: {
+        Row: {
+          user_id: string;
+          provider: string;
+          key_encrypted: string;
+          is_active: boolean;
+          last_verified_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          provider?: string;
+          key_encrypted: string;
+          is_active?: boolean;
+          last_verified_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          provider?: string;
+          key_encrypted?: string;
+          is_active?: boolean;
+          last_verified_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_api_keys_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
+      /** service_role only. Upserts one Gemini call into gemini_usage. */
+      record_gemini_usage: {
+        Args: {
+          p_key_index: number;
+          p_model: string;
+          p_tokens?: number;
+          p_is_error?: boolean;
+        };
+        Returns: undefined;
+      };
+      /** service_role only. Today's request and error counts per key. */
+      gemini_pool_used_today: {
+        Args: never;
+        Returns: { key_index: number; requests: number; errors: number }[];
+      };
       gen_referral_code: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
       /** service_role only. Throws INSUFFICIENT_CREDITS. Returns the new total balance. */
