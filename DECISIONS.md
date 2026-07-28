@@ -192,3 +192,38 @@ These files are the project's memory.
 
 **What was created:** `AGENTS.md`, `CLAUDE.md`, `HANDOFF.md`, `DECISIONS.md`, `PRD.md`,
 `SCHEMA.md`, `DESIGN.md`, `PROMPTS.md`, `ROADMAP.md`.
+
+---
+
+## 2026-07-28 — Malesan gets its own git repo at `Documents/malesan`
+
+**Why:** the directory was already inside a repo whose root is the **user's entire home
+folder**, with a remote pointing at `github.com/vallendrino-vldr/duitkita` — an unrelated
+project — and no `.gitignore` anywhere. Committing Malesan into that repo would mix two
+products into one history and would make deployment impossible: Vercel builds from a repo
+root, and the repo root was `C:\Users\Administrator`.
+
+**Cost / tradeoff:** nested repositories are mildly unusual, and the outer repo will see
+`Documents/malesan` as an opaque directory. Accepted — the alternative is worse.
+
+**Not done, deliberately:** the outer repo was left completely untouched. It belongs to
+another project. Its missing `.gitignore` (with `.ssh/` and `.git-credentials` sitting
+untracked next to a live remote) was reported to the human rather than silently "fixed".
+
+---
+
+## 2026-07-28 — Secrets are never pasted into chat and never written to the repo by an agent
+
+**Why:** on this date the human shared a GitHub PAT and two Supabase admin credentials
+(`sb_secret_` and the `service_role` JWT) in a chat message. Chat transcripts persist, so any
+secret that passes through one must be treated as burned. The `service_role` key bypasses
+every RLS policy in `SCHEMA.md` §4 — the entire authorisation model is void if it leaks.
+
+**Rule adopted:**
+- `.env.example` holds placeholders only and **is** committed.
+- `.env.local` holds real values, is gitignored, and is filled in **by the human**, locally.
+- An agent never needs a production secret to do its job. Steps 1–2 need none at all.
+- GitHub auth goes through `gh auth login` or a credential helper — never a token in a file.
+
+**Consequence:** those three credentials must be rotated. Tracked in `HANDOFF.md` BLOCKERS
+until confirmed done.

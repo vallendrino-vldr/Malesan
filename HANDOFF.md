@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-28T09:37:34Z
 Last agent: Claude Code
-Last commit: `<pending — filled in immediately after the step 0 commit>`
+Last commit: `0f1a34c` — chore: initial spec and agent handoff files
 Current step: 0 of 13 — **complete**
 
 ## WHAT I JUST DID
@@ -24,6 +24,10 @@ Current step: 0 of 13 — **complete**
 - Created `DECISIONS.md` — 17 entries backfilled from the spec so the *reasoning* survives
   independently of the master prompt
 - Created this file
+- Created `.gitignore` (secrets, `node_modules`, `.next`, `.vercel`, editor/OS noise) and
+  `.env.example` (all nine env vars as placeholders, with a note on which are public)
+- **Initialised a dedicated git repo at `Documents/malesan`.** See GOTCHAS — the enclosing
+  directory was inside a repo rooted at the user's home folder.
 
 No application code was written. That is per master prompt §14: *"Do not build application
 code in this first turn."*
@@ -61,9 +65,22 @@ Do **not** touch Supabase, auth or Gemini in step 1.
 ## BLOCKERS — NEEDS THE HUMAN
 None are blocking step 1. These block later steps and are worth resolving early:
 
+- 🔴 **CREDENTIAL ROTATION — do this first.** On 2026-07-28 the human pasted a GitHub personal
+  access token, a Supabase `sb_secret_` key and a Supabase `service_role` JWT into a chat
+  transcript. All three must be revoked and reissued. The `service_role` key in particular
+  bypasses every RLS policy — it is full admin on the database. **No agent wrote any of these
+  values to disk, and none of them are in this repo or its history.** The Supabase `anon` key
+  and `sb_publishable_` key were also shared but are public by design and need no action.
+  Do not accept secrets pasted into chat; the human fills `.env.local` themselves.
+- **Supabase project exists** — id `hjdctzrvnhvarxoxixrn`, region `ap-southeast-1`, so the URL
+  is `https://hjdctzrvnhvarxoxixrn.supabase.co`. No schema has been applied yet. The human must
+  put the anon key and the **rotated** service role key into `.env.local` before step 2.
 - **Domain not confirmed.** Master prompt says "malesan.app (or similar — confirm with human
   before hardcoding)". Nothing hardcodes it yet. Needed before deploy.
-- **Supabase project** — not created. URL, anon key and service role key needed for step 2.
+- **GitHub remote for this repo** — none set. The repo `vallendrino-vldr/duitkita` seen on the
+  machine is a *different project*; do not push Malesan there. A new empty repo is needed, and
+  authentication should go through `gh auth login` or a git credential helper, **not** a token
+  pasted into a file or a chat message.
 - **Google OAuth credentials** — client ID/secret and authorised redirect URIs needed for step 2.
 - **Two Google Cloud projects with Gemini API keys** — needed for step 4. They must be *two
   separate projects*; two keys in one project share one quota and buy nothing.
@@ -122,5 +139,18 @@ Per `AGENTS.md` §6, these are written down and **not built**.
   what slipped through.
 - **`DECISIONS.md` is append-only.** If a decision is reversed, add a new entry referencing the
   old one. Never edit or delete history.
-- The repo had exactly one prior commit (`bac9bcb first commit`) containing only the master
-  prompt. There is no scaffold, no `package.json`, no `node_modules` — step 1 starts from bare.
+- **This project now has its own git repo, rooted at `Documents/malesan`.** It did not before.
+  The directory sits inside a second, unrelated repo whose root is the **user's entire home
+  folder** (`C:\Users\Administrator`), which has a remote pointing at
+  `github.com/vallendrino-vldr/duitkita` and — as of step 0 — **no `.gitignore` at all**, while
+  `.ssh/`, `.git-credentials` and `NTUSER.DAT` sit there untracked. A stray `git add -A` in the
+  home folder would publish the human's private keys.
+  - That outer repo was **left untouched** — it belongs to another project and is not ours to
+    modify. It has been reported to the human. Do not "helpfully" fix it either.
+  - **Never run `git add -A` from a parent directory.** Always confirm
+    `git rev-parse --show-toplevel` returns the malesan path before staging anything.
+  - Commit `bac9bcb first commit` belongs to the *outer* repo, not this one. This repo's
+    history starts at `0f1a34c`.
+- `gh` (GitHub CLI) is **not installed** on this machine — `gh: command not found`. Anything
+  that assumes it will fail.
+- There is no scaffold, no `package.json`, no `node_modules` — step 1 starts from bare.
