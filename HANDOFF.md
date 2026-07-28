@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-28T14:20:00Z
 Last agent: Claude Code
-Last commit: `<pending — filled in immediately after the step 3 commit>`
+Last commit: `85f69ba` — feat: step 3 — credit ledger and atomic credit functions
 Current step: 3 of 13 — **complete**. Step 2 also closed in this session.
 
 ## WHAT I JUST DID
