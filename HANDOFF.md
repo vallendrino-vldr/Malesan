@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-28T11:05:00Z
 Last agent: Claude Code
-Last commit: `<pending — filled in immediately after the step 2 commit>`
+Last commit: `f3455ba` — feat: step 2 — profiles table, RLS, Google OAuth wiring
 Current step: 2 of 13 — **database and code complete, sign-in unproven** (see BLOCKERS)
 
 ## WHAT I JUST DID
