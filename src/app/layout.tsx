@@ -34,6 +34,10 @@ export const metadata: Metadata = {
   applicationName: "Malesan",
   // No metadataBase / canonical URL yet: the domain is unconfirmed.
   // See HANDOFF.md BLOCKERS before adding one.
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {

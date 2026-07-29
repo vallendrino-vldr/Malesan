@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
   // honoured. Without this check it is an open redirect.
   const requested = searchParams.get("next") ?? "/";
   const next = requested.startsWith("/") && !requested.startsWith("//") ? requested : "/";
+  const refCode = searchParams.get("ref");
 
   if (oauthError) {
     return NextResponse.redirect(
@@ -32,12 +33,34 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error, data: sessionData } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     return NextResponse.redirect(
       `${origin}/masuk?error=${encodeURIComponent(error.message)}`,
     );
+  }
+
+  // If there's a ref code, update the user's profile with referred_by
+  if (refCode && sessionData.user) {
+    const { createServiceRoleClient } = await import("@/lib/supabase/server");
+    const serviceRole = createServiceRoleClient();
+    
+    // Check who owns the referral code
+    const { data: referrerProfile } = await serviceRole
+      .from("profiles")
+      .select("id")
+      .eq("referral_code", refCode)
+      .single();
+      
+    if (referrerProfile && referrerProfile.id !== sessionData.user.id) {
+      // Only set referred_by if it's currently null (don't overwrite)
+      await serviceRole
+        .from("profiles")
+        .update({ referred_by: referrerProfile.id })
+        .eq("id", sessionData.user.id)
+        .is("referred_by", null);
+    }
   }
 
   return NextResponse.redirect(`${origin}${next}`);

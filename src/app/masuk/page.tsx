@@ -12,9 +12,9 @@ export const metadata: Metadata = {
 export default async function MasukPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ error?: string; next?: string; ref?: string }>;
 }) {
-  const { error, next } = await searchParams;
+  const { error, next, ref } = await searchParams;
 
   const supabase = await createClient();
   const {
@@ -60,7 +60,7 @@ export default async function MasukPage({
         )}
 
         <div className="mt-8">
-          <GoogleSignInButton next={safeNext} />
+          <GoogleSignInButton next={safeNext} referralCode={ref} />
         </div>
 
         <p className="mt-6 font-mono text-[11px] leading-relaxed text-muted">

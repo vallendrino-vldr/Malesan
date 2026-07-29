@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
  * Google is the only sign-in method. No email/password, no magic links — that
  * is an anti-abuse decision (DECISIONS.md), not a default.
  */
-export function GoogleSignInButton({ next = "/" }: { next?: string }) {
+export function GoogleSignInButton({ next = "/", referralCode }: { next?: string; referralCode?: string | null }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ export function GoogleSignInButton({ next = "/" }: { next?: string }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${referralCode ? `&ref=${encodeURIComponent(referralCode)}` : ""}`,
       },
     });
 

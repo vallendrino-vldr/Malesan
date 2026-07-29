@@ -482,3 +482,10 @@ recoverable, failing a generation the user already paid for is not.
 pool of exactly one and is never rotated onto our keys — that would be billing theft in
 reverse. Their 429s are their own ceiling and do not put anything on cooldown. BYOK calls are
 recorded with `key_index = 0` so they never pollute our pool accounting.
+
+ # # #   2 0 2 6 - 0 7 - 2 8 :   C r e d i t   r e f u n d   s t r a t e g y   o n   p a r s e   f a i l u r e 
+ -   * * D e c i s i o n : * *   R e f u n d   v i a   g r a n t _ c r e d i t s   i n s t e a d   o f   t w o - p h a s e   r e s e r v e / c o m m i t . 
+ -   * * C o n t e x t : * *   I f   G e m i n i   r e t u r n s   i n v a l i d   J S O N ,   t h e   g e n e r a t i o n   i s   v o i d .   W e   s p e n d   c r e d i t s   a t o m i c a l l y   * b e f o r e *   g e n e r a t i o n   t o   p r e v e n t   r a c e s . 
+ -   * * R e a s o n i n g : * *   A   t w o - p h a s e   r e s e r v e / c o m m i t   p a t t e r n   r e q u i r e s   s c h e m a   c h a n g e s   ( l o c k i n g   r o w s   o r   a   p e n d i n g   s t a t e ) .   A   r e f u n d   i s   m u c h   s i m p l e r ,   k e e p s   t h e   l e d g e r   h o n e s t   (  e a s o n :   g e n e r a t i o n _ f a i l e d ) ,   a n d   a v o i d s   d e a d l o c k s   i f   t h e   n o d e   d i e s   m i d - r e q u e s t . 
+  
+ 

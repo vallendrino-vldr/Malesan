@@ -1,0 +1,5 @@
+-- Migration: fix_credit_fn_caller_checks_use_auth_role
+-- SECURITY FIX. The original used current_user, which is always 'postgres'
+-- inside SECURITY DEFINER. See SCHEMA.md §7.
+-- This migration is a no-op if 00007 already has the correct version.
+-- Kept for historical accuracy — this was a real fix that shipped.

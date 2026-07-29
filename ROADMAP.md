@@ -14,8 +14,8 @@ report** → wait for the human to say "lanjut". Do not chain two steps in one t
 | 2 | Supabase Google OAuth, `profiles`, RLS | Sign in/out works, profile row auto-created, RLS verified | ✅ **done** — 2026-07-28. Real Google sign-in produced a profile with 5 credits and a referral code |
 | 3 | Credit system | `spend_credits` is race-safe under parallel calls, ledger correct, daily refill works | ✅ **done** — 2026-07-28. Race test passed at 12 and 20 parallel requests |
 | 4 | Gemini server layer | Key rotation, 429 backoff, quota guard, streaming, BYOK path | ✅ **done** — 2026-07-28. Rotation observed across both keys, guard verified engaging, streaming first byte 0.73s |
-| 5 | Ide Hari Ini + Idea Engine | Zero-input generation works end to end, credits deducted correctly | ⬜ next |
-| 6 | Creator DNA + onboarding gate | First generation free, form appears after, DNA injected into prompts | ⬜ |
+| 5 | Ide Hari Ini + Idea Engine | Zero-input generation works end to end, credits deducted correctly | ✅ **done** — 2026-07-28. Stream working, quota/credit guards verified |
+| 6 | Creator DNA + onboarding gate | First generation free, form appears after, DNA injected into prompts | 🟡 next |
 | 7 | Hook Lab + Script Builder + Repurpose | All modules produce valid parsed JSON | ⬜ |
 | 8 | Pipeline | Kanban with drag, performance rating captured | ⬜ |
 | 9 | Trend cron | Daily job populates `trends`, one Gemini call, injected into prompts | ⬜ |

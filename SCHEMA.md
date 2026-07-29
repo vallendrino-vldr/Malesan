@@ -406,3 +406,8 @@ GCM rather than CBC because it authenticates: a tampered ciphertext fails to dec
 of silently yielding garbage that then gets sent to Google as an API key. **If
 `ENCRYPTION_KEY` is lost or rotated, every stored key becomes undecryptable** and users must
 re-enter theirs. There is no recovery path, by design.
+
+### 00010_create_creator_dna_and_generations.sql
+- **creator_dna**: Primary key user_id, references profiles. Stores creator niche, tone, audience, platforms, etc.
+- **generations**: The history of AI outputs. module enum. input/output jsonb. Service-role inserts only to prevent client forging.
+

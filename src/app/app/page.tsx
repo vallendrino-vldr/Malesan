@@ -1,17 +1,20 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { IdeHariIni } from "@/components/IdeHariIni";
+import { IdeaEngine } from "@/components/IdeaEngine";
+import { CreditDisplay } from "@/components/CreditDisplay";
+import { PipelineBoard } from "@/components/PipelineBoard";
+import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Malesan",
+  title: "Malesan App",
   robots: { index: false },
 };
 
-/**
- * Step 2 only proves the loop: signed in -> profile row exists -> RLS returns
- * exactly that row. The real modules land in step 5. Deliberately plain.
- */
-export default async function AppPage() {
+export default async function AppPage({ searchParams }: { searchParams?: { tab?: string } }) {
+  const params = await searchParams;
+  const tab = params?.tab || "studio";
   const supabase = await createClient();
 
   const {
@@ -22,8 +25,6 @@ export default async function AppPage() {
     redirect("/masuk?next=%2Fapp");
   }
 
-  // RLS means this can only ever return the caller's own row — there is no
-  // `.eq('id', user.id)` filter and it still cannot leak anyone else's data.
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
@@ -39,71 +40,126 @@ export default async function AppPage() {
           Ini bukan salah lo. Coba keluar terus masuk lagi — kalau masih gini,
           berarti trigger di database gak jalan.
         </p>
-        {error && (
-          <p className="mt-4 font-mono text-xs text-danger">{error.message}</p>
-        )}
         <SignOutButton />
       </main>
     );
   }
 
-  const totalCredits = profile.credits_free + profile.credits_paid;
+  // Onboarding Gate: If they have generated at least 1 thing and haven't completed onboarding, redirect.
+  if (!profile.onboarding_completed) {
+    const { count, error: countError } = await supabase
+      .from("generations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if (!countError && count && count >= 1) {
+      redirect("/app/onboarding");
+    }
+  }
+
+  // Claim daily refill on session load
+  const serviceRole = createServiceRoleClient();
+  let totalCredits = profile.credits_free + profile.credits_paid;
+  
+  try {
+    const { data: refilledCredits, error: refillError } = await serviceRole.rpc("claim_daily_refill", {
+      p_user: user.id
+    });
+    if (!refillError && typeof refilledCredits === 'number') {
+      totalCredits = refilledCredits;
+    }
+  } catch (err: unknown) {
+    // If it fails, we just use the current balance
+  }
+
+  // Fetch Pipeline Cards
+  const { data: pipelineCards } = await supabase
+    .from("pipeline_cards")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
   return (
-    <main className="mx-auto w-full max-w-lg flex-1 px-5 py-16">
-      <div className="reveal">
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-ember">
-          Udah masuk
-        </p>
-        <h1 className="mt-4 font-display text-3xl font-bold leading-tight tracking-display-md text-ink">
-          Halo, {profile.display_name ?? "kreator"}.
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Belum ada apa-apa di sini. Modulnya nyusul — ini baru buktiin login,
-          profil, sama RLS-nya jalan.
-        </p>
-      </div>
+    <div className="min-h-full w-full bg-obsidian">
+      {/* App Header */}
+      <header className="sticky top-0 z-30 border-b border-hairline bg-obsidian/80 px-5 py-4 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="font-display text-lg font-extrabold tracking-display-sm text-ink">
+              malesan
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {profile.role === "admin" && (
+              <Link href="/admin" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">
+                Admin Panel
+              </Link>
+            )}
+            <CreditDisplay credits={totalCredits} />
+            <Link href="/app/profile" className="h-8 w-8 overflow-hidden rounded-full border border-hairline bg-surface transition-transform hover:scale-105">
+              {profile.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.avatar_url || user.user_metadata?.avatar_url || user.user_metadata?.picture} alt="Avatar" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center font-display text-xs font-bold text-muted">
+                  {profile.display_name?.charAt(0).toUpperCase() || "?"}
+                </div>
+              )}
+            </Link>
+            <SignOutButton compact />
+          </div>
+        </div>
+      </header>
 
-      <dl className="reveal mt-10 grid gap-px overflow-hidden rounded-2xl border border-hairline bg-hairline sm:grid-cols-2">
-        <Stat label="Credit total" value={String(totalCredits)} hint={`${profile.credits_free} gratis + ${profile.credits_paid} berbayar`} />
-        <Stat label="Kode referral" value={profile.referral_code} hint="Bagi ke temen lo" />
-        <Stat label="Role" value={profile.role} hint={profile.role === "admin" ? "Bypass semua cek credit" : "User biasa"} />
-        <Stat label="Onboarding" value={profile.onboarding_completed ? "selesai" : "belum"} hint="Creator DNA nyusul di step 6" />
-      </dl>
+      {/* Main Content */}
+      <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:py-12">
+        <div className="mb-8 flex border-b border-hairline">
+          <Link
+            href="/app?tab=studio"
+            className={`px-4 py-3 font-display text-sm font-bold transition-colors ${
+              tab === "studio"
+                ? "border-b-2 border-ember text-ember"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            Studio
+          </Link>
+          <Link
+            href="/app?tab=pipeline"
+            className={`px-4 py-3 font-display text-sm font-bold transition-colors ${
+              tab === "pipeline"
+                ? "border-b-2 border-ember text-ember"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            Pipeline
+          </Link>
+        </div>
 
-      <SignOutButton />
-    </main>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <div className="bg-surface p-5">
-      <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted">
-        {label}
-      </dt>
-      <dd className="tabular mt-2 font-display text-xl font-bold tracking-display-sm text-ink">
-        {value}
-      </dd>
-      <p className="mt-1 text-xs text-muted">{hint}</p>
+        <div className="reveal space-y-12">
+          {tab === "studio" ? (
+            <div className="mx-auto max-w-3xl space-y-12">
+              <IdeHariIni />
+              <IdeaEngine />
+            </div>
+          ) : (
+            <PipelineBoard initialCards={pipelineCards || []} />
+          )}
+        </div>
+      </main>
     </div>
   );
 }
 
-function SignOutButton() {
+function SignOutButton({ compact = false }: { compact?: boolean }) {
   return (
-    <form action="/auth/signout" method="post" className="mt-10">
+    <form action="/auth/signout" method="post">
       <button
         type="submit"
-        className="rounded-xl border border-hairline bg-surface px-5 py-3 font-display text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"
+        className={`font-display font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink ${
+          compact ? "text-xs" : "rounded-xl border border-hairline bg-surface px-5 py-3 text-sm hover:bg-surface-raised mt-10 text-ink"
+        }`}
       >
         Keluar
       </button>

@@ -195,6 +195,419 @@ export type Database = {
           },
         ];
       };
+      creator_dna: {
+        Row: {
+          user_id: string;
+          niche: string | null;
+          target_audience: string | null;
+          tone: string | null;
+          platforms: string[] | null;
+          output_language: string;
+          banned_words: string[] | null;
+          brand_notes: string | null;
+          ai_persona_summary: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          niche?: string | null;
+          target_audience?: string | null;
+          tone?: string | null;
+          platforms?: string[] | null;
+          output_language?: string;
+          banned_words?: string[] | null;
+          brand_notes?: string | null;
+          ai_persona_summary?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          niche?: string | null;
+          target_audience?: string | null;
+          tone?: string | null;
+          platforms?: string[] | null;
+          output_language?: string;
+          banned_words?: string[] | null;
+          brand_notes?: string | null;
+          ai_persona_summary?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "creator_dna_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      generations: {
+        Row: {
+          id: string;
+          user_id: string;
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+          platform: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
+          input: Json | null;
+          output: Json | null;
+          model_used: string | null;
+          credits_spent: number;
+          is_favorite: boolean;
+          performance_rating: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+          platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
+          input?: Json | null;
+          output?: Json | null;
+          model_used?: string | null;
+          credits_spent: number;
+          is_favorite?: boolean;
+          performance_rating?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+          platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
+          input?: Json | null;
+          output?: Json | null;
+          model_used?: string | null;
+          credits_spent?: number;
+          is_favorite?: boolean;
+          performance_rating?: number | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "generations_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      pipeline_cards: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          content: Json | null;
+          status: "ide" | "draft" | "siap" | "posted";
+          generation_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          content?: Json | null;
+          status?: "ide" | "draft" | "siap" | "posted";
+          generation_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          content?: Json | null;
+          status?: "ide" | "draft" | "siap" | "posted";
+          generation_id?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_cards_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "pipeline_cards_generation_id_fkey";
+            columns: ["generation_id"];
+            isOneToOne: false;
+            referencedRelation: "generations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      credit_packs: {
+        Row: {
+          id: string;
+          credits: number;
+          price_idr: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          credits: number;
+          price_idr: number;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          credits?: number;
+          price_idr?: number;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      topups: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount_idr: number;
+          credits: number;
+          method: "bank_transfer" | "qris" | "voucher" | "manual_admin";
+          proof_url: string | null;
+          status: "pending" | "approved" | "rejected";
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount_idr: number;
+          credits: number;
+          method: "bank_transfer" | "qris" | "voucher" | "manual_admin";
+          proof_url?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount_idr?: number;
+          credits?: number;
+          method?: "bank_transfer" | "qris" | "voucher" | "manual_admin";
+          proof_url?: string | null;
+          status?: "pending" | "approved" | "rejected";
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "topups_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "topups_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      vouchers: {
+        Row: {
+          code: string;
+          credits: number;
+          is_redeemed: boolean;
+          redeemed_by: string | null;
+          redeemed_at: string | null;
+          created_by: string | null;
+          expires_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          code: string;
+          credits: number;
+          is_redeemed?: boolean;
+          redeemed_by?: string | null;
+          redeemed_at?: string | null;
+          created_by?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          code?: string;
+          credits?: number;
+          is_redeemed?: boolean;
+          redeemed_by?: string | null;
+          redeemed_at?: string | null;
+          created_by?: string | null;
+          expires_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_redeemed_by_fkey";
+            columns: ["redeemed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "vouchers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      referrals: {
+        Row: {
+          id: string;
+          referrer_id: string;
+          referee_id: string;
+          status: "pending" | "credited" | "voided";
+          void_reason: string | null;
+          credited_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          referrer_id: string;
+          referee_id: string;
+          status?: "pending" | "credited" | "voided";
+          void_reason?: string | null;
+          credited_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          referrer_id?: string;
+          referee_id?: string;
+          status?: "pending" | "credited" | "voided";
+          void_reason?: string | null;
+          credited_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referrer_id_fkey";
+            columns: ["referrer_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "referrals_referee_id_fkey";
+            columns: ["referee_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      trends: {
+        Row: {
+          id: string;
+          source: string;
+          title: string;
+          summary: string | null;
+          category: string | null;
+          region: string | null;
+          is_active: boolean;
+          captured_at: string;
+        };
+        Insert: {
+          id?: string;
+          source: string;
+          title: string;
+          summary?: string | null;
+          category?: string | null;
+          region?: string | null;
+          is_active?: boolean;
+          captured_at?: string;
+        };
+        Update: {
+          id?: string;
+          source?: string;
+          title?: string;
+          summary?: string | null;
+          category?: string | null;
+          region?: string | null;
+          is_active?: boolean;
+          captured_at?: string;
+        };
+        Relationships: [];
+      };
+      rate_limits: {
+        Row: {
+          user_id: string;
+          window_start: string;
+          request_count: number;
+        };
+        Insert: {
+          user_id: string;
+          window_start: string;
+          request_count?: number;
+        };
+        Update: {
+          user_id?: string;
+          window_start?: string;
+          request_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "rate_limits_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      audit_log: {
+        Row: {
+          id: number;
+          actor_id: string | null;
+          action: string;
+          target_type: string | null;
+          target_id: string | null;
+          metadata: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          actor_id?: string | null;
+          action: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          actor_id?: string | null;
+          action?: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -246,3 +659,13 @@ export type Database = {
 
 /** Convenience alias — the shape of a profiles row. */
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+
+export type CreatorDna = Database["public"]["Tables"]["creator_dna"]["Row"];
+export type Generation = Database["public"]["Tables"]["generations"]["Row"];
+export type PipelineCard = Database["public"]["Tables"]["pipeline_cards"]["Row"];
+export type CreditPack = Database["public"]["Tables"]["credit_packs"]["Row"];
+export type Topup = Database["public"]["Tables"]["topups"]["Row"];
+export type Voucher = Database["public"]["Tables"]["vouchers"]["Row"];
+export type Referral = Database["public"]["Tables"]["referrals"]["Row"];
+export type Trend = Database["public"]["Tables"]["trends"]["Row"];
+export type AuditLog = Database["public"]["Tables"]["audit_log"]["Row"];
