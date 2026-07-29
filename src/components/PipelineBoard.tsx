@@ -1,29 +1,100 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { motion, PanInfo } from "framer-motion";
 import type { PipelineCard } from "@/lib/supabase/database.types";
-import { updateCardStatus, ratePerformance, updateCardContentAndStatus } from "@/app/actions/pipeline";
+import {
+  updateCardStatus,
+  ratePerformance,
+  updateCardContentAndStatus,
+} from "@/app/actions/pipeline";
 import { IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE } from "@/lib/sse";
 
+/**
+ * Pipeline.
+ *
+ * The previous version was one layout for every screen: four 280px columns at
+ * 70vh inside a horizontally scrolling strip, moved only by dragging. On a
+ * phone that is three problems at once — the board scrolls sideways, each
+ * column eats the viewport, and `drag` inside `overflow-x-auto` fights the
+ * scroll container so the gesture barely lands.
+ *
+ * It also never said what the board was *for*. A card dragged straight from
+ * Ide to Draft skipped hook generation, then offered "Bikin Script" — the next
+ * stage's action on a card that never completed this one. That is the reported
+ * dead end: the card moved, and nothing explained what had just happened or
+ * what to do next.
+ *
+ * So: one stage at a time on phones with an explicit stage switcher and button
+ * moves, the full kanban with drag from `md` up, and every stage — empty or
+ * not — states plainly what it holds and what the next action is.
+ */
+
 type Column = "ide" | "draft" | "siap" | "posted";
-const COLUMNS: { id: Column; label: string }[] = [
-  { id: "ide", label: "Ide" },
-  { id: "draft", label: "Draft" },
-  { id: "siap", label: "Siap" },
-  { id: "posted", label: "Posted" },
+
+const COLUMNS: {
+  id: Column;
+  label: string;
+  blurb: string;
+  empty: string;
+}[] = [
+  {
+    id: "ide",
+    label: "Ide",
+    blurb: "Ide mentah yang belum digarap.",
+    empty:
+      "Belum ada ide di sini. Generate di tab Studio, terus tap “Simpan ke pipeline” di kartu hasilnya.",
+  },
+  {
+    id: "draft",
+    label: "Draft",
+    blurb: "Udah punya hook, tinggal dibikinin script.",
+    empty: "Kosong. Kartu masuk sini otomatis begitu hook-nya jadi.",
+  },
+  {
+    id: "siap",
+    label: "Siap",
+    blurb: "Script kelar. Tinggal syuting dan posting.",
+    empty: "Kosong. Kartu masuk sini otomatis begitu script-nya jadi.",
+  },
+  {
+    id: "posted",
+    label: "Posted",
+    blurb: "Udah tayang. Kasih rating biar ide berikutnya makin nyambung.",
+    empty: "Belum ada yang tayang. Geser kartu dari Siap kalau udah lo posting.",
+  },
 ];
+
+/** What this card is waiting on, in one line. Drives the guidance strip. */
+function nextStep(card: PipelineCard, hasHook: boolean): string {
+  switch (card.status as Column) {
+    case "ide":
+      return "Langkah 1 dari 3 — bikin hook dulu.";
+    case "draft":
+      return hasHook
+        ? "Langkah 2 dari 3 — hook udah ada, lanjut bikin script."
+        : "Kartu ini lompat tahap, hook-nya belum ada. Bikin hook dulu biar script-nya nyambung.";
+    case "siap":
+      return "Langkah 3 dari 3 — syuting, posting, terus geser ke Posted.";
+    case "posted":
+      return "Kasih rating performanya.";
+    default:
+      return "";
+  }
+}
 
 export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }) {
   const [prevInitialCards, setPrevInitialCards] = useState<PipelineCard[]>(initialCards);
   const [cards, setCards] = useState<PipelineCard[]>(initialCards);
-  
+  const [mobileStage, setMobileStage] = useState<Column>("ide");
+
   if (initialCards !== prevInitialCards) {
     setPrevInitialCards(initialCards);
     setCards(initialCards);
   }
+
   const colRefs = useRef<{ [key in Column]: HTMLDivElement | null }>({
     ide: null,
     draft: null,
@@ -31,87 +102,168 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
     posted: null,
   });
 
+  const countOf = (c: Column) => cards.filter((x) => x.status === c).length;
 
-  const handleDragEnd = async (cardId: string, currentStatus: Column, info: PanInfo) => {
-    const { point } = info;
-    
-    // Find which column we dropped into
-    let targetColumn: Column | null = null;
-    
-    for (const col of COLUMNS) {
-      const el = colRefs.current[col.id];
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        // Check if pointer is within column bounds
-        if (
-          point.x >= rect.left &&
-          point.x <= rect.right &&
-          point.y >= rect.top &&
-          point.y <= rect.bottom
-        ) {
-          targetColumn = col.id;
-          break;
-        }
-      }
-    }
-
-    if (targetColumn && targetColumn !== currentStatus) {
-      // Optimistic update
-      setCards((prev) =>
-        prev.map((c) => (c.id === cardId ? { ...c, status: targetColumn as Column } : c))
-      );
-
-      try {
-        await updateCardStatus(cardId, targetColumn);
-      } catch (err) {
-        // Revert on error
-        setCards(initialCards);
-      }
+  const move = async (cardId: string, to: Column) => {
+    const snapshot = cards;
+    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, status: to } : c)));
+    try {
+      await updateCardStatus(cardId, to);
+    } catch {
+      setCards(snapshot);
     }
   };
 
-  return (
-    <div className="flex w-full gap-4 overflow-x-auto pb-4">
-      {COLUMNS.map((col) => (
-        <div
-          key={col.id}
-          ref={(el) => {
-            colRefs.current[col.id] = el;
-          }}
-          className="flex h-[70vh] min-w-[280px] flex-col rounded-xl border border-hairline bg-surface/50 p-4"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-display font-semibold text-ink">{col.label}</h3>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-surface-raised text-[10px] text-muted">
-              {cards.filter((c) => c.status === col.id).length}
-            </span>
-          </div>
+  const handleDragEnd = async (cardId: string, currentStatus: Column, info: PanInfo) => {
+    const { point } = info;
+    let target: Column | null = null;
 
-          <div className="flex flex-col gap-3 flex-1 overflow-y-auto">
-            {cards
-              .filter((c) => c.status === col.id)
-              .map((card) => (
-                <PipelineCardItem
-                  key={card.id}
-                  card={card}
-                  onDragEnd={(info) => handleDragEnd(card.id, col.id, info)}
-                />
-              ))}
-          </div>
+    for (const col of COLUMNS) {
+      const el = colRefs.current[col.id];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      if (point.x >= r.left && point.x <= r.right && point.y >= r.top && point.y <= r.bottom) {
+        target = col.id;
+        break;
+      }
+    }
+
+    if (target && target !== currentStatus) await move(cardId, target);
+  };
+
+  const total = cards.length;
+
+  return (
+    <div className="space-y-4">
+      {/* ---------- what this board is (shown once, only while empty) ---------- */}
+      {total === 0 && (
+        <div className="surface-card rounded-2xl p-5">
+          <h2 className="font-display text-lg font-bold text-ink">Pipeline</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Tempat ide lo jalan dari mentah sampai tayang. Tiap kartu lewat tiga
+            langkah: <span className="text-ink">hook</span> →{" "}
+            <span className="text-ink">script</span> →{" "}
+            <span className="text-ink">posting</span>. Gak usah mikirin urutannya,
+            tiap kartu bakal ngomong sendiri langkah berikutnya apa.
+          </p>
         </div>
-      ))}
+      )}
+
+      {/* ---------- phones: stage switcher, one stage at a time ---------- */}
+      <div className="md:hidden">
+        <div
+          role="tablist"
+          aria-label="Tahap pipeline"
+          className="flex gap-1 rounded-xl border border-hairline bg-surface/60 p-1"
+        >
+          {COLUMNS.map((col) => {
+            const on = col.id === mobileStage;
+            return (
+              <button
+                key={col.id}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setMobileStage(col.id)}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                  on ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
+                }`}
+              >
+                {col.label}
+                <span
+                  className={`grid size-4 place-items-center rounded-full text-[9px] ${
+                    on ? "bg-ember/25 text-ember" : "bg-surface-raised text-muted"
+                  }`}
+                >
+                  {countOf(col.id)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {COLUMNS.filter((c) => c.id === mobileStage).map((col) => {
+          const list = cards.filter((c) => c.status === col.id);
+          return (
+            <div key={col.id} className="mt-3 space-y-3">
+              <p className="text-xs leading-relaxed text-muted">{col.blurb}</p>
+              {list.length === 0 ? (
+                <EmptyStage text={col.empty} />
+              ) : (
+                list.map((card) => (
+                  <PipelineCardItem key={card.id} card={card} onMove={move} draggable={false} />
+                ))
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ---------- md and up: the full board ---------- */}
+      <div className="hidden gap-4 md:flex">
+        {COLUMNS.map((col) => {
+          const list = cards.filter((c) => c.status === col.id);
+          return (
+            <div
+              key={col.id}
+              ref={(el) => {
+                colRefs.current[col.id] = el;
+              }}
+              className="flex max-h-[70vh] min-w-0 flex-1 flex-col rounded-xl border border-hairline bg-surface/50 p-4"
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="font-display font-semibold text-ink">{col.label}</h3>
+                <span className="grid size-5 place-items-center rounded-full bg-surface-raised text-[10px] text-muted">
+                  {list.length}
+                </span>
+              </div>
+              <p className="mb-3 text-[11px] leading-snug text-muted">{col.blurb}</p>
+
+              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+                {list.length === 0 ? (
+                  <EmptyStage text={col.empty} />
+                ) : (
+                  list.map((card) => (
+                    <PipelineCardItem
+                      key={card.id}
+                      card={card}
+                      onMove={move}
+                      draggable
+                      onDragEnd={(info) => handleDragEnd(card.id, col.id, info)}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EmptyStage({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center">
+      <p className="text-xs leading-relaxed text-muted">{text}</p>
     </div>
   );
 }
 
 function PipelineCardItem({
   card,
+  onMove,
+  draggable,
   onDragEnd,
 }: {
   card: PipelineCard;
-  onDragEnd: (info: PanInfo) => void;
+  onMove: (cardId: string, to: Column) => void | Promise<void>;
+  draggable: boolean;
+  onDragEnd?: (info: PanInfo) => void;
 }) {
-  const content = card.content as unknown as IdeaData & { generated_hook?: any, generated_script?: any };
+  const content = card.content as unknown as IdeaData & {
+    generated_hook?: { hooks?: { script_segment?: string }[] };
+    generated_script?: unknown;
+  };
   const [ratingHover, setRatingHover] = useState(0);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [rated, setRated] = useState(false);
@@ -119,29 +271,36 @@ function PipelineCardItem({
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const status = card.status as Column;
+  const hasHook = !!content?.generated_hook;
+
   const handleGenerate = async (module: "hook" | "script") => {
     setIsGenerating(true);
     setError("");
 
     try {
-      const payload = {
-        module,
-        input: {
-          idea: content.title + "\n" + (content.angle || ""),
-          ...(module === "script" ? { hook: content.hook_seed || "", duration: content.est_duration || "60s" } : {}),
-        },
-        platform: "tiktok",
-      };
-
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          module,
+          input: {
+            idea: card.title + "\n" + (content.angle || ""),
+            ...(module === "script"
+              ? {
+                  hook:
+                    content.generated_hook?.hooks?.[0]?.script_segment ||
+                    content.hook_seed ||
+                    "",
+                  duration: content.est_duration || "60s",
+                }
+              : {}),
+          },
+          platform: "tiktok",
+        }),
       });
 
-      if (!res.ok) {
-        throw new Error(await readErrorBody(res, "Gagal generate."));
-      }
+      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal generate."));
 
       let finalResult: unknown = null;
       let streamError: string | null = null;
@@ -152,8 +311,7 @@ function PipelineCardItem({
           return true;
         }
         if (msg.done) {
-          const gen = msg.generation as { output?: unknown } | undefined;
-          finalResult = gen?.output ?? null;
+          finalResult = (msg.generation as { output?: unknown } | undefined)?.output ?? null;
           return true;
         }
       });
@@ -163,14 +321,23 @@ function PipelineCardItem({
       if (finalResult) {
         const newContent = {
           ...content,
-          ...(module === "hook" ? { generated_hook: finalResult } : { generated_script: finalResult }),
+          ...(module === "hook"
+            ? { generated_hook: finalResult }
+            : { generated_script: finalResult }),
         };
-        const newStatus = module === "hook" ? "draft" : "siap";
-        await updateCardContentAndStatus(card.id, newContent, newStatus);
+        await updateCardContentAndStatus(
+          card.id,
+          newContent,
+          module === "hook" ? "draft" : "siap",
+        );
         router.refresh();
+      } else {
+        // A stream that ends without a terminal frame used to leave the card
+        // sitting there with no explanation. Say so instead.
+        throw new Error("Generate-nya kepotong di tengah jalan. Coba lagi ya.");
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error");
+      setError(err instanceof Error ? err.message : "Ada yang error.");
     } finally {
       setIsGenerating(false);
     }
@@ -187,75 +354,87 @@ function PipelineCardItem({
     setIsSubmittingRating(false);
   };
 
-  return (
-    <motion.div
-      layoutId={card.id}
-      drag
-      dragSnapToOrigin
-      onDragEnd={(_, info) => onDragEnd(info)}
-      whileDrag={{ scale: 1.05, zIndex: 10, cursor: "grabbing" }}
-      className="cursor-grab rounded-lg border border-hairline bg-surface-raised p-4 transition-colors hover:border-ember/30"
-    >
-      <h4 className="font-display text-sm font-bold text-ink">{card.title}</h4>
+  const body = (
+    <>
+      <h4 className="font-display text-sm font-bold leading-snug text-ink">{card.title}</h4>
       {content?.format && (
-        <span className="mt-2 inline-block rounded bg-obsidian px-2 py-1 font-mono text-[9px] uppercase tracking-wider text-muted">
+        <span className="eyebrow mt-2 inline-block rounded bg-obsidian px-2 py-1 text-muted">
           {content.format}
         </span>
       )}
 
-      {/* Show generation errors */}
+      {/* The card always says what it is waiting on. */}
+      <p className="mt-3 text-[11px] leading-relaxed text-ember-lo">
+        {nextStep(card, hasHook)}
+      </p>
+
       {error && (
-        <p className="mt-2 text-[10px] text-danger">{error}</p>
+        <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-[11px] leading-relaxed text-danger">
+          {error}
+        </p>
       )}
 
-      {/* Show Hook/Script generator buttons */}
-      {card.status === "ide" && (
-        <div className="mt-4 border-t border-hairline pt-3">
+      {(status === "ide" || (status === "draft" && !hasHook)) && (
+        <div className="mt-3 border-t border-hairline pt-3">
           <button
             onClick={() => handleGenerate("hook")}
             disabled={isGenerating}
-            className={`w-full rounded bg-surface px-3 py-2 text-xs font-bold transition-colors ${
-              isGenerating ? "glow-ember text-ember" : "text-muted hover:text-ink hover:bg-surface-raised"
+            className={`w-full rounded-lg px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-60 ${
+              isGenerating
+                ? "glow-ember bg-surface text-ember"
+                : "bg-surface text-muted hover:bg-surface-raised hover:text-ink"
             }`}
           >
-            {isGenerating ? "Lagi mikirin hook..." : "Bikin Hook (2 credits)"}
+            {isGenerating ? "Lagi mikirin hook..." : "Bikin hook · 2 kredit"}
           </button>
         </div>
       )}
 
-      {card.status === "draft" && (
-        <div className="mt-4 border-t border-hairline pt-3">
+      {status === "draft" && hasHook && (
+        <div className="mt-3 border-t border-hairline pt-3">
           <button
             onClick={() => handleGenerate("script")}
             disabled={isGenerating}
-            className={`w-full rounded bg-surface px-3 py-2 text-xs font-bold transition-colors ${
-              isGenerating ? "glow-ember text-ember" : "text-muted hover:text-ink hover:bg-surface-raised"
+            className={`w-full rounded-lg px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-60 ${
+              isGenerating
+                ? "glow-ember bg-surface text-ember"
+                : "bg-surface text-muted hover:bg-surface-raised hover:text-ink"
             }`}
           >
-            {isGenerating ? "Lagi nulis script..." : "Bikin Script (4 credits)"}
+            {isGenerating ? "Lagi nulis script..." : "Bikin script · 4 kredit"}
           </button>
         </div>
       )}
 
-      {/* Show generated hook preview if available */}
-      {content.generated_hook && card.status === "draft" && (
-        <div className="mt-4 rounded-lg bg-obsidian p-3 border border-hairline max-h-24 overflow-y-auto">
-          <p className="text-[10px] text-ember uppercase tracking-widest mb-1 font-mono">Hook 1</p>
-          <p className="text-xs text-ink/80 leading-relaxed">
-            {((content.generated_hook as { hooks?: { script_segment?: string }[] }).hooks?.[0]?.script_segment) || "Hook generated."}
+      {hasHook && status === "draft" && (
+        <div className="mt-3 max-h-24 overflow-y-auto rounded-lg border border-hairline bg-obsidian p-3">
+          <p className="eyebrow mb-1 text-ember">Hook</p>
+          <p className="text-xs leading-relaxed text-ink/80">
+            {content.generated_hook?.hooks?.[0]?.script_segment || "Hook udah jadi."}
           </p>
         </div>
       )}
 
-      {/* Show rating UI only if posted and has a generation_id and hasn't just been rated */}
-      {card.status === "posted" && card.generation_id && !rated && (
-        <div className="mt-4 border-t border-hairline pt-3">
-          <p className="text-[10px] text-muted mb-2">Rating performa konten ini:</p>
+      {status === "siap" && (
+        <div className="mt-3 border-t border-hairline pt-3">
+          <button
+            onClick={() => onMove(card.id, "posted")}
+            className="w-full rounded-lg bg-surface px-3 py-2.5 text-xs font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised hover:text-ink"
+          >
+            Udah gue posting
+          </button>
+        </div>
+      )}
+
+      {status === "posted" && card.generation_id && !rated && (
+        <div className="mt-3 border-t border-hairline pt-3">
+          <p className="mb-2 text-[11px] text-muted">Performanya gimana?</p>
           <div className="flex gap-1" onMouseLeave={() => setRatingHover(0)}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 disabled={isSubmittingRating}
+                aria-label={`Kasih ${star} bintang`}
                 onMouseEnter={() => setRatingHover(star)}
                 onClick={() => handleRate(star)}
                 className={`text-lg transition-colors ${
@@ -268,6 +447,62 @@ function PipelineCardItem({
           </div>
         </div>
       )}
+
+      {status === "posted" && rated && (
+        <p className="mt-3 border-t border-hairline pt-3 text-[11px] text-success">
+          Makasih — ini kepake buat ide lo berikutnya.
+        </p>
+      )}
+    </>
+  );
+
+  // Phones get buttons, not drag: `drag` inside a scroll container is a fight
+  // the scroll container wins, and the gesture is hard to land one-handed.
+  if (!draggable) {
+    return (
+      <div className="surface-card rounded-xl p-4">
+        {body}
+        <StageMover status={status} onMove={(to) => onMove(card.id, to)} />
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      layoutId={card.id}
+      drag
+      dragSnapToOrigin
+      onDragEnd={(_, info) => onDragEnd?.(info)}
+      whileDrag={{ scale: 1.04, zIndex: 10, cursor: "grabbing" }}
+      className="cursor-grab rounded-xl border border-hairline bg-surface-raised p-4 transition-colors hover:border-ember/30"
+    >
+      {body}
     </motion.div>
+  );
+}
+
+/** Explicit stage movement for touch — the escape hatch when a card is in the wrong place. */
+function StageMover({
+  status,
+  onMove,
+}: {
+  status: Column;
+  onMove: (to: Column) => void;
+}) {
+  const order: Column[] = ["ide", "draft", "siap", "posted"];
+  const i = order.indexOf(status);
+  const back = i > 0 ? order[i - 1] : null;
+
+  if (!back) return null;
+
+  return (
+    <div className="mt-3 flex justify-end">
+      <button
+        onClick={() => onMove(back)}
+        className="text-[11px] text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+      >
+        Balikin ke {COLUMNS.find((c) => c.id === back)?.label}
+      </button>
+    </div>
   );
 }
