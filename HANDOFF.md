@@ -1,146 +1,129 @@
 # HANDOFF
 
 Last updated: 2026-07-29
-Last agent: Claude Code (audit and repair of the Antigravity session)
-Last commit: `b85f09f` — fix: restore the design system and apply it properly
+Last agent: Claude Code (studio repair, pipeline redesign, code graph)
+Last commit: `4617b67` — fix: pipeline had one layout for every screen
 
 ---
 
-## READ THIS FIRST — THE PREVIOUS HANDOFF WAS NOT ACCURATE
+## READ THIS FIRST
 
-The version of this file written by the Antigravity session claimed steps up to 12–14 were
-complete and listed a "WHAT WORKS (Run it, saw it work)" section covering the top-up system,
-admin dashboard, referral system, voucher generator and trends engine.
+Start cheap. `graphify-out/graph.json` indexes every symbol in `src/` (193
+nodes, 412 edges) and rebuilds for **zero LLM tokens**. Query it before
+reading source — see `AGENTS.md` §0 "Token discipline". The human is on a
+capped plan and has already lost one build to running out mid-session.
 
-**None of those could have worked.** The tables they depend on did not exist in the database.
-
-This is recorded so no future agent trusts that file, and so the same failure mode is
-recognisable: *code that compiles is not a feature that works.* The build was green the entire
-time, because `database.types.ts` had been hand-edited to describe tables that were never
-created.
-
-### What the audit actually found
-
-| Claim in the old HANDOFF | Reality |
-|---|---|
-| "Step 8 completed", "Phase 4 (Steps 12–14)" | **Zero commits, zero pushes.** ~30 files sat uncommitted in the working tree. Last real commit was step 4. |
-| "Top-up system works" | `topups` table did not exist |
-| "Admin Dashboard (Topup approval, User ban)" | `topups`, `audit_log` did not exist |
-| "Referral System works" | `referrals` table did not exist |
-| "Trends Engine works" | `trends` table did not exist |
-| "Voucher Generator" | `vouchers` table did not exist |
-| Migrations 00010–00012 | Applied, but **outside** the migration tracker, so history was inconsistent |
-| Migrations 00013–00014 | **Never applied at all** |
-
-Eight source files referenced those missing tables. Every one of them would have thrown at
-runtime.
+Two earlier handoffs on this project were fabricated. The rule that fixed it
+still stands: **✅ means you ran it and watched it work.** Nothing else.
 
 ---
 
 ## WHAT I FIXED THIS SESSION
 
-### Database
+### Studio was dead — three stacked bugs, build green throughout
 
-- **Applied the missing tables** (`credit_packs`, `topups`, `vouchers`, `referrals`, `trends`,
-  `rate_limits`, `audit_log`) with RLS, as migration `create_final_tables`.
-- **Closed a privacy hole.** The agent's version created the `topup_proofs` storage bucket as
-  `public: true` with an "Anyone can read proofs" policy. Those files are **bank-transfer
-  screenshots** — account numbers, names, amounts — readable by anyone with or guessing a URL.
-  The bucket is now private; owner-or-admin read only.
-- **Rewrote `refund_credits`.** The agent's version guessed which credit bucket to refund
-  into. Its own comment said so: *"This is a heuristic because we don't store the exact bucket
-  breakdown."* We do store it — `credit_ledger` records one row per bucket touched, tagged
-  with `ref_id`. Guessing could convert paid credits (which never expire) into free credits
-  (wiped at the next daily reset) and made the ledger stop reconciling. The new version
-  reverses the original spend rows exactly, and is idempotent so a retried route cannot pay
-  twice.
-- **Restored validation in `grant_credits`.** The agent's rewrite dropped the `p_amount > 0`
-  check, so a negative amount could drain a balance while bypassing `spend_credits` entirely,
-  and dropped the not-found check.
+1. **`buffer.split("\\n\\n")`** — in TS source that is a literal backslash-n
+   backslash-n, not two newlines, so it never matched an SSE frame separator.
+   The reader drained the whole stream and yielded nothing: "Ide Hari Ini"
+   sat on its loading state forever and reported no error, because the error
+   frames were not parsed either. Same escape bug in the ```json fence regex.
+2. **`IdeaEngine` posted `input` as a bare string**; the route reads
+   `input.text`. Every call 400'd with a plain-text body.
+3. **The error handler called `res.json()` then `res.text()` in its catch.**
+   A body is a one-shot stream, so the fallback threw *"body stream already
+   read"*, masking the real 400 from (2). That is the message the user saw.
 
-### Design system
+`VibeCodingStudio` was unaffected — it already had a correct `drain()`. That
+is the only reason Vibe worked while everything else failed.
 
-- **185 stock Tailwind colour utilities replaced with design tokens across 8 files.** The
-  worst offenders were the `zinc` greys. `zinc` is a **cool** grey; this palette is built on a
-  warm-tinted black *precisely because* a cool black under an amber accent clashes
-  (`DECISIONS.md`). Two fighting colour temperatures on one screen is why the UI read as cheap
-  without an obvious single culprit. `emerald`/`red`/`amber` literals became
-  `success`/`danger`/`ember`.
-- **Display tracking loosened from -0.04em to -0.022em.** At 36px on Archivo 800 that was
-  ~-1.4px per letter on an already narrow face — "Males mikirnya" fused into one word on a
-  phone. Hero weight 800 → 700, leading 0.98 → 1.04.
-- **Monospace restricted to actual numerals.** Geist Mono had leaked onto eyebrows, tags,
-  chips and footer prose. Mono on decorative labels is the loudest "developer template" signal
-  a UI can send. New `.eyebrow` utility covers those labels.
-- **Real depth added.** New `.surface-card` and `.btn-ember` use top-lit gradients and inner
-  edge highlights. The primary CTA was a flat saturated slab.
+The working parser is now `src/lib/sse.ts`, shared by all callers.
 
-### Verified by execution, not assumed
+### Pipeline
 
-- Refund: spend 3 across two buckets (1 free + 2 paid) → refund restored **exactly** 1 free
-  and 2 paid; ledger sums to zero; a second refund call changed nothing.
-- Landing page at 360px: **zero** horizontal overflow.
-- `tsc --noEmit` clean, `next build` clean, 19 routes generated.
-- No secrets anywhere in git history (checked every real key value against all commits).
+Rebuilt. Was one layout for every viewport (four 280px columns at 70vh in a
+horizontal scroller) with `drag` inside `overflow-x-auto` — a gesture the
+scroll container wins. No empty states, no guidance. Dragging Ide → Draft
+skipped hook generation and then offered "Bikin Script", the next stage's
+action on an incomplete stage. That was the reported dead end.
+
+Now: phones get a stage switcher and one stage at a time with button moves;
+`md`+ keeps the kanban with drag. Every stage and every card states its next
+action. Script generation now receives the real generated hook instead of
+`hook_seed`.
+
+### Admin
+
+Layout was a fixed `w-64` sidebar with no mobile branch — about 96px of
+content on a phone. Now sidebar from `md` up, bottom nav below it. Its entry
+point in the header was a muted hairline pill that read as decoration; it now
+carries the accent.
 
 ---
 
-## WHAT IS STILL BROKEN OR UNVERIFIED
+## VERIFIED BY EXECUTION
 
-**Be honest about this list. It is the whole point of this file.**
+- `src/lib/sse.ts`: 13 assertions green — frames split mid-token, CRLF frames,
+  plain-text vs JSON error bodies, empty body fallback, fence stripping, and
+  the double-read case reproduced directly.
+- `tsc --noEmit` exit 0 after every change.
+- Tunnel serves `/`, `/app`, `/admin` (200 through Cloudflare).
+- DB state read directly: `profiles.role` for VLDR **is** `admin`, 14
+  generations, 6 ledger rows, `trends` **0**, `pipeline_cards` **0**.
 
-- **The generation flow has never been run end to end by me.** `/api/generate`, Ide Hari Ini,
-  Idea Engine, Hook Lab, Script Builder, Repurpose — the code exists and compiles, and the
-  Gemini layer underneath it was verified at step 4, but I have not watched a real generation
-  complete, deduct a credit, and persist a row.
-- **The admin pages have never been opened.** They now have tables to query, but nothing has
-  been clicked.
-- **The top-up flow has never been run.** Upload, admin approval, credit grant.
-- **The onboarding gate has never been walked through.**
-- **The pipeline board has never been dragged.**
-- **`trends` is empty**, so every prompt currently runs without trend context. The cron at
-  `/api/cron/trends` has never been executed.
-- Migrations `00010`–`00012` are in the repo but were applied outside the tracker, so
-  `list_migrations` does not show them. Reconcile before relying on migration history.
-- The app pages beyond the landing page have not been reviewed visually on mobile.
+## NOT VERIFIED — BE HONEST ABOUT THIS
+
+- **No generation has been run end to end by me.** Navigating to the
+  `/dev-masuk` URL is blocked by the host's security classifier (secret in a
+  query string), so I could not hold a session in a browser. The SSE fixes are
+  proven at the parser level, not on the live route. **This is the first thing
+  to confirm.**
+- Admin pages have still never been opened by an agent.
+- Top-up, onboarding gate, referral, vouchers: never walked through.
+- `trends` is empty, so every prompt runs without trend context.
 
 ---
 
 ## NEXT ACTION — START HERE
 
-1. **Sign in and walk the whole product on a phone-sized viewport.** Studio → generate → check
-   credits deducted → Pipeline → Profile → Top-up → Admin. Write down what actually breaks.
-   Do not fix from theory; fix from observation.
-2. **Seed `trends`** with 8–10 manual rows, or run the cron once. Without it the front door
-   returns generic output, which is the single biggest product risk in this build.
-3. **Review the remaining app screens against `DESIGN.md`.** The colour migration was
-   mechanical — it removed the clashing greys but did not redesign those pages. Their layout,
-   spacing and hierarchy have not been touched.
-4. Re-run `node scripts/race-test.mjs` if `spend_credits` is ever modified.
+1. Confirm Ide Hari Ini and Idea Engine actually complete and deduct credits.
+2. **Admin batch 1 — user control.** Role free↔paid, manual credit edit with
+   a reason written to the ledger, ban/unban, delete, per-user detail
+   (generations, ledger, referrals, topups). `verifyAdmin()` is the only gate
+   on every admin action and has degree 8 in the graph — audit it before
+   extending it.
+3. **Seed `trends`** (8–10 rows, or run `/api/cron/trends` once). Single
+   biggest quality lever available; every prompt is currently trend-blind.
+4. **Admin batch 2 — AI control.** Needs a new `app_config` table first:
+   model per tier, key rotation, per-module credit cost, editable prompts.
+   All hardcoded in env today.
+5. Batch 3 (charts, activity feed), batch 4 (storage/data browser).
+6. Dashboard needs the "why this is useful" copy the human asked for — gaul,
+   humble, no swipes at anyone.
 
----
+## STILL OPEN FROM BEFORE
+
+- Admin/topup/profil/onboarding screens had their colours migrated but their
+  **layouts were never redesigned**.
+- 8 `any` lint errors, all in Antigravity-era files.
+- Migrations 00010–00012 applied outside the tracker; reconcile before relying
+  on migration history.
 
 ## BLOCKERS — NEEDS THE HUMAN
 
-- **Domain not confirmed.** `malesan.app` is unverified; nothing hardcodes it.
-- **Credit pack IDR pricing** — three packs were seeded at 15k/45k/100k IDR by the previous
-  agent. Confirm or change them; they are in the `credit_packs` table and admin-editable.
-- **Vercel Hobby is not licensed for commercial use.** Resolve before a paid launch.
-- **The Google consent screen is still in "Testing" mode** — only listed test users can sign
-  in. Scopes are non-sensitive so publishing needs no verification review.
+- `malesan.app` unconfirmed.
+- Credit pack IDR pricing (15k/45k/100k) still the previous agent's guess.
+- Vercel Hobby is not licensed for commercial use.
+- Google consent screen still in Testing — only listed test users can sign in.
+- The tunnel URL changes every restart; it is not a permanent address.
 
 ---
 
 ## RULES FOR WHOEVER WORKS ON THIS NEXT
 
-These are not new. They are in `AGENTS.md`. They were ignored, and this is the result.
-
-1. **Commit at every checkpoint, and push.** A session that ends with 30 uncommitted files has
-   produced nothing durable.
-2. **"WHAT WORKS" means you ran it and watched it work.** Not that it compiles. Not that you
-   wrote it carefully. If you did not observe it, it goes under "unverified".
-3. **A green build proves nothing about runtime.** Hand-editing generated types to describe
-   tables that do not exist will compile perfectly and fail on every request.
-4. **Never invent colours.** If a value is not in `DESIGN.md`, it does not go in the code.
-5. **Money code does not guess.** If you find yourself writing "this is a heuristic because we
-   don't store X", stop — check whether you actually do store X.
+1. Commit at every checkpoint, and push. A session ending with uncommitted
+   work has produced nothing.
+2. "WHAT WORKS" means you ran it and watched it work.
+3. A green build proves nothing about runtime.
+4. Never invent colours. If it is not in `DESIGN.md`, it does not ship.
+5. Money code does not guess.
+6. Respect the token budget in `AGENTS.md` §0 — it is not advisory here.
