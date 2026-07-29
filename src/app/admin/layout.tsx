@@ -15,11 +15,37 @@ import { Logo } from "@/components/Logo";
  * region does, and the nav is a bottom bar on phones / a sidebar from `md` up.
  */
 
+/**
+ * Icons, not bare words. The first version's bottom bar was four text labels at
+ * 11.5px with no glyphs and a 3px vertical pad — under the minimum touch target,
+ * visually flat, and the labels clipped against the browser's own bottom
+ * chrome. It read as unfinished because it was.
+ */
 const LINKS = [
-  { href: "/admin", label: "Ringkasan" },
-  { href: "/admin/users", label: "User" },
-  { href: "/admin/topups", label: "Topup" },
-  { href: "/admin/vouchers", label: "Voucher" },
+  {
+    href: "/admin",
+    label: "Ringkasan",
+    icon: <path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z" />,
+  },
+  {
+    href: "/admin/users",
+    label: "User",
+    icon: (
+      <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-8 2-8 4.5V21h16v-2.5C20 16 16 14 12 14Z" />
+    ),
+  },
+  {
+    href: "/admin/topups",
+    label: "Topup",
+    icon: <path d="M3 6h18v4H3V6Zm0 6h18v6H3v-6Zm2 2v2h6v-2H5Z" />,
+  },
+  {
+    href: "/admin/vouchers",
+    label: "Voucher",
+    icon: (
+      <path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4V7Zm6 2v6h2V9H9Z" />
+    ),
+  },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -84,7 +110,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* ---------- content: the only scrollable region ---------- */}
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="mx-auto w-full max-w-4xl px-4 py-5">{children}</div>
+        <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-8">{children}</div>
       </main>
 
       {/* ---------- mobile bottom nav ---------- */}
@@ -97,9 +123,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link
               key={l.href}
               href={l.href}
-              className="flex-1 py-3 text-center text-[11.5px] font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ember"
+              className="group flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-2 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ember"
             >
-              {l.label}
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[19px] fill-current">
+                {l.icon}
+              </svg>
+              <span className="text-[10.5px] font-semibold leading-none">{l.label}</span>
             </Link>
           ))}
         </div>

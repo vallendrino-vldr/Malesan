@@ -1,63 +1,179 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
+/**
+ * Admin overview.
+ *
+ * Was three full-width stat cards stacked down a phone with `text-4xl` numbers,
+ * so the whole viewport carried three integers and you scrolled to reach the
+ * quota table — which was itself a `<table>` with `divide-zinc-800`, a cool grey
+ * on a warm palette that DESIGN.md rules out.
+ *
+ * Density is the point on an overview: four stats fit in one glance as a 2×2,
+ * quota reads better as bars than as numbers in a row, and the activity feed
+ * gives `audit_log` its first surface.
+ */
+
+type QuotaRow = { key_index: number; requests: number; errors: number };
+type AuditRow = {
+  id: number;
+  action: string;
+  target_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+const FREE_TIER_DAILY = 1500;
+
+const ACTION_LABEL: Record<string, string> = {
+  "user.ban": "Ban user",
+  "user.unban": "Buka ban",
+  "user.promote_pro": "Naikin ke Pro",
+  "user.demote_free": "Turunin ke Free",
+  "user.grant_admin": "Jadiin admin",
+  "user.revoke_admin": "Cabut admin",
+  "user.delete": "Hapus user",
+  "credits.grant": "Tambah kredit",
+};
+
+function timeAgo(iso: string) {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "barusan";
+  if (mins < 60) return `${mins} menit lalu`;
+  const h = Math.floor(mins / 60);
+  if (h < 24) return `${h} jam lalu`;
+  return `${Math.floor(h / 24)} hari lalu`;
+}
+
 export default async function AdminDashboardPage() {
   const supabase = createServiceRoleClient();
 
-  // Basic stats
-  const { count: usersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true });
-  const { count: topupsCount } = await supabase.from("topups").select("*", { count: "exact", head: true }).eq("status", "pending");
-  const { count: generationsCount } = await supabase.from("generations").select("*", { count: "exact", head: true });
+  const [users, pendingTopups, generations, trends, usageRes, auditRes] = await Promise.all([
+    supabase.from("profiles").select("*", { count: "exact", head: true }),
+    supabase.from("topups").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("generations").select("*", { count: "exact", head: true }),
+    supabase.from("trends").select("*", { count: "exact", head: true }).eq("is_active", true),
+    supabase.rpc("gemini_pool_used_today"),
+    supabase
+      .from("audit_log")
+      .select("id, action, target_id, metadata, created_at")
+      .order("created_at", { ascending: false })
+      .limit(8),
+  ]);
 
-  const { data: usage } = await supabase.rpc("gemini_pool_used_today");
+  const usage = (usageRes.data as QuotaRow[] | null) ?? [];
+  const audit = (auditRes.data as AuditRow[] | null) ?? [];
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-white mb-8">Dashboard Admin</h1>
+    <div className="space-y-6">
+      <header>
+        <h1 className="font-display text-xl font-bold text-ink">Ringkasan</h1>
+        <p className="mt-1 text-sm text-muted">Kondisi platform hari ini.</p>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="bg-surface border border-hairline rounded-2xl p-6">
-          <div className="text-muted text-sm mb-2">Total Users</div>
-          <div className="text-4xl font-black text-white">{usersCount || 0}</div>
-        </div>
-        <div className="bg-surface border border-hairline rounded-2xl p-6 relative overflow-hidden">
-          <div className="text-muted text-sm mb-2">Pending Topup</div>
-          <div className="text-4xl font-black text-white">{topupsCount || 0}</div>
-          {topupsCount && topupsCount > 0 ? (
-            <div className="absolute top-0 right-0 w-2 h-full bg-success"></div>
-          ) : null}
-        </div>
-        <div className="bg-surface border border-hairline rounded-2xl p-6">
-          <div className="text-muted text-sm mb-2">Total Generations</div>
-          <div className="text-4xl font-black text-white">{generationsCount || 0}</div>
-        </div>
+      <div className="grid grid-cols-2 gap-2.5">
+        <Stat label="User" value={users.count ?? 0} />
+        <Stat label="Topup nunggu" value={pendingTopups.count ?? 0} alert={(pendingTopups.count ?? 0) > 0} />
+        <Stat label="Generasi" value={generations.count ?? 0} />
+        <Stat
+          label="Tren aktif"
+          value={trends.count ?? 0}
+          alert={(trends.count ?? 0) === 0}
+          note={(trends.count ?? 0) === 0 ? "Prompt jalan tanpa konteks tren" : undefined}
+        />
       </div>
 
-      <h2 className="text-xl font-bold text-white mb-4">Gemini API Quota Hari Ini</h2>
-      <div className="bg-surface border border-hairline rounded-2xl overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-obsidian text-muted text-sm border-b border-hairline">
-            <tr>
-              <th className="px-6 py-3 font-medium">Key Index</th>
-              <th className="px-6 py-3 font-medium">Requests</th>
-              <th className="px-6 py-3 font-medium">Errors</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800">
-            {usage?.map((u: any) => (
-              <tr key={u.key_index} className="text-white">
-                <td className="px-6 py-4">Key {u.key_index}</td>
-                <td className="px-6 py-4">{u.requests} <span className="text-muted text-sm">/ 1500 (Free limits)</span></td>
-                <td className="px-6 py-4 text-danger">{u.errors}</td>
-              </tr>
+      <section>
+        <h2 className="eyebrow mb-2 text-muted">Kuota Gemini hari ini</h2>
+        {usage.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
+            Belum ada pemakaian hari ini.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {usage.map((u) => {
+              const pct = Math.min(100, Math.round((u.requests / FREE_TIER_DAILY) * 100));
+              return (
+                <div key={u.key_index} className="rounded-xl border border-hairline bg-surface p-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm font-semibold text-ink">Key {u.key_index}</span>
+                    <span className="font-mono text-xs text-muted">
+                      <span className="text-ember">{u.requests}</span> / {FREE_TIER_DAILY}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-obsidian">
+                    <div
+                      className={`h-full ${pct > 85 ? "bg-danger" : "bg-ember"}`}
+                      style={{ width: `${Math.max(pct, 2)}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-muted">
+                    {pct}% kepakai
+                    {u.errors > 0 && <span className="text-danger"> · {u.errors} error</span>}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="eyebrow mb-2 text-muted">Aktivitas admin</h2>
+        {audit.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
+            Belum ada aksi admin yang tercatat.
+          </p>
+        ) : (
+          <ol className="overflow-hidden rounded-xl border border-hairline bg-surface">
+            {audit.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-start justify-between gap-3 border-b border-hairline px-3.5 py-2.5 last:border-b-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-ink">
+                    {ACTION_LABEL[a.action] ?? a.action}
+                  </p>
+                  <p className="truncate text-[11px] text-muted">
+                    {typeof a.metadata?.reason === "string"
+                      ? String(a.metadata.reason)
+                      : typeof a.metadata?.email === "string"
+                        ? String(a.metadata.email)
+                        : (a.target_id ?? "").slice(0, 8)}
+                  </p>
+                </div>
+                <span className="shrink-0 text-[10.5px] text-muted">{timeAgo(a.created_at)}</span>
+              </li>
             ))}
-            {(!usage || usage.length === 0) && (
-              <tr>
-                <td colSpan={3} className="px-6 py-8 text-center text-muted">Belum ada usage hari ini</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+          </ol>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  alert,
+  note,
+}: {
+  label: string;
+  value: number;
+  alert?: boolean;
+  note?: string;
+}) {
+  return (
+    <div
+      className={`rounded-xl border bg-surface p-3.5 ${
+        alert ? "border-ember/35" : "border-hairline"
+      }`}
+    >
+      <p className="eyebrow text-muted">{label}</p>
+      <p className={`mt-1 font-display text-2xl font-bold ${alert ? "text-ember" : "text-ink"}`}>
+        {value}
+      </p>
+      {note && <p className="mt-1 text-[10.5px] leading-snug text-muted">{note}</p>}
     </div>
   );
 }
