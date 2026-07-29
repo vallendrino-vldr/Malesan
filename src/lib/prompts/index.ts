@@ -270,8 +270,24 @@ export function buildCreatorDnaAnalysisPrompt(rawDna: Partial<CreatorDna>): stri
   return `Lo adalah Creative Director buat kreator konten Indonesia. Kreator ini baru aja ngisi profil (DNA) mereka secara kasar:
 
 Niche: ${rawDna.niche || "-"}
+Bidang/industri: ${rawDna.industry || "-"}
 Target Audience: ${rawDna.target_audience || "-"}
 Tone: ${rawDna.tone || "-"}
+Gaya persona: ${rawDna.persona_style || "-"}
+Level humor (0-10): ${typeof rawDna.humor_level === "number" ? rawDna.humor_level : "-"}
+Jam terbang: ${rawDna.experience_level || "-"}
+Pilar konten: ${(rawDna.content_pillars || []).join(", ") || "-"}
+Frekuensi posting: ${rawDna.posting_frequency || "-"}
+Yang dia kejar: ${rawDna.goals || "-"}
+Kreator referensi: ${rawDna.reference_creators || "-"}
+Bikin konten buat: ${
+    rawDna.work_context === "klien"
+      ? "KLIEN (dia yang di balik kamera, bukan pemilik usahanya)"
+      : rawDna.work_context === "brand"
+        ? "BRAND tempat dia kerja (ngomong atas nama 'kami')"
+        : "dirinya sendiri (personal brand, orang pertama)"
+  }
+Tentang klien/brand: ${rawDna.client_brief || "-"}
 Platforms: ${(rawDna.platforms || []).join(", ") || "-"}
 Banned Words: ${(rawDna.banned_words || []).join(", ") || "-"}
 Brand Notes: ${rawDna.brand_notes || "-"}
