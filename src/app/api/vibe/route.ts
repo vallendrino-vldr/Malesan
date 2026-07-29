@@ -103,8 +103,16 @@ export async function POST(request: NextRequest) {
     throw err;
   }
 
+  // Vibe was the only generator that never read Creator DNA, so every user got
+  // identical documents — the "generic AI output" complaint, at its source.
+  const { data: dna } = await serviceRole
+    .from("creator_dna")
+    .select("industry, experience_level, work_context, client_brief, goals, ai_persona_summary, output_language")
+    .eq("user_id", user.id)
+    .single();
+
   const encoder = new TextEncoder();
-  const dnaLang = "id";
+  const dnaLang = dna?.output_language || "id";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -116,7 +124,7 @@ export async function POST(request: NextRequest) {
         send({ status: "Lagi nyusun spesifikasi buat lo..." });
 
         for await (const chunk of generateStream({
-          prompt: buildVibeKitPrompt({ idea, stack, audience }, dnaLang),
+          prompt: buildVibeKitPrompt({ idea, stack, audience }, dnaLang, dna),
           tier: profile.is_pro ? "pro" : "free",
           model: await getModel(profile.is_pro ? "pro" : "free"),
           schema: VIBE_KIT_SCHEMA as unknown as Record<string, unknown>,

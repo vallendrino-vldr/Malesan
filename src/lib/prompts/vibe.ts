@@ -108,11 +108,53 @@ export const VIBE_KIT_DOCS = [
 
 export const VIBE_KIT_CREDIT_COST = 6;
 
-export function buildVibeKitPrompt(input: VibeKitInput, outputLanguage = "id"): string {
+/**
+ * Creator DNA reaches the Vibe Kit too.
+ *
+ * It was the only generator that ignored the profile entirely — the same
+ * creator got the same documents as everyone else, which is exactly the
+ * "generic AI output" complaint. Someone building for a client needs a spec
+ * written for a client engagement; someone at "baru mulai" needs a roadmap that
+ * does not assume a team.
+ */
+export function buildVibeKitPrompt(
+  input: VibeKitInput,
+  outputLanguage = "id",
+  dna?: {
+    industry?: string | null;
+    experience_level?: string | null;
+    work_context?: string | null;
+    client_brief?: string | null;
+    goals?: string | null;
+    ai_persona_summary?: string | null;
+  } | null,
+): string {
   const lang =
     outputLanguage === "en"
       ? "English"
       : "Bahasa Indonesia yang natural dan ngobrol, bukan bahasa terjemahan";
+
+  let who = "";
+  if (dna) {
+    const bits: string[] = [];
+    if (dna.ai_persona_summary) bits.push(`Persona: ${dna.ai_persona_summary}`);
+    if (dna.industry) bits.push(`Bidang: ${dna.industry}`);
+    if (dna.experience_level) bits.push(`Jam terbang: ${dna.experience_level}`);
+    if (dna.goals) bits.push(`Yang dia kejar: ${dna.goals}`);
+    if (dna.work_context === "klien" || dna.work_context === "brand") {
+      bits.push(
+        `Dia bikin ini buat ${dna.work_context === "klien" ? "klien" : "brand tempat dia kerja"}${
+          dna.client_brief ? ` — ${dna.client_brief}` : ""
+        }`,
+      );
+    }
+    if (bits.length) {
+      who =
+        `\nSIAPA YANG BAKAL PAKE DOKUMEN INI:\n- ${bits.join("\n- ")}\n` +
+        `Sesuaikan kedalaman dan asumsinya. Kalau dia baru mulai, jangan asumsiin` +
+        ` dia punya tim atau budget. Kalau dia udah lama, jangan jelasin hal dasar.\n`;
+    }
+  }
 
   return `Lo adalah engineer senior yang udah sering mimpin project dari nol sampai launch,
 dan sekarang lagi bantu orang yang mau bikin aplikasi pakai AI coding agent
@@ -123,6 +165,7 @@ ${input.idea}
 
 ${input.stack ? `STACK YANG DIA MAU: ${input.stack}` : "STACK: belum ditentuin. Lo yang pilihin, dan jelasin alasannya singkat."}
 ${input.audience ? `TARGET USER: ${input.audience}` : ""}
+${who}
 
 Tugas lo: bikin SATU SET dokumen spesifikasi lengkap yang siap ditaruh di root repo.
 Dokumen ini yang bakal dibaca AI agent sebelum dia nulis baris kode pertama.
