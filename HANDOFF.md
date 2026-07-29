@@ -1,8 +1,8 @@
 # HANDOFF
 
 Last updated: 2026-07-29
-Last agent: Claude Code (studio repair, pipeline, graph, admin 1+2, DNA depth, vibe)
-Last commit: `a676c04` — feat: deeper Vibe output, config-driven pricing
+Last agent: Claude Code (studio repair, pipeline, graph, admin batches 1-4, DNA, vibe)
+Last commit: `e7f3639` — fix: admin could not see the transfer proofs
 
 ---
 
@@ -172,11 +172,14 @@ session that the Gemini layer works on a live route.
    Generate one kit and check the floors are actually met before calling this
    fixed — if the model still under-delivers, raise the floors into the schema
    rather than the prose.
-2. **Batch 3 — charts.** The activity feed shipped on `/admin/overview`; the
-   time-series side did not. Generations per day, credits burned, error rate
-   per module. `gemini_usage` and `credit_ledger` already hold the data.
-3. **Batch 4** — storage/data browser, `topup_proofs` review and delete.
-   Remember the bucket is private now; use signed URLs, do not make it public.
+2. **Batches 1-4 are all shipped.** What is left of the admin area is
+   `/admin/vouchers`, still on the old layout and still using `prompt()`.
+   Everything else has been rebuilt.
+3. **Batch 4 turned up a live bug worth remembering:** the proof bucket was
+   made private during the schema repair but `/admin/topups` kept rendering the
+   public `proof_url`, so every approval since then was made against a broken
+   image. Anywhere else that renders a storage URL directly has the same
+   problem — signed URLs only.
 4. **Vibe Coding Kit output quality.** The human's word is "kurang maksimal".
    Not yet diagnosed — read `src/lib/prompts/vibe.ts` against a real run before
    changing anything. The anti-AI-voice rules added to `lib/prompts/index.ts`
