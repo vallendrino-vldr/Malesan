@@ -233,6 +233,25 @@ every device. Concrete gaps still open, roughly in value order:
 6. **ScriptView inside a 272px kanban column** is legible but cramped. A detail
    modal on desktop would be better than nested scrolling.
 
+## EXPLICITLY REQUESTED AND NOT YET BUILT
+
+These were asked for directly and are outstanding. Do not treat the list above
+as complete without them.
+
+- **History**: open an item to see its full output again; filter and search.
+- **`/admin/vouchers`**: the last page still on the old layout, still `prompt()`.
+- **Impersonate user** (read-only) — see the product as a given user.
+- **Broadcast banner** — a message pushed to every user from the panel.
+- **Prompt editor in the panel** — edit module prompts without a deploy. The
+  `app_config` plumbing already exists; add `prompt_<module>` keys and have
+  `lib/prompts` prefer them over the compiled-in text.
+- **Provider switch is configurable but not yet implemented end to end.**
+  `getProviderConfig()` returns provider/baseUrl/apiKey and the admin UI writes
+  them, but `lib/gemini/client.ts` still speaks only the Gemini REST shape. To
+  finish: branch on `provider` and add an OpenAI-compatible request/response
+  adapter. Until then, changing the vendor field changes nothing at runtime —
+  **this is the one place the panel currently over-promises.**
+
 ## TRAPS THIS SESSION HIT — DO NOT REDISCOVER THEM
 
 0. **Never spread an object imported from a `"use client"` module inside a
