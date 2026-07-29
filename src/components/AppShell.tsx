@@ -78,12 +78,19 @@ export function AppShell({
           </Link>
 
           <div className="flex min-w-0 items-center gap-2">
+            {/* Was a muted hairline pill that read as decoration — the one
+                entry point to the whole admin area, and it went unfound. It is
+                now tinted with the accent so it reads as an action. */}
             {isAdmin && (
               <Link
                 href="/admin"
-                className="eyebrow rounded-full border border-hairline px-2 py-1.5 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+                aria-label="Panel admin"
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-ember/35 bg-ember/10 px-2.5 py-1.5 text-ember-lo transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/60 hover:bg-ember/20"
               >
-                Admin
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
+                  <path d="M12 2 4 5.5v5.9c0 4.6 3.2 8.4 8 10.6 4.8-2.2 8-6 8-10.6V5.5L12 2Zm0 2.2 6 2.6v4.6c0 3.6-2.4 6.6-6 8.4-3.6-1.8-6-4.8-6-8.4V6.8l6-2.6Z" />
+                </svg>
+                <span className="eyebrow">Admin</span>
               </Link>
             )}
             <CreditDisplay credits={credits} />

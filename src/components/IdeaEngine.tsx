@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { IdeaCard, type IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
+import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 
 export function IdeaEngine() {
   const [input, setInput] = useState("");
@@ -25,67 +26,45 @@ export function IdeaEngine() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ module: "idea", input }),
+        // The route reads `input.text`. Sending a bare string made every call
+        // fail validation with a 400 whose body was plain text, which is what
+        // the double-read error handler then choked on.
+        body: JSON.stringify({ module: "idea", input: { text: input } }),
       });
 
       if (!res.ok) {
-        let msg = "Generation failed";
-        try {
-          const errData = await res.json();
-          msg = errData.error || msg;
-        } catch {
-          msg = await res.text();
-        }
-        throw new Error(msg);
+        throw new Error(await readErrorBody(res, "Gagal ngembangin ide."));
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No stream");
+      let acc = "";
+      let streamError: string | null = null;
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        
-        const chunks = buffer.split("\\n\\n");
-        buffer = chunks.pop() || "";
-
-        for (const chunk of chunks) {
-          if (!chunk.startsWith("data: ")) continue;
-          const dataStr = chunk.slice(6);
+      await readSSE(res, (msg) => {
+        if (typeof msg.error === "string") {
+          streamError = msg.error;
+          return true;
+        }
+        if (msg.done) {
+          const gen = msg.generation as
+            | { id?: string; output?: { ideas?: IdeaData[] } }
+            | undefined;
+          if (gen?.output?.ideas) setIdeas(gen.output.ideas);
+          if (gen?.id) setGenerationId(gen.id);
+          router.refresh();
+          return true;
+        }
+        if (typeof msg.chunk === "string") {
+          acc += msg.chunk;
           try {
-            const data = JSON.parse(dataStr);
-            if (data.error) throw new Error(data.error);
-            if (data.done) {
-              if (data.generation?.output?.ideas) {
-                setIdeas(data.generation.output.ideas);
-              }
-              if (data.generation?.id) {
-                setGenerationId(data.generation.id);
-              }
-              router.refresh();
-              break;
-            }
-            if (data.chunk) {
-              const cleaned = data.chunk.replace(/^```json\\n?/, "").replace(/\\n?```$/, "");
-              try {
-                const partial = JSON.parse(cleaned);
-                if (partial.ideas) {
-                  setIdeas(partial.ideas);
-                }
-              } catch {
-                // Ignore partial JSON errors
-              }
-            }
-          } catch (err: unknown) {
-            // Ignore parse errors on chunks
+            const partial = JSON.parse(stripFence(acc.trim()));
+            if (Array.isArray(partial.ideas)) setIdeas(partial.ideas);
+          } catch {
+            /* JSON not closed yet */
           }
         }
-      }
+      });
+
+      if (streamError) throw new Error(streamError);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An error occurred";
       setError(message);

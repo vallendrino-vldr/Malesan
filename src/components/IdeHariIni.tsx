@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { IdeaCard, type IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
+import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 
 export function IdeHariIni() {
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
@@ -25,77 +26,40 @@ export function IdeHariIni() {
       });
 
       if (!res.ok) {
-        let msg = "Generation failed";
-        try {
-          const errData = await res.json();
-          msg = errData.error || msg;
-        } catch {
-          msg = await res.text();
-        }
-        throw new Error(msg);
+        throw new Error(await readErrorBody(res, "Gagal bikin ide."));
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No stream");
+      // The model streams one big JSON object, so accumulate and re-parse as it
+      // grows. Parsing each chunk in isolation can never succeed.
+      let acc = "";
+      let streamError: string | null = null;
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        
-        const chunks = buffer.split("\\n\\n");
-        buffer = chunks.pop() || "";
-
-        for (const chunk of chunks) {
-          if (!chunk.startsWith("data: ")) continue;
-          const dataStr = chunk.slice(6);
+      await readSSE(res, (msg) => {
+        if (typeof msg.error === "string") {
+          streamError = msg.error;
+          return true;
+        }
+        if (msg.done) {
+          const gen = msg.generation as
+            | { id?: string; output?: { ideas?: IdeaData[] } }
+            | undefined;
+          if (gen?.output?.ideas) setIdeas(gen.output.ideas);
+          if (gen?.id) setGenerationId(gen.id);
+          router.refresh();
+          return true;
+        }
+        if (typeof msg.chunk === "string") {
+          acc += msg.chunk;
           try {
-            const data = JSON.parse(dataStr);
-            if (data.error) throw new Error(data.error);
-            if (data.done) {
-              // Generation complete, refresh to update credit balance
-              if (data.generation?.output?.ideas) {
-                setIdeas(data.generation.output.ideas);
-              }
-              if (data.generation?.id) {
-                setGenerationId(data.generation.id);
-              }
-              router.refresh();
-              break;
-            }
-            if (data.chunk) {
-              // Append to full parsed JSON so far
-              // But we rely on the final complete JSON for the ideas.
-              // If we want token-by-token parsing, we'd need a dirty JSON parser.
-              // For simplicity in Phase 1, we parse the accumulated string when complete,
-              // or do basic regex extraction.
-              
-              // With Gemini structured JSON, doing real-time streaming parsing of arrays is tricky.
-              // We'll update the raw JSON text if needed, but here we'll just wait for the complete
-              // JSON to be valid, or use a partial json parser.
-              
-              // Let's implement a naive dirty parser just for the streaming effect.
-              // To keep it robust, we'll try parsing the accumulated string.
-              const cleaned = data.chunk.replace(/^```json\\n?/, "").replace(/\\n?```$/, "");
-              try {
-                // If it happens to be valid JSON mid-way, update ideas
-                const partial = JSON.parse(cleaned);
-                if (partial.ideas) {
-                  setIdeas(partial.ideas);
-                }
-              } catch {
-                // Ignore partial JSON errors
-              }
-            }
-          } catch (err: unknown) {
-            // Ignore parse errors on chunks
+            const partial = JSON.parse(stripFence(acc.trim()));
+            if (Array.isArray(partial.ideas)) setIdeas(partial.ideas);
+          } catch {
+            /* JSON not closed yet — expected on every chunk but the last */
           }
         }
-      }
+      });
+
+      if (streamError) throw new Error(streamError);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An error occurred";
       setError(message);

@@ -6,6 +6,7 @@ import type { PipelineCard } from "@/lib/supabase/database.types";
 import { updateCardStatus, ratePerformance, updateCardContentAndStatus } from "@/app/actions/pipeline";
 import { IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
+import { readErrorBody, readSSE } from "@/lib/sse";
 
 type Column = "ide" | "draft" | "siap" | "posted";
 const COLUMNS: { id: Column; label: string }[] = [
@@ -139,47 +140,25 @@ function PipelineCardItem({
       });
 
       if (!res.ok) {
-        let msg = "Generation failed";
-        try {
-          const errData = await res.json();
-          msg = errData.error || msg;
-        } catch {
-          msg = await res.text();
-        }
-        throw new Error(msg);
+        throw new Error(await readErrorBody(res, "Gagal generate."));
       }
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No stream");
+      let finalResult: unknown = null;
+      let streamError: string | null = null;
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let finalResult = null;
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        
-        const chunks = buffer.split("\\n\\n");
-        buffer = chunks.pop() || "";
-
-        for (const chunk of chunks) {
-          if (!chunk.startsWith("data: ")) continue;
-          const dataStr = chunk.slice(6);
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.error) throw new Error(data.error);
-            if (data.done) {
-              finalResult = data.generation.output;
-              break;
-            }
-          } catch (err: unknown) {
-            // Ignore parse errors on chunks
-          }
+      await readSSE(res, (msg) => {
+        if (typeof msg.error === "string") {
+          streamError = msg.error;
+          return true;
         }
-      }
+        if (msg.done) {
+          const gen = msg.generation as { output?: unknown } | undefined;
+          finalResult = gen?.output ?? null;
+          return true;
+        }
+      });
+
+      if (streamError) throw new Error(streamError);
 
       if (finalResult) {
         const newContent = {
