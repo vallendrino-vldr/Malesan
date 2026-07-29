@@ -82,3 +82,53 @@ export async function getAllConfig() {
   cache = null;
   return load();
 }
+
+export type PaymentConfig = {
+  methods: { bank: boolean; qris: boolean };
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  qrisImageUrl: string;
+  note: string;
+};
+
+/**
+ * Payment details were hardcoded into the top-up page — one bank, one number,
+ * no QRIS. Changing a destination account meant a code change and a deploy.
+ */
+export async function getPaymentConfig(): Promise<PaymentConfig> {
+  const rows = await load();
+  const str = (k: string, d = "") => (typeof rows[k] === "string" ? (rows[k] as string) : d);
+  const m = rows["payment_methods"] as { bank?: boolean; qris?: boolean } | undefined;
+  return {
+    methods: { bank: m?.bank !== false, qris: m?.qris === true },
+    bankName: str("bank_name", "BCA"),
+    accountNumber: str("bank_account_number"),
+    accountHolder: str("bank_account_holder"),
+    qrisImageUrl: str("qris_image_url"),
+    note: str("payment_note"),
+  };
+}
+
+export type ProviderConfig = {
+  provider: "gemini" | "openai" | "anthropic" | "custom";
+  baseUrl: string;
+  apiKey: string;
+};
+
+/**
+ * Lets the owner point the product at a different model vendor without touching
+ * code. An empty `apiKey` means "keep using the env-based Gemini key rotation",
+ * so a half-filled form cannot take generation down.
+ */
+export async function getProviderConfig(): Promise<ProviderConfig> {
+  const rows = await load();
+  const p = rows["ai_provider"];
+  const provider =
+    p === "openai" || p === "anthropic" || p === "custom" ? p : "gemini";
+  return {
+    provider,
+    baseUrl: typeof rows["ai_base_url"] === "string" ? (rows["ai_base_url"] as string) : "",
+    apiKey: typeof rows["ai_api_key"] === "string" ? (rows["ai_api_key"] as string) : "",
+  };
+}

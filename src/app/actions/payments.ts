@@ -1,5 +1,18 @@
 "use server";
 
+import { getPaymentConfig, type PaymentConfig } from "@/lib/config";
+
+/**
+ * Payment details for the top-up page.
+ *
+ * Not secret — it is a destination account the user is meant to read — but it
+ * lives in `app_config` behind admin-only RLS, so the browser cannot query it
+ * directly. This is the read path.
+ */
+export async function paymentSettings(): Promise<PaymentConfig> {
+  return getPaymentConfig();
+}
+
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 

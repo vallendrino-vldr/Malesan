@@ -394,6 +394,9 @@ function Stat({ label, value }: { label: string; value: number }) {
  */
 function greet() {
   const wib = new Date(Date.now() + 7 * 3600 * 1000).getUTCHours();
+  // 00:00-03:59 is not "pagi" to anyone awake at that hour — it was greeting
+  // 2am with "Pagi" because everything below 11 fell into the same branch.
+  if (wib < 4) return "Belum tidur";
   if (wib < 11) return "Pagi";
   if (wib < 15) return "Siang";
   if (wib < 18) return "Sore";

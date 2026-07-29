@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { submitTopup, redeemVoucher } from "@/app/actions/payments";
+import { useEffect, useState } from "react";
+import { submitTopup, redeemVoucher, paymentSettings } from "@/app/actions/payments";
+import type { PaymentConfig } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/utils/image";
 import { motion } from "framer-motion";
@@ -15,6 +16,11 @@ const CREDIT_PACKS = [
 export default function TopupPage() {
   const [activeTab, setActiveTab] = useState<"topup" | "voucher">("topup");
   const [selectedPack, setSelectedPack] = useState(CREDIT_PACKS[0]);
+  const [pay, setPay] = useState<PaymentConfig | null>(null);
+
+  useEffect(() => {
+    paymentSettings().then(setPay).catch(() => setPay(null));
+  }, []);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -152,15 +158,48 @@ export default function TopupPage() {
             ))}
           </div>
 
-          <div className="bg-surface/50 border border-hairline rounded-2xl p-6">
-            <h3 className="text-white font-medium mb-4">Transfer ke Rekening BCA</h3>
-            <p className="text-muted text-sm mb-6">
-              Transfer sebesar <strong className="text-white">Rp {selectedPack.price.toLocaleString("id-ID")}</strong> ke:
-              <br/><br/>
-              <span className="font-mono text-lg text-white bg-obsidian px-3 py-2 rounded-lg border border-hairline">123 456 7890</span>
-              <br/><br/>
-              a.n. PT Malesan Karya Bangsa
+          {/* Bank details, the QRIS image and which methods are offered all
+              come from app_config, so the owner can change a destination
+              account from the panel without a deploy. */}
+          <div className="rounded-2xl border border-hairline bg-surface/50 p-5 sm:p-6">
+            <h3 className="font-display font-semibold text-ink">
+              {pay?.methods.qris && !pay?.methods.bank
+                ? "Scan QRIS"
+                : `Transfer ke ${pay?.bankName || "rekening"}`}
+            </h3>
+            <p className="mt-2 text-sm text-muted">
+              Transfer sebesar{" "}
+              <strong className="text-ink">
+                Rp {selectedPack.price.toLocaleString("id-ID")}
+              </strong>{" "}
+              ke:
             </p>
+
+            {pay?.methods.bank !== false && (
+              <div className="mt-3">
+                <p className="inline-block rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-lg text-ink">
+                  {pay?.accountNumber || "—"}
+                </p>
+                <p className="mt-2 text-sm text-muted">a.n. {pay?.accountHolder || "—"}</p>
+              </div>
+            )}
+
+            {pay?.methods.qris && pay.qrisImageUrl && (
+              <div className="mt-4">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={pay.qrisImageUrl}
+                  alt="Kode QRIS"
+                  className="mx-auto max-h-64 w-auto rounded-lg bg-white p-2"
+                />
+              </div>
+            )}
+
+            {pay?.note && (
+              <p className="mt-3 rounded-lg border border-hairline bg-obsidian px-3 py-2 text-[12px] leading-relaxed text-muted">
+                {pay.note}
+              </p>
+            )}
 
             <form onSubmit={handleTopupSubmit} className="space-y-4">
               <div>

@@ -98,6 +98,117 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
         </div>
       </section>
 
+      {/* ---- provider ---- */}
+      <section>
+        <h2 className="eyebrow mb-2 text-muted">Provider AI</h2>
+        <p className="mb-2 text-[11px] leading-relaxed text-muted">
+          Mau ganti otaknya ke vendor lain? Ganti di sini. Kalau API key
+          dikosongin, sistem balik pakai rotasi key Gemini dari env — jadi form
+          setengah jadi gak bikin generate mati.
+        </p>
+        <div className="space-y-2">
+          <div className="rounded-xl border border-hairline bg-surface p-3">
+            <label className="text-sm font-semibold text-ink">Vendor</label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(["gemini", "openai", "anthropic", "custom"] as const).map((p) => {
+                const on = String(byKey["ai_provider"]?.value ?? "gemini") === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => save("ai_provider", p)}
+                    disabled={busy === "ai_provider"}
+                    className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-semibold capitalize transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-50 ${
+                      on
+                        ? "border-ember/45 bg-ember/10 text-ember"
+                        : "border-hairline text-muted hover:text-ink"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <TextRow
+            label="Base URL"
+            hint="Kosongin kalau pakai endpoint default vendornya."
+            initial={String(byKey["ai_base_url"]?.value ?? "")}
+            busy={busy === "ai_base_url"}
+            saved={ok === "ai_base_url"}
+            onSave={(v) => save("ai_base_url", v)}
+          />
+
+          <SecretRow
+            label="API key"
+            hasValue={!!String(byKey["ai_api_key"]?.value ?? "")}
+            busy={busy === "ai_api_key"}
+            saved={ok === "ai_api_key"}
+            onSave={(v) => save("ai_api_key", v)}
+          />
+        </div>
+      </section>
+
+      {/* ---- payment ---- */}
+      <section>
+        <h2 className="eyebrow mb-2 text-muted">Pembayaran</h2>
+        <p className="mb-2 text-[11px] leading-relaxed text-muted">
+          Yang lo ubah di sini langsung kelihatan di halaman top up user.
+        </p>
+
+        <div className="mb-2 overflow-hidden rounded-xl border border-hairline bg-surface">
+          {(["bank", "qris"] as const).map((m) => {
+            const cur = (byKey["payment_methods"]?.value ?? {}) as Record<string, boolean>;
+            const on = m === "bank" ? cur.bank !== false : cur.qris === true;
+            return (
+              <div
+                key={m}
+                className="flex items-center justify-between border-b border-hairline px-3.5 py-3 last:border-b-0"
+              >
+                <span className="text-sm uppercase text-ink">{m}</span>
+                <button
+                  onClick={() => save("payment_methods", { ...cur, [m]: !on })}
+                  disabled={busy === "payment_methods"}
+                  role="switch"
+                  aria-checked={on}
+                  aria-label={`${m} ${on ? "nyala" : "mati"}`}
+                  className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-50 ${
+                    on ? "bg-ember" : "bg-surface-raised"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 size-5 rounded-full bg-obsidian transition-[left] duration-[var(--duration-standard)] ease-heat ${
+                      on ? "left-[22px]" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="space-y-2">
+          {(
+            [
+              ["bank_name", "Nama bank"],
+              ["bank_account_number", "Nomor rekening"],
+              ["bank_account_holder", "Atas nama"],
+              ["qris_image_url", "URL gambar QRIS"],
+              ["payment_note", "Catatan tambahan"],
+            ] as const
+          ).map(([k, label]) => (
+            <TextRow
+              key={k}
+              label={label}
+              initial={String(byKey[k]?.value ?? "")}
+              busy={busy === k}
+              saved={ok === k}
+              onSave={(v) => save(k, v)}
+            />
+          ))}
+        </div>
+      </section>
+
       {/* ---- kill switches ---- */}
       <section>
         <h2 className="eyebrow mb-2 text-muted">Saklar modul</h2>
@@ -180,6 +291,71 @@ function TextRow({
           {busy ? "..." : "Simpan"}
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Write-only field for secrets. The stored value is never rendered — the row
+ * only reports whether one exists. A key that can be read back out of the DOM
+ * is a key that leaks through a screenshot or a shared screen.
+ */
+function SecretRow({
+  label,
+  hasValue,
+  onSave,
+  busy,
+  saved,
+}: {
+  label: string;
+  hasValue: boolean;
+  onSave: (v: string) => void;
+  busy: boolean;
+  saved: boolean;
+}) {
+  const [v, setV] = useState("");
+
+  return (
+    <div className="rounded-xl border border-hairline bg-surface p-3">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-semibold text-ink">{label}</label>
+        {saved ? (
+          <span className="text-[11px] text-success">Tersimpan</span>
+        ) : (
+          <span className="text-[11px] text-muted">
+            {hasValue ? "Udah keisi · ●●●●●●" : "Belum diisi"}
+          </span>
+        )}
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input
+          type="password"
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          placeholder={hasValue ? "Ketik key baru buat ganti" : "Tempel API key"}
+          autoComplete="off"
+          className="min-w-0 flex-1 rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-xs text-ink placeholder:text-muted focus:border-ember focus:outline-none"
+        />
+        <button
+          onClick={() => {
+            onSave(v.trim());
+            setV("");
+          }}
+          disabled={busy || !v.trim()}
+          className="shrink-0 cursor-pointer rounded-lg bg-ember px-3 py-2 text-xs font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {busy ? "..." : "Simpan"}
+        </button>
+      </div>
+      {hasValue && (
+        <button
+          onClick={() => onSave("")}
+          disabled={busy}
+          className="mt-2 cursor-pointer text-[11px] text-muted underline-offset-2 hover:text-danger hover:underline"
+        >
+          Hapus key (balik ke rotasi Gemini dari env)
+        </button>
+      )}
     </div>
   );
 }

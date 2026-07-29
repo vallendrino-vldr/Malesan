@@ -26,7 +26,17 @@ export default async function AdminConfigPage() {
         </p>
       </header>
 
-      <ConfigEditor rows={(data as ConfigRow[]) ?? []} />
+      {/* The key never reaches the browser. The editor only needs to know
+          whether one is set, so send a boolean-ish placeholder instead of the
+          secret — a value rendered into the page is a value that leaks through
+          a screenshot or a shared screen. */}
+      <ConfigEditor
+        rows={((data as ConfigRow[]) ?? []).map((r) =>
+          r.key === "ai_api_key"
+            ? { ...r, value: String(r.value ?? "").length > 0 ? "set" : "" }
+            : r,
+        )}
+      />
     </div>
   );
 }
