@@ -58,13 +58,22 @@ export default function Home() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(255,138,61,0.16),transparent_70%)]"
       />
 
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-6 sm:px-8">
-        <span className="font-display text-lg font-extrabold tracking-display-sm text-ink">
-          malesan
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-5 sm:px-8 sm:py-6">
+        {/* The wordmark carries the brand on every screen, so it gets an actual
+            treatment: an ember dot that reads as the "heat" in the concept,
+            and normal tracking so the letters breathe. */}
+        <span className="flex items-center gap-2">
+          <span
+            aria-hidden="true"
+            className="size-1.5 rounded-full bg-ember shadow-[0_0_10px_2px_color-mix(in_oklab,var(--color-ember)_60%,transparent)]"
+          />
+          <span className="font-display text-[17px] font-bold tracking-display-sm text-ink">
+            malesan
+          </span>
         </span>
         <Link
           href="/masuk"
-          className="rounded-full border border-hairline bg-surface px-4 py-1.5 font-display text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"
+          className="rounded-full border border-hairline bg-surface/80 px-4 py-2 font-display text-[13px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
         >
           Masuk
         </Link>
@@ -72,15 +81,17 @@ export default function Home() {
 
       <main className="relative z-10 flex-1">
         {/* ---------------- hero ---------------- */}
-        <section className="mx-auto w-full max-w-6xl px-5 pt-10 pb-20 sm:px-8 sm:pt-20 sm:pb-28">
+        <section className="mx-auto w-full max-w-6xl px-5 pt-8 pb-16 sm:px-8 sm:pt-20 sm:pb-28">
           <Reveal>
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-ember">
-              Buat kreator konten Indonesia
-            </p>
+            <p className="eyebrow text-ember">Buat kreator konten Indonesia</p>
           </Reveal>
 
           <Reveal index={1}>
-            <h1 className="mt-5 max-w-4xl font-display text-[clamp(2.25rem,8.5vw,5rem)] font-extrabold leading-[0.98] tracking-display-lg text-ink">
+            {/* leading-[1.04] instead of 0.98: at 800 weight the two lines were
+                colliding on a phone. Weight drops to 700 — 800 on a narrow face
+                at display size is what made this look shouty rather than
+                confident. */}
+            <h1 className="mt-5 max-w-4xl font-display text-[clamp(2.4rem,8.5vw,5rem)] font-bold leading-[1.04] tracking-display-lg text-ink">
               Males mikirnya.
               <br />
               <span className="text-gradient-ember">Bukan bikinnya.</span>
@@ -99,7 +110,7 @@ export default function Home() {
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/masuk"
-                className="glow-ember inline-flex items-center justify-center rounded-xl bg-ember px-6 py-3.5 font-display text-[15px] font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo"
+                className="btn-ember inline-flex items-center justify-center rounded-xl px-6 py-3.5 font-display text-[15px] font-bold text-obsidian"
               >
                 Males mikir. Kasih ide.
               </Link>
@@ -113,9 +124,15 @@ export default function Home() {
           </Reveal>
 
           <Reveal index={4}>
-            <p className="mt-6 font-mono text-xs leading-relaxed text-muted">
-              10 credit gratis tiap hari · login pakai Google · gak ada
-              email-password
+            {/* Mono is reserved for real data. The numeral keeps it; the prose
+                around it does not. */}
+            <p className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+              <span className="tabular font-mono text-ink">10</span>
+              <span>credit gratis tiap hari</span>
+              <span aria-hidden="true" className="text-hairline">
+                •
+              </span>
+              <span>login pakai Google, gak pake password</span>
             </p>
           </Reveal>
         </section>
@@ -125,7 +142,7 @@ export default function Home() {
           id="modul"
           className="scroll-mt-20 border-t border-hairline bg-obsidian"
         >
-          <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
+          <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
             <Reveal>
               <h2 className="max-w-2xl font-display text-[clamp(1.75rem,4.5vw,2.75rem)] font-bold leading-tight tracking-display-md text-ink">
                 Lima alat. Satu alur.
@@ -140,21 +157,27 @@ export default function Home() {
               {MODULES.map((m, i) => (
                 <li key={m.name} className="h-full">
                   <Reveal index={i} className="h-full">
-                    <article className="group flex h-full flex-col rounded-2xl border border-hairline bg-surface p-6 transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-display text-lg font-bold tracking-display-sm text-ink">
-                          {m.name}
-                        </h3>
-                        <span className="tabular shrink-0 rounded-md border border-hairline px-2 py-1 font-mono text-[11px] text-muted">
-                          {m.cost} credit
-                        </span>
-                      </div>
-                      <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
-                        {m.body}
-                      </p>
-                      <span className="mt-5 font-mono text-[11px] uppercase tracking-[0.14em] text-ember-deep transition-colors duration-[var(--duration-standard)] ease-heat group-hover:text-ember">
+                    <article className="surface-card surface-card-interactive group flex h-full flex-col rounded-2xl border border-hairline p-5 sm:p-6">
+                      {/* Eyebrow first, then title: the tag is the scanning
+                          hook, and burying it at the bottom (as it was) made
+                          every card look identical at a glance. */}
+                      <span className="eyebrow text-ember-deep transition-colors duration-[var(--duration-standard)] ease-heat group-hover:text-ember">
                         {m.tag}
                       </span>
+                      <h3 className="mt-3 font-display text-[19px] font-bold tracking-display-sm text-ink">
+                        {m.name}
+                      </h3>
+                      <p className="mt-2.5 flex-1 text-[13.5px] leading-relaxed text-muted">
+                        {m.body}
+                      </p>
+                      <div className="mt-5 flex items-center gap-1.5 border-t border-hairline/70 pt-4">
+                        <span className="tabular font-mono text-sm text-ink">
+                          {m.cost}
+                        </span>
+                        <span className="text-xs text-muted">
+                          credit sekali pakai
+                        </span>
+                      </div>
                     </article>
                   </Reveal>
                 </li>
@@ -168,7 +191,7 @@ export default function Home() {
           id="beda"
           className="scroll-mt-20 border-t border-hairline bg-surface/40"
         >
-          <div className="mx-auto w-full max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
+          <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
             <Reveal>
               <h2 className="max-w-2xl font-display text-[clamp(1.75rem,4.5vw,2.75rem)] font-bold leading-tight tracking-display-md text-ink">
                 Bedanya sama nge-prompt sendiri
@@ -184,7 +207,10 @@ export default function Home() {
               {DIFFERENTIATORS.map((d, i) => (
                 <Reveal key={d.title} index={i} className="h-full">
                   <div className="h-full bg-obsidian p-6 sm:p-7">
-                    <span className="tabular font-mono text-xs text-ember">
+                    <span
+                      aria-hidden="true"
+                      className="tabular font-display text-2xl font-bold leading-none text-ember/25"
+                    >
                       0{i + 1}
                     </span>
                     <h3 className="mt-4 font-display text-lg font-bold tracking-display-sm text-ink">
@@ -213,7 +239,7 @@ export default function Home() {
           <span className="font-display text-sm font-bold tracking-display-sm text-ink">
             malesan
           </span>
-          <span className="font-mono text-xs text-muted">
+          <span className="text-xs text-muted">
             Belum dibuka buat umum. Lagi dibangun.
           </span>
         </div>

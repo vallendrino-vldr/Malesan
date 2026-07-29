@@ -84,16 +84,26 @@ export default async function AppPage({ searchParams }: { searchParams?: { tab?:
       {/* App Header */}
       <header className="sticky top-0 z-30 border-b border-hairline bg-obsidian/80 px-5 py-4 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="font-display text-lg font-extrabold tracking-display-sm text-ink">
+          <Link href="/app" className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="size-1.5 rounded-full bg-ember shadow-[0_0_10px_2px_color-mix(in_oklab,var(--color-ember)_60%,transparent)]"
+            />
+            <span className="font-display text-[17px] font-bold tracking-display-sm text-ink">
               malesan
             </span>
-          </div>
-          
-          <div className="flex items-center gap-4">
+          </Link>
+
+          <div className="flex items-center gap-3 sm:gap-4">
             {profile.role === "admin" && (
-              <Link href="/admin" className="text-xs font-bold text-emerald-400 hover:text-emerald-300">
-                Admin Panel
+              // Was `text-emerald-400` — a stock Tailwind colour that exists
+              // nowhere in DESIGN.md. Off-palette accents are the fastest way to
+              // make a considered design look like a template.
+              <Link
+                href="/admin"
+                className="eyebrow rounded-full border border-hairline px-2.5 py-1.5 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+              >
+                Admin
               </Link>
             )}
             <CreditDisplay credits={totalCredits} />

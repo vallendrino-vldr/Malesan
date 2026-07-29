@@ -75,13 +75,13 @@ export default function AdminUsersPage() {
           placeholder="Cari email..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
+          className="w-full max-w-md bg-surface border border-hairline rounded-lg px-4 py-2 text-white focus:outline-none focus:border-success"
         />
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-x-auto">
+      <div className="bg-surface border border-hairline rounded-2xl overflow-x-auto">
         <table className="w-full text-left">
-          <thead className="bg-zinc-950 text-zinc-400 text-sm border-b border-zinc-800">
+          <thead className="bg-obsidian text-muted text-sm border-b border-hairline">
             <tr>
               <th className="px-6 py-3 font-medium">Email</th>
               <th className="px-6 py-3 font-medium">Status</th>
@@ -92,29 +92,29 @@ export default function AdminUsersPage() {
           </thead>
           <tbody className="divide-y divide-zinc-800 text-sm">
             {loading ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-zinc-500">Loading...</td></tr>
+              <tr><td colSpan={5} className="px-6 py-8 text-center text-muted">Loading...</td></tr>
             ) : users.map(u => (
-              <tr key={u.id} className="text-white hover:bg-zinc-800/50">
+              <tr key={u.id} className="text-white hover:bg-surface-raised/50">
                 <td className="px-6 py-4">{u.email}</td>
                 <td className="px-6 py-4">
                   {u.is_banned ? (
-                    <span className="px-2 py-1 rounded bg-red-500/10 text-red-400 text-xs">Banned: {u.ban_reason}</span>
+                    <span className="px-2 py-1 rounded bg-danger/10 text-danger text-xs">Banned: {u.ban_reason}</span>
                   ) : u.is_pro ? (
-                    <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 text-xs">Pro</span>
+                    <span className="px-2 py-1 rounded bg-success/10 text-success text-xs">Pro</span>
                   ) : (
-                    <span className="px-2 py-1 rounded bg-zinc-800 text-zinc-400 text-xs">Free</span>
+                    <span className="px-2 py-1 rounded bg-surface-raised text-muted text-xs">Free</span>
                   )}
                 </td>
                 <td className="px-6 py-4">{u.credits_free + u.credits_paid}</td>
-                <td className="px-6 py-4 text-zinc-400">{new Date(u.created_at).toLocaleDateString("id-ID")}</td>
+                <td className="px-6 py-4 text-muted">{new Date(u.created_at).toLocaleDateString("id-ID")}</td>
                 <td className="px-6 py-4 text-right flex gap-3 justify-end">
-                  <button onClick={() => handleInject(u.id)} className="text-amber-400 hover:text-amber-300">
+                  <button onClick={() => handleInject(u.id)} className="text-ember hover:text-ember-lo">
                     Inject
                   </button>
                   {u.is_banned ? (
-                    <button onClick={() => handleUnban(u.id)} className="text-emerald-400 hover:text-emerald-300">Unban</button>
+                    <button onClick={() => handleUnban(u.id)} className="text-success hover:text-success">Unban</button>
                   ) : (
-                    <button onClick={() => handleBan(u.id)} className="text-red-400 hover:text-red-300">Ban</button>
+                    <button onClick={() => handleBan(u.id)} className="text-danger hover:text-danger">Ban</button>
                   )}
                 </td>
               </tr>

@@ -39,27 +39,27 @@ export default function AdminTopupsPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-zinc-400">Loading...</div>;
+  if (loading) return <div className="p-8 text-muted">Loading...</div>;
 
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-white mb-8">Antrean Topup</h1>
 
       {topups.length === 0 ? (
-        <div className="text-zinc-500">Gak ada topup yang pending. Mulus!</div>
+        <div className="text-muted">Gak ada topup yang pending. Mulus!</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {topups.map(t => (
-            <div key={t.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-zinc-800">
-                <div className="text-zinc-400 text-sm mb-1">{t.profiles?.email}</div>
+            <div key={t.id} className="bg-surface border border-hairline rounded-2xl overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-hairline">
+                <div className="text-muted text-sm mb-1">{t.profiles?.email}</div>
                 <div className="text-xl font-bold text-white">Rp {t.amount_idr.toLocaleString("id-ID")}</div>
-                <div className="text-emerald-400 text-sm">Untuk {t.credits} credits</div>
-                <div className="text-zinc-500 text-xs mt-2">{new Date(t.created_at).toLocaleString("id-ID")}</div>
+                <div className="text-success text-sm">Untuk {t.credits} credits</div>
+                <div className="text-muted text-xs mt-2">{new Date(t.created_at).toLocaleString("id-ID")}</div>
               </div>
               
               {t.proof_url ? (
-                <div className="relative h-64 bg-zinc-950">
+                <div className="relative h-64 bg-obsidian">
                   <Image 
                     src={t.proof_url} 
                     alt="Bukti Transfer" 
@@ -69,7 +69,7 @@ export default function AdminTopupsPage() {
                   />
                 </div>
               ) : (
-                <div className="h-64 flex items-center justify-center bg-zinc-950 text-zinc-600 text-sm">
+                <div className="h-64 flex items-center justify-center bg-obsidian text-muted text-sm">
                   Gak ada gambar
                 </div>
               )}
@@ -77,13 +77,13 @@ export default function AdminTopupsPage() {
               <div className="p-4 flex gap-2 mt-auto">
                 <button 
                   onClick={() => handleApprove(t.id)}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg transition-colors"
+                  className="flex-1 bg-success hover:bg-success text-white font-medium py-2 rounded-lg transition-colors"
                 >
                   Approve
                 </button>
                 <button 
                   onClick={() => handleReject(t.id)}
-                  className="flex-1 bg-red-900/50 hover:bg-red-800/50 text-red-400 font-medium py-2 rounded-lg transition-colors"
+                  className="flex-1 bg-danger/50 hover:bg-danger/50 text-danger font-medium py-2 rounded-lg transition-colors"
                 >
                   Reject
                 </button>

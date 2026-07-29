@@ -33,10 +33,18 @@
   --font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  /* Display sizes get tighter tracking as they grow. DESIGN.md §3. */
-  --tracking-display-sm: -0.02em;
-  --tracking-display-md: -0.03em;
-  --tracking-display-lg: -0.04em;
+  /* Display tracking. Tightened as sizes grow, but far less than the first
+     pass, which set -0.04em on a 36px Archivo 800 — about -1.4px per letter on
+     an already narrow face. On a phone that reads as "Malesmikirnya": the words
+     fuse and the whole page looks cheap. Optical tightening should be felt, not
+     seen. Large display now sits at -0.022em and body text is left alone. */
+  --tracking-display-sm: -0.008em;
+  --tracking-display-md: -0.014em;
+  --tracking-display-lg: -0.022em;
+
+  /* Small uppercase eyebrows. Wide tracking is what makes them legible at
+     11-12px; it is the one place letter-spacing should be obvious. */
+  --tracking-eyebrow: 0.16em;
 
   /* ---- motion ---- DESIGN.md §4
      Only --ease-* is a real Tailwind v4 theme namespace, so the easing lives
@@ -133,6 +141,82 @@
       0 0 0 1px color-mix(in oklab, var(--color-ember) 30%, transparent),
       0 0 24px -4px color-mix(in oklab, var(--color-ember) 45%, transparent),
       0 0 64px -12px color-mix(in oklab, var(--color-ember-deep) 55%, transparent);
+  }
+
+  /* Card depth without shadows-on-black, which just look like grey smudges.
+     Depth here comes from a top-lit gradient plus a 1px inner highlight on the
+     upper edge — the same trick physical materials use: the surface catches
+     light where it turns toward you. DESIGN.md §1 asks for layered depth, not
+     flat rectangles. */
+  .surface-card {
+    background-image: linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--color-surface-raised) 92%, var(--color-ink)),
+      var(--color-surface) 42%
+    );
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-ink) 7%, transparent),
+      0 1px 2px 0 rgb(0 0 0 / 0.5),
+      0 8px 24px -12px rgb(0 0 0 / 0.7);
+  }
+
+  /* Heat on approach: the card warms toward the accent rather than just
+     lightening. This is the signature the concept is built on. */
+  .surface-card-interactive {
+    transition:
+      border-color var(--duration-standard) var(--ease-heat),
+      box-shadow var(--duration-standard) var(--ease-heat);
+  }
+  .surface-card-interactive:hover,
+  .surface-card-interactive:focus-within {
+    border-color: color-mix(in oklab, var(--color-ember) 32%, var(--color-hairline));
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklab, var(--color-ember) 18%, transparent),
+      0 1px 2px 0 rgb(0 0 0 / 0.5),
+      0 10px 30px -14px color-mix(in oklab, var(--color-ember-deep) 45%, transparent);
+  }
+
+  /* The primary action. A flat saturated fill is the most obvious "unstyled
+     framework button" signal there is. Real depth: a top-lit gradient, a bright
+     inner edge where the surface turns toward the light, and the ember bloom
+     underneath so the button looks like it is the heat source. */
+  .btn-ember {
+    background-image: linear-gradient(
+      to bottom,
+      var(--color-ember-lo),
+      var(--color-ember) 46%,
+      color-mix(in oklab, var(--color-ember) 88%, var(--color-ember-deep))
+    );
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.4),
+      inset 0 -1px 0 0 color-mix(in oklab, var(--color-ember-deep) 60%, transparent),
+      0 1px 2px 0 rgb(0 0 0 / 0.4),
+      0 10px 26px -10px color-mix(in oklab, var(--color-ember) 55%, transparent);
+    transition:
+      box-shadow var(--duration-standard) var(--ease-heat),
+      translate var(--duration-standard) var(--ease-heat);
+  }
+  .btn-ember:hover {
+    box-shadow:
+      inset 0 1px 0 0 rgb(255 255 255 / 0.5),
+      inset 0 -1px 0 0 color-mix(in oklab, var(--color-ember-deep) 60%, transparent),
+      0 1px 2px 0 rgb(0 0 0 / 0.4),
+      0 14px 34px -10px color-mix(in oklab, var(--color-ember) 70%, transparent);
+  }
+  .btn-ember:active {
+    translate: 0 1px;
+  }
+
+  /* Eyebrow labels. Deliberately NOT monospace: Geist Mono is reserved for real
+     data — credit counts, timestamps, quotas. Mono on decorative labels is the
+     single loudest "developer template" tell, and it was all over this UI. */
+  .eyebrow {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.6875rem;
+    line-height: 1;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
   }
 
   .text-gradient-ember {
