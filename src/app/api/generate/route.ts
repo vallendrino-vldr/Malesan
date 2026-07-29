@@ -113,11 +113,17 @@ export async function POST(request: NextRequest) {
     if (module === "script") cost = 4;
     // ide_hari_ini, idea, repurpose all cost 1 credit
 
+    // Every spend carries a ref so a failed generation can be reversed exactly.
+    // Without it a refund has to guess which bucket the credits came from, which
+    // is what the previous version did — see refund below.
+    const spendRef = crypto.randomUUID();
+
     try {
       await serviceRole.rpc("spend_credits", {
         p_user: user.id,
         p_amount: cost,
         p_reason: `generate_${module}`,
+        p_ref: spendRef,
       });
       // Fire and forget referral processing (idempotent, only does something on first gen)
       processReferral(user.id).catch(console.error);
@@ -201,30 +207,23 @@ export async function POST(request: NextRequest) {
             )
           );
 
-          // 8. On parse/generation failure: refund smartly
+          // On failure the user must not be charged (PROMPTS.md §1).
+          //
+          // The previous version reimplemented the same guessing heuristic that
+          // was removed from SQL: it assumed the credits came from `free` up to
+          // a ceiling of 10 and dumped the rest into `paid`. That can hand back
+          // paid credits as free ones — which are wiped at the next daily reset
+          // — and it makes the ledger stop reconciling.
+          //
+          // refund_credits reads the original spend rows by ref and reverses
+          // them exactly, bucket for bucket. It is idempotent, so a retry here
+          // cannot pay the user twice.
           try {
-            const { data: currentProfile } = await serviceRole
-              .from("profiles")
-              .select("credits_free")
-              .eq("id", user.id)
-              .single();
-
-            if (currentProfile) {
-              const freeAvailable = 10 - currentProfile.credits_free;
-              const toFree = Math.min(Math.max(0, freeAvailable), cost);
-              const toPaid = cost - toFree;
-
-              if (toFree > 0) {
-                await serviceRole.rpc("grant_credits", {
-                  p_user: user.id, p_amount: toFree, p_bucket: "free", p_reason: "generation_failed_refund"
-                });
-              }
-              if (toPaid > 0) {
-                await serviceRole.rpc("grant_credits", {
-                  p_user: user.id, p_amount: toPaid, p_bucket: "paid", p_reason: "generation_failed_refund"
-                });
-              }
-            }
+            await serviceRole.rpc("refund_credits", {
+              p_user: user.id,
+              p_ref: spendRef,
+              p_reason: `refund_${module}_failed`,
+            });
           } catch (e) {
             console.error("Refund failed", e);
           }

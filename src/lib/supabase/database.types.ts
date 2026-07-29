@@ -246,7 +246,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit";
           platform: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input: Json | null;
           output: Json | null;
@@ -259,7 +259,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;
@@ -272,7 +272,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
-          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;
@@ -608,6 +608,50 @@ export type Database = {
           }
         ];
       };
+      vibe_projects: {
+        Row: {
+          id: string;
+          user_id: string;
+          generation_id: string | null;
+          name: string;
+          one_liner: string | null;
+          stack: string | null;
+          docs: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          generation_id?: string | null;
+          name: string;
+          one_liner?: string | null;
+          stack?: string | null;
+          docs?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          generation_id?: string | null;
+          name?: string;
+          one_liner?: string | null;
+          stack?: string | null;
+          docs?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "vibe_projects_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: Record<never, never>;
     Functions: {
@@ -641,6 +685,11 @@ export type Database = {
       /** service_role only. Sets credits_free to 10; does not add. Idempotent per day. */
       claim_daily_refill: { Args: { p_user: string }; Returns: number };
       /** service_role only. Admin/system grants. */
+      /** service_role only. Exact ledger-driven reversal of a spend, by ref. Idempotent. */
+      refund_credits: {
+        Args: { p_user: string; p_ref: string; p_reason?: string };
+        Returns: number;
+      };
       grant_credits: {
         Args: {
           p_user: string;

@@ -5,7 +5,14 @@ import { IdeHariIni } from "@/components/IdeHariIni";
 import { IdeaEngine } from "@/components/IdeaEngine";
 import { CreditDisplay } from "@/components/CreditDisplay";
 import { PipelineBoard } from "@/components/PipelineBoard";
+import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import Link from "next/link";
+
+const TABS = [
+  { key: "studio", label: "Studio" },
+  { key: "vibe", label: "Vibe Coding" },
+  { key: "pipeline", label: "Pipeline" },
+] as const;
 
 export const metadata: Metadata = {
   title: "Malesan App",
@@ -124,37 +131,38 @@ export default async function AppPage({ searchParams }: { searchParams?: { tab?:
 
       {/* Main Content */}
       <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:py-12">
-        <div className="mb-8 flex border-b border-hairline">
-          <Link
-            href="/app?tab=studio"
-            className={`px-4 py-3 font-display text-sm font-bold transition-colors ${
-              tab === "studio"
-                ? "border-b-2 border-ember text-ember"
-                : "text-muted hover:text-ink"
-            }`}
-          >
-            Studio
-          </Link>
-          <Link
-            href="/app?tab=pipeline"
-            className={`px-4 py-3 font-display text-sm font-bold transition-colors ${
-              tab === "pipeline"
-                ? "border-b-2 border-ember text-ember"
-                : "text-muted hover:text-ink"
-            }`}
-          >
-            Pipeline
-          </Link>
+        {/* Scrolls horizontally instead of wrapping: three tabs already crowd a
+            360px screen, and a wrapped tab row looks broken. */}
+        <div className="-mx-5 mb-8 overflow-x-auto border-b border-hairline px-5">
+          <div className="flex w-max gap-1">
+            {TABS.map((t) => (
+              <Link
+                key={t.key}
+                href={`/app?tab=${t.key}`}
+                className={`whitespace-nowrap px-4 py-3 font-display text-sm font-bold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                  tab === t.key
+                    ? "border-b-2 border-ember text-ember"
+                    : "border-b-2 border-transparent text-muted hover:text-ink"
+                }`}
+              >
+                {t.label}
+              </Link>
+            ))}
+          </div>
         </div>
 
         <div className="reveal space-y-12">
-          {tab === "studio" ? (
+          {tab === "pipeline" ? (
+            <PipelineBoard initialCards={pipelineCards || []} />
+          ) : tab === "vibe" ? (
+            <div className="mx-auto max-w-3xl">
+              <VibeCodingStudio />
+            </div>
+          ) : (
             <div className="mx-auto max-w-3xl space-y-12">
               <IdeHariIni />
               <IdeaEngine />
             </div>
-          ) : (
-            <PipelineBoard initialCards={pipelineCards || []} />
           )}
         </div>
       </main>

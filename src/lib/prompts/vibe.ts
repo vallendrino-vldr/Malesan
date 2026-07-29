@@ -1,0 +1,186 @@
+/**
+ * VIBE CODING KIT
+ *
+ * Approved scope addition, 2026-07-29. Not in MALESAN_MASTER_PROMPT.md.
+ *
+ * Same thesis as the content modules — "males mikirnya, bukan bikinnya" — aimed
+ * at a different blank page. A creator stares at an empty editor; someone about
+ * to vibe-code stares at an empty repo and an AI agent waiting for instructions
+ * they have not thought through yet.
+ *
+ * The output is deliberately the document set this project itself runs on,
+ * because that set is what stopped this build from dissolving when it changed
+ * agents mid-way. That is the product insight: the documents are not paperwork,
+ * they are the thing that makes an AI agent produce something coherent.
+ */
+
+export type VibeKitInput = {
+  /** What they want to build, in their own words. Can be one messy sentence. */
+  idea: string;
+  /** Optional. Free text — "Next.js + Supabase", "gatau, saranin aja". */
+  stack?: string;
+  /** Optional. Who it is for. */
+  audience?: string;
+};
+
+/**
+ * Six documents. Each is a complete file the user can save straight into a repo.
+ *
+ * They are generated in one call because they must agree with each other: a
+ * roadmap that references tables the schema does not define is worse than no
+ * roadmap. Separate calls would drift.
+ */
+export const VIBE_KIT_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    project_name: { type: "STRING" },
+    one_liner: { type: "STRING" },
+    stack_summary: { type: "STRING" },
+    docs: {
+      type: "OBJECT",
+      properties: {
+        prd: { type: "STRING" },
+        design: { type: "STRING" },
+        roadmap: { type: "STRING" },
+        agents: { type: "STRING" },
+        schema: { type: "STRING" },
+        master_prompt: { type: "STRING" },
+      },
+      required: ["prd", "design", "roadmap", "agents", "schema", "master_prompt"],
+    },
+  },
+  required: ["project_name", "one_liner", "stack_summary", "docs"],
+} as const;
+
+export type VibeKitOutput = {
+  project_name: string;
+  one_liner: string;
+  stack_summary: string;
+  docs: {
+    prd: string;
+    design: string;
+    roadmap: string;
+    agents: string;
+    schema: string;
+    master_prompt: string;
+  };
+};
+
+/** Shown in the UI so the user knows what they are paying for before they pay. */
+export const VIBE_KIT_DOCS = [
+  {
+    key: "prd" as const,
+    file: "PRD.md",
+    label: "PRD",
+    blurb: "Masalah, buat siapa, fitur mana yang masuk fase 1 dan mana yang ditunda.",
+  },
+  {
+    key: "design" as const,
+    file: "DESIGN.md",
+    label: "Design system",
+    blurb: "Token warna, tipografi, motion, dan aturan copy. Biar gak tiap layar beda gaya.",
+  },
+  {
+    key: "roadmap" as const,
+    file: "ROADMAP.md",
+    label: "Roadmap",
+    blurb: "Urutan langkah dengan definisi selesai yang bisa diuji, bukan checklist ngambang.",
+  },
+  {
+    key: "agents" as const,
+    file: "AGENTS.md",
+    label: "Aturan agent",
+    blurb: "Aturan keras buat AI-nya. Ini yang bikin dia gak ngarang atau kabur dari spek.",
+  },
+  {
+    key: "schema" as const,
+    file: "SCHEMA.md",
+    label: "Skema database",
+    blurb: "Tabel, relasi, dan aturan akses baris. Lengkap dengan SQL-nya.",
+  },
+  {
+    key: "master_prompt" as const,
+    file: "MASTER_PROMPT.md",
+    label: "Prompt pembuka",
+    blurb: "Yang lo paste pertama kali ke Claude, Cursor, atau Antigravity.",
+  },
+];
+
+export const VIBE_KIT_CREDIT_COST = 6;
+
+export function buildVibeKitPrompt(input: VibeKitInput, outputLanguage = "id"): string {
+  const lang =
+    outputLanguage === "en"
+      ? "English"
+      : "Bahasa Indonesia yang natural dan ngobrol, bukan bahasa terjemahan";
+
+  return `Lo adalah engineer senior yang udah sering mimpin project dari nol sampai launch,
+dan sekarang lagi bantu orang yang mau bikin aplikasi pakai AI coding agent
+(Claude Code, Cursor, Antigravity, dan sejenisnya).
+
+IDE DIA:
+${input.idea}
+
+${input.stack ? `STACK YANG DIA MAU: ${input.stack}` : "STACK: belum ditentuin. Lo yang pilihin, dan jelasin alasannya singkat."}
+${input.audience ? `TARGET USER: ${input.audience}` : ""}
+
+Tugas lo: bikin SATU SET dokumen spesifikasi lengkap yang siap ditaruh di root repo.
+Dokumen ini yang bakal dibaca AI agent sebelum dia nulis baris kode pertama.
+
+KENAPA INI PENTING — pahami ini dulu sebelum nulis:
+Agent AI kehabisan konteks, sesi mati, orangnya ganti tool di tengah jalan.
+Kalau dokumennya gak akurat, kerjaan hilang dan agent berikutnya ngarang.
+Dokumen ini bukan formalitas — ini memori project.
+
+ATURAN NULIS:
+- Bahasa: ${lang}. Tapi nama tabel, kolom, tipe, dan semua identifier kode tetap bahasa Inggris.
+- SPESIFIK. Jangan nulis "bikin autentikasi yang aman" — tulis metode apa, kenapa itu, dan apa konsekuensinya.
+- Tiap keputusan harus ada ALASANNYA. Yang bikin dokumen ini berguna itu "kenapa", bukan "apa".
+- Jujur soal batasan. Kalau sesuatu gak realistis di free tier, bilang, jangan pura-pura bisa.
+- Format Markdown yang rapi. Pakai tabel kalau memang lebih jelas dari paragraf.
+
+ISI TIAP DOKUMEN:
+
+1. PRD.md
+   Masalah yang dipecahin dan buat siapa. Positioning yang tajam.
+   Fitur fase 1 (maksimal 8, yang bener-bener perlu buat produk ini hidup).
+   Yang SENGAJA gak masuk fase 1, plus alasannya.
+   Cara ngukur berhasil atau nggak.
+
+2. DESIGN.md
+   Konsep visualnya dalam satu kalimat yang bisa dipegang.
+   Token warna lengkap dengan hex dan kapan dipakai. Hitam/putihnya jangan netral — kasih arah suhu warna dan jelasin kenapa.
+   Tipografi: font display, body, dan mono, plus kapan masing-masing dipakai.
+   Motion: durasi dan easing yang konkret.
+   Aturan copy: nada bicara, dan contoh nyata buat loading, empty state, sama pesan error.
+   Lantai kualitas: responsif sampai 360px, focus state keyboard kelihatan, prefers-reduced-motion dihormati.
+
+3. ROADMAP.md
+   Langkah bernomor dari nol sampai bisa dipakai orang. Tiap langkah punya deliverable dan
+   DEFINISI SELESAI YANG BISA DIUJI — sesuatu yang bisa dijalanin dan diliat hasilnya,
+   bukan "auth selesai".
+   Tandain langkah mana yang paling berisiko dan kenapa.
+
+4. AGENTS.md
+   Aturan keras buat AI agent. Yang paling penting:
+   - rahasia gak boleh masuk ke bundle browser atau ke git
+   - jangan ngarang fitur di luar roadmap, tulis usulan lalu tunggu persetujuan
+   - "berhasil" artinya udah dijalanin dan diliat jalan, bukan cuma build hijau
+   - commit tiap checkpoint, jangan numpuk kerjaan gak ke-commit
+   - kalau spek bentrok sama kenyataan, berhenti dan tanya, jangan nebak
+   Plus protokol serah terima: file apa yang wajib diupdate sebelum sesi berakhir.
+
+5. SCHEMA.md
+   Tabel-tabelnya dalam SQL beneran yang bisa langsung dijalanin.
+   Relasi antar tabel.
+   Aturan akses per baris: siapa boleh baca dan tulis baris mana.
+   Kalau ada operasi yang rawan balapan (saldo, kuota, stok), tulis fungsi database-nya
+   dan jelasin kenapa gak boleh dikerjain dari kode aplikasi.
+
+6. MASTER_PROMPT.md
+   Prompt yang dia paste pertama kali ke AI agent-nya.
+   Harus berdiri sendiri: siapa agent-nya, baca file mana dulu, mulai dari mana,
+   dan kapan dia harus berhenti buat lapor.
+
+Balas HANYA JSON valid sesuai skema. Isi tiap dokumen adalah string Markdown utuh.`;
+}
