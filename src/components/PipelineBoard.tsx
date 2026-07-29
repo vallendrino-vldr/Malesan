@@ -67,6 +67,26 @@ const COLUMNS: {
   },
 ];
 
+/**
+ * One hook as HOOK_LAB_SCHEMA actually returns it: `text`, not `script_segment`.
+ * Reading the wrong field sent an empty hook to Script Builder, which rejected
+ * the request with "Idea, hook, and duration inputs are required" — an error
+ * about the user's input for a value the user never supplied. The optional
+ * aliases are tolerance for older rows written before this was pinned down.
+ */
+type HookOption = {
+  text?: string;
+  script_segment?: string;
+  hook?: string;
+  pattern?: string;
+  score?: number;
+  why?: string;
+};
+
+export function hookText(h: HookOption | undefined): string {
+  return (h?.text ?? h?.script_segment ?? h?.hook ?? "").trim();
+}
+
 /** What this card is waiting on, in one line. Drives the guidance strip. */
 function nextStep(card: PipelineCard, hasHook: boolean): string {
   switch (card.status as Column) {
@@ -261,8 +281,9 @@ function PipelineCardItem({
   onDragEnd?: (info: PanInfo) => void;
 }) {
   const content = card.content as unknown as IdeaData & {
-    generated_hook?: { hooks?: { script_segment?: string }[] };
+    generated_hook?: { hooks?: HookOption[] };
     generated_script?: unknown;
+    chosen_hook?: number;
   };
   const [ratingHover, setRatingHover] = useState(0);
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
@@ -272,9 +293,34 @@ function PipelineCardItem({
   const router = useRouter();
 
   const status = card.status as Column;
-  const hasHook = !!content?.generated_hook;
+  // Hook Lab returns ten. Unranked and unbounded that is a wall of buttons on a
+  // phone, so lead with the model's own scoring and let the rest scroll.
+  const hookList = (content?.generated_hook?.hooks ?? [])
+    .filter((h) => hookText(h))
+    .slice()
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  const [picked, setPicked] = useState(content?.chosen_hook ?? 0);
+  const hasHook = hookList.length > 0;
+  const chosenHook = hookText(hookList[picked]);
 
   const handleGenerate = async (module: "hook" | "script") => {
+    const idea = [card.title, content.angle].filter(Boolean).join("\n").trim();
+    const hook = chosenHook || content.hook_seed?.trim() || "";
+    const duration = content.est_duration?.trim() || "60s";
+
+    // Check locally what the route is about to check anyway. A 400 phrased as
+    // "Idea, hook, and duration inputs are required" is the server's contract
+    // leaking into the UI — it names fields the user never typed and offers no
+    // way out. Catch it here and say what to actually do.
+    if (!idea) {
+      setError("Kartu ini gak punya judul, jadi gak ada yang bisa digarap. Hapus aja terus generate ulang dari Studio.");
+      return;
+    }
+    if (module === "script" && !hook) {
+      setError("Hook-nya belum kepilih. Bikin hook dulu, nanti tombol ini kebuka sendiri.");
+      return;
+    }
+
     setIsGenerating(true);
     setError("");
 
@@ -285,16 +331,8 @@ function PipelineCardItem({
         body: JSON.stringify({
           module,
           input: {
-            idea: card.title + "\n" + (content.angle || ""),
-            ...(module === "script"
-              ? {
-                  hook:
-                    content.generated_hook?.hooks?.[0]?.script_segment ||
-                    content.hook_seed ||
-                    "",
-                  duration: content.est_duration || "60s",
-                }
-              : {}),
+            idea,
+            ...(module === "script" ? { hook, duration } : {}),
           },
           platform: "tiktok",
         }),
@@ -322,8 +360,8 @@ function PipelineCardItem({
         const newContent = {
           ...content,
           ...(module === "hook"
-            ? { generated_hook: finalResult }
-            : { generated_script: finalResult }),
+            ? { generated_hook: finalResult, chosen_hook: 0 }
+            : { generated_script: finalResult, chosen_hook: picked }),
         };
         await updateCardContentAndStatus(
           card.id,
@@ -390,28 +428,50 @@ function PipelineCardItem({
         </div>
       )}
 
-      {status === "draft" && hasHook && (
-        <div className="mt-3 border-t border-hairline pt-3">
+      {/* The hooks were generated and then never shown — the card said "Hook
+          udah jadi" and moved on. They are the whole point of the step, so
+          show them and let the pick drive what the script is written against. */}
+      {hasHook && status === "draft" && (
+        <div className="mt-3 space-y-1.5">
+          <p className="eyebrow text-ember">
+            {hookList.length > 1 ? `Pilih hook · ${hookList.length} opsi` : "Hook"}
+          </p>
+          <div className="max-h-56 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5">
+          {hookList.map((h, i) => {
+            const on = i === picked;
+            return (
+              <button
+                key={i}
+                onClick={() => setPicked(i)}
+                aria-pressed={on}
+                className={`block w-full cursor-pointer rounded-lg border p-3 text-left transition-colors duration-[var(--duration-standard)] ease-heat ${
+                  on
+                    ? "border-ember/45 bg-ember/10"
+                    : "border-hairline bg-obsidian hover:border-ember/25"
+                }`}
+              >
+                <p className={`text-xs leading-relaxed ${on ? "text-ink" : "text-ink/70"}`}>
+                  {hookText(h)}
+                </p>
+                {h.why && on && (
+                  <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted">{h.why}</p>
+                )}
+              </button>
+            );
+          })}
+          </div>
+
           <button
             onClick={() => handleGenerate("script")}
             disabled={isGenerating}
-            className={`w-full rounded-lg px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-60 ${
+            className={`mt-1 w-full cursor-pointer rounded-lg px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-60 ${
               isGenerating
                 ? "glow-ember bg-surface text-ember"
-                : "bg-surface text-muted hover:bg-surface-raised hover:text-ink"
+                : "bg-ember text-obsidian hover:bg-ember-lo"
             }`}
           >
-            {isGenerating ? "Lagi nulis script..." : "Bikin script · 4 kredit"}
+            {isGenerating ? "Lagi nulis script..." : "Bikin script dari hook ini · 4 kredit"}
           </button>
-        </div>
-      )}
-
-      {hasHook && status === "draft" && (
-        <div className="mt-3 max-h-24 overflow-y-auto rounded-lg border border-hairline bg-obsidian p-3">
-          <p className="eyebrow mb-1 text-ember">Hook</p>
-          <p className="text-xs leading-relaxed text-ink/80">
-            {content.generated_hook?.hooks?.[0]?.script_segment || "Hook udah jadi."}
-          </p>
         </div>
       )}
 
