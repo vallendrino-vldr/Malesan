@@ -35,8 +35,21 @@ export async function GET(request: NextRequest) {
   const email = process.env.DEV_LOGIN_EMAIL;
   if (!secret || !email) return notFound();
 
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   if (searchParams.get("key") !== secret) return notFound();
+
+  /**
+   * Behind a tunnel or proxy, `request.url` carries the *internal* host, so
+   * redirecting to its origin sends the phone to https://localhost:3000 — which
+   * on a phone is the phone itself. The forwarded headers carry the host the
+   * browser actually asked for.
+   */
+  const fwdHost = request.headers.get("x-forwarded-host");
+  const host = fwdHost ?? request.headers.get("host") ?? "localhost:3000";
+  const proto =
+    request.headers.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") ? "http" : "https");
+  const origin = `${proto}://${host}`;
 
   const next = searchParams.get("next") ?? "/app";
   const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
