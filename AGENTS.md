@@ -19,6 +19,34 @@ this file to match.
 When the human types only **"lanjut"**, read those three files and continue from
 `HANDOFF.md` → NEXT ACTION. Do not ask questions those files already answer.
 
+### Token discipline — this project runs on a hard budget
+
+The human is on a capped plan and has run out mid-build before. Burning context
+on rediscovery is not neutral; it is the thing most likely to end the session
+before the work lands. Obey these in order:
+
+1. **Query the code graph before reading source.** `graphify-out/graph.json`
+   holds every symbol in `src/` and how they connect (193 nodes / 412 edges,
+   rebuilt by AST with **zero LLM tokens**). To find what calls what, run
+   `graphify query "<question>"` — do not grep-and-read your way to the same
+   answer. Rebuild after big refactors with:
+   `graphify-out/.graphify_python -m graphify update` (still free — `src/` is a
+   code-only corpus, so the semantic/subagent pass never runs).
+2. **Never `Read` a whole file to change ten lines.** Grep for the anchor, read
+   with `offset`/`limit`, then `Edit`. Reading a 400-line component to patch one
+   handler costs more than the patch.
+3. **Do not spawn subagents or workflows unless the human asks.** Each one starts
+   cold and re-derives context this session already has.
+4. **Do not re-read a file you just edited to check it landed.** The edit tool
+   errors if it did not.
+5. **Batch independent tool calls into one message.** Round trips cost context.
+6. **Verify by execution, not by re-reading.** `tsc --noEmit` and a targeted test
+   prove more per token than any amount of re-inspection.
+
+If context is running out, **commit what works and write `HANDOFF.md` before
+starting anything new.** A session that dies with uncommitted work has produced
+nothing — that is exactly how the Antigravity session failed.
+
 ---
 
 ## 1. What Malesan is
