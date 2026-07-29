@@ -9,6 +9,7 @@ import { IdeaEngine } from "@/components/IdeaEngine";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
+import { ModuleRunner, MODULE_SPECS } from "@/components/ModuleRunner";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -26,7 +27,10 @@ export default async function AppPage({
   const tab: TabKey = VALID_TABS.includes(params.tab as TabKey)
     ? (params.tab as TabKey)
     : "studio";
-  const mod = params.m === "ide" || params.m === "idea" ? params.m : null;
+  const MODS = ["ide", "idea", "hook", "script", "repurpose"] as const;
+  const mod = MODS.includes(params.m as (typeof MODS)[number])
+    ? (params.m as (typeof MODS)[number])
+    : null;
 
   const supabase = await createClient();
   const {
@@ -136,6 +140,19 @@ export default async function AppPage({
             />
           </div>
 
+          {/* Hook Lab, Script Builder and Repurpose shipped in the backend from
+              the start with no way in. Compact row so the dashboard still fits
+              one screen — the two primaries stay the headline. */}
+          <div className="grid grid-cols-3 gap-2">
+            <MiniTile href="/app?tab=studio&m=hook" title="Hook Lab" cost={await getCost("hook")} />
+            <MiniTile href="/app?tab=studio&m=script" title="Script" cost={await getCost("script")} />
+            <MiniTile
+              href="/app?tab=studio&m=repurpose"
+              title="Repurpose"
+              cost={await getCost("repurpose")}
+            />
+          </div>
+
           {/* The dashboard never said what the product is good for. Three lines,
               no scroll added, and no swipes at anything else. */}
           <ul className="flex items-center justify-between gap-1 rounded-xl border border-hairline bg-surface/50 px-3 py-2.5">
@@ -164,6 +181,13 @@ export default async function AppPage({
         <div className="reveal space-y-4">
           <BackToStudio />
           <IdeaEngine />
+        </div>
+      )}
+
+      {tab === "studio" && (mod === "hook" || mod === "script" || mod === "repurpose") && (
+        <div className="reveal space-y-4">
+          <BackToStudio />
+          <ModuleRunner spec={{ ...MODULE_SPECS[mod], cost: await getCost(mod) }} />
         </div>
       )}
 
@@ -240,6 +264,20 @@ export default async function AppPage({
         </div>
       )}
     </AppShell>
+  );
+}
+
+function MiniTile({ href, title, cost }: { href: string; title: string; cost: number }) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-xl border border-hairline bg-surface/60 px-2.5 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:bg-surface"
+    >
+      <p className="truncate text-[12.5px] font-semibold text-ink group-hover:text-ember-lo">
+        {title}
+      </p>
+      <p className="mt-0.5 font-mono text-[10px] text-muted">{cost} kredit</p>
+    </Link>
   );
 }
 
