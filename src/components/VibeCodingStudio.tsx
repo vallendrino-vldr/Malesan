@@ -9,8 +9,44 @@ import {
 
 type DocKey = (typeof VIBE_KIT_DOCS)[number]["key"];
 
+/**
+ * Idea starters.
+ *
+ * Each seed is a full sentence with a user, a job and a constraint — the same
+ * shape the prompt needs to produce a spec worth reading. Short prompts like
+ * "aplikasi keuangan" generate generic documents, so the starters double as a
+ * worked example of how much detail to give.
+ */
+const STARTERS: { label: string; seed: string }[] = [
+  {
+    label: "Kasir warung",
+    seed: "Aplikasi kasir buat warung kecil: catat penjualan harian, stok barang yang tinggal dikit dikasih peringatan, dan rekap untung rugi per minggu. Dipakai sambil berdiri, satu tangan, HP murah.",
+  },
+  {
+    label: "Absensi karyawan",
+    seed: "Absensi karyawan pakai foto selfie dan lokasi, buat usaha yang punya beberapa cabang. Owner bisa lihat siapa telat dan rekap jam kerja tiap akhir bulan buat hitung gaji.",
+  },
+  {
+    label: "Katalog jualan",
+    seed: "Katalog produk online yang tinggal share linknya ke WhatsApp. Pembeli pilih barang, checkout-nya langsung jadi pesan WhatsApp yang rapi ke penjual. Gak perlu bikin akun.",
+  },
+  {
+    label: "Tracker kebiasaan",
+    seed: "Pencatat kebiasaan harian yang gak bikin ngerasa bersalah kalau bolong. Fokus ke tren mingguan, bukan streak. Ada satu grafik yang gampang dibaca dan pengingat yang bisa dimatiin.",
+  },
+  {
+    label: "Split bill",
+    seed: "Aplikasi patungan buat teman-teman yang sering makan bareng: siapa bayar apa, siapa utang ke siapa, dan hitung siapa harus transfer ke siapa biar paling sedikit transaksinya.",
+  },
+  {
+    label: "Jadwal les",
+    seed: "Pengatur jadwal buat guru les privat: jadwal per murid, catatan tiap pertemuan, dan tagihan bulanan otomatis yang bisa dikirim ke orang tua.",
+  },
+];
+
 export function VibeCodingStudio() {
   const [idea, setIdea] = useState("");
+  const IDEA_STARTERS = STARTERS;
   const [stack, setStack] = useState("");
   const [audience, setAudience] = useState("");
   const [pending, setPending] = useState(false);
@@ -140,6 +176,28 @@ export function VibeCodingStudio() {
           placeholder="Contoh: aplikasi buat nyatet pengeluaran harian bareng pasangan, bisa split bill, ada grafik bulanan."
           className="mt-2 w-full resize-y rounded-xl border border-hairline bg-obsidian px-3.5 py-3 text-[15px] leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
         />
+
+        {/* A blank textarea is the hardest thing to face on this screen. These
+            are deliberately specific — a vague seed produces a vague spec, and
+            the point of the starters is to show what "enough detail" looks
+            like, not just to fill the box. */}
+        {!idea.trim() && (
+          <div className="mt-2.5">
+            <p className="text-[11px] text-muted">Belum kepikiran? Mulai dari sini:</p>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {IDEA_STARTERS.map((s) => (
+                <button
+                  key={s.label}
+                  type="button"
+                  onClick={() => setIdea(s.seed)}
+                  className="cursor-pointer rounded-full border border-hairline px-3 py-1.5 text-[11.5px] font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
