@@ -10,6 +10,7 @@ import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
 import { ModuleRunner } from "@/components/ModuleRunner";
+import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -89,6 +90,36 @@ export default async function AppPage({
     .select("*")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  // History only matters on the profile tab; skip the query everywhere else.
+  const history: HistoryItem[] =
+    tab !== "profil"
+      ? []
+      : ((
+          await supabase
+            .from("generations")
+            .select("id, module, created_at, credits_spent, performance_rating, output")
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(25)
+        ).data ?? []).map((g) => {
+          const o = g.output as Record<string, unknown> | null;
+          const ideas = o?.ideas as { title?: string }[] | undefined;
+          const hooks = o?.hooks as { text?: string }[] | undefined;
+          return {
+            id: g.id as string,
+            module: g.module as string,
+            created_at: g.created_at as string,
+            credits_spent: (g.credits_spent as number) ?? 0,
+            performance_rating: (g.performance_rating as number | null) ?? null,
+            gist: String(
+              ideas?.[0]?.title ??
+                hooks?.[0]?.text ??
+                (typeof o?.caption === "string" ? o.caption : "") ??
+                "(tanpa judul)",
+            ).slice(0, 160),
+          };
+        });
 
   const avatar =
     profile.avatar_url ??
@@ -206,6 +237,10 @@ export default async function AppPage({
 
       {tab === "profil" && (
         <div className="reveal space-y-4">
+          <section>
+            <h2 className="eyebrow mb-2 ml-1 text-muted">Riwayat</h2>
+            <HistoryList items={history} />
+          </section>
           <section className="surface-card rounded-2xl border border-hairline p-5">
             <div className="flex items-center gap-4">
               <div className="size-14 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface">
