@@ -1,8 +1,8 @@
 # HANDOFF
 
 Last updated: 2026-07-29
-Last agent: Claude Code (studio repair, pipeline redesign, code graph)
-Last commit: `4617b67` — fix: pipeline had one layout for every screen
+Last agent: Claude Code (studio repair, pipeline redesign, code graph, admin batch 1)
+Last commit: `a016081` — feat: admin batch 1
 
 ---
 
@@ -58,6 +58,33 @@ content on a phone. Now sidebar from `md` up, bottom nav below it. Its entry
 point in the header was a muted hairline pill that read as decoration; it now
 carries the accent.
 
+### Script generation blamed the user for a field-name mismatch
+
+`HOOK_LAB_SCHEMA` returns each hook as `text`. The card read `script_segment`,
+so the hook resolved to `""` and Script Builder answered *"Idea, hook, and
+duration inputs are required"* — a contract error naming three fields the user
+never typed. Same wrong field is why the preview only said "Hook udah jadi".
+
+All ten hooks are now shown, ranked by the model's own `score`, selectable, and
+the pick is persisted as `chosen_hook` and is what the script is written
+against. Preflight validates locally so the route's 400 never reaches the UI.
+
+### Admin batch 1 — done
+
+`setProStatus`, `setAdminRole` (refuses to strip the last admin), `deleteUser`
+(refuses admins and self), plus `recentAuditLog`. Every mutation now writes to
+`audit_log`, which had never been written to since it was created.
+
+The UI ran on `prompt()`/`confirm()`/`alert()` and a table that pushed its
+actions column off-screen on a phone. Replaced with cards + a bottom sheet;
+confirmation is inline and in plain language. Removed the last `divide-zinc-800`.
+
+### `trends` is no longer empty
+
+Ran `/api/cron/trends` for real: **5 active rows**. Every prompt had been
+running trend-blind until now. This is also the first end-to-end proof this
+session that the Gemini layer works on a live route.
+
 ---
 
 ## VERIFIED BY EXECUTION
@@ -85,20 +112,23 @@ carries the accent.
 
 ## NEXT ACTION — START HERE
 
-1. Confirm Ide Hari Ini and Idea Engine actually complete and deduct credits.
-2. **Admin batch 1 — user control.** Role free↔paid, manual credit edit with
-   a reason written to the ledger, ban/unban, delete, per-user detail
-   (generations, ledger, referrals, topups). `verifyAdmin()` is the only gate
-   on every admin action and has degree 8 in the graph — audit it before
-   extending it.
-3. **Seed `trends`** (8–10 rows, or run `/api/cron/trends` once). Single
-   biggest quality lever available; every prompt is currently trend-blind.
-4. **Admin batch 2 — AI control.** Needs a new `app_config` table first:
-   model per tier, key rotation, per-module credit cost, editable prompts.
-   All hardcoded in env today.
-5. Batch 3 (charts, activity feed), batch 4 (storage/data browser).
-6. Dashboard needs the "why this is useful" copy the human asked for — gaul,
-   humble, no swipes at anyone.
+1. Confirm Ide Hari Ini, Idea Engine and pipeline hook→script actually complete
+   and deduct credits, on a phone. Still never observed by an agent.
+2. **Admin batch 2 — AI control.** Needs an `app_config` table first: model per
+   tier, key rotation, per-module credit cost, editable prompts. All hardcoded
+   in env today. `verifyAdmin()` is the only gate on every admin action —
+   degree 8 in the graph — audit it before extending it.
+3. **Batch 3** — charts, activity feed, generations browser. `audit_log` now
+   has real rows to render.
+4. **Batch 4** — storage/data browser, `topup_proofs` review and delete.
+5. **Vibe Coding Kit output quality.** The human's word is "kurang maksimal".
+   Not yet diagnosed — read `src/lib/prompts/vibe.ts` against a real run before
+   changing anything.
+6. **Premium UI pass.** Dashboard still needs the "why this is useful" copy —
+   gaul, humble, no swipes at anyone. Admin ringkasan/topups/vouchers and
+   profile/topup/onboarding screens still carry the old agent's layouts.
+   `ui-ux-pro-max` suggested accent `#DC2626`; it was **rejected** — AGENTS.md
+   §2 forbids colours not in `DESIGN.md`. Ember stays.
 
 ## STILL OPEN FROM BEFORE
 
