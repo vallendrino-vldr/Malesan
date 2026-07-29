@@ -3,6 +3,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { generateStream, parseJson } from "@/lib/gemini/client";
+import { getCost, isModuleEnabled, getModel } from "@/lib/config";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import {
   VIBE_KIT_SCHEMA,
@@ -70,12 +71,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Cost and availability come from app_config, same as /api/generate, so this
+  // module is not the one place pricing still needs a deploy to change.
+  if (!(await isModuleEnabled("vibe"))) {
+    return Response.json(
+      { error: "Vibe Coding lagi dimatiin sementara. Coba lagi nanti ya." },
+      { status: 503 },
+    );
+  }
+  const cost = await getCost("vibe");
+
   // Spend first, with a ref, so a failure can be reversed exactly.
   const spendRef = crypto.randomUUID();
   try {
     await serviceRole.rpc("spend_credits", {
       p_user: user.id,
-      p_amount: VIBE_KIT_CREDIT_COST,
+      p_amount: cost,
       p_reason: "generate_vibe_kit",
       p_ref: spendRef,
     });
@@ -84,7 +95,7 @@ export async function POST(request: NextRequest) {
     if (msg.includes("INSUFFICIENT_CREDITS")) {
       return Response.json(
         {
-          error: `Vibe Kit butuh ${VIBE_KIT_CREDIT_COST} credit dan punya lo kurang. Besok refill jam 00:00, atau top up biar gak nunggu.`,
+          error: `Vibe Kit butuh ${cost} credit dan punya lo kurang. Besok refill jam 00:00, atau top up biar gak nunggu.`,
         },
         { status: 402 },
       );
@@ -107,6 +118,7 @@ export async function POST(request: NextRequest) {
         for await (const chunk of generateStream({
           prompt: buildVibeKitPrompt({ idea, stack, audience }, dnaLang),
           tier: profile.is_pro ? "pro" : "free",
+          model: await getModel(profile.is_pro ? "pro" : "free"),
           schema: VIBE_KIT_SCHEMA as unknown as Record<string, unknown>,
           byokKey,
         })) {
@@ -128,10 +140,8 @@ export async function POST(request: NextRequest) {
             module: "vibe_kit",
             input: { idea, stack, audience },
             output: parsed as unknown as Json,
-            credits_spent: VIBE_KIT_CREDIT_COST,
-            model_used: profile.is_pro
-              ? process.env.GEMINI_MODEL_PRO
-              : process.env.GEMINI_MODEL_FREE,
+            credits_spent: cost,
+            model_used: await getModel(profile.is_pro ? "pro" : "free"),
           })
           .select("id")
           .single();

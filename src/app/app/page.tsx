@@ -8,6 +8,7 @@ import { IdeHariIni } from "@/components/IdeHariIni";
 import { IdeaEngine } from "@/components/IdeaEngine";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
+import { getCost } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -118,20 +119,37 @@ export default async function AppPage({
           </section>
 
           <div className="grid gap-3">
+            {/* Costs are admin-editable now, so reading them from config keeps
+                the tile from advertising a price that is no longer charged. */}
             <ModuleTile
               href="/app?tab=studio&m=ide"
               title="Ide Hari Ini"
               body="Gak usah ngetik apa-apa. Langsung dapet 3 ide buat hari ini."
-              cost={1}
+              cost={await getCost("ide_hari_ini")}
               primary
             />
             <ModuleTile
               href="/app?tab=studio&m=idea"
               title="Idea Engine"
               body="Punya ide mentah? Lempar, balik jadi 5 yang udah mateng."
-              cost={1}
+              cost={await getCost("idea")}
             />
           </div>
+
+          {/* The dashboard never said what the product is good for. Three lines,
+              no scroll added, and no swipes at anything else. */}
+          <ul className="flex items-center justify-between gap-1 rounded-xl border border-hairline bg-surface/50 px-3 py-2.5">
+            {[
+              { k: "Nyambung", v: "Ngikutin gaya lo" },
+              { k: "Update", v: "Tau tren hari ini" },
+              { k: "Kelar", v: "Sampai jadi script" },
+            ].map((x) => (
+              <li key={x.k} className="min-w-0 flex-1 text-center">
+                <p className="eyebrow text-ember">{x.k}</p>
+                <p className="mt-0.5 truncate text-[10.5px] leading-snug text-muted">{x.v}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -307,3 +325,4 @@ function greet() {
   if (wib < 18) return "Sore";
   return "Malam";
 }
+
