@@ -219,8 +219,12 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         })}
       </div>
 
-      {/* ---------- md and up: the full board ---------- */}
-      <div className="hidden gap-4 md:flex">
+      {/* ---------- md and up: the full board ----------
+          `min-w` is load-bearing. Without it `flex-1` lets four columns shrink
+          to whatever the container allows, and at 768px that is ~170px each —
+          narrow enough that every card wrapped to one word per line. The board
+          scrolls sideways instead of crushing its own contents. */}
+      <div className="hidden gap-3 overflow-x-auto pb-2 md:flex">
         {COLUMNS.map((col) => {
           const list = cards.filter((c) => c.status === col.id);
           return (
@@ -229,7 +233,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
               ref={(el) => {
                 colRefs.current[col.id] = el;
               }}
-              className="flex max-h-[70vh] min-w-0 flex-1 flex-col rounded-xl border border-hairline bg-surface/50 p-4"
+              className="flex max-h-[72vh] w-[272px] shrink-0 flex-col rounded-xl border border-hairline bg-surface/50 p-3.5"
             >
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="font-display font-semibold text-ink">{col.label}</h3>

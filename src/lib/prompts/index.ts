@@ -135,6 +135,14 @@ function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string
   let context = `Lo adalah otak kreatif di balik Malesan — asisten buat kreator konten Indonesia.\n`;
 
   if (dna) {
+    // The onboarding flow spends 2 credits distilling everything above into one
+    // sharp sentence, stores it as `ai_persona_summary` — and then no prompt
+    // ever read it. It is the single most useful line in the profile, so it
+    // leads, before the raw fields it was derived from.
+    if (dna.ai_persona_summary) {
+      context += `\nPERSONA KREATOR INI (pegang ini kuat-kuat):\n${dna.ai_persona_summary}\n`;
+    }
+
     context += `\nPROFIL KREATOR:\n`;
     if (dna.niche) context += `- Niche: ${dna.niche}\n`;
     if (dna.industry) context += `- Bidang/industri: ${dna.industry}\n`;
@@ -182,6 +190,11 @@ function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string
     for (const t of trends) {
       context += `- ${t.title} (${t.category}): ${t.summary} -> Angle: ${t.content_angle}\n`;
     }
+    // Trends were being injected with no instruction on how to use them, so the
+    // model treated them as topics to copy. They are context, not a brief.
+    context += `Pakai tren cuma kalau nyambung sama niche dia. Maksa nyambungin tren`;
+    context += ` yang gak relevan itu ketahuan banget dan bikin kontennya murahan.`;
+    context += ` Kalau gak ada yang cocok, abaikan aja.\n`;
   }
 
   context += `\nATURAN:\n`;

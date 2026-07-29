@@ -117,8 +117,16 @@ export function AppShell({
       </header>
 
       {/* ---------- content: the only scrollable region ---------- */}
+      {/* The pipeline is a four-column board; 3xl leaves each column ~170px,
+          which is where the desktop layout collapsed into one word per line. */}
       <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="mx-auto w-full max-w-3xl px-4 py-4">{children}</div>
+        <div
+          className={`mx-auto w-full px-4 py-4 ${
+            active === "pipeline" ? "max-w-6xl" : "max-w-3xl"
+          }`}
+        >
+          {children}
+        </div>
       </main>
 
       {/* ---------- bottom tab bar ---------- */}
