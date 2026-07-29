@@ -321,6 +321,34 @@ export async function setConfig(key: string, value: unknown) {
   revalidatePath("/admin/config");
 }
 
+/**
+ * Short-lived signed URL for a transfer proof.
+ *
+ * The bucket was switched from public to private during the schema repair —
+ * these are bank-transfer screenshots with account numbers on them — but the
+ * approval screen kept rendering `proof_url` directly. That URL stopped
+ * resolving the moment the bucket went private, so the admin has been
+ * approving payments against a broken image.
+ *
+ * Five minutes is enough to look at it and not much else.
+ */
+export async function signedProofUrl(proofUrl: string): Promise<string | null> {
+  await verifyAdmin();
+
+  const parts = proofUrl.split("/topup_proofs/");
+  if (parts.length !== 2) return null;
+
+  const { data, error } = await createServiceRoleClient()
+    .storage.from("topup_proofs")
+    .createSignedUrl(parts[1], 300);
+
+  if (error) {
+    console.error("signed url failed", error);
+    return null;
+  }
+  return data?.signedUrl ?? null;
+}
+
 /** Recent admin activity, newest first. Powers the trail shown in the panel. */
 export async function recentAuditLog(limit = 30) {
   await verifyAdmin();
