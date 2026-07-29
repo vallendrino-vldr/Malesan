@@ -257,3 +257,71 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   IDLE 3D — "the ember that cannot be bothered"
+   ============================================================
+   CSS 3D transforms only. DESIGN.md §1 rules out WebGL scenes because they
+   contradict the speed requirement on the mid-range Android phones this market
+   actually uses — this costs one compositor layer and no JavaScript.
+
+   The motion is deliberately slow: 28-44s per revolution. Anything faster reads
+   as "loading" or "busy", which is the opposite of the brand. It should look
+   alive but unhurried. Males, not mati.
+   ============================================================ */
+
+@keyframes ml-orbit-a {
+  from { transform: rotateX(68deg) rotateZ(0deg); }
+  to   { transform: rotateX(68deg) rotateZ(360deg); }
+}
+@keyframes ml-orbit-b {
+  from { transform: rotateX(62deg) rotateY(28deg) rotateZ(360deg); }
+  to   { transform: rotateX(62deg) rotateY(28deg) rotateZ(0deg); }
+}
+@keyframes ml-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.95; transform: scale(1.06); }
+}
+@keyframes ml-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -6px, 0); }
+}
+
+@layer utilities {
+  .ambient-idle {
+    perspective: 520px;
+    transform-style: preserve-3d;
+  }
+  .ambient-idle__ring {
+    border-radius: 9999px;
+    border: 1px solid color-mix(in oklab, var(--color-ember) 26%, transparent);
+    animation: ml-orbit-a 34s linear infinite;
+  }
+  .ambient-idle__ring--b {
+    border-color: color-mix(in oklab, var(--color-ember-lo) 18%, transparent);
+    animation: ml-orbit-b 44s linear infinite;
+  }
+  .ambient-idle__core {
+    background: radial-gradient(
+      circle at 50% 42%,
+      color-mix(in oklab, var(--color-ember-lo) 85%, transparent),
+      color-mix(in oklab, var(--color-ember) 55%, transparent) 45%,
+      transparent 72%
+    );
+    animation: ml-breathe 7s var(--ease-heat) infinite;
+  }
+  .ambient-idle__shell {
+    animation: ml-drift 11s var(--ease-heat) infinite;
+  }
+}
+
+/* Reduced motion: the thing stops moving but stays visible. Removing it
+   entirely would leave a hole in the layout. */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-idle__ring,
+  .ambient-idle__ring--b,
+  .ambient-idle__core,
+  .ambient-idle__shell {
+    animation: none !important;
+  }
+}
