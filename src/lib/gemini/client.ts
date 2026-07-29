@@ -33,6 +33,8 @@ export type GenerateArgs = {
   tier?: Tier;
   /** A user's own key. When present the shared pool is bypassed entirely. */
   byokKey?: string;
+  /** Explicit model id. Overrides the tier lookup — set from app_config. */
+  model?: string;
   /** Gemini responseSchema. Supplying one makes the model emit strict JSON. */
   schema?: Record<string, unknown>;
   signal?: AbortSignal;
@@ -138,7 +140,10 @@ async function withRotation(
 
 /** One-shot generation. Returns the raw model text. */
 export async function generate(args: GenerateArgs): Promise<string> {
-  const model = modelFor(args.tier ?? "free");
+  // `args.model` lets app_config drive the choice at runtime; without it we
+  // fall back to modelFor(), which reads env. Kept as an override rather than
+  // a replacement so this module stays usable with no database.
+  const model = args.model ?? modelFor(args.tier ?? "free");
   const { res, key } = await withRotation(model, args, false);
   const json = await res.json();
 
@@ -166,7 +171,10 @@ export async function generate(args: GenerateArgs): Promise<string> {
 export async function* generateStream(
   args: GenerateArgs,
 ): AsyncGenerator<string, void, unknown> {
-  const model = modelFor(args.tier ?? "free");
+  // `args.model` lets app_config drive the choice at runtime; without it we
+  // fall back to modelFor(), which reads env. Kept as an override rather than
+  // a replacement so this module stays usable with no database.
+  const model = args.model ?? modelFor(args.tier ?? "free");
   const { res, key } = await withRotation(model, args, true);
 
   const reader = res.body?.getReader();

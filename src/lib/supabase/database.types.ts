@@ -595,6 +595,32 @@ export type Database = {
           }
         ];
       };
+      // Added by migration `app_config`. Verified present before being written
+      // here — see the note on creator_dna above.
+      app_config: {
+        Row: {
+          key: string;
+          value: Json;
+          description: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          key: string;
+          value: Json;
+          description?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          key?: string;
+          value?: Json;
+          description?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       audit_log: {
         Row: {
           id: number;

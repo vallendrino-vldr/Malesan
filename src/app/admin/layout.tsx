@@ -46,6 +46,13 @@ const LINKS = [
       <path d="M3 7h18v3a2 2 0 0 0 0 4v3H3v-3a2 2 0 0 0 0-4V7Zm6 2v6h2V9H9Z" />
     ),
   },
+  {
+    href: "/admin/config",
+    label: "Otak AI",
+    icon: (
+      <path d="M12 2a5 5 0 0 0-5 5v1.1A4 4 0 0 0 5 15v2a5 5 0 0 0 5 5h4a5 5 0 0 0 5-5v-2a4 4 0 0 0-2-6.9V7a5 5 0 0 0-5-5Zm0 2a3 3 0 0 1 3 3v2h2a2 2 0 0 1 2 2v2a3 3 0 0 1-3 3h-4a3 3 0 0 1-3-3v-2a2 2 0 0 1 2-2h2V7a3 3 0 0 1 1-3Z" />
+    ),
+  },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

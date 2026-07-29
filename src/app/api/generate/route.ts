@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
+import { getCost, isModuleEnabled, getModel } from "@/lib/config";
 import { generateStream } from "@/lib/gemini/client";
 import { processReferral } from "@/app/actions/payments";
 import {
@@ -108,10 +109,19 @@ export async function POST(request: NextRequest) {
       .order("captured_at", { ascending: false })
       .limit(5);
     
-    let cost = 1;
-    if (module === "hook") cost = 2;
-    if (module === "script") cost = 4;
-    // ide_hari_ini, idea, repurpose all cost 1 credit
+    // Cost and availability come from app_config now, so pricing changes and
+    // taking a broken module out of service no longer need a deploy. Both fall
+    // back to the previous hardcoded values if the table is unreachable.
+    if (!(await isModuleEnabled(module))) {
+      return new Response(
+        JSON.stringify({
+          error: "Modul ini lagi dimatiin sementara. Coba lagi nanti ya.",
+        }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    const cost = await getCost(module);
 
     // Every spend carries a ref so a failed generation can be reversed exactly.
     // Without it a refund has to guess which bucket the credits came from, which
@@ -174,6 +184,7 @@ export async function POST(request: NextRequest) {
           const generator = generateStream({
             prompt: promptText,
             tier: profile.is_pro ? "pro" : "free",
+            model: await getModel(profile.is_pro ? "pro" : "free"),
             schema: schema,
             // byokKey: ... we'd decrypt here, but crypto module isn't fully implemented in this PRD section. Leaving out BYOK key decryption for now.
           });
@@ -240,7 +251,7 @@ export async function POST(request: NextRequest) {
                 platform: platform || null,
                 input: input || null,
                 output: parsed,
-                model_used: profile.is_pro ? process.env.GEMINI_MODEL_PRO : process.env.GEMINI_MODEL_FREE,
+                model_used: await getModel(profile.is_pro ? "pro" : "free"),
                 credits_spent: cost,
               })
               .select()

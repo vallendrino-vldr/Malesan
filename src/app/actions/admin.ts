@@ -2,6 +2,7 @@
 
 import { createServiceRoleClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { invalidateConfigCache } from "@/lib/config";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -284,6 +285,40 @@ export async function injectCredits(userId: string, amount: number, bucket: "fre
 
   await audit(adminId, "credits.grant", userId, { amount, bucket, reason });
   revalidatePath("/admin/users");
+}
+
+/**
+ * Write one `app_config` row. Values are JSON, so the caller decides shape —
+ * but the key must already exist. Creating keys from the UI would let a typo
+ * silently produce a row nothing reads, which looks like a saved setting that
+ * does nothing.
+ */
+export async function setConfig(key: string, value: unknown) {
+  const adminId = await verifyAdmin();
+  const serviceRole = createServiceRoleClient();
+
+  const { data: existing } = await serviceRole
+    .from("app_config")
+    .select("key")
+    .eq("key", key)
+    .single();
+
+  if (!existing) throw new Error(`Setting "${key}" gak dikenal.`);
+
+  const { error } = await serviceRole
+    .from("app_config")
+    .update({
+      value: value as never,
+      updated_at: new Date().toISOString(),
+      updated_by: adminId,
+    })
+    .eq("key", key);
+
+  if (error) throw new Error(error.message);
+
+  await audit(adminId, "config.update", key, { value: JSON.stringify(value) });
+  invalidateConfigCache();
+  revalidatePath("/admin/config");
 }
 
 /** Recent admin activity, newest first. Powers the trail shown in the panel. */
