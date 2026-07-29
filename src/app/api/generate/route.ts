@@ -5,6 +5,7 @@ import { getCost, isModuleEnabled, getModel } from "@/lib/config";
 import { generateStream } from "@/lib/gemini/client";
 import { processReferral } from "@/app/actions/payments";
 import {
+  type LearnedNote,
   buildIdeHariIniPrompt,
   buildIdeaEnginePrompt,
   buildHookLabPrompt,
@@ -108,6 +109,38 @@ export async function POST(request: NextRequest) {
       .eq("is_active", true)
       .order("captured_at", { ascending: false })
       .limit(5);
+
+    // Feedback loop. Ratings have been collected on every generation since the
+    // ledger work and never read back — a survey rather than a loop. Pull this
+    // creator's rated history so the prompt can learn from their own results
+    // instead of starting cold every time.
+    const { data: rated } = await serviceRole
+      .from("generations")
+      .select("module, output, performance_rating")
+      .eq("user_id", user.id)
+      .not("performance_rating", "is", null)
+      .order("performance_rating", { ascending: false })
+      .limit(12);
+
+    const learned: LearnedNote[] = (rated ?? [])
+      .map((r) => {
+        const o = r.output as Record<string, unknown> | null;
+        // Every module shapes its output differently; take whatever reads as a
+        // headline and fall back to the raw JSON's first readable string.
+        const ideas = o?.ideas as { title?: string }[] | undefined;
+        const hooks = o?.hooks as { text?: string }[] | undefined;
+        const gist =
+          ideas?.[0]?.title ??
+          hooks?.[0]?.text ??
+          (typeof o?.caption === "string" ? o.caption : "") ??
+          "";
+        return {
+          module: r.module as string,
+          rating: r.performance_rating as number,
+          gist: String(gist).slice(0, 140),
+        };
+      })
+      .filter((l) => l.gist.trim());
     
     // Cost and availability come from app_config now, so pricing changes and
     // taking a broken module out of service no longer need a deploy. Both fall
@@ -154,19 +187,19 @@ export async function POST(request: NextRequest) {
     let schema = {};
 
     if (module === "ide_hari_ini") {
-      promptText = buildIdeHariIniPrompt(dna, trends || []);
+      promptText = buildIdeHariIniPrompt(dna, trends || [], learned);
       schema = IDE_HARI_INI_SCHEMA;
     } else if (module === "idea") {
-      promptText = buildIdeaEnginePrompt(input!.text, dna, []);
+      promptText = buildIdeaEnginePrompt(input!.text, dna, trends || [], learned);
       schema = IDEA_ENGINE_SCHEMA;
     } else if (module === "hook") {
-      promptText = buildHookLabPrompt(input!.idea, platform || "tiktok", dna, []);
+      promptText = buildHookLabPrompt(input!.idea, platform || "tiktok", dna, trends || [], learned);
       schema = HOOK_LAB_SCHEMA;
     } else if (module === "script") {
-      promptText = buildScriptBuilderPrompt(input!.idea, input!.hook, platform || "tiktok", input!.duration, dna, []);
+      promptText = buildScriptBuilderPrompt(input!.idea, input!.hook, platform || "tiktok", input!.duration, dna, trends || [], learned);
       schema = SCRIPT_BUILDER_SCHEMA;
     } else if (module === "repurpose") {
-      promptText = buildRepurposePrompt(input!.source_content, dna, []);
+      promptText = buildRepurposePrompt(input!.source_content, dna, trends || [], learned);
       schema = REPURPOSE_SCHEMA;
     }
 

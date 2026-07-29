@@ -131,7 +131,47 @@ export const REPURPOSE_SCHEMA = {
   // The PRD says "Output keyed by platform: tiktok, instagram, youtube, x, threads." Let's require all 5.
 };
 
-function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string {
+/**
+ * One past generation the creator rated, with its score.
+ *
+ * `performance_rating` has been collected on every pipeline card and generation
+ * since the ledger work and nothing ever read it. Ratings that only travel one
+ * way are a survey, not a feedback loop — this is what turns them into one.
+ */
+export type LearnedNote = {
+  module: string;
+  rating: number;
+  gist: string;
+};
+
+/**
+ * Both ends matter. Showing only winners teaches the model what to imitate but
+ * not what to avoid, and a creator's 1-star posts are usually more diagnostic
+ * than their 5-star ones.
+ */
+function buildLearned(learned: LearnedNote[]): string {
+  const good = learned.filter((l) => l.rating >= 4).slice(0, 4);
+  const bad = learned.filter((l) => l.rating <= 2).slice(0, 3);
+  if (!good.length && !bad.length) return "";
+
+  let s = `\nAPA YANG UDAH KEBUKTI BUAT KREATOR INI:\n`;
+  if (good.length) {
+    s += `Yang perform bagus (dia kasih rating tinggi):\n`;
+    for (const g of good) s += `- [${g.module}] ${g.gist}\n`;
+  }
+  if (bad.length) {
+    s += `Yang gagal (rating rendah) — jangan diulang polanya:\n`;
+    for (const b of bad) s += `- [${b.module}] ${b.gist}\n`;
+  }
+  s += `Tiru polanya, bukan topiknya. Jangan bikin ulang konten yang sama.\n`;
+  return s;
+}
+
+function buildSharedContext(
+  dna: CreatorDna | null,
+  trends: TrendCard[],
+  learned?: LearnedNote[],
+): string {
   let context = `Lo adalah otak kreatif di balik Malesan — asisten buat kreator konten Indonesia.\n`;
 
   if (dna) {
@@ -197,6 +237,8 @@ function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string
     context += ` Kalau gak ada yang cocok, abaikan aja.\n`;
   }
 
+  if (learned?.length) context += buildLearned(learned);
+
   context += `\nATURAN:\n`;
   context += `- Bahasa Indonesia yang natural dan ngobrol, bukan bahasa terjemahan.\n`;
   context += `- Spesifik dan bisa langsung dieksekusi. Jangan kasih saran umum.\n`;
@@ -219,7 +261,7 @@ function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string
   return context;
 }
 
-export function buildIdeHariIniPrompt(dna: CreatorDna | null, trends: TrendCard[]): string {
+export function buildIdeHariIniPrompt(dna: CreatorDna | null, trends: TrendCard[], learned?: LearnedNote[]): string {
   const today = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     year: "numeric",
@@ -227,7 +269,7 @@ export function buildIdeHariIniPrompt(dna: CreatorDna | null, trends: TrendCard[
     day: "numeric",
   }).format(new Date());
 
-  const shared = buildSharedContext(dna, trends);
+  const shared = buildSharedContext(dna, trends, learned);
 
   return `${shared}
 Kreator ini buka aplikasi dan gak tau mau bikin apa hari ini. Tanggal: ${today}.
@@ -254,9 +296,10 @@ JSON:
 export function buildIdeaEnginePrompt(
   userInput: string,
   dna: CreatorDna | null,
-  trends: TrendCard[]
+  trends: TrendCard[],
+  learned?: LearnedNote[]
 ): string {
-  const shared = buildSharedContext(dna, trends);
+  const shared = buildSharedContext(dna, trends, learned);
 
   return `${shared}
 Kreator punya pikiran atau ide kasar ini: "${userInput}"
@@ -324,9 +367,10 @@ export function buildHookLabPrompt(
   ideaOrTopic: string,
   platform: string,
   dna: CreatorDna | null,
-  trends: TrendCard[]
+  trends: TrendCard[],
+  learned?: LearnedNote[]
 ): string {
-  const shared = buildSharedContext(dna, trends);
+  const shared = buildSharedContext(dna, trends, learned);
   return `${shared}
 Bikin 10 hook buat konten ini: ${ideaOrTopic}
 Platform: ${platform || "General"}
@@ -352,9 +396,10 @@ export function buildScriptBuilderPrompt(
   platform: string,
   duration: string,
   dna: CreatorDna | null,
-  trends: TrendCard[]
+  trends: TrendCard[],
+  learned?: LearnedNote[]
 ): string {
-  const shared = buildSharedContext(dna, trends);
+  const shared = buildSharedContext(dna, trends, learned);
   return `${shared}
 Bikin naskah lengkap. Ide: ${idea}. Hook: ${hook}. Platform: ${platform || "General"}.
 Durasi target: ${duration || "pendek"}.
@@ -386,9 +431,10 @@ JSON:
 export function buildRepurposePrompt(
   sourceContent: string,
   dna: CreatorDna | null,
-  trends: TrendCard[]
+  trends: TrendCard[],
+  learned?: LearnedNote[]
 ): string {
-  const shared = buildSharedContext(dna, trends);
+  const shared = buildSharedContext(dna, trends, learned);
   return `${shared}
 Ini ada satu konten mentah atau naskah:
 "${sourceContent}"
