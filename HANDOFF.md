@@ -210,6 +210,29 @@ session that the Gemini layer works on a live route.
 
 ---
 
+## WHERE THE PRODUCT STILL FEELS THIN — THE HUMAN'S STANDING BRIEF
+
+Verbatim intent: it must feel expensive and smart even though it is free, on
+every device. Concrete gaps still open, roughly in value order:
+
+1. **Prompt intelligence has no feedback loop.** `pipeline_cards.performance_
+   rating` and `generations.performance_rating` are captured and never read.
+   Feeding "here is what scored 4-5 for this creator before" into the shared
+   context is the single biggest remaining quality lever.
+2. **Only 2 of 5 modules are reachable.** Hook Lab, Script Builder and Repurpose
+   exist in `/api/generate` and in the prompt library but have no Studio tile —
+   they can only be triggered from a pipeline card. The dashboard advertises two
+   things while the backend supports five.
+3. **No generation history.** Every generation is persisted to `generations` and
+   there is no screen that lists them. Users cannot find yesterday's work.
+4. **`/admin/vouchers`** is the last page on the old layout, still using
+   `prompt()`.
+5. **Admin gaps** the human asked for that are not built: impersonate-user
+   (read-only), broadcast banner, per-user feature flags, editable prompts from
+   the panel, a generations browser with filters.
+6. **ScriptView inside a 272px kanban column** is legible but cramped. A detail
+   modal on desktop would be better than nested scrolling.
+
 ## TRAPS THIS SESSION HIT — DO NOT REDISCOVER THEM
 
 1. **`tsc --noEmit` passes on unbalanced JSX.** The dev server's swc parse and
