@@ -9,7 +9,7 @@ import { IdeaEngine } from "@/components/IdeaEngine";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
-import { ModuleRunner, MODULE_SPECS } from "@/components/ModuleRunner";
+import { ModuleRunner } from "@/components/ModuleRunner";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -187,7 +187,8 @@ export default async function AppPage({
       {tab === "studio" && (mod === "hook" || mod === "script" || mod === "repurpose") && (
         <div className="reveal space-y-4">
           <BackToStudio />
-          <ModuleRunner spec={{ ...MODULE_SPECS[mod], cost: await getCost(mod) }} />
+          {/* Primitives only across the boundary — see the note in ModuleRunner. */}
+          <ModuleRunner moduleKey={mod} cost={await getCost(mod)} />
         </div>
       )}
 

@@ -110,7 +110,27 @@ const PLATFORMS = ["tiktok", "instagram", "youtube", "x", "threads"] as const;
 type HookItem = { text?: string; pattern?: string; score?: number; why?: string };
 type RepurposeOut = Record<string, string>;
 
-export function ModuleRunner({ spec }: { spec: ModuleSpec }) {
+/**
+ * Takes a key, not a spec.
+ *
+ * The first version accepted the whole `ModuleSpec` and the server component
+ * built it with `{...MODULE_SPECS[mod], cost}`. That cannot work: when a server
+ * component imports from a `"use client"` module it receives a client
+ * *reference*, not the object, so the spread produced `{cost}` and nothing
+ * else — `spec.fields` was undefined and the page threw on first render.
+ *
+ * Only serialisable primitives cross the boundary now. The spec is looked up on
+ * the client, where it actually exists.
+ */
+export function ModuleRunner({
+  moduleKey,
+  cost,
+}: {
+  moduleKey: ModuleSpec["key"];
+  cost: number;
+}) {
+  const base = MODULE_SPECS[moduleKey];
+  const spec: ModuleSpec | null = base ? { ...base, cost } : null;
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({});
   const [platform, setPlatform] = useState<string>("tiktok");
@@ -118,13 +138,16 @@ export function ModuleRunner({ spec }: { spec: ModuleSpec }) {
   const [error, setError] = useState("");
   const [out, setOut] = useState<unknown>(null);
 
-  const missing = spec.fields.filter((f) => f.required && !values[f.name]?.trim());
+  // Never throw on a bad key again — an unknown module renders a message, not
+  // a red error overlay over the whole app.
+  const missing = (spec?.fields ?? []).filter((f) => f.required && !values[f.name]?.trim());
 
   const run = async () => {
     if (missing.length) {
       setError(`Isi dulu: ${missing.map((f) => f.label).join(", ")}.`);
       return;
     }
+    if (!spec) return;
     setBusy(true);
     setError("");
     setOut(null);
@@ -172,6 +195,14 @@ export function ModuleRunner({ spec }: { spec: ModuleSpec }) {
       setBusy(false);
     }
   };
+
+  if (!spec) {
+    return (
+      <p className="rounded-xl border border-hairline bg-surface px-4 py-6 text-center text-sm text-muted">
+        Modul ini gak ada. Balik ke Studio ya.
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-4">
