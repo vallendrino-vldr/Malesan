@@ -1,8 +1,8 @@
 # HANDOFF
 
 Last updated: 2026-07-29
-Last agent: Claude Code (studio repair, pipeline redesign, code graph, admin batch 1)
-Last commit: `a016081` — feat: admin batch 1
+Last agent: Claude Code (studio repair, pipeline, code graph, admin batch 1, DNA depth)
+Last commit: `3212fc7` — feat: Creator DNA setup asks the questions that matter
 
 ---
 
@@ -79,6 +79,39 @@ The UI ran on `prompt()`/`confirm()`/`alert()` and a table that pushed its
 actions column off-screen on a phone. Replaced with cards + a bottom sheet;
 confirmation is inline and in plain language. Removed the last `divide-zinc-800`.
 
+### The generated script was never rendered
+
+A card in "Siap" said "syuting, posting" and showed nothing to shoot from. Six
+scenes, a CTA, a caption and hashtags were in the row, invisible. New
+`ScriptView`: a **Baca** tab (continuous voice-over, hook → body → CTA →
+closing) and a **Scene** tab (timestamp, spoken, on-screen text, footage), plus
+copy and Markdown download.
+
+### Creator DNA now captures point of view
+
+Migration `creator_dna_depth` adds `work_context` (sendiri | klien | brand),
+`client_brief`, `industry`, `goals`, `persona_style`, `experience_level`,
+`content_pillars`, `posting_frequency`, `reference_creators`, `humor_level`.
+
+`buildSharedContext` switches narrative POV on `work_context` — "gue" for a
+personal brand, "kami" in-house, behind-the-camera for client work. Previously
+everything defaulted to first-person-owner, so client work read wrong in a way
+tone tuning could not fix.
+
+Prompts also gained an explicit anti-AI-voice section naming the tells (banned
+opener phrases, no definition intros, varied rhythm, concrete detail, no
+emoji-as-content, no lecturing). Asking for "natural" does not work; naming the
+list does.
+
+The onboarding form was rebuilt into three steps and now collects all of it,
+with a completeness meter counting exactly the fields that reach the prompt.
+
+### Two more instances of the "guess the refund bucket" bug
+
+`/api/onboarding` refunded a failed DNA analysis with `grant_credits` into
+`free`. Now carries a ref and calls `refund_credits`. **If you find another
+`grant_credits` used as a refund anywhere, it is the same bug.**
+
 ### `trends` is no longer empty
 
 Ran `/api/cron/trends` for real: **5 active rows**. Every prompt had been
@@ -114,6 +147,13 @@ session that the Gemini layer works on a live route.
 
 1. Confirm Ide Hari Ini, Idea Engine and pipeline hook→script actually complete
    and deduct credits, on a phone. Still never observed by an agent.
+1b. **Admin UI is still the worst surface in the product.** The human's words:
+   the ringkasan page wastes the screen on three giant stacked stat cards, and
+   the bottom nav "ga pantes buat disentuh" — its labels sit under the browser
+   chrome because the admin content region scrolls the page rather than itself.
+   `/admin`, `/admin/topups`, `/admin/vouchers` still carry the old agent's
+   layouts; only `/admin/users` has been rebuilt. Fix the nav first — it is the
+   thing being touched on every visit.
 2. **Admin batch 2 — AI control.** Needs an `app_config` table first: model per
    tier, key rotation, per-module credit cost, editable prompts. All hardcoded
    in env today. `verifyAdmin()` is the only gate on every admin action —
