@@ -11,6 +11,7 @@ import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
 import { ModuleRunner } from "@/components/ModuleRunner";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
+import { RefreshButton } from "@/components/RefreshButton";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -203,21 +204,21 @@ export default async function AppPage({
 
       {tab === "studio" && mod === "ide" && (
         <div className="reveal space-y-4">
-          <BackToStudio />
+          <ModuleBar />
           <IdeHariIni />
         </div>
       )}
 
       {tab === "studio" && mod === "idea" && (
         <div className="reveal space-y-4">
-          <BackToStudio />
+          <ModuleBar />
           <IdeaEngine />
         </div>
       )}
 
       {tab === "studio" && (mod === "hook" || mod === "script" || mod === "repurpose") && (
         <div className="reveal space-y-4">
-          <BackToStudio />
+          <ModuleBar />
           {/* Primitives only across the boundary — see the note in ModuleRunner. */}
           <ModuleRunner moduleKey={mod} cost={await getCost(mod)} />
         </div>
@@ -317,17 +318,28 @@ function MiniTile({ href, title, cost }: { href: string; title: string; cost: nu
   );
 }
 
-function BackToStudio() {
+/**
+ * Back and refresh as a matched pair.
+ *
+ * Back was a bare text link with no visual weight and there was no refresh at
+ * all — on an installed PWA there is no browser chrome, so a stale screen had
+ * no way out but closing the app. Both are pill buttons now, same height, same
+ * border, sitting on one row.
+ */
+function ModuleBar() {
   return (
-    <Link
-      href="/app?tab=studio"
-      className="inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink"
-    >
-      <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
-        <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
-      </svg>
-      Balik ke Studio
-    </Link>
+    <div className="flex items-center justify-between">
+      <Link
+        href="/app?tab=studio"
+        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-[12.5px] font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
+      >
+        <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
+          <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
+        </svg>
+        Balik
+      </Link>
+      <RefreshButton />
+    </div>
   );
 }
 
