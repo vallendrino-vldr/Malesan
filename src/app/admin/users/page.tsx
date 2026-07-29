@@ -1,126 +1,499 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { banUser, unbanUser, injectCredits } from "@/app/actions/admin";
+import {
+  banUser,
+  unbanUser,
+  injectCredits,
+  setProStatus,
+  setAdminRole,
+  deleteUser,
+} from "@/app/actions/admin";
+
+/**
+ * User control.
+ *
+ * The previous version drove every destructive action through `prompt()`,
+ * `confirm()` and `alert()`. Those are the browser's own dialogs: unstyleable,
+ * ignorable by the browser, blocked outright in some mobile contexts, and they
+ * look nothing like the product. Banning someone and injecting credits ran
+ * through a chain of three of them with no way to review before committing.
+ *
+ * It also rendered one wide table inside `overflow-x-auto`, so on a phone the
+ * actions column sat off-screen — the controls existed and could not be
+ * reached. And it still carried `divide-zinc-800`, a cool grey on a warm
+ * palette, which DESIGN.md rules out.
+ *
+ * Now: cards on phones, a table from `md` up, and one bottom sheet that shows
+ * the whole user and every action with its consequence spelled out.
+ */
+
+type Profile = {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  is_pro: boolean;
+  is_banned: boolean;
+  ban_reason: string | null;
+  credits_free: number;
+  credits_paid: number;
+  created_at: string;
+};
+
+const fmtDate = (s: string) =>
+  new Date(s).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Profile | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [search]);
-
-  async function fetchUsers() {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     const supabase = createClient();
-    
     let query = supabase
       .from("profiles")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(50);
-      
-    if (search) {
-      query = query.ilike("email", `%${search}%`);
-    }
-
+    if (search.trim()) query = query.ilike("email", `%${search.trim()}%`);
     const { data } = await query;
-    setUsers(data || []);
+    setUsers((data as Profile[]) ?? []);
     setLoading(false);
-  }
+  }, [search]);
 
-  async function handleBan(id: string) {
-    const reason = prompt("Alasan ban:");
-    if (reason) {
-      await banUser(id, reason);
-      fetchUsers();
-    }
-  }
+  useEffect(() => {
+    const t = setTimeout(fetchUsers, 250); // debounce the search field
+    return () => clearTimeout(t);
+  }, [fetchUsers]);
 
-  async function handleUnban(id: string) {
-    if (confirm("Yakin mau unban user ini?")) {
-      await unbanUser(id);
-      fetchUsers();
-    }
-  }
-
-  async function handleInject(id: string) {
-    const amountStr = prompt("Jumlah credit (bisa minus):");
-    if (!amountStr) return;
-    const amount = parseInt(amountStr);
-    if (isNaN(amount)) return alert("Harus angka");
-    
-    const bucket = confirm("Inject ke paid bucket? (OK = Paid, Cancel = Free)") ? "paid" : "free";
-    const reason = prompt("Alasan:") || "admin_injection";
-
-    try {
-      await injectCredits(id, amount, bucket, reason);
-      alert("Credit injected!");
-      fetchUsers();
-    } catch (e: any) {
-      alert("Error: " + e.message);
-    }
-  }
+  const refresh = async () => {
+    await fetchUsers();
+    setSelected(null);
+  };
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-white mb-6">Users & Bans</h1>
+    <div className="space-y-4">
+      <header>
+        <h1 className="font-display text-xl font-bold text-ink">User</h1>
+        <p className="mt-1 text-sm text-muted">
+          Tap satu user buat atur kredit, status, dan akses.
+        </p>
+      </header>
 
-      <div className="mb-6">
-        <input 
-          type="text" 
-          placeholder="Cari email..." 
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full max-w-md bg-surface border border-hairline rounded-lg px-4 py-2 text-white focus:outline-none focus:border-success"
-        />
-      </div>
+      <input
+        type="search"
+        placeholder="Cari email..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        aria-label="Cari user berdasarkan email"
+        className="w-full rounded-xl border border-hairline bg-surface px-4 py-3 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember"
+      />
 
-      <div className="bg-surface border border-hairline rounded-2xl overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-obsidian text-muted text-sm border-b border-hairline">
-            <tr>
-              <th className="px-6 py-3 font-medium">Email</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              <th className="px-6 py-3 font-medium">Credits</th>
-              <th className="px-6 py-3 font-medium">Joined</th>
-              <th className="px-6 py-3 font-medium text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800 text-sm">
-            {loading ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-muted">Loading...</td></tr>
-            ) : users.map(u => (
-              <tr key={u.id} className="text-white hover:bg-surface-raised/50">
-                <td className="px-6 py-4">{u.email}</td>
-                <td className="px-6 py-4">
-                  {u.is_banned ? (
-                    <span className="px-2 py-1 rounded bg-danger/10 text-danger text-xs">Banned: {u.ban_reason}</span>
-                  ) : u.is_pro ? (
-                    <span className="px-2 py-1 rounded bg-success/10 text-success text-xs">Pro</span>
-                  ) : (
-                    <span className="px-2 py-1 rounded bg-surface-raised text-muted text-xs">Free</span>
-                  )}
-                </td>
-                <td className="px-6 py-4">{u.credits_free + u.credits_paid}</td>
-                <td className="px-6 py-4 text-muted">{new Date(u.created_at).toLocaleDateString("id-ID")}</td>
-                <td className="px-6 py-4 text-right flex gap-3 justify-end">
-                  <button onClick={() => handleInject(u.id)} className="text-ember hover:text-ember-lo">
-                    Inject
-                  </button>
-                  {u.is_banned ? (
-                    <button onClick={() => handleUnban(u.id)} className="text-success hover:text-success">Unban</button>
-                  ) : (
-                    <button onClick={() => handleBan(u.id)} className="text-danger hover:text-danger">Ban</button>
-                  )}
-                </td>
-              </tr>
+      {loading ? (
+        <div className="space-y-2" aria-busy="true">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl border border-hairline bg-surface/60" />
+          ))}
+        </div>
+      ) : users.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-hairline px-4 py-10 text-center">
+          <p className="text-sm text-muted">
+            {search ? `Gak ada user yang cocok sama “${search}”.` : "Belum ada user."}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* phones */}
+          <div className="space-y-2 md:hidden">
+            {users.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => setSelected(u)}
+                className="surface-card flex w-full cursor-pointer items-center gap-3 rounded-xl p-3 text-left transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/30"
+              >
+                <Avatar user={u} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-ink">
+                    {u.display_name || u.email}
+                  </p>
+                  <p className="truncate text-[11px] text-muted">{u.email}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    <Badges u={u} />
+                  </div>
+                </div>
+                <span className="shrink-0 text-right">
+                  <span className="block font-mono text-sm text-ember">
+                    {u.credits_free + u.credits_paid}
+                  </span>
+                  <span className="eyebrow text-muted">kredit</span>
+                </span>
+              </button>
             ))}
-          </tbody>
-        </table>
+          </div>
+
+          {/* md and up */}
+          <div className="hidden overflow-hidden rounded-2xl border border-hairline bg-surface md:block">
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-hairline bg-obsidian text-muted">
+                <tr>
+                  <th className="px-5 py-3 font-medium">User</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 font-medium">Kredit</th>
+                  <th className="px-5 py-3 font-medium">Gabung</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-hairline">
+                {users.map((u) => (
+                  <tr
+                    key={u.id}
+                    onClick={() => setSelected(u)}
+                    className="cursor-pointer text-ink transition-colors hover:bg-surface-raised/50"
+                  >
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar user={u} />
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{u.display_name || "—"}</p>
+                          <p className="truncate text-[11px] text-muted">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        <Badges u={u} />
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 font-mono text-ember">
+                      {u.credits_free + u.credits_paid}
+                    </td>
+                    <td className="px-5 py-3 text-muted">{fmtDate(u.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {selected && (
+        <UserSheet user={selected} onClose={() => setSelected(null)} onDone={refresh} />
+      )}
+    </div>
+  );
+}
+
+function Avatar({ user }: { user: Profile }) {
+  return (
+    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-hairline bg-surface-raised">
+      {user.avatar_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={user.avatar_url} alt="" className="size-full object-cover" />
+      ) : (
+        <span className="font-display text-xs font-bold text-muted">
+          {(user.display_name || user.email).charAt(0).toUpperCase()}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function Badges({ u }: { u: Profile }) {
+  return (
+    <>
+      {u.is_banned && (
+        <span className="rounded bg-danger/10 px-2 py-0.5 text-[10px] text-danger">Banned</span>
+      )}
+      {u.role === "admin" && (
+        <span className="rounded bg-ember/15 px-2 py-0.5 text-[10px] text-ember">Admin</span>
+      )}
+      <span
+        className={`rounded px-2 py-0.5 text-[10px] ${
+          u.is_pro ? "bg-success/10 text-success" : "bg-surface-raised text-muted"
+        }`}
+      >
+        {u.is_pro ? "Pro" : "Free"}
+      </span>
+    </>
+  );
+}
+
+/** One sheet for the whole user. Every action states what it does before it runs. */
+function UserSheet({
+  user,
+  onClose,
+  onDone,
+}: {
+  user: Profile;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const [amount, setAmount] = useState("");
+  const [bucket, setBucket] = useState<"free" | "paid">("paid");
+  const [reason, setReason] = useState("");
+  const [confirming, setConfirming] = useState<"ban" | "delete" | null>(null);
+
+  const run = async (key: string, fn: () => Promise<void>) => {
+    setBusy(key);
+    setError("");
+    try {
+      await fn();
+      onDone();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Gagal.");
+      setBusy("");
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-obsidian/70 backdrop-blur-sm md:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Atur ${user.email}`}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[88dvh] w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-hairline bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-w-lg md:rounded-2xl"
+      >
+        <div className="flex items-start gap-3">
+          <Avatar user={user} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-display font-bold text-ink">
+              {user.display_name || "Tanpa nama"}
+            </p>
+            <p className="truncate text-xs text-muted">{user.email}</p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Tutup"
+            className="cursor-pointer rounded-full border border-hairline px-2.5 py-1 text-xs text-muted hover:text-ink"
+          >
+            Tutup
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+          <Stat label="Free" value={user.credits_free} />
+          <Stat label="Paid" value={user.credits_paid} />
+          <Stat label="Gabung" value={fmtDate(user.created_at)} small />
+        </div>
+
+        {user.is_banned && user.ban_reason && (
+          <p className="mt-3 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-xs text-danger">
+            Dibanned: {user.ban_reason}
+          </p>
+        )}
+
+        {error && (
+          <p className="mt-3 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-xs text-danger">
+            {error}
+          </p>
+        )}
+
+        {/* ---- credits ---- */}
+        <Section title="Tambah kredit">
+          <p className="mb-2 text-[11px] leading-relaxed text-muted">
+            Cuma bisa nambah, gak bisa ngurangin — biar ledger-nya tetap cocok.
+            Paid gak pernah hangus; free kereset tiap hari.
+          </p>
+          <div className="flex gap-2">
+            <input
+              type="number"
+              min={1}
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Jumlah"
+              aria-label="Jumlah kredit"
+              className="w-24 rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink focus:border-ember focus:outline-none"
+            />
+            <div className="flex overflow-hidden rounded-lg border border-hairline">
+              {(["paid", "free"] as const).map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setBucket(b)}
+                  className={`cursor-pointer px-3 py-2 text-xs font-semibold transition-colors ${
+                    bucket === b ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {b === "paid" ? "Paid" : "Free"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Alasan (masuk audit log)"
+            aria-label="Alasan"
+            className="mt-2 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none"
+          />
+          <Action
+            label={`Tambahin ${amount || "…"} kredit ${bucket}`}
+            busy={busy === "inject"}
+            disabled={!amount || Number(amount) <= 0 || !reason.trim()}
+            onClick={() =>
+              run("inject", () =>
+                injectCredits(user.id, Number(amount), bucket, reason.trim()),
+              )
+            }
+          />
+        </Section>
+
+        {/* ---- tier ---- */}
+        <Section title="Tier">
+          <p className="mb-2 text-[11px] leading-relaxed text-muted">
+            Pro pakai model yang lebih kuat dan pool kuota terpisah.
+          </p>
+          <Action
+            label={user.is_pro ? "Turunin ke Free" : "Naikin ke Pro"}
+            busy={busy === "pro"}
+            onClick={() => run("pro", () => setProStatus(user.id, !user.is_pro))}
+          />
+        </Section>
+
+        {/* ---- access ---- */}
+        <Section title="Akses">
+          <Action
+            label={user.role === "admin" ? "Cabut akses admin" : "Jadiin admin"}
+            busy={busy === "role"}
+            onClick={() => run("role", () => setAdminRole(user.id, user.role !== "admin"))}
+          />
+
+          {user.is_banned ? (
+            <Action
+              label="Buka ban"
+              busy={busy === "unban"}
+              onClick={() => run("unban", () => unbanUser(user.id))}
+            />
+          ) : confirming === "ban" ? (
+            <ConfirmRow
+              text="Ban user ini? Dia langsung gak bisa generate apa-apa."
+              danger
+              busy={busy === "ban"}
+              disabled={!reason.trim()}
+              hint={!reason.trim() ? "Isi alasannya dulu di kolom atas." : undefined}
+              onCancel={() => setConfirming(null)}
+              onConfirm={() => run("ban", () => banUser(user.id, reason.trim()))}
+            />
+          ) : (
+            <Action label="Ban user" danger onClick={() => setConfirming("ban")} />
+          )}
+        </Section>
+
+        {/* ---- delete ---- */}
+        <Section title="Zona bahaya">
+          {confirming === "delete" ? (
+            <ConfirmRow
+              text={`Hapus ${user.email} permanen? Semua data dia ikut kehapus dan gak bisa dibalikin.`}
+              danger
+              busy={busy === "delete"}
+              onCancel={() => setConfirming(null)}
+              onConfirm={() => run("delete", () => deleteUser(user.id))}
+            />
+          ) : (
+            <Action label="Hapus user permanen" danger onClick={() => setConfirming("delete")} />
+          )}
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value, small }: { label: string; value: string | number; small?: boolean }) {
+  return (
+    <div className="rounded-lg border border-hairline bg-obsidian px-2 py-2">
+      <p className={`font-mono text-ink ${small ? "text-[11px]" : "text-base"}`}>{value}</p>
+      <p className="eyebrow mt-0.5 text-muted">{label}</p>
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-5 border-t border-hairline pt-4">
+      <h3 className="eyebrow mb-2 text-muted">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function Action({
+  label,
+  onClick,
+  busy,
+  danger,
+  disabled,
+}: {
+  label: string;
+  onClick: () => void;
+  busy?: boolean;
+  danger?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy || disabled}
+      className={`mt-2 w-full cursor-pointer rounded-lg border px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:cursor-not-allowed disabled:opacity-45 ${
+        danger
+          ? "border-danger/30 bg-danger/10 text-danger hover:bg-danger/20"
+          : "border-hairline bg-surface-raised text-ink hover:border-ember/40 hover:text-ember-lo"
+      }`}
+    >
+      {busy ? "Bentar..." : label}
+    </button>
+  );
+}
+
+/** Confirmation lives inline, in the sheet, in plain language — not in a native dialog. */
+function ConfirmRow({
+  text,
+  onConfirm,
+  onCancel,
+  busy,
+  danger,
+  disabled,
+  hint,
+}: {
+  text: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  busy?: boolean;
+  danger?: boolean;
+  disabled?: boolean;
+  hint?: string;
+}) {
+  return (
+    <div
+      className={`mt-2 rounded-lg border p-3 ${
+        danger ? "border-danger/30 bg-danger/5" : "border-hairline bg-obsidian"
+      }`}
+    >
+      <p className="text-xs leading-relaxed text-ink">{text}</p>
+      {hint && <p className="mt-1 text-[11px] text-muted">{hint}</p>}
+      <div className="mt-3 flex gap-2">
+        <button
+          onClick={onCancel}
+          className="flex-1 cursor-pointer rounded-lg border border-hairline px-3 py-2 text-xs font-semibold text-muted hover:text-ink"
+        >
+          Batal
+        </button>
+        <button
+          onClick={onConfirm}
+          disabled={busy || disabled}
+          className="flex-1 cursor-pointer rounded-lg bg-danger px-3 py-2 text-xs font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          {busy ? "Bentar..." : "Ya, lanjut"}
+        </button>
       </div>
     </div>
   );
