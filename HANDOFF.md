@@ -215,14 +215,16 @@ session that the Gemini layer works on a live route.
 Verbatim intent: it must feel expensive and smart even though it is free, on
 every device. Concrete gaps still open, roughly in value order:
 
-1. **Prompt intelligence has no feedback loop.** `pipeline_cards.performance_
-   rating` and `generations.performance_rating` are captured and never read.
-   Feeding "here is what scored 4-5 for this creator before" into the shared
-   context is the single biggest remaining quality lever.
+1. ~~No feedback loop~~ — **done.** Rated history is read back into every
+   prompt as `LearnedNote[]` (wins to imitate, failures to avoid), and rating is
+   now reachable from the history list rather than only from a posted pipeline
+   card. **Unverified end to end** — nothing has been rated and regenerated yet
+   to confirm the loop visibly changes output.
 2. ~~Only 2 of 5 modules reachable~~ — **done.** `ModuleRunner` now serves Hook
    Lab, Script Builder and Repurpose from the Studio. Never run end to end.
-3. **No generation history.** Every generation is persisted to `generations` and
-   there is no screen that lists them. Users cannot find yesterday's work.
+3. ~~No generation history~~ — **done.** Last 25 on the profile tab, rateable.
+   Still missing: opening a history item to see its full output again, and any
+   search or filter.
 4. **`/admin/vouchers`** is the last page on the old layout, still using
    `prompt()`.
 5. **Admin gaps** the human asked for that are not built: impersonate-user
