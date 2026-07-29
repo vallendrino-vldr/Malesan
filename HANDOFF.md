@@ -219,10 +219,8 @@ every device. Concrete gaps still open, roughly in value order:
    rating` and `generations.performance_rating` are captured and never read.
    Feeding "here is what scored 4-5 for this creator before" into the shared
    context is the single biggest remaining quality lever.
-2. **Only 2 of 5 modules are reachable.** Hook Lab, Script Builder and Repurpose
-   exist in `/api/generate` and in the prompt library but have no Studio tile —
-   they can only be triggered from a pipeline card. The dashboard advertises two
-   things while the backend supports five.
+2. ~~Only 2 of 5 modules reachable~~ — **done.** `ModuleRunner` now serves Hook
+   Lab, Script Builder and Repurpose from the Studio. Never run end to end.
 3. **No generation history.** Every generation is persisted to `generations` and
    there is no screen that lists them. Users cannot find yesterday's work.
 4. **`/admin/vouchers`** is the last page on the old layout, still using
