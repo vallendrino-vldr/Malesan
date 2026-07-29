@@ -11,6 +11,7 @@ import {
 import { IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE } from "@/lib/sse";
+import { ScriptView, type ScriptOutput } from "./ScriptView";
 
 /**
  * Pipeline.
@@ -282,7 +283,7 @@ function PipelineCardItem({
 }) {
   const content = card.content as unknown as IdeaData & {
     generated_hook?: { hooks?: HookOption[] };
-    generated_script?: unknown;
+    generated_script?: ScriptOutput;
     chosen_hook?: number;
   };
   const [ratingHover, setRatingHover] = useState(0);
@@ -473,6 +474,11 @@ function PipelineCardItem({
             {isGenerating ? "Lagi nulis script..." : "Bikin script dari hook ini · 4 kredit"}
           </button>
         </div>
+      )}
+
+      {/* The script existed in the row the whole time and was never shown. */}
+      {(status === "siap" || status === "posted") && content.generated_script && (
+        <ScriptView script={content.generated_script} title={card.title} />
       )}
 
       {status === "siap" && (
