@@ -47,6 +47,11 @@ const LINKS = [
     ),
   },
   {
+    href: "/admin/stats",
+    label: "Grafik",
+    icon: <path d="M4 20h16v-2H6V4H4v16Zm4-4h2v-5H8v5Zm4 0h2V7h-2v9Zm4 0h2v-7h-2v7Z" />,
+  },
+  {
     href: "/admin/config",
     label: "Otak AI",
     icon: (
