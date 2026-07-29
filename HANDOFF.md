@@ -1,8 +1,8 @@
 # HANDOFF
 
 Last updated: 2026-07-29
-Last agent: Claude Code (studio repair, pipeline, graph, admin batch 1+2, DNA depth)
-Last commit: `f43b957` — feat: admin batch 2
+Last agent: Claude Code (studio repair, pipeline, graph, admin 1+2, DNA depth, vibe)
+Last commit: `a676c04` — feat: deeper Vibe output, config-driven pricing
 
 ---
 
@@ -165,6 +165,13 @@ session that the Gemini layer works on a live route.
 
 1. Confirm Ide Hari Ini, Idea Engine and pipeline hook→script actually complete
    and deduct credits, on a phone. Still never observed by an agent.
+1c. **Vibe depth is a prompt change, not a verified improvement.** The prompt
+   now carries explicit floors (6 features with acceptance criteria, 12 colour
+   tokens, runnable DDL, 10 agent rules with consequences, env list, folder
+   tree) and the anti-AI-voice rules it never had. **Nobody has run it since.**
+   Generate one kit and check the floors are actually met before calling this
+   fixed — if the model still under-delivers, raise the floors into the schema
+   rather than the prose.
 2. **Batch 3 — charts.** The activity feed shipped on `/admin/overview`; the
    time-series side did not. Generations per day, credits burned, error rate
    per module. `gemini_usage` and `credit_ledger` already hold the data.
@@ -197,6 +204,22 @@ session that the Gemini layer works on a live route.
 - Vercel Hobby is not licensed for commercial use.
 - Google consent screen still in Testing — only listed test users can sign in.
 - The tunnel URL changes every restart; it is not a permanent address.
+
+---
+
+## TRAPS THIS SESSION HIT — DO NOT REDISCOVER THEM
+
+1. **`tsc --noEmit` passes on unbalanced JSX.** The dev server's swc parse and
+   `next build` are the real gates. Run `next build` before claiming anything.
+2. **`app_config` overrides env.** Seeding a key with a guessed value silently
+   replaces a working one. Read the env value before you seed.
+3. **Do not round-trip source files through PowerShell `Get-Content -Raw` /
+   `Set-Content`.** It writes a UTF-8 BOM and mangles non-ASCII into mojibake.
+   Use the Edit tool, or Python with explicit UTF-8.
+4. **`grant_credits` is not a refund.** Three separate places used it as one.
+   Refunds go through `refund_credits` with the spend's `p_ref`.
+5. **Hand-editing `database.types.ts` is allowed only after confirming the
+   column exists in `information_schema`.** A green build proves nothing.
 
 ---
 
