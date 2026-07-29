@@ -207,9 +207,34 @@ export type Database = {
           brand_notes: string | null;
           ai_persona_summary: string | null;
           updated_at: string;
+          // Added by migration `creator_dna_depth`. Verified present in
+          // information_schema before being written here — this file is
+          // generated, and hand-editing it to describe columns that do not
+          // exist is exactly how a previous session shipped a green build
+          // that failed on every request.
+          work_context: string;
+          client_brief: string | null;
+          industry: string | null;
+          goals: string | null;
+          persona_style: string | null;
+          experience_level: string | null;
+          content_pillars: string[] | null;
+          posting_frequency: string | null;
+          reference_creators: string | null;
+          humor_level: number | null;
         };
         Insert: {
           user_id: string;
+          work_context?: string;
+          client_brief?: string | null;
+          industry?: string | null;
+          goals?: string | null;
+          persona_style?: string | null;
+          experience_level?: string | null;
+          content_pillars?: string[] | null;
+          posting_frequency?: string | null;
+          reference_creators?: string | null;
+          humor_level?: number | null;
           niche?: string | null;
           target_audience?: string | null;
           tone?: string | null;

@@ -137,12 +137,44 @@ function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string
   if (dna) {
     context += `\nPROFIL KREATOR:\n`;
     if (dna.niche) context += `- Niche: ${dna.niche}\n`;
+    if (dna.industry) context += `- Bidang/industri: ${dna.industry}\n`;
     if (dna.target_audience) context += `- Target audience: ${dna.target_audience}\n`;
     if (dna.tone) context += `- Tone: ${dna.tone}\n`;
+    if (dna.persona_style) context += `- Gaya persona: ${dna.persona_style}\n`;
+    if (typeof dna.humor_level === "number") {
+      context += `- Level humor: ${dna.humor_level}/10 (0 = serius/edukatif, 10 = komedi duluan)\n`;
+    }
+    if (dna.experience_level) context += `- Jam terbang: ${dna.experience_level}\n`;
+    if (dna.content_pillars?.length) context += `- Pilar konten: ${dna.content_pillars.join(", ")}\n`;
+    if (dna.posting_frequency) context += `- Frekuensi posting: ${dna.posting_frequency}\n`;
+    if (dna.goals) context += `- Yang dia kejar: ${dna.goals}\n`;
+    if (dna.reference_creators) context += `- Kreator referensi: ${dna.reference_creators}\n`;
     if (dna.platforms && dna.platforms.length > 0) context += `- Platform utama: ${dna.platforms.join(", ")}\n`;
     context += `- Bahasa output: ${dna.output_language || 'id'}\n`;
     if (dna.banned_words && dna.banned_words.length > 0) context += `- Kata yang HARUS dihindari: ${dna.banned_words.join(", ")}\n`;
     if (dna.brand_notes) context += `- Catatan brand: ${dna.brand_notes}\n`;
+
+    // POV. A creator posting for themselves and a creator producing for a
+    // client are writing as different people. Defaulting everything to
+    // first-person-owner made client work read wrong in a way no amount of
+    // tone tuning could fix.
+    context += `\nSUDUT PANDANG NARASI:\n`;
+    if (dna.work_context === "klien") {
+      context += `- Kreator ini bikin konten UNTUK KLIEN, bukan buat dirinya sendiri.\n`;
+      context += `- Jangan nulis pengalaman pribadi sebagai pemilik usaha. Dia orang di balik kamera.\n`;
+      context += `- Aman: sudut pandang orang kedua ke audiens, atau narasi atas nama brand.\n`;
+      if (dna.client_brief) context += `- Tentang kliennya: ${dna.client_brief}\n`;
+    } else if (dna.work_context === "brand") {
+      context += `- Kreator ini in-house, ngomong ATAS NAMA brand. Pakai "kami", bukan "gue".\n`;
+      context += `- Boleh klaim soal produk, tapi jangan ngarang fitur yang gak disebutin.\n`;
+      if (dna.client_brief) context += `- Tentang brand-nya: ${dna.client_brief}\n`;
+    } else {
+      context += `- Personal brand. Orang pertama, "gue". Pengalaman pribadi boleh dipakai.\n`;
+    }
+  } else {
+    // No DNA yet — the first generation happens before onboarding by design.
+    context += `\nCATATAN: Kreator ini belum ngisi profil. Pakai gaya kreator Indonesia`;
+    context += ` yang ngobrol santai dan orang pertama, dan jangan ngarang detail personal.\n`;
   }
 
   if (trends && trends.length > 0) {
@@ -156,7 +188,20 @@ function buildSharedContext(dna: CreatorDna | null, trends: TrendCard[]): string
   context += `- Bahasa Indonesia yang natural dan ngobrol, bukan bahasa terjemahan.\n`;
   context += `- Spesifik dan bisa langsung dieksekusi. Jangan kasih saran umum.\n`;
   context += `- Jangan pernah nyaranin konten clickbait bohong atau menyesatkan.\n`;
-  context += `- Balas HANYA JSON valid. Tanpa \`\`\`json, tanpa penjelasan tambahan.\n`;
+
+  // The single most-repeated complaint about this product's output is that it
+  // reads like AI. Naming the specific tells works better than asking for
+  // "natural" — a model cannot act on an adjective, but it can avoid a list.
+  context += `\nJANGAN KEDENGERAN KAYAK AI:\n`;
+  context += `- Haram: "di era digital ini", "mari kita", "tak dapat dipungkiri", "sangatlah penting", "dalam dunia yang serba cepat".\n`;
+  context += `- Jangan buka pakai definisi atau basa-basi. Kalimat pertama langsung ke intinya.\n`;
+  context += `- Kalimat pendek-panjang diselang-seling. Ritme datar itu ciri khas tulisan mesin.\n`;
+  context += `- Boleh nyebut angka, merek, harga, dan detail konkret. Vague itu bikin murah.\n`;
+  context += `- Jangan pakai emoji sebagai pengganti isi, dan jangan tiap poin dikasih emoji.\n`;
+  context += `- Jangan rapi-rapi amat. Orang beneran ngomong pakai jeda, koreksi, dan penekanan.\n`;
+  context += `- Jangan menggurui. Sejajar sama penonton, bukan di atasnya.\n`;
+
+  context += `\n- Balas HANYA JSON valid. Tanpa \`\`\`json, tanpa penjelasan tambahan.\n`;
 
   return context;
 }
