@@ -152,3 +152,45 @@ this aggregate in the trend context once there is enough volume.
 
 Anything not listed in §5. If you think something belongs here, write it in PROPOSALS in
 `HANDOFF.md` and wait for approval. See `AGENTS.md` §6.
+
+---
+
+## 10. Vibe Coding Kit — approved scope addition, 2026-07-29
+
+**Not in `MALESAN_MASTER_PROMPT.md`.** The original specification covers content creators
+only. This was requested directly by the product owner and is recorded here as an explicit
+extension, not folded in silently.
+
+### Why it belongs
+
+The product thesis is *"males mikirnya, bukan bikinnya"* — kill the blank page, not the craft.
+There is a second blank page with exactly the same shape: someone opens an empty repo, opens
+Claude Code or Cursor, and has to write instructions for a problem they have not thought
+through yet. They are not lazy about building. They are stuck on deciding.
+
+### What it produces
+
+One generation, six files, written together so they agree with each other:
+
+| File | Contents |
+|---|---|
+| `PRD.md` | Problem, audience, phase-1 features, and what is deliberately excluded |
+| `DESIGN.md` | Colour tokens with hex, typography, motion, copy voice, quality floor |
+| `ROADMAP.md` | Numbered steps with **testable** definitions of done |
+| `AGENTS.md` | Hard rules for the AI agent, plus the handoff protocol |
+| `SCHEMA.md` | Runnable SQL, relationships, row-level access rules |
+| `MASTER_PROMPT.md` | The kickoff prompt to paste into the agent |
+
+They are generated in a single call on purpose. Split across calls they drift, and a roadmap
+that references tables the schema never defines is worse than no roadmap at all.
+
+### Cost
+
+**6 credits** — the most expensive module in the product, above Script Builder at 4. It is six
+long documents and the heaviest single call the platform makes.
+
+### Why this is a genuine moat
+
+The document set is not invented for the feature. It is the set this repository runs on, and
+it is the reason this build survived a mid-project agent handoff, a fabricated status report,
+and a rebuild. That is a product claim we can actually stand behind.

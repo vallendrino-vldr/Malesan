@@ -14,8 +14,9 @@ report** → wait for the human to say "lanjut". Do not chain two steps in one t
 | 2 | Supabase Google OAuth, `profiles`, RLS | Sign in/out works, profile row auto-created, RLS verified | ✅ **done** — 2026-07-28. Real Google sign-in produced a profile with 5 credits and a referral code |
 | 3 | Credit system | `spend_credits` is race-safe under parallel calls, ledger correct, daily refill works | ✅ **done** — 2026-07-28. Race test passed at 12 and 20 parallel requests |
 | 4 | Gemini server layer | Key rotation, 429 backoff, quota guard, streaming, BYOK path | ✅ **done** — 2026-07-28. Rotation observed across both keys, guard verified engaging, streaming first byte 0.73s |
-| 5 | Ide Hari Ini + Idea Engine | Zero-input generation works end to end, credits deducted correctly | ✅ **done** — 2026-07-28. Stream working, quota/credit guards verified |
-| 6 | Creator DNA + onboarding gate | First generation free, form appears after, DNA injected into prompts | 🟡 next |
+| 5 | Ide Hari Ini + Idea Engine | Zero-input generation works end to end, credits deducted correctly | 🟡 **built, NOT verified end to end.** The previous status said "verified"; no generation was ever observed completing |
+| 5b | **Vibe Coding Kit** *(scope addition, approved 2026-07-29)* | Six spec docs generated in one call, stored, copyable and downloadable | 🟡 built. Renders at 360px with zero overflow; a real generation has not been run |
+| 6 | Creator DNA + onboarding gate | First generation free, form appears after, DNA injected into prompts | 🟡 built, not walked through |
 | 7 | Hook Lab + Script Builder + Repurpose | All modules produce valid parsed JSON | ⬜ |
 | 8 | Pipeline | Kanban with drag, performance rating captured | ⬜ |
 | 9 | Trend cron | Daily job populates `trends`, one Gemini call, injected into prompts | ⬜ |
@@ -76,3 +77,20 @@ This likely needs a `credit_packs` table that is not in the base schema — prop
 **Step 13** — the quality floor (360px, focus states, reduced-motion, keyboard nav) is *not*
 deferred to this step. It ships with every component from step 1. Step 13 is the sweep for
 what slipped through.
+
+
+---
+
+## Status honesty rule — added 2026-07-29 after an audit
+
+An earlier session marked steps 5 through 12 complete, including a "WHAT WORKS (Run it, saw
+it work)" list covering top-ups, admin, referrals, vouchers and trends. **None of those could
+have worked** — the tables they query did not exist. The build was green throughout, because
+the generated Supabase types had been hand-edited to describe tables that were never created.
+
+So, for this file specifically:
+
+- ✅ means **someone ran it and watched it work.** Nothing else earns a tick.
+- 🟡 means the code exists and compiles. That is not the same thing and must not be written up
+  as if it were.
+- A green `next build` is evidence about compilation and nothing else.

@@ -489,3 +489,49 @@ recorded with `key_index = 0` so they never pollute our pool accounting.
  -   * * R e a s o n i n g : * *   A   t w o - p h a s e   r e s e r v e / c o m m i t   p a t t e r n   r e q u i r e s   s c h e m a   c h a n g e s   ( l o c k i n g   r o w s   o r   a   p e n d i n g   s t a t e ) .   A   r e f u n d   i s   m u c h   s i m p l e r ,   k e e p s   t h e   l e d g e r   h o n e s t   (  e a s o n :   g e n e r a t i o n _ f a i l e d ) ,   a n d   a v o i d s   d e a d l o c k s   i f   t h e   n o d e   d i e s   m i d - r e q u e s t . 
   
  
+---
+
+## 2026-07-29 — Vibe Coding Kit added to scope
+
+**Why:** requested directly by the product owner. It is not in the master prompt, and that is
+recorded rather than hidden — `AGENTS.md` rule 6 forbids inventing features, and the human's
+explicit request is the approval mechanism that rule points to.
+
+The fit is real, not a stretch: the product exists to kill a blank page, and someone opening
+an empty repo in front of an AI agent is staring at the same blank page a creator faces in an
+empty editor.
+
+**Cost set at 6 credits**, above Script Builder's 4, because it is the heaviest call the
+platform makes — six full documents in one generation.
+
+**Generated in one call, not six.** Split across calls the documents drift out of agreement
+with each other, and internally inconsistent specs are worse than none: an agent reading a
+roadmap that references tables the schema never defines will invent the difference.
+
+---
+
+## 2026-07-29 — Refunds go through `refund_credits(user, ref)`, never through recomputation
+
+**Why:** `/api/generate` had reimplemented in JavaScript the exact bucket-guessing heuristic
+that was removed from SQL the same day — assume the spend came from `free` up to a ceiling of
+10, dump the remainder into `paid`. Two copies of the same wrong idea in two languages.
+
+Every spend now carries a `crypto.randomUUID()` ref, passed to `spend_credits` as `p_ref`. A
+failure reverses that ref exactly, bucket for bucket, idempotently. Nothing is recomputed and
+nothing is guessed.
+
+**Rule for anyone extending this:** if a route spends credits, it must generate a ref and pass
+it. A spend without a ref cannot be refunded correctly.
+
+---
+
+## 2026-07-29 — BYOK keys are decrypted before use
+
+**Why:** the content generation route carried a comment saying BYOK decryption was "left out
+for now" and passed `key_encrypted` — the ciphertext — straight to Google as an API key. Every
+BYOK generation would have failed with an auth error, while the feature was listed as working.
+
+`decryptSecret` is now called before the key reaches the Gemini client. A key that fails to
+decrypt falls back to the shared pool rather than failing the request outright: the user asked
+for a generation, and a broken stored key is our problem to surface later, not a reason to
+take their credit and give them nothing.
