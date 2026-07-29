@@ -1,8 +1,8 @@
 # HANDOFF
 
 Last updated: 2026-07-29
-Last agent: Claude Code (studio repair, pipeline, code graph, admin batch 1, DNA depth)
-Last commit: `3212fc7` — feat: Creator DNA setup asks the questions that matter
+Last agent: Claude Code (studio repair, pipeline, graph, admin batch 1+2, DNA depth)
+Last commit: `f43b957` — feat: admin batch 2
 
 ---
 
@@ -112,6 +112,24 @@ with a completeness meter counting exactly the fields that reach the prompt.
 `free`. Now carries a ref and calls `refund_credits`. **If you find another
 `grant_credits` used as a refund anywhere, it is the same bug.**
 
+### Admin batch 2 — runtime config
+
+`app_config` + `lib/config`: model per tier, credit cost per module, and a
+per-module kill switch, all read on every generation with the old hardcoded
+values as fallbacks. Editable at `/admin/config`. A disabled module returns 503
+and the user is not charged.
+
+**Trap worth remembering:** config now wins over env. The seeded model ids were
+`gemini-2.5-*`; the ids actually in use are `gemini-3.1-flash-lite` and
+`gemini-3.6-flash`. Shipping the seed would have 404'd every generation. If you
+add a config key that overrides an env var, read the env value first.
+
+### Admin overview and nav
+
+2×2 stat grid, quota as bars, and the last 8 `audit_log` entries — the table's
+first surface. Nav gained icons and a 52px touch target; it was four bare
+labels clipping against the browser chrome.
+
 ### `trends` is no longer empty
 
 Ran `/api/cron/trends` for real: **5 active rows**. Every prompt had been
@@ -147,28 +165,22 @@ session that the Gemini layer works on a live route.
 
 1. Confirm Ide Hari Ini, Idea Engine and pipeline hook→script actually complete
    and deduct credits, on a phone. Still never observed by an agent.
-1b. **Admin UI is still the worst surface in the product.** The human's words:
-   the ringkasan page wastes the screen on three giant stacked stat cards, and
-   the bottom nav "ga pantes buat disentuh" — its labels sit under the browser
-   chrome because the admin content region scrolls the page rather than itself.
-   `/admin`, `/admin/topups`, `/admin/vouchers` still carry the old agent's
-   layouts; only `/admin/users` has been rebuilt. Fix the nav first — it is the
-   thing being touched on every visit.
-2. **Admin batch 2 — AI control.** Needs an `app_config` table first: model per
-   tier, key rotation, per-module credit cost, editable prompts. All hardcoded
-   in env today. `verifyAdmin()` is the only gate on every admin action —
-   degree 8 in the graph — audit it before extending it.
-3. **Batch 3** — charts, activity feed, generations browser. `audit_log` now
-   has real rows to render.
-4. **Batch 4** — storage/data browser, `topup_proofs` review and delete.
-5. **Vibe Coding Kit output quality.** The human's word is "kurang maksimal".
+2. **Batch 3 — charts.** The activity feed shipped on `/admin/overview`; the
+   time-series side did not. Generations per day, credits burned, error rate
+   per module. `gemini_usage` and `credit_ledger` already hold the data.
+3. **Batch 4** — storage/data browser, `topup_proofs` review and delete.
+   Remember the bucket is private now; use signed URLs, do not make it public.
+4. **Vibe Coding Kit output quality.** The human's word is "kurang maksimal".
    Not yet diagnosed — read `src/lib/prompts/vibe.ts` against a real run before
-   changing anything.
-6. **Premium UI pass.** Dashboard still needs the "why this is useful" copy —
-   gaul, humble, no swipes at anyone. Admin ringkasan/topups/vouchers and
-   profile/topup/onboarding screens still carry the old agent's layouts.
-   `ui-ux-pro-max` suggested accent `#DC2626`; it was **rejected** — AGENTS.md
-   §2 forbids colours not in `DESIGN.md`. Ember stays.
+   changing anything. The anti-AI-voice rules added to `lib/prompts/index.ts`
+   are **not** applied to the vibe prompt; that is probably the first fix.
+5. **Premium UI pass.** Dashboard still needs the "why this is useful" copy —
+   gaul, humble, no swipes at anyone. `/admin/topups`, `/admin/vouchers`,
+   profile, topup and the pipeline's desktop board still carry old layouts.
+   `ui-ux-pro-max` suggested accent `#DC2626`; **rejected** — AGENTS.md §2
+   forbids colours not in `DESIGN.md`. Ember stays.
+6. `verifyAdmin()` gates every admin action and is degree 8 in the graph. It
+   is now also the gate on runtime config. Audit it before extending further.
 
 ## STILL OPEN FROM BEFORE
 
