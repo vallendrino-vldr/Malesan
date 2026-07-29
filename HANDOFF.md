@@ -233,6 +233,11 @@ every device. Concrete gaps still open, roughly in value order:
 
 ## TRAPS THIS SESSION HIT — DO NOT REDISCOVER THEM
 
+0. **Never spread an object imported from a `"use client"` module inside a
+   server component.** The server gets a client *reference*, not the object, so
+   `{...MODULE_SPECS[key], cost}` silently produced `{cost}` and the page threw
+   on render. Types are real at compile time, so the build stays green. Pass
+   primitives across the boundary and look the object up on the client.
 1. **`tsc --noEmit` passes on unbalanced JSX.** The dev server's swc parse and
    `next build` are the real gates. Run `next build` before claiming anything.
 2. **`app_config` overrides env.** Seeding a key with a guessed value silently
