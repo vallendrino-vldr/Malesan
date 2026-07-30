@@ -4,6 +4,7 @@ import type { Json } from "@/lib/supabase/database.types";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { generateStream, parseJson } from "@/lib/gemini/client";
 import { getCost, isModuleEnabled, getModel } from "@/lib/config";
+import { spendCredits, refundCredits } from "@/lib/credits";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import {
   VIBE_KIT_SCHEMA,
@@ -90,27 +91,22 @@ export async function POST(request: NextRequest) {
   }
   const cost = await getCost("vibe");
 
-  // Spend first, with a ref, so a failure can be reversed exactly.
-  const spendRef = crypto.randomUUID();
-  try {
-    await serviceRole.rpc("spend_credits", {
-      p_user: user.id,
-      p_amount: cost,
-      p_reason: "generate_vibe_kit",
-      p_ref: spendRef,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "";
-    if (msg.includes("INSUFFICIENT_CREDITS")) {
-      return Response.json(
-        {
-          error: `Vibe Kit butuh ${cost} credit dan punya lo kurang. Besok refill jam 00:00, atau top up biar gak nunggu.`,
-        },
-        { status: 402 },
-      );
-    }
-    throw err;
+  // The old inline try/catch around `.rpc()` could never fire — `.rpc()`
+  // resolves with `{ error }` rather than rejecting — so this route generated
+  // six-document kits for users with no credits at all.
+  const spend = await spendCredits(user.id, cost, "generate_vibe_kit");
+  if (!spend.ok) {
+    return Response.json(
+      {
+        error:
+          spend.reason === "insufficient"
+            ? `Vibe Kit butuh ${cost} kredit, punya lo kurang. Besok jam 00:00 direfill, atau top up biar gak nunggu.`
+            : spend.message,
+      },
+      { status: spend.reason === "insufficient" ? 402 : 500 },
+    );
   }
+  const spendRef = spend.ref;
 
   // Vibe was the only generator that never read Creator DNA, so every user got
   // identical documents — the "generic AI output" complaint, at its source.
@@ -182,15 +178,7 @@ export async function POST(request: NextRequest) {
           err instanceof Error ? err.message : "Gagal bikin kit-nya.";
 
         // Not charged for a failure. Exact reversal by ref, idempotent.
-        try {
-          await serviceRole.rpc("refund_credits", {
-            p_user: user.id,
-            p_ref: spendRef,
-            p_reason: "refund_vibe_kit_failed",
-          });
-        } catch (e) {
-          console.error("Vibe kit refund failed", e);
-        }
+        await refundCredits(user.id, spendRef, "refund_vibe_kit_failed");
 
         send({
           error: `Gagal bikin kit-nya: ${message}. Credit lo udah dibalikin — coba lagi.`,

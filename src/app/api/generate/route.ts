@@ -4,6 +4,7 @@ import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { getCost, isModuleEnabled, getModel } from "@/lib/config";
 import { generateStream } from "@/lib/gemini/client";
 import { processReferral } from "@/app/actions/payments";
+import { spendCredits, refundCredits } from "@/lib/credits";
 import {
   type LearnedNote,
   buildIdeHariIniPrompt,
@@ -156,31 +157,20 @@ export async function POST(request: NextRequest) {
 
     const cost = await getCost(module);
 
-    // Every spend carries a ref so a failed generation can be reversed exactly.
-    // Without it a refund has to guess which bucket the credits came from, which
-    // is what the previous version did — see refund below.
-    const spendRef = crypto.randomUUID();
-
-    try {
-      await serviceRole.rpc("spend_credits", {
-        p_user: user.id,
-        p_amount: cost,
-        p_reason: `generate_${module}`,
-        p_ref: spendRef,
+    // Spend through the helper. The old inline `try/catch` around `.rpc()` never
+    // fired, because `.rpc()` resolves with `{ error }` instead of rejecting —
+    // so a user at zero credits generated for free.
+    const spend = await spendCredits(user.id, cost, `generate_${module}`);
+    if (!spend.ok) {
+      return new Response(JSON.stringify({ error: spend.message }), {
+        status: spend.reason === "insufficient" ? 402 : 500,
+        headers: { "Content-Type": "application/json" },
       });
-      // Fire and forget referral processing (idempotent, only does something on first gen)
-      processReferral(user.id).catch(console.error);
-    } catch (err: unknown) {
-      if (err instanceof Error && err.message?.includes("INSUFFICIENT_CREDITS")) {
-        return new Response(
-          JSON.stringify({
-            error: "Credit abis. Besok refill jam 00:00, atau top up biar gak nunggu.",
-          }),
-          { status: 402, headers: { "Content-Type": "application/json" } }
-        );
-      }
-      throw err;
     }
+    const spendRef = spend.ref;
+
+    // Fire and forget referral processing (idempotent, only does something on first gen)
+    processReferral(user.id).catch(console.error);
 
     // 5. Build prompt
     let promptText = "";
@@ -262,15 +252,9 @@ export async function POST(request: NextRequest) {
           // refund_credits reads the original spend rows by ref and reverses
           // them exactly, bucket for bucket. It is idempotent, so a retry here
           // cannot pay the user twice.
-          try {
-            await serviceRole.rpc("refund_credits", {
-              p_user: user.id,
-              p_ref: spendRef,
-              p_reason: `refund_${module}_failed`,
-            });
-          } catch (e) {
-            console.error("Refund failed", e);
-          }
+          // Same trap as the spend: this used to be a bare try/catch around
+          // `.rpc()`, which cannot catch anything. The helper inspects `error`.
+          await refundCredits(user.id, spendRef, `refund_${module}_failed`);
         }
 
         if (!isError && parsed) {

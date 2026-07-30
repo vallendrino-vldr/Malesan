@@ -110,16 +110,17 @@ export default async function AppPage({
         })()
       : Promise.resolve(null),
 
-    // Only the pipeline tab renders these. Reading every card on the studio,
-    // vibe and profile tabs was pure waste on three navigations out of four.
-    tab === "pipeline"
-      ? supabase
-          .from("pipeline_cards")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .then((r) => r.data)
-      : Promise.resolve([]),
+    // Loaded unconditionally. Skipping this unless `tab === "pipeline"` made
+    // sense when each tab was its own navigation; once tabs became client-side
+    // the server only ever renders once, so the conditional meant the pipeline
+    // board and the history list were permanently empty for anyone who landed
+    // on /app and then tapped across. A regression I introduced.
+    supabase
+      .from("pipeline_cards")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .then((r) => r.data),
 
     // Five `await getCost(...)` calls inline in JSX resolved one after another.
     // They share one 30s cache, so in parallel they cost a single lookup.
@@ -136,18 +137,18 @@ export default async function AppPage({
   const pipelineCards = pipelineResult ?? [];
   const [costIde, costIdea, costHook, costScript, costRepurpose] = costs;
 
-  // History only matters on the profile tab; skip the query everywhere else.
-  const history: HistoryItem[] =
-    tab !== "profil"
-      ? []
-      : ((
-          await supabase
-            .from("generations")
-            .select("id, module, created_at, credits_spent, performance_rating, output")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(25)
-        ).data ?? []).map((g) => {
+  // Same regression as the pipeline query above: gated on `tab === "profil"`,
+  // which is never true when the profile tab is reached by a client-side switch.
+  const history: HistoryItem[] = (
+    (
+      await supabase
+        .from("generations")
+        .select("id, module, created_at, credits_spent, performance_rating, output")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(25)
+    ).data ?? []
+  ).map((g) => {
           const o = g.output as Record<string, unknown> | null;
           const ideas = o?.ideas as { title?: string }[] | undefined;
           const hooks = o?.hooks as { text?: string }[] | undefined;

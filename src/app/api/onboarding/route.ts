@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { generate, parseJson } from "@/lib/gemini/client";
+import { spendCredits, refundCredits } from "@/lib/credits";
 import {
   buildCreatorDnaAnalysisPrompt,
   CREATOR_DNA_ANALYSIS_SCHEMA,
@@ -69,35 +70,23 @@ export async function POST(request: NextRequest) {
     // refunded with grant_credits into "free" — the same guessing heuristic
     // that was removed from SQL. It could hand back paid credits (which never
     // expire) as free ones (wiped at the next daily reset).
-    const spendRef = crypto.randomUUID();
-    const refund = async (reason: string) => {
-      try {
-        await serviceRole.rpc("refund_credits", {
-          p_user: user.id,
-          p_ref: spendRef,
-          p_reason: reason,
-        });
-      } catch (e) {
-        console.error("refund failed", reason, e);
-      }
-    };
-
-    try {
-      await serviceRole.rpc("spend_credits", {
-        p_user: user.id,
-        p_amount: cost,
-        p_reason: "creator_dna_analysis",
-        p_ref: spendRef,
-      });
-    } catch (err: unknown) {
-      if (err instanceof Error && err.message?.includes("INSUFFICIENT_CREDITS")) {
-        return NextResponse.json(
-          { error: "Credit kurang. Butuh 2 credit buat analisa DNA." },
-          { status: 402 }
-        );
-      }
-      throw err;
+    // Third copy of the same broken pattern: `.rpc()` resolves with `{ error }`
+    // and never rejects, so this `catch` could not fire and a user with no
+    // credits still got a paid DNA analysis.
+    const spend = await spendCredits(user.id, cost, "creator_dna_analysis");
+    if (!spend.ok) {
+      return NextResponse.json(
+        {
+          error:
+            spend.reason === "insufficient"
+              ? "Kredit lo kurang. Analisa DNA butuh 2 kredit."
+              : spend.message,
+        },
+        { status: spend.reason === "insufficient" ? 402 : 500 },
+      );
     }
+    const spendRef = spend.ref;
+    const refund = (reason: string) => refundCredits(user.id, spendRef, reason);
 
     // Step 2: Generate AI Persona Summary
     const promptText = buildCreatorDnaAnalysisPrompt({
