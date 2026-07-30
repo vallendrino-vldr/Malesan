@@ -183,7 +183,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
           onChange={(e) => setIdea(e.target.value)}
           rows={4}
           placeholder="Contoh: aplikasi buat nyatet pengeluaran harian bareng pasangan, bisa split bill, ada grafik bulanan."
-          className="mt-2 w-full resize-y rounded-xl border border-hairline bg-obsidian px-3.5 py-3 text-[15px] leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+          className="mt-2 w-full resize-y skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-3 text-[15px] leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
         />
 
         {/* A blank textarea is the hardest thing to face on this screen. These
@@ -218,7 +218,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               value={stack}
               onChange={(e) => setStack(e.target.value)}
               placeholder="Next.js + Supabase, atau kosongin"
-              className="mt-2 w-full rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+              className="mt-2 w-full skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
             />
           </div>
           <div>
@@ -231,7 +231,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
               placeholder="Pasangan muda di kota besar"
-              className="mt-2 w-full rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+              className="mt-2 w-full skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
             />
           </div>
         </div>

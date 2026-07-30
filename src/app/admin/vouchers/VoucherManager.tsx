@@ -86,7 +86,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
   };
 
   const input =
-    "w-full rounded-lg border border-hairline bg-obsidian px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none";
+    "w-full skeu-inset rounded-lg border border-hairline bg-obsidian px-3 py-2.5 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none";
 
   return (
     <div className="space-y-5">

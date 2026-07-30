@@ -369,7 +369,7 @@ function MiniTile({ href, title, cost }: { href: string; title: string; cost: nu
   return (
     <Link
       href={href}
-      className="group flex min-h-[68px] cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center shadow-[0_1px_0_0_color-mix(in_oklab,var(--color-ink)_6%,transparent)_inset] transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:bg-surface active:scale-[0.97]"
+      className="skeu skeu-press group flex min-h-[68px] cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center hover:border-ember/45"
     >
       <span className="flex items-center justify-center gap-1">
         <span className="truncate text-[12.5px] font-bold text-ink group-hover:text-ember-lo">

@@ -184,7 +184,7 @@ export function AppShell({
       {/* ---------- bottom tab bar ---------- */}
       <nav
         aria-label="Navigasi utama"
-        className="relative z-20 shrink-0 border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+        className="relative z-20 shrink-0 skeu-bar border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
       >
         <div className="mx-auto flex w-full max-w-3xl">
           {TABS.map((t) => {

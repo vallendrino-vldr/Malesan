@@ -135,7 +135,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* ---------- mobile bottom nav ---------- */}
       <nav
         aria-label="Navigasi admin"
-        className="shrink-0 border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+        className="shrink-0 skeu-bar border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       >
         <div className="flex">
           {LINKS.map((l) => (
