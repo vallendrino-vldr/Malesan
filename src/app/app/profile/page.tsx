@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { CopyField } from "@/components/CopyField";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -20,54 +21,69 @@ export default async function ProfilePage() {
   const referralLink = `${baseUrl}/masuk?ref=${profile.referral_code}`;
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6">
-      <h1 className="text-3xl font-black text-white mb-8">Profil Lo</h1>
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <a
+        href="/app?tab=profil"
+        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-[12.5px] font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+          <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
+        </svg>
+        Balik
+      </a>
+      <h1 className="mt-4 font-display text-2xl font-bold tracking-display-md text-ink">
+        Profil lo
+      </h1>
 
       <div className="space-y-6">
-        <div className="bg-surface/50 border border-hairline rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-white mb-2">Referral Program</h2>
-          <p className="text-muted mb-6">Ajak temen pake Malesan, dapet bonus 10 credits pas mereka kelar generate konten pertama. Unlimited!</p>
+        <div className="surface-card rounded-2xl p-5">
+          <h2 className="font-display text-lg font-bold text-ink">Program referral</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">Ajak temen pakai Malesan. Lo dapet 10 kredit begitu dia kelar generate konten pertamanya — dan dia juga dapet 10. Gak ada batasnya.</p>
           
-          <div className="bg-obsidian border border-hairline rounded-xl p-4 flex items-center justify-between mb-6">
-            <code className="text-success text-lg">{referralLink}</code>
-            {/* Native copy is easy but omitting interactive for now since it's a server component. 
-                In a real app, we'd add a small client component for the copy button. */}
+          <div className="mt-4">
+            <CopyField value={referralLink} label="Link referral lo" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-surface-raised/50 p-4 rounded-xl border border-hairline/50">
-              <div className="text-muted text-sm mb-1">Total Temen Join</div>
-              <div className="text-3xl font-black text-white">{referralCount}</div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-hairline bg-obsidian p-3.5">
+              <div className="eyebrow mb-1 text-muted">Temen yang join</div>
+              <div className="font-display text-2xl font-bold text-ink">{referralCount}</div>
             </div>
-            <div className="bg-success/10 p-4 rounded-xl border border-success/20">
-              <div className="text-success text-sm mb-1">Bonus Didapat</div>
-              <div className="text-3xl font-black text-success">{referralCount * 10} <span className="text-sm font-normal text-success/50">cr</span></div>
+            <div className="rounded-xl border border-success/20 bg-success/10 p-3.5">
+              <div className="eyebrow mb-1 text-success">Bonus didapat</div>
+              <div className="font-display text-2xl font-bold text-success">{referralCount * 10} <span className="text-xs font-normal text-success/60">kredit</span></div>
             </div>
           </div>
         </div>
 
-        <div className="bg-surface/50 border border-hairline rounded-2xl p-6">
-          <h2 className="text-xl font-bold text-white mb-2">Informasi Akun</h2>
-          <div className="space-y-4">
+        <div className="surface-card rounded-2xl p-5">
+          <h2 className="font-display text-lg font-bold text-ink">Informasi akun</h2>
+          <div className="mt-3 space-y-3.5">
             <div>
-              <div className="text-muted text-sm">Email</div>
-              <div className="text-white">{profile.email}</div>
+              <div className="eyebrow text-muted">Email</div>
+              <div className="mt-0.5 text-sm text-ink">{profile.email}</div>
             </div>
             <div>
-              <div className="text-muted text-sm">Status</div>
-              <div className="text-white mb-6">
+              <div className="eyebrow text-muted">Status</div>
+              <div className="mt-0.5 text-sm">
                 {profile.is_pro ? (
-                  <span className="text-success font-medium">Pro Member</span>
+                  <span className="font-semibold text-success">Pro</span>
                 ) : (
-                  <span className="text-ink">Free Tier</span>
+                  <span className="text-ink">Free</span>
                 )}
               </div>
             </div>
             
             <div className="pt-4 border-t border-hairline">
-              <a href="/app/onboarding" className="inline-block bg-surface-raised hover:bg-surface-raised text-white font-medium px-4 py-2 rounded-lg transition-colors">
-                Edit Profil DNA Kreator
+              <a
+                href="/app/onboarding"
+                className="inline-block cursor-pointer rounded-lg border border-hairline bg-surface-raised px-4 py-2.5 text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+              >
+                Edit Creator DNA
               </a>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+                Makin lengkap DNA lo, makin nyambung hasil generate-nya.
+              </p>
             </div>
           </div>
         </div>
