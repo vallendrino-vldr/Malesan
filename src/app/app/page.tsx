@@ -172,23 +172,52 @@ export default async function AppPage({
     (user.user_metadata?.picture as string | undefined) ??
     null;
 
+  const shellProps = {
+    active: tab,
+    credits: totalCredits,
+    isAdmin: profile.role === "admin",
+    avatarUrl: avatar,
+    initial: profile.display_name?.charAt(0).toUpperCase() ?? "?",
+  };
+
+  // A module sub-view owns the whole content area, so it stays a real
+  // navigation — the tab bar falls back to links for it.
+  if (mod) {
+    return (
+      <AppShell {...shellProps}>
+        <div className="reveal space-y-4">
+          <ModuleBar />
+          {mod === "ide" ? (
+            <IdeHariIni />
+          ) : mod === "idea" ? (
+            <IdeaEngine />
+          ) : (
+            <ModuleRunner
+              moduleKey={mod}
+              cost={mod === "hook" ? costHook : mod === "script" ? costScript : costRepurpose}
+            />
+          )}
+        </div>
+      </AppShell>
+    );
+  }
+
+  // All four panels render once; the shell swaps them in the browser with no
+  // network at all. This is what removes the multi-second tab delay.
   return (
     <AppShell
-      active={tab}
-      credits={totalCredits}
-      isAdmin={profile.role === "admin"}
-      avatarUrl={avatar}
-      initial={profile.display_name?.charAt(0).toUpperCase() ?? "?"}
-    >
-      {tab === "studio" && !mod && (
-        // Fits one phone screen without scrolling. The hero is the idle
-        // centrepiece; the two tiles are the only decisions on the page. Opening
-        // a module swaps the whole view rather than growing this one, which is
-        // what keeps the dashboard a dashboard.
-        <div className="reveal flex min-h-[calc(100dvh-9.5rem)] flex-col justify-center gap-4 py-2">
+      {...shellProps}
+      panels={{
+        studio: (
+        // This used to force everything into `min-h-[calc(100dvh-9.5rem)]` with
+        // `justify-center`, back when it held a hero and two tiles. It now holds
+        // five tiles and a value strip, and squeezing that into a fixed height
+        // is what made it read as cramped and colliding. Natural flow with real
+        // spacing instead — scrolling a little beats crushing everything.
+        <div className="reveal flex flex-col gap-4 py-1">
           <section className="surface-card relative overflow-hidden rounded-2xl border border-hairline px-5 pb-5 pt-5">
-            <AmbientIdle className="mx-auto size-36 sm:size-44" />
-            <div className="mt-2 text-center">
+            <AmbientIdle className="mx-auto size-28 sm:size-40" />
+            <div className="mt-1 text-center">
               <p className="eyebrow text-ember">
                 {greet()}, {profile.display_name?.split(" ")[0] ?? "kreator"}
               </p>
@@ -231,56 +260,28 @@ export default async function AppPage({
 
           {/* The dashboard never said what the product is good for. Three lines,
               no scroll added, and no swipes at anything else. */}
-          <ul className="flex items-center justify-between gap-1 rounded-xl border border-hairline bg-surface/50 px-3 py-2.5">
+          {/* `truncate` was cutting these off on a 360px screen — three columns
+              of clipped text is worse than no strip at all. Wrapping instead. */}
+          <ul className="grid grid-cols-3 gap-2 rounded-xl border border-hairline bg-surface/50 px-3 py-3">
             {[
               { k: "Nyambung", v: "Ngikutin gaya lo" },
               { k: "Update", v: "Tau tren hari ini" },
               { k: "Kelar", v: "Sampai jadi script" },
             ].map((x) => (
-              <li key={x.k} className="min-w-0 flex-1 text-center">
+              <li key={x.k} className="min-w-0 text-center">
                 <p className="eyebrow text-ember">{x.k}</p>
-                <p className="mt-0.5 truncate text-[10.5px] leading-snug text-muted">{x.v}</p>
+                <p className="mt-1 text-[10.5px] leading-snug text-muted">{x.v}</p>
               </li>
             ))}
           </ul>
         </div>
-      )}
+        ),
 
-      {tab === "studio" && mod === "ide" && (
-        <div className="reveal space-y-4">
-          <ModuleBar />
-          <IdeHariIni />
-        </div>
-      )}
+        vibe: <VibeCodingStudio />,
 
-      {tab === "studio" && mod === "idea" && (
-        <div className="reveal space-y-4">
-          <ModuleBar />
-          <IdeaEngine />
-        </div>
-      )}
+        pipeline: <PipelineBoard initialCards={pipelineCards || []} />,
 
-      {tab === "studio" && (mod === "hook" || mod === "script" || mod === "repurpose") && (
-        <div className="reveal space-y-4">
-          <ModuleBar />
-          {/* Primitives only across the boundary — see the note in ModuleRunner. */}
-          <ModuleRunner moduleKey={mod} cost={mod === "hook" ? costHook : mod === "script" ? costScript : costRepurpose} />
-        </div>
-      )}
-
-      {tab === "vibe" && (
-        <div className="reveal">
-          <VibeCodingStudio />
-        </div>
-      )}
-
-      {tab === "pipeline" && (
-        <div className="reveal">
-          <PipelineBoard initialCards={pipelineCards || []} />
-        </div>
-      )}
-
-      {tab === "profil" && (
+        profil: (
         <div className="reveal space-y-4">
           <section>
             <h2 className="eyebrow mb-2 ml-1 text-muted">Riwayat</h2>
@@ -343,8 +344,9 @@ export default async function AppPage({
             </button>
           </form>
         </div>
-      )}
-    </AppShell>
+        ),
+      }}
+    />
   );
 }
 

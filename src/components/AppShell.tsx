@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { CreditDisplay } from "./CreditDisplay";
 
@@ -53,12 +55,32 @@ const TABS: { key: TabKey; label: string; icon: ReactNode }[] = [
   },
 ];
 
+/**
+ * Tabs switch in the browser, not on the server.
+ *
+ * Each tab used to be `<Link href="/app?tab=...">` — a full RSC navigation per
+ * tap. On the deployed setup that meant the middleware's `auth.getUser()`, the
+ * page's `auth.getUser()`, and the profile read all crossing from the Vercel
+ * function to a Supabase project in ap-southeast-1, in sequence, before
+ * anything could render. Three trans-Pacific round trips plus a possible cold
+ * start is the 5-second tab change.
+ *
+ * All four panels are rendered once by the server and swapped here with state.
+ * Switching costs no network at all. The URL is kept in sync with
+ * `history.replaceState` so refresh and deep links still land on the right tab
+ * without triggering a navigation.
+ *
+ * `panels` rather than `children`: passing server-rendered nodes as props into
+ * a client component is the standard slot pattern and keeps every panel a
+ * server component — none of this ships their data-fetching to the browser.
+ */
 export function AppShell({
   active,
   credits,
   isAdmin,
   avatarUrl,
   initial,
+  panels,
   children,
 }: {
   active: TabKey;
@@ -66,8 +88,24 @@ export function AppShell({
   isAdmin: boolean;
   avatarUrl?: string | null;
   initial: string;
-  children: ReactNode;
+  /** One node per tab. Omit to render `children` instead (module sub-views). */
+  panels?: Partial<Record<TabKey, ReactNode>>;
+  children?: ReactNode;
 }) {
+  const [current, setCurrent] = useState<TabKey>(active);
+
+  // A module sub-view (?m=hook) owns the whole content area, so tab state does
+  // not apply — fall back to server-driven navigation for those.
+  const clientTabs = Boolean(panels);
+  const shown = clientTabs ? current : active;
+
+  const go = (key: TabKey) => {
+    setCurrent(key);
+    // replaceState, not pushState: the tab bar is not history. Back should
+    // leave the app, the way it does in a native shell.
+    window.history.replaceState(null, "", key === "studio" ? "/app" : `/app?tab=${key}`);
+  };
+
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-obsidian">
       {/* ---------- header ---------- */}
@@ -122,10 +160,19 @@ export function AppShell({
       <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div
           className={`mx-auto w-full px-4 py-4 ${
-            active === "pipeline" ? "max-w-6xl" : "max-w-3xl"
+            shown === "pipeline" ? "max-w-6xl" : "max-w-3xl"
           }`}
         >
-          {children}
+          {/* Inactive panels stay mounted but hidden. Re-rendering them on every
+              switch would throw away scroll position and any in-progress form
+              state — the thing that makes a web app feel unlike a native one. */}
+          {clientTabs
+            ? TABS.map((t) => (
+                <div key={t.key} hidden={t.key !== shown}>
+                  {panels?.[t.key]}
+                </div>
+              ))
+            : children}
         </div>
       </main>
 
@@ -136,14 +183,9 @@ export function AppShell({
       >
         <div className="mx-auto flex w-full max-w-3xl">
           {TABS.map((t) => {
-            const on = t.key === active;
-            return (
-              <Link
-                key={t.key}
-                href={`/app?tab=${t.key}`}
-                aria-current={on ? "page" : undefined}
-                className="group relative flex flex-1 flex-col items-center gap-1 py-2.5"
-              >
+            const on = t.key === shown;
+            const inner = (
+              <>
                 {/* The active tab is lit from above — the same heat language as
                     the rest of the product, rather than a generic underline. */}
                 {on && (
@@ -168,6 +210,33 @@ export function AppShell({
                 >
                   {t.label}
                 </span>
+              </>
+            );
+
+            const cls =
+              "group relative flex flex-1 cursor-pointer flex-col items-center gap-1 py-2.5";
+
+            // A button when tabs switch in the browser; a real link when they
+            // drive a navigation. A link that does not navigate breaks
+            // middle-click and "open in new tab" for no benefit.
+            return clientTabs ? (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => go(t.key)}
+                aria-current={on ? "page" : undefined}
+                className={cls}
+              >
+                {inner}
+              </button>
+            ) : (
+              <Link
+                key={t.key}
+                href={`/app?tab=${t.key}`}
+                aria-current={on ? "page" : undefined}
+                className={cls}
+              >
+                {inner}
               </Link>
             );
           })}
