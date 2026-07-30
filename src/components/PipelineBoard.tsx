@@ -220,10 +220,12 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       </div>
 
       {/* ---------- md and up: the full board ----------
-          `min-w` is load-bearing. Without it `flex-1` lets four columns shrink
-          to whatever the container allows, and at 768px that is ~170px each —
-          narrow enough that every card wrapped to one word per line. The board
-          scrolls sideways instead of crushing its own contents. */}
+          `flex-1` with a `min-w` floor, not a fixed width. Fixed 272px columns
+          inside a 1152px container meant a 1920px screen showed cramped cards
+          *and* empty gutters at the same time — the board could not use the
+          room it had. Columns now grow to fill the width (~380px each on a
+          desktop) and only fall back to horizontal scrolling when the viewport
+          genuinely cannot fit four at the 290px floor. */}
       <div className="hidden gap-3 overflow-x-auto pb-2 md:flex">
         {COLUMNS.map((col) => {
           const list = cards.filter((c) => c.status === col.id);
@@ -233,7 +235,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
               ref={(el) => {
                 colRefs.current[col.id] = el;
               }}
-              className="flex max-h-[72vh] w-[272px] shrink-0 flex-col rounded-xl border border-hairline bg-surface/50 p-3.5"
+              className="flex max-h-[76vh] min-w-[290px] flex-1 flex-col rounded-xl border border-hairline bg-surface/50 p-3.5"
             >
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="font-display font-semibold text-ink">{col.label}</h3>

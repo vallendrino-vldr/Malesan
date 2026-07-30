@@ -3,6 +3,7 @@ import { Archivo, Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { PwaProvider } from "@/components/PwaProvider";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
+import { TEXT_INIT_SCRIPT } from "@/components/TextScale";
 
 // Display — industrial, engineered. Weights 600-800, tight negative tracking.
 const archivo = Archivo({
@@ -62,7 +63,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TEXT_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

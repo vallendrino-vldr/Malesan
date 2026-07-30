@@ -12,6 +12,7 @@ import { getCost } from "@/lib/config";
 import { ModuleRunner } from "@/components/ModuleRunner";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { RefreshButton } from "@/components/RefreshButton";
+import { TextScale } from "@/components/TextScale";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -292,6 +293,12 @@ export default async function AppPage({
 
         profil: (
         <div className="reveal space-y-4">
+          {/* Accessibility controls first: someone who needs larger text needs
+              it before they can comfortably read anything else on the page. */}
+          <section className="surface-card rounded-2xl p-4">
+            <TextScale />
+          </section>
+
           <section>
             <h2 className="eyebrow mb-2 ml-1 text-muted">Riwayat</h2>
             <HistoryList items={history} />

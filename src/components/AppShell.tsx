@@ -171,7 +171,7 @@ export function AppShell({
       <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div
           className={`mx-auto w-full px-4 py-4 ${
-            shown === "pipeline" ? "max-w-6xl" : "max-w-3xl"
+            shown === "pipeline" ? "max-w-[1600px]" : "max-w-3xl"
           }`}
         >
           {/* Inactive panels stay mounted but hidden. Re-rendering them on every

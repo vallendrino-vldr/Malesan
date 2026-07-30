@@ -576,31 +576,37 @@
 --------------------------------------------------------------------------- */
 
 :root[data-theme="soft"] {
-  /* Page and surfaces are one material. This is the whole idea. */
-  --color-obsidian: #e4ebf3;
-  --color-surface: #e4ebf3;
-  --color-surface-raised: #edf2f8;
-  --color-hairline: #d3dce7;
+  /* Warm, not cool — and this is the whole fix.
+     The first light palette used a blue-grey surface (#e4ebf3, hue 212°) under
+     the warm ember accent (hue 21°). That is a 169° hue gap: near-complementary,
+     at mismatched saturations, which is the technical description of colours
+     that fight. Every neumorphic reference that looks good keeps accent and
+     surface in one hue family — the blue-accent examples sit on blue-grey.
+     Ember is the brand, so the surface moves to meet it instead.
+     Hue gap is now ~8°, and the accent finally looks like it belongs. */
+  --color-obsidian: #e8e0d8;
+  --color-surface: #f2ece6;
+  --color-surface-raised: #faf5f0;
+  --color-hairline: #ded3c8;
 
-  /* Every value below was measured against this surface, not chosen by eye.
-     The first pass failed AA on four tokens — ember at 2.92:1, muted at 3.82,
-     success at 3.64 — which is the exact trap this style is known for. These
-     are the darkest-passing values found by search:
-       ink 10.40 · muted 4.72 · ember 4.62 · ember-lo 5.29 · success 5.46
-       danger 4.55 · white-on-ember 5.56 */
-  --color-ember: #b0480f;
-  --color-ember-lo: #a1420e;
-  --color-ember-deep: #7d3209;
+  /* Search picked the *lightest* value at each hue that still clears AA on the
+     surface, so the palette stays bright instead of muddy. Measured, not eyed:
+       ember 4.54 · ember-lo 4.62 · ink 10.13 · muted 4.57
+       success 4.50 · danger 4.54 · white-on-ember 5.32 */
+  --color-ember: #b04e15;
+  --color-ember-lo: #b24a0e;
+  --color-ember-deep: #8a3a0a;
 
-  --color-ink: #2b3445;
-  --color-muted: #5c6878;
+  --color-ink: #3d3630;
+  --color-muted: #736960;
 
-  --color-success: #176b3a;
-  --color-danger: #c2352c;
+  --color-success: #257a50;
+  --color-danger: #bf3e30;
 
-  /* The paired light source every shadow below is derived from. */
-  --soft-light: #ffffff;
-  --soft-shade: #a9b6c8;
+  /* Shadows warm too. A blue-grey shade under a warm surface was the second
+     half of the clash — it read as dirt rather than depth. */
+  --soft-light: #fffdfb;
+  --soft-shade: #c4b3a2;
 }
 
 /* ---- raised: cards, tiles, anything sitting on the page ---- */
@@ -718,3 +724,23 @@
     box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ember) 30%, transparent);
   }
 }
+
+/* ===========================================================================
+   TEXT SCALE  —  :root[data-text="sm|md|lg|xl"]
+   ===========================================================================
+   Browser zoom scales *everything*, including the fixed chrome, so on a phone
+   it pushes the bottom tab bar off screen. This scales type only: the shell,
+   tap targets and spacing stay exactly where they are.
+
+   Implemented on the root font-size because every size in the product is
+   expressed in rem — so one variable moves all of them coherently instead of
+   needing a second set of type tokens.
+
+   Floor is 15px, not lower. WCAG treats sub-16px body text as a readability
+   problem already, and "smaller" is a preference, not a licence to break it.
+--------------------------------------------------------------------------- */
+:root { font-size: 16px; }
+:root[data-text="sm"] { font-size: 15px; }
+:root[data-text="md"] { font-size: 16px; }
+:root[data-text="lg"] { font-size: 17.5px; }
+:root[data-text="xl"] { font-size: 19px; }
