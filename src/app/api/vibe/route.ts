@@ -2,14 +2,16 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
-import { generateStream, parseJson } from "@/lib/gemini/client";
+import { generate, parseJson } from "@/lib/gemini/client";
 import { getCost, isModuleEnabled, getModel } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import {
-  VIBE_KIT_SCHEMA,
-  VIBE_KIT_CREDIT_COST,
-  buildVibeKitPrompt,
+  VIBE_DOC_SPECS,
+  VIBE_DOC_SCHEMA,
+  VIBE_IDENTITY_SCHEMA,
+  buildVibeDocPrompt,
+  buildVibeIdentityPrompt,
   type VibeKitOutput,
 } from "@/lib/prompts/vibe";
 
@@ -124,27 +126,74 @@ export async function POST(request: NextRequest) {
       const send = (obj: unknown) =>
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
 
-      let raw = "";
       try {
-        send({ status: "Lagi nyusun spesifikasi buat lo..." });
+        const tier = profile.is_pro ? "pro" : "free";
+        const model = await getModel(tier);
 
-        for await (const chunk of generateStream({
-          prompt: buildVibeKitPrompt({ idea, stack, audience }, dnaLang, dna),
-          tier: profile.is_pro ? "pro" : "free",
-          model: await getModel(profile.is_pro ? "pro" : "free"),
-          schema: VIBE_KIT_SCHEMA as unknown as Record<string, unknown>,
+        // One short call to name the project, so all six documents agree on it.
+        send({ status: "Mikirin konsepnya...", step: 0, total: 7 });
+        const identityRaw = await generate({
+          prompt: buildVibeIdentityPrompt({ idea, stack, audience }, dnaLang, dna),
+          tier,
+          model,
+          schema: VIBE_IDENTITY_SCHEMA as unknown as Record<string, unknown>,
           byokKey,
-        })) {
-          raw += chunk;
-          // Progress only — the payload is one large JSON object and is useless
-          // to the client until it is complete, so we report size, not content.
-          send({ progress: raw.length });
+        });
+        const identity = parseJson<{
+          project_name: string;
+          one_liner: string;
+          stack_summary: string;
+        }>(identityRaw);
+
+        if (!identity?.project_name) {
+          throw new Error("Gagal nentuin konsep project-nya. Coba ceritain idenya lebih jelas.");
         }
 
-        const parsed = parseJson<VibeKitOutput>(raw);
-        if (!parsed?.docs?.prd || !parsed?.docs?.master_prompt) {
-          throw new Error("Model returned an incomplete kit");
+        send({
+          status: `"${identity.project_name}" — sekarang nulis dokumennya`,
+          step: 1,
+          total: 7,
+          identity,
+        });
+
+        // Six concurrent calls. Sequential would blow past the 60s function
+        // limit; concurrent costs the slowest single document instead of the
+        // sum, and each one reports as it lands so progress is real rather
+        // than a character counter.
+        let done = 1;
+        const results = await Promise.all(
+          VIBE_DOC_SPECS.map(async (doc) => {
+            const raw = await generate({
+              prompt: buildVibeDocPrompt({ idea, stack, audience }, doc, identity, dnaLang, dna),
+              tier,
+              model,
+              schema: VIBE_DOC_SCHEMA as unknown as Record<string, unknown>,
+              byokKey,
+            });
+            const content = parseJson<{ content: string }>(raw)?.content ?? "";
+            done += 1;
+            send({
+              status: `${doc.file} kelar`,
+              step: done,
+              total: 7,
+              doc: doc.key,
+              chars: content.length,
+            });
+            return { key: doc.key, content };
+          }),
+        );
+
+        const docs = Object.fromEntries(results.map((r) => [r.key, r.content])) as
+          VibeKitOutput["docs"];
+
+        const empty = VIBE_DOC_SPECS.filter((d) => !docs[d.key]?.trim());
+        if (empty.length) {
+          throw new Error(
+            `Dokumen ini gagal dibikin: ${empty.map((d) => d.file).join(", ")}. Kredit lo balik.`,
+          );
         }
+
+        const parsed: VibeKitOutput = { ...identity, docs };
 
         const { data: genRow } = await serviceRole
           .from("generations")

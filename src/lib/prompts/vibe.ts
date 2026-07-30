@@ -30,6 +30,89 @@ export type VibeKitInput = {
  * roadmap that references tables the schema does not define is worse than no
  * roadmap. Separate calls would drift.
  */
+/**
+ * One document per call.
+ *
+ * The kit was generated as a single request for all six documents under one
+ * strict schema. Six long Markdown files do not fit in one response: the model
+ * ran out of output budget partway through, the JSON came back truncated, and
+ * `parseJson` threw "incomplete kit" — the failure that showed as a progress
+ * counter stalling around 2k characters and then dying with nothing to show.
+ * Adding depth requirements to the prompt made it strictly worse.
+ *
+ * Six focused calls fit comfortably, give real per-document progress, and let
+ * one document fail without losing the other five. They run concurrently, so
+ * wall-clock is the slowest single document rather than the sum.
+ */
+export const VIBE_DOC_SPECS: {
+  key: keyof VibeKitOutput["docs"];
+  file: string;
+  brief: string;
+}[] = [
+  {
+    key: "prd",
+    file: "PRD.md",
+    brief: `Masalah yang dipecahin dan buat siapa. Positioning yang tajam.
+Minimal 6 fitur fase 1, tiap fitur ada acceptance criteria yang bisa dicentang.
+Sebutin juga apa yang SENGAJA gak dibikin dulu, dan kenapa.`,
+  },
+  {
+    key: "design",
+    file: "DESIGN.md",
+    brief: `Sistem desain. Minimal 12 token warna lengkap hex dan kapan dipakai —
+hitam/putihnya jangan netral, kasih arah suhu warna dan jelasin kenapa.
+2 pasangan font dengan ukuran dan line-height. Skala spasi.
+Minimal 6 contoh copy nyata: loading, empty state, error, sukses, konfirmasi, dan tombol utama.`,
+  },
+  {
+    key: "roadmap",
+    file: "ROADMAP.md",
+    brief: `Urutan langkah dari nol sampai bisa dipakai orang.
+Tiap step ada "definition of done" yang bisa diuji, bukan "selesai".
+Tandain mana yang bikin produk hidup dan mana yang bisa ditunda.`,
+  },
+  {
+    key: "agents",
+    file: "AGENTS.md",
+    brief: `Aturan keras buat AI coding agent. Minimal 10 aturan, tiap aturan ada
+konsekuensi kalau dilanggar. Wajib termasuk: jangan ngarang fitur di luar roadmap,
+commit tiap checkpoint, berhenti dan tanya kalau spek bentrok sama kenyataan,
+dan jangan ngaku sesuatu berhasil tanpa dijalanin dulu.`,
+  },
+  {
+    key: "schema",
+    file: "SCHEMA.md",
+    brief: `Skema database. SQL DDL beneran yang bisa langsung dijalanin —
+CREATE TABLE lengkap dengan tipe, constraint, index, dan row-level security policy.
+Bukan deskripsi tabel. Jelasin relasi antar tabel dan kenapa dibikin gitu.`,
+  },
+  {
+    key: "master_prompt",
+    file: "MASTER_PROMPT.md",
+    brief: `Prompt pembuka yang tinggal di-paste ke AI agent di sesi pertama.
+Harus siap tempel, gak ada placeholder yang mesti diisi manual.
+Isinya: konteks project, urutan baca dokumen, aturan kerja, dan langkah pertama yang konkret.`,
+  },
+];
+
+/** Schema for a single document call. */
+export const VIBE_DOC_SCHEMA = {
+  type: "OBJECT",
+  properties: { content: { type: "STRING" } },
+  required: ["content"],
+} as const;
+
+/** Schema for the short identity pass that names the project. */
+export const VIBE_IDENTITY_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    project_name: { type: "STRING" },
+    one_liner: { type: "STRING" },
+    stack_summary: { type: "STRING" },
+  },
+  required: ["project_name", "one_liner", "stack_summary"],
+} as const;
+
 export const VIBE_KIT_SCHEMA = {
   type: "OBJECT",
   properties: {
@@ -247,4 +330,112 @@ ISI TIAP DOKUMEN:
    dan kapan dia harus berhenti buat lapor.
 
 Balas HANYA JSON valid sesuai skema. Isi tiap dokumen adalah string Markdown utuh.`;
+}
+
+// ---------------------------------------------------------------------------
+// Per-document generation
+// ---------------------------------------------------------------------------
+
+type VibeDna = {
+  industry?: string | null;
+  experience_level?: string | null;
+  work_context?: string | null;
+  client_brief?: string | null;
+  goals?: string | null;
+  ai_persona_summary?: string | null;
+} | null;
+
+/** Shared preamble. Identical for every document so the six stay consistent. */
+function vibeContext(input: VibeKitInput, lang: string, dna: VibeDna): string {
+  let who = "";
+  if (dna) {
+    const bits: string[] = [];
+    if (dna.ai_persona_summary) bits.push(`Persona: ${dna.ai_persona_summary}`);
+    if (dna.industry) bits.push(`Bidang: ${dna.industry}`);
+    if (dna.experience_level) bits.push(`Jam terbang: ${dna.experience_level}`);
+    if (dna.goals) bits.push(`Yang dia kejar: ${dna.goals}`);
+    if (dna.work_context === "klien" || dna.work_context === "brand") {
+      bits.push(
+        `Dia bikin ini buat ${dna.work_context === "klien" ? "klien" : "brand tempat dia kerja"}${
+          dna.client_brief ? ` — ${dna.client_brief}` : ""
+        }`,
+      );
+    }
+    if (bits.length) {
+      who =
+        `\nSIAPA YANG BAKAL PAKE DOKUMEN INI:\n- ${bits.join("\n- ")}\n` +
+        `Sesuaikan kedalaman dan asumsinya. Kalau dia baru mulai, jangan asumsiin` +
+        ` dia punya tim atau budget. Kalau dia udah lama, jangan jelasin hal dasar.\n`;
+    }
+  }
+
+  return `Lo engineer senior yang udah sering mimpin project dari nol sampai launch,
+sekarang lagi bantu orang bikin aplikasi pakai AI coding agent (Claude Code, Cursor, dsb).
+
+IDE DIA:
+${input.idea}
+
+${input.stack ? `STACK YANG DIA MAU: ${input.stack}` : "STACK: belum ditentuin. Lo yang pilihin, jelasin alasannya singkat."}
+${input.audience ? `TARGET USER: ${input.audience}` : ""}
+${who}
+ATURAN NULIS:
+- Bahasa: ${lang}. Nama tabel, kolom, tipe, dan identifier kode tetap bahasa Inggris.
+- SPESIFIK. Jangan "bikin autentikasi yang aman" — tulis metodenya apa, kenapa, dan konsekuensinya.
+- Tiap keputusan ada ALASANNYA. Yang bikin dokumen ini berguna itu "kenapa", bukan "apa".
+- Jujur soal batasan. Kalau sesuatu gak realistis di free tier, bilang.
+- Markdown rapi. Pakai tabel kalau lebih jelas dari paragraf.
+
+JANGAN KEDENGERAN KAYAK AI:
+- Haram: "di era digital ini", "mari kita", "tak dapat dipungkiri", "sangatlah penting",
+  "dalam dunia yang serba cepat", "solusi yang komprehensif".
+- Jangan buka pakai definisi atau basa-basi. Kalimat pertama langsung ke inti.
+- Jangan bikin poin yang cuma satu frasa tanpa isi. Poin kosong lebih buruk dari gak ada poin.
+- Angka, nama tool, versi, dan batas konkret. Vague bikin dokumen kerasa murah.
+- Jangan menggurui dan jangan muji-muji idenya. Langsung kerja.`;
+}
+
+/** Short first pass: names the project so all six documents agree on it. */
+export function buildVibeIdentityPrompt(
+  input: VibeKitInput,
+  lang = "id",
+  dna: VibeDna = null,
+): string {
+  return `${vibeContext(input, lang, dna)}
+
+Tugas lo sekarang CUMA tiga hal pendek:
+1. project_name — nama project yang enak disebut, maksimal 3 kata.
+2. one_liner — satu kalimat yang jelasin produknya ke orang awam.
+3. stack_summary — stack yang dipakai dan alasannya, maksimal 2 kalimat.
+
+Balas HANYA JSON valid sesuai skema. Tanpa \`\`\`json.`;
+}
+
+/** One document. Called six times concurrently. */
+export function buildVibeDocPrompt(
+  input: VibeKitInput,
+  doc: (typeof VIBE_DOC_SPECS)[number],
+  identity: { project_name: string; one_liner: string; stack_summary: string },
+  lang = "id",
+  dna: VibeDna = null,
+): string {
+  return `${vibeContext(input, lang, dna)}
+
+PROJECT INI UDAH DINAMAIN:
+- Nama: ${identity.project_name}
+- Ringkasan: ${identity.one_liner}
+- Stack: ${identity.stack_summary}
+Pakai nama dan stack itu konsisten. Jangan bikin nama atau stack baru.
+
+Tugas lo sekarang: tulis SATU dokumen — ${doc.file}.
+
+ISI YANG DIMINTA:
+${doc.brief}
+
+KENAPA INI PENTING:
+Agent AI kehabisan konteks, sesi mati, orangnya ganti tool di tengah jalan.
+Kalau dokumennya gak akurat, kerjaan hilang dan agent berikutnya ngarang.
+Ini bukan formalitas — ini memori project.
+
+Tulis isi ${doc.file} lengkap sebagai Markdown, di field "content".
+Jangan tulis dokumen lain. Balas HANYA JSON valid sesuai skema. Tanpa \`\`\`json.`;
 }
