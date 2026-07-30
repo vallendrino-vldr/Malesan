@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { VibeQuestions } from "./VibeQuestions";
 import {
   VIBE_KIT_DOCS,
   type VibeKitOutput,
+  type VibeQuestion,
 } from "@/lib/prompts/vibe";
 
 type DocKey = (typeof VIBE_KIT_DOCS)[number]["key"];
@@ -57,8 +59,42 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
   const [active, setActive] = useState<DocKey>("prd");
   const [copied, setCopied] = useState<DocKey | null>(null);
   const [step, setStep] = useState<{ done: number; total: number } | null>(null);
+  // The clarifying-question step lives between the idea and the generation.
+  const [questions, setQuestions] = useState<VibeQuestion[] | null>(null);
+  const [asking, setAsking] = useState(false);
 
-  async function generate() {
+  /**
+   * Step one: ask. A one-line idea makes a one-line-deep spec, so the questions
+   * are worth the extra few seconds — and they are free, unlike the kit.
+   *
+   * Failure here is never a blocker: if the questions cannot be produced we go
+   * straight to generating, because the user came for documents, not a form.
+   */
+  async function ask() {
+    if (idea.trim().length < 12) {
+      setError("Ceritain dulu mau bikin apa, minimal satu kalimat.");
+      return;
+    }
+    setAsking(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/vibe/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea }),
+      });
+      const j = await res.json();
+      if (j?.questions?.length) setQuestions(j.questions as VibeQuestion[]);
+      else await runGenerate([]);
+    } catch {
+      await runGenerate([]);
+    } finally {
+      setAsking(false);
+    }
+  }
+
+  async function runGenerate(answers: { q: string; a: string }[]) {
+    setQuestions(null);
     setPending(true);
     setError(null);
     setKit(null);
@@ -69,7 +105,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
       const res = await fetch("/api/vibe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, stack, audience }),
+        body: JSON.stringify({ idea, stack, audience, answers }),
       });
 
       if (!res.ok && res.headers.get("Content-Type")?.includes("json")) {
@@ -239,11 +275,11 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
-            onClick={generate}
-            disabled={pending || idea.trim().length < 12}
+            onClick={ask}
+            disabled={pending || asking || idea.trim().length < 12}
             className="btn-ember inline-flex items-center justify-center rounded-xl px-5 py-3 font-display text-[15px] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {pending ? "Lagi mikirin buat lo..." : "Males mikir. Bikinin speknya."}
+            {asking ? "Nyiapin pertanyaan..." : pending ? "Lagi mikirin buat lo..." : "Males mikir. Bikinin speknya."}
           </button>
           {/* Read from app_config, not the compiled-in constant. Vibe pricing
               became admin-editable but this label kept showing 6, so changing
@@ -256,6 +292,17 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
 
         {/* Real progress: a step count and a bar that actually advances as each
             document lands, plus the lava mark so the wait has a heartbeat. */}
+        {questions && (
+          <div className="mt-5 border-t border-hairline pt-5">
+            <VibeQuestions
+              questions={questions}
+              busy={pending}
+              onDone={runGenerate}
+              onSkipAll={() => runGenerate([])}
+            />
+          </div>
+        )}
+
         {status && (
           <div role="status" aria-live="polite" className="mt-4">
             <div className="flex items-center gap-3">

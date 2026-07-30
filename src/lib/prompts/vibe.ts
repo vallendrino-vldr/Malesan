@@ -439,3 +439,95 @@ Ini bukan formalitas — ini memori project.
 Tulis isi ${doc.file} lengkap sebagai Markdown, di field "content".
 Jangan tulis dokumen lain. Balas HANYA JSON valid sesuai skema. Tanpa \`\`\`json.`;
 }
+
+// ---------------------------------------------------------------------------
+// Clarifying questions
+// ---------------------------------------------------------------------------
+
+/**
+ * Five questions, asked before anything is generated.
+ *
+ * A one-sentence idea produces a one-sentence-deep specification. No amount of
+ * prompt engineering fixes missing information — the model has to invent the
+ * user, the constraint and the priority, and invented context is exactly what
+ * "generic AI output" is made of.
+ *
+ * The questions are generated from the idea rather than fixed, because the right
+ * questions for a cashier app are not the right questions for a habit tracker.
+ * Each comes with suggested answers so the whole step is tappable: a required
+ * form of five open text boxes gets abandoned, and an abandoned form teaches the
+ * model nothing.
+ *
+ * Free of charge on purpose. Charging to improve the thing they already paid for
+ * would be hostile, and the answers make the paid output measurably better.
+ */
+export const VIBE_QUESTIONS_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    questions: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          q: { type: "STRING" },
+          why: { type: "STRING" },
+          suggestions: { type: "ARRAY", items: { type: "STRING" } },
+          multi: { type: "BOOLEAN" },
+        },
+        required: ["q", "why", "suggestions", "multi"],
+      },
+    },
+  },
+  required: ["questions"],
+} as const;
+
+export type VibeQuestion = {
+  q: string;
+  why: string;
+  suggestions: string[];
+  multi: boolean;
+};
+
+export function buildVibeQuestionsPrompt(idea: string, lang = "id"): string {
+  const language =
+    lang === "en" ? "English" : "Bahasa Indonesia yang santai dan gampang dipahami orang awam";
+
+  return `Lo product manager senior. Orang ini mau bikin aplikasi tapi idenya masih terlalu umum:
+
+"${idea}"
+
+Tugas lo: bikin TEPAT 5 pertanyaan yang paling nentuin bentuk produknya.
+
+Yang bikin pertanyaan bagus:
+- Jawabannya ngubah keputusan nyata di produk, bukan cuma nambah info.
+- Spesifik ke ide DIA, bukan pertanyaan template yang bisa ditempel ke aplikasi apa pun.
+- Bisa dijawab orang yang bukan programmer. Jangan tanya soal database atau framework.
+
+Wajib ada minimal satu pertanyaan tentang:
+1. Siapa orangnya dan sekarang dia ngatasin masalah ini pakai apa.
+2. Satu hal yang paling penting kelar di pemakaian pertama.
+3. Fitur mana yang WAJIB ada versus yang bisa nanti.
+
+Buat tiap pertanyaan:
+- "q": pertanyaannya, satu kalimat, bahasa ${language}.
+- "why": kenapa ini ngaruh, maksimal 12 kata. Ini dipajang ke user biar dia tau pertanyaannya bukan iseng.
+- "suggestions": 4-5 jawaban singkat yang masuk akal buat ide DIA, biar bisa tinggal ditap.
+  Bikin yang beneran nyambung sama idenya — jangan generik.
+- "multi": true kalau boleh pilih beberapa, false kalau satu aja.
+
+Balas HANYA JSON valid sesuai skema. Tanpa \`\`\`json.`;
+}
+
+/** Folds the answers into the shared context for every document. */
+export function formatVibeAnswers(
+  answers: { q: string; a: string }[],
+): string {
+  const filled = answers.filter((x) => x.a.trim());
+  if (!filled.length) return "";
+  return (
+    `\nJAWABAN DIA ATAS PERTANYAAN KLARIFIKASI:\n` +
+    filled.map((x) => `- ${x.q}\n  → ${x.a}`).join("\n") +
+    `\nIni informasi langsung dari dia. Pakai ini, jangan ngarang asumsi sendiri` +
+    ` yang bertentangan sama jawaban di atas.\n`
+  );
+}

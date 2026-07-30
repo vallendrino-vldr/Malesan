@@ -12,6 +12,7 @@ import {
   VIBE_IDENTITY_SCHEMA,
   buildVibeDocPrompt,
   buildVibeIdentityPrompt,
+  formatVibeAnswers,
   type VibeKitOutput,
 } from "@/lib/prompts/vibe";
 
@@ -24,6 +25,15 @@ export async function POST(request: NextRequest) {
   const idea: string = body?.idea?.trim() ?? "";
   const stack: string | undefined = body?.stack?.trim() || undefined;
   const audience: string | undefined = body?.audience?.trim() || undefined;
+  // Answers to the clarifying questions, when the user filled any in. Optional
+  // by design — the step is skippable and generation must still work without it.
+  const answers: { q: string; a: string }[] = Array.isArray(body?.answers)
+    ? body.answers
+        .filter((x: unknown): x is { q: string; a: string } =>
+          !!x && typeof (x as { q?: unknown }).q === "string" && typeof (x as { a?: unknown }).a === "string",
+        )
+        .slice(0, 5)
+    : [];
 
   if (idea.length < 12) {
     return Response.json(
@@ -133,7 +143,9 @@ export async function POST(request: NextRequest) {
         // One short call to name the project, so all six documents agree on it.
         send({ status: "Mikirin konsepnya...", step: 0, total: 7 });
         const identityRaw = await generate({
-          prompt: buildVibeIdentityPrompt({ idea, stack, audience }, dnaLang, dna),
+          prompt:
+            buildVibeIdentityPrompt({ idea, stack, audience }, dnaLang, dna) +
+            formatVibeAnswers(answers),
           tier,
           model,
           schema: VIBE_IDENTITY_SCHEMA as unknown as Record<string, unknown>,
@@ -164,7 +176,9 @@ export async function POST(request: NextRequest) {
         const results = await Promise.all(
           VIBE_DOC_SPECS.map(async (doc) => {
             const raw = await generate({
-              prompt: buildVibeDocPrompt({ idea, stack, audience }, doc, identity, dnaLang, dna),
+              prompt:
+                buildVibeDocPrompt({ idea, stack, audience }, doc, identity, dnaLang, dna) +
+                formatVibeAnswers(answers),
               tier,
               model,
               schema: VIBE_DOC_SCHEMA as unknown as Record<string, unknown>,
@@ -200,7 +214,7 @@ export async function POST(request: NextRequest) {
           .insert({
             user_id: user.id,
             module: "vibe_kit",
-            input: { idea, stack, audience },
+            input: { idea, stack, audience, answers },
             output: parsed as unknown as Json,
             credits_spent: cost,
             model_used: await getModel(profile.is_pro ? "pro" : "free"),
