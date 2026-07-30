@@ -351,16 +351,31 @@ export default async function AppPage({
   );
 }
 
+/**
+ * These read as three flat labels rather than three buttons — no affordance at
+ * all. A chevron, a lifted surface and a pressed state make it obvious they are
+ * tappable; `active:scale` gives the touch feedback that sells it on a phone,
+ * where there is no hover to hint with.
+ */
 function MiniTile({ href, title, cost }: { href: string; title: string; cost: number }) {
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-hairline bg-surface/60 px-2.5 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:bg-surface"
+      className="group flex min-h-[68px] cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center shadow-[0_1px_0_0_color-mix(in_oklab,var(--color-ink)_6%,transparent)_inset] transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:bg-surface active:scale-[0.97]"
     >
-      <p className="truncate text-[12.5px] font-semibold text-ink group-hover:text-ember-lo">
-        {title}
-      </p>
-      <p className="mt-0.5 font-mono text-[10px] text-muted">{cost} kredit</p>
+      <span className="flex items-center justify-center gap-1">
+        <span className="truncate text-[12.5px] font-bold text-ink group-hover:text-ember-lo">
+          {title}
+        </span>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          className="size-3 shrink-0 fill-muted transition-colors group-hover:fill-ember"
+        >
+          <path d="M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6-1.4-1.4Z" />
+        </svg>
+      </span>
+      <span className="mt-1 block font-mono text-[10px] text-ember-lo">{cost} kredit</span>
     </Link>
   );
 }

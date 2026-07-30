@@ -30,10 +30,17 @@ export function PwaProvider() {
     let reg: ServiceWorkerRegistration | undefined;
 
     navigator.serviceWorker
-      .register("/sw.js")
+      // `updateViaCache: "none"` is the whole fix for "the installed app shows
+      // old data". Without it the browser serves /sw.js from its own HTTP cache
+      // for up to 24 hours, so the *old worker keeps running* and never even
+      // learns a new build exists — the visibility check below was calling
+      // update() against a cached copy and always concluding nothing changed.
+      .register("/sw.js", { updateViaCache: "none" })
       .then((r) => {
         reg = r;
         if (r.waiting) setUpdateReady(true);
+        // Check once at startup too, not only on the next foreground.
+        r.update().catch(() => {});
         r.addEventListener("updatefound", () => {
           const sw = r.installing;
           sw?.addEventListener("statechange", () => {
