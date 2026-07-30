@@ -242,6 +242,22 @@ export default function Home() {
           <span className="text-xs text-muted">
             Buat kreator Indonesia. Gratis 10 kredit tiap hari.
           </span>
+          {/* Google will not publish the OAuth consent screen without a
+              reachable privacy policy, and it checks the link works. */}
+          <span className="flex gap-4 text-xs">
+            <Link
+              href="/privasi"
+              className="text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+            >
+              Privasi
+            </Link>
+            <Link
+              href="/ketentuan"
+              className="text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+            >
+              Ketentuan
+            </Link>
+          </span>
         </div>
       </footer>
     </div>
