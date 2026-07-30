@@ -39,8 +39,6 @@ export function PwaProvider() {
       .then((r) => {
         reg = r;
         if (r.waiting) setUpdateReady(true);
-        // Check once at startup too, not only on the next foreground.
-        r.update().catch(() => {});
         r.addEventListener("updatefound", () => {
           const sw = r.installing;
           sw?.addEventListener("statechange", () => {
@@ -55,10 +53,17 @@ export function PwaProvider() {
         // A failed registration must never break the app.
       });
 
-    // Check for a new build when the app is brought back to the foreground.
-    // Without this an installed PWA can go days without ever checking.
+    // Check for a new build when the app returns to the foreground, but no more
+    // than once an hour. An update() on every single foreground event was one
+    // half of the takeover loop; the worker no longer skip-waits, and this no
+    // longer hammers it.
+    let lastCheck = 0;
     const onVisible = () => {
-      if (document.visibilityState === "visible") reg?.update().catch(() => {});
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastCheck < 60 * 60 * 1000) return;
+      lastCheck = now;
+      reg?.update().catch(() => {});
     };
     document.addEventListener("visibilitychange", onVisible);
 
