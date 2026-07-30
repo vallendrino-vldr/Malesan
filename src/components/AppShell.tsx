@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { CreditDisplay } from "./CreditDisplay";
+import { TutorialSheet } from "./TutorialSheet";
 
 /**
  * Native-app shell.
@@ -116,6 +117,10 @@ export function AppShell({
           </Link>
 
           <div className="flex min-w-0 items-center gap-2">
+            {/* Five modules, a three-stage pipeline and a credit system are more
+                than tiles alone can explain. Sits in the header so it is
+                reachable from every tab, not buried in a settings page. */}
+            <TutorialSheet />
             {/* Was a muted hairline pill that read as decoration — the one
                 entry point to the whole admin area, and it went unfound. It is
                 now tinted with the accent so it reads as an action. */}

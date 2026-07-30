@@ -349,6 +349,60 @@ export async function signedProofUrl(proofUrl: string): Promise<string | null> {
   return data?.signedUrl ?? null;
 }
 
+/**
+ * Upload the QRIS image and store its public URL in one step.
+ *
+ * The config screen only accepted a URL, which meant the owner had to go and
+ * host the image somewhere else first — a dead end for someone who does not
+ * code, and the reason the QRIS option never worked. Takes the file directly
+ * now and writes `qris_image_url` itself.
+ *
+ * Goes to `public_assets`, not `topup_proofs`: proofs are private because they
+ * are bank screenshots, and the QRIS has to be readable by every user.
+ */
+export async function uploadQrisImage(form: FormData) {
+  const adminId = await verifyAdmin();
+  const file = form.get("file");
+
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Gak ada file yang keunggah.");
+  }
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Filenya harus gambar (PNG atau JPG).");
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    throw new Error("Gambarnya kegedean. Maksimal 2MB.");
+  }
+
+  const serviceRole = createServiceRoleClient();
+  const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "png";
+  // Timestamped name so a replacement is not masked by a cached old file.
+  const path = `qris/${Date.now()}.${ext}`;
+
+  const { error: upErr } = await serviceRole.storage
+    .from("public_assets")
+    .upload(path, file, { contentType: file.type, upsert: true });
+
+  if (upErr) throw new Error(`Gagal upload: ${upErr.message}`);
+
+  const {
+    data: { publicUrl },
+  } = serviceRole.storage.from("public_assets").getPublicUrl(path);
+
+  const { error } = await serviceRole
+    .from("app_config")
+    .update({ value: publicUrl, updated_at: new Date().toISOString(), updated_by: adminId })
+    .eq("key", "qris_image_url");
+
+  if (error) throw new Error(error.message);
+
+  await audit(adminId, "config.upload_qris", "qris_image_url", { path });
+  invalidateConfigCache();
+  revalidatePath("/admin/config");
+  revalidatePath("/app/topup");
+  return publicUrl;
+}
+
 /** Recent admin activity, newest first. Powers the trail shown in the panel. */
 export async function recentAuditLog(limit = 30) {
   await verifyAdmin();

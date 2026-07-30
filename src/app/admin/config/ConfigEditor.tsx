@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { setConfig } from "@/app/actions/admin";
+import { setConfig, uploadQrisImage } from "@/app/actions/admin";
 
 export type ConfigRow = {
   key: string;
@@ -193,7 +193,7 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
               ["bank_name", "Nama bank"],
               ["bank_account_number", "Nomor rekening"],
               ["bank_account_holder", "Atas nama"],
-              ["qris_image_url", "URL gambar QRIS"],
+              ["qris_image_url", "URL gambar QRIS (atau upload di bawah)"],
               ["payment_note", "Catatan tambahan"],
             ] as const
           ).map(([k, label]) => (
@@ -206,6 +206,11 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
               onSave={(v) => save(k, v)}
             />
           ))}
+
+          <QrisUpload
+            current={String(byKey["qris_image_url"]?.value ?? "")}
+            onDone={() => router.refresh()}
+          />
         </div>
       </section>
 
@@ -401,6 +406,87 @@ function NumberRow({
           {busy ? "..." : "OK"}
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Direct upload for the QRIS code.
+ *
+ * The URL field alone was a dead end: it assumed the owner could already host
+ * an image somewhere, which is exactly the thing a non-coder cannot do. This
+ * takes the file, puts it in the public bucket, and writes the resulting URL
+ * into `qris_image_url` in one step.
+ */
+function QrisUpload({ current, onDone }: { current: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState(false);
+
+  const pick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // let the same file be re-picked after a failure
+    if (!file) return;
+
+    setBusy(true);
+    setErr("");
+    setOk(false);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      await uploadQrisImage(fd);
+      setOk(true);
+      onDone();
+      setTimeout(() => setOk(false), 2500);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Gagal upload.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-hairline bg-surface p-3">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-semibold text-ink">Upload QRIS</label>
+        {ok && <span className="text-[11px] text-success">Keunggah</span>}
+      </div>
+      <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+        Pilih gambar QRIS-nya langsung — gak perlu bikin link dulu. PNG atau JPG,
+        maksimal 2MB.
+      </p>
+
+      {current && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={current}
+          alt="QRIS sekarang"
+          className="mt-2 max-h-40 w-auto rounded-lg bg-white p-2"
+        />
+      )}
+
+      <label
+        className={`mt-2 flex cursor-pointer items-center justify-center rounded-lg border border-dashed px-3 py-3 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat ${
+          busy
+            ? "border-hairline text-muted"
+            : "border-ember/40 text-ember-lo hover:border-ember hover:bg-ember/5"
+        }`}
+      >
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          onChange={pick}
+          disabled={busy}
+          className="hidden"
+        />
+        {busy ? "Lagi ngunggah..." : current ? "Ganti gambar QRIS" : "Pilih gambar QRIS"}
+      </label>
+
+      {err && (
+        <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-[11px] text-danger">
+          {err}
+        </p>
+      )}
     </div>
   );
 }
