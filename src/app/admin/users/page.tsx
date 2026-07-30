@@ -10,6 +10,7 @@ import {
   setAdminRole,
   deleteUser,
 } from "@/app/actions/admin";
+import { LiveRefresh } from "@/components/LiveRefresh";
 
 /**
  * User control.
@@ -78,6 +79,8 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-4">
+      <LiveRefresh tables={["profiles"]} label="Data user berubah" />
+
       <header>
         <h1 className="font-display text-xl font-bold text-ink">User</h1>
         <p className="mt-1 text-sm text-muted">

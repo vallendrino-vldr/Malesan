@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { approveTopup, rejectTopup, signedProofUrl } from "@/app/actions/admin";
+import { LiveRefresh } from "@/components/LiveRefresh";
 
 /**
  * Top-up approval.
@@ -82,6 +83,8 @@ export default function AdminTopupsPage() {
 
   return (
     <div className="space-y-4">
+      <LiveRefresh tables={["topups"]} label="Ada topup baru" />
+
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Antrean topup</h1>
         <p className="mt-1 text-sm text-muted">

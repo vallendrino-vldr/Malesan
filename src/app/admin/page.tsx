@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { LiveRefresh } from "@/components/LiveRefresh";
 
 /**
  * Admin overview.
@@ -65,6 +66,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <LiveRefresh tables={["topups", "profiles", "generations", "error_log"]} label="Ada aktivitas baru" />
+
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Ringkasan</h1>
         <p className="mt-1 text-sm text-muted">Kondisi platform hari ini.</p>

@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { LiveRefresh } from "@/components/LiveRefresh";
 
 /**
  * Why things failed.
@@ -90,6 +91,8 @@ export default async function AdminErrorsPage() {
 
   return (
     <div className="space-y-5">
+      <LiveRefresh tables={["error_log"]} label="Error baru tercatat" />
+
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Error</h1>
         <p className="mt-1 text-sm leading-relaxed text-muted">
