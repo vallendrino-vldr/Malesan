@@ -31,7 +31,7 @@ export default async function MasukPage({
     <div className="relative flex min-h-full flex-1 flex-col items-center justify-center overflow-x-hidden bg-obsidian px-5 py-16">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(255,138,61,0.14),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(60%_100%_at_50%_0%,var(--ambient-glow),transparent_70%)]"
       />
 
       <main className="reveal relative z-10 w-full max-w-sm">

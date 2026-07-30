@@ -659,3 +659,62 @@
   filter: blur(6px);
   opacity: 0.75;
 }
+
+/* ===========================================================================
+   AMBIENT GLOW — theme-aware
+   ===========================================================================
+   Three screens painted the hero's ambient orange glow as literal
+   `rgba(255,138,61,...)` — the dark theme's ember, hardcoded. It never read
+   the soft theme's deepened accent, so switching themes left a neon dark-mode
+   glow sitting on top of the pastel soft palette. That mismatch is a direct
+   cause of "warnanya gak selaras" in bright mode: nothing else on the page is
+   that saturated or that orange.
+--------------------------------------------------------------------------- */
+:root {
+  --ambient-glow: color-mix(in oklab, var(--color-ember) 14%, transparent);
+  --ambient-glow-strong: color-mix(in oklab, var(--color-ember) 16%, transparent);
+}
+
+/* ===========================================================================
+   Z-INDEX SCALE
+   ===========================================================================
+   Undocumented z-50 on everything meant the PWA install banner and modal
+   dialogs (TutorialSheet, admin UserSheet) competed for the same stacking
+   layer. Whichever mounted later painted on top — the PWA banner sits fixed
+   near the bottom of the screen and, at equal z-index, drew over the bottom of
+   an open tutorial sheet, which is the collision in the "berantakan" screenshot.
+
+   Fixed scale, low to high:
+     20  chrome     — header, bottom tab bar (always visible, never covers content)
+     40  ambient    — toasts, install prompts, live-update pulses (dismissible, transient)
+     60  modal      — dialogs, bottom sheets (must sit above every ambient element)
+--------------------------------------------------------------------------- */
+
+/* ===========================================================================
+   THEME TOGGLE — idle attention
+   ===========================================================================
+   A flat 32px icon in a row of near-identical icon buttons had zero chance of
+   being noticed as "the new interactive thing here". This is a slow breathing
+   glow behind the switch that runs only until the user's first toggle — after
+   that they know what it does, and a control that keeps animating forever
+   reads as broken/nagging rather than inviting.
+--------------------------------------------------------------------------- */
+@keyframes theme-toggle-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-ember) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-ember) 0%, transparent);
+  }
+}
+
+.theme-toggle-hint {
+  animation: theme-toggle-breathe 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle-hint {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ember) 30%, transparent);
+  }
+}

@@ -150,20 +150,25 @@ export function TutorialSheet() {
 
   return (
     <>
+      {/* WCAG 2.2's minimum comfortable target is 44-48px; the visible glyph
+          stays 32px so the header does not bloat, and the button's own box
+          absorbs the extra hit area. */}
       <button
         onClick={() => setOpen(true)}
         aria-label="Cara pakai"
         title="Cara pakai"
-        className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border border-hairline text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:text-ember"
+        className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center"
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
-          <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm-1 12h2v2h-2v-2Zm1-9c-1.8 0-3 1.1-3 2.8h2c0-.7.4-1 1-1s1 .3 1 .9c0 .5-.3.8-.9 1.2-.8.5-1.1 1-1.1 2.1h2c0-.6.2-.9.9-1.3.9-.6 1.4-1.2 1.4-2.3C15.2 8.1 13.9 7 12 7Z" />
-        </svg>
+        <span className="skeu-press flex size-8 items-center justify-center rounded-full border border-hairline text-muted transition-colors duration-[var(--duration-standard)] ease-heat group-hover:border-ember/45 hover:border-ember/45 hover:text-ember">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm-1 12h2v2h-2v-2Zm1-9c-1.8 0-3 1.1-3 2.8h2c0-.7.4-1 1-1s1 .3 1 .9c0 .5-.3.8-.9 1.2-.8.5-1.1 1-1.1 2.1h2c0-.6.2-.9.9-1.3.9-.6 1.4-1.2 1.4-2.3C15.2 8.1 13.9 7 12 7Z" />
+          </svg>
+        </span>
       </button>
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center"
           role="dialog"
           aria-modal="true"
           aria-label="Cara pakai Malesan"

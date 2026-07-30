@@ -46,7 +46,7 @@ export default function OnboardingSuccessPage() {
         </p>
 
         {persona ? (
-          <div className="mt-8 rounded-2xl border border-hairline bg-surface p-6 shadow-[0_0_40px_rgba(255,87,34,0.05)]">
+          <div className="mt-8 rounded-2xl border border-hairline bg-surface p-6 shadow-[0_0_40px_var(--ambient-glow)]">
             <p className="font-display text-lg font-semibold italic text-ember leading-relaxed">
               &quot;{persona}&quot;
             </p>

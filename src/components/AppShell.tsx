@@ -139,11 +139,14 @@ export function AppShell({
               </Link>
             )}
             <CreditDisplay credits={credits} />
+            {/* 44px hit area wrapping a 32px visual avatar, same pattern as
+                the other header icon buttons. */}
             <Link
               href="/app?tab=profil"
               aria-label="Profil"
-              className="size-8 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center"
             >
+              <span className="block size-8 overflow-hidden rounded-full border border-hairline bg-surface">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -156,6 +159,7 @@ export function AppShell({
                   {initial}
                 </span>
               )}
+              </span>
             </Link>
           </div>
         </div>

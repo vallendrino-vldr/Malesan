@@ -129,7 +129,7 @@ function Banner({
   onClose: () => void;
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.6rem)] z-50 px-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.6rem)] z-40 px-4">
       <div className="surface-card pointer-events-auto mx-auto flex max-w-md items-center gap-3 rounded-xl border border-ember/30 px-4 py-3">
         <p className="min-w-0 flex-1 text-[13px] leading-snug text-ink">{text}</p>
         <button
