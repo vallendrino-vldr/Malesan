@@ -541,3 +541,121 @@
     transform: none;
   }
 }
+
+/* ===========================================================================
+   SOFT UI THEME  —  :root[data-theme="soft"]
+   ===========================================================================
+
+   A second skin, not a second codebase.
+
+   The whole product is drawn from eleven colour tokens and three surface
+   classes. Overriding those eleven values plus the shadows on those three
+   classes re-skins every screen at once — no component is touched, so nothing
+   can break in one theme and not the other.
+
+   Neumorphism's defining rule is that surfaces are the *same material* as the
+   background: the page, a card and a button are all one colour, and the only
+   thing separating them is light. So `--color-obsidian` and `--color-surface`
+   are deliberately identical here, and every boundary comes from a paired
+   shadow — light above-left, shade below-right, one consistent light source.
+
+   Two known weaknesses of the style, handled rather than inherited:
+
+   1. **Low contrast.** Soft UI usually fails WCAG because grey-on-grey is the
+      whole aesthetic. The text tokens here are near-black and the accent is
+      deepened well past the dark theme's ember, which would sit at roughly 2:1
+      on a light surface. Measured values are in the commit.
+   2. **Invisible affordances.** When everything is the same colour, nothing
+      looks pressable. Interactive surfaces keep a raised shadow at rest and
+      switch to an inset one when pressed, which is the one cue the style has.
+
+   `background-color` is set explicitly on the surface classes here. The dark
+   theme gets its fill from a gradient in `background-image`; if a future edit
+   replaces that image the colour underneath still holds, instead of the panel
+   going transparent.
+--------------------------------------------------------------------------- */
+
+:root[data-theme="soft"] {
+  /* Page and surfaces are one material. This is the whole idea. */
+  --color-obsidian: #e4ebf3;
+  --color-surface: #e4ebf3;
+  --color-surface-raised: #edf2f8;
+  --color-hairline: #d3dce7;
+
+  /* Every value below was measured against this surface, not chosen by eye.
+     The first pass failed AA on four tokens — ember at 2.92:1, muted at 3.82,
+     success at 3.64 — which is the exact trap this style is known for. These
+     are the darkest-passing values found by search:
+       ink 10.40 · muted 4.72 · ember 4.62 · ember-lo 5.29 · success 5.46
+       danger 4.55 · white-on-ember 5.56 */
+  --color-ember: #b0480f;
+  --color-ember-lo: #a1420e;
+  --color-ember-deep: #7d3209;
+
+  --color-ink: #2b3445;
+  --color-muted: #5c6878;
+
+  --color-success: #176b3a;
+  --color-danger: #c2352c;
+
+  /* The paired light source every shadow below is derived from. */
+  --soft-light: #ffffff;
+  --soft-shade: #a9b6c8;
+}
+
+/* ---- raised: cards, tiles, anything sitting on the page ---- */
+:root[data-theme="soft"] .surface-card,
+:root[data-theme="soft"] .skeu {
+  background-color: var(--color-surface);
+  background-image: none;
+  box-shadow:
+    -6px -6px 14px 0 var(--soft-light),
+    6px 6px 16px 0 color-mix(in oklab, var(--soft-shade) 70%, transparent);
+}
+
+/* ---- recessed: inputs and wells ---- */
+:root[data-theme="soft"] .skeu-inset {
+  background-color: var(--color-surface);
+  background-image: none;
+  box-shadow:
+    inset 3px 3px 7px 0 color-mix(in oklab, var(--soft-shade) 65%, transparent),
+    inset -3px -3px 7px 0 var(--soft-light);
+}
+
+/* ---- the primary action ----
+   Keeps a real accent fill rather than becoming another grey pillow. The
+   canonical neumorphic button is unreadable as a primary CTA precisely because
+   it looks identical to a disabled one. */
+:root[data-theme="soft"] .btn-ember {
+  background-color: var(--color-ember);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, #fff 18%, transparent) 0%,
+    transparent 55%
+  );
+  box-shadow:
+    inset 0 1px 0 0 color-mix(in oklab, #fff 45%, transparent),
+    -4px -4px 10px 0 var(--soft-light),
+    5px 5px 14px 0 color-mix(in oklab, var(--color-ember) 35%, transparent);
+}
+
+:root[data-theme="soft"] .btn-ember:active,
+:root[data-theme="soft"] .skeu-press:active {
+  box-shadow:
+    inset 3px 3px 8px 0 color-mix(in oklab, var(--soft-shade) 70%, transparent),
+    inset -2px -2px 6px 0 var(--soft-light);
+}
+
+/* ---- chrome bars ---- */
+:root[data-theme="soft"] .skeu-bar {
+  background-color: var(--color-surface);
+  box-shadow: 0 -4px 14px 0 color-mix(in oklab, var(--soft-shade) 45%, transparent);
+}
+
+/* The ambient lava mark is tuned for a dark page; soften it so it reads as a
+   warm glow rather than a hole burned in a light surface. */
+:root[data-theme="soft"] .lava::before,
+:root[data-theme="soft"] .lava::after {
+  filter: blur(6px);
+  opacity: 0.75;
+}

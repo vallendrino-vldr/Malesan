@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { CreditDisplay } from "./CreditDisplay";
 import { TutorialSheet } from "./TutorialSheet";
+import { ThemeToggle } from "./ThemeToggle";
 
 /**
  * Native-app shell.
@@ -120,6 +121,7 @@ export function AppShell({
             {/* Five modules, a three-stage pipeline and a credit system are more
                 than tiles alone can explain. Sits in the header so it is
                 reachable from every tab, not buried in a settings page. */}
+            <ThemeToggle />
             <TutorialSheet />
             {/* Was a muted hairline pill that read as decoration — the one
                 entry point to the whole admin area, and it went unfound. It is

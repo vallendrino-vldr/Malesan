@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { PwaProvider } from "@/components/PwaProvider";
 import "./globals.css";
+import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
 
 // Display — industrial, engineered. Weights 600-800, tight negative tracking.
 const archivo = Archivo({
@@ -55,7 +56,14 @@ export default function RootLayout({
     <html
       lang="id"
       className={`${archivo.variable} ${jakarta.variable} ${geistMono.variable} h-full antialiased`}
+      // The theme script mutates this element before React hydrates, which is
+      // the point — without it the dark theme paints for one frame before the
+      // light one takes over, and that flash is worse than either theme.
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
         <PwaProvider />
