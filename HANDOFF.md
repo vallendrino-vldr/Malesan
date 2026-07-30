@@ -256,6 +256,30 @@ every device. Concrete gaps still open, roughly in value order:
 6. **ScriptView inside a 272px kanban column** is legible but cramped. A detail
    modal on desktop would be better than nested scrolling.
 
+## THE 18-POINT LIST — STATUS
+
+Closed: Vibe truncation (six parallel doc calls), credit spend swallowing a
+failed RPC, zero-balance generation, empty history (my client-tabs regression),
+PWA serving the install-day build, unclickable module tiles, real step progress,
+Gemini error causes with plain-language fixes, per-user activity, QRIS upload,
+tutorial, admin overview density, nav touch targets.
+
+Two clarifications that were never bugs:
+- **`spend_credits` returns early for `role = 'admin'`** without touching the
+  ledger — an intentional bypass documented against PRD.md §5. Testing on the
+  admin account is why credits looked like they never decreased. Use a non-admin
+  account to exercise the credit system.
+- **Gemini quota was syncing correctly.** `gemini_pool_used_today` uses
+  `current_date`, which is **UTC** — between 00:00 and 07:00 WIB it still reports
+  yesterday. Worth converting to WIB if the numbers ever look a day behind.
+
+Still open:
+- **Provider adapter.** `/admin/config` writes provider/baseUrl/apiKey and
+  `getProviderConfig()` reads them, but `lib/gemini/client.ts` still speaks only
+  the Gemini REST shape. Selecting openai/anthropic changes nothing at runtime.
+  This is the one place the panel over-promises — finish it or hide the field.
+- **`/admin/vouchers`** is the last page on the old layout, still using `prompt()`.
+
 ## EXPLICITLY REQUESTED AND NOT YET BUILT
 
 These were asked for directly and are outstanding. Do not treat the list above
