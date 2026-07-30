@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   VIBE_KIT_DOCS,
-  VIBE_KIT_CREDIT_COST,
   type VibeKitOutput,
 } from "@/lib/prompts/vibe";
 
@@ -45,7 +44,7 @@ const STARTERS: { label: string; seed: string }[] = [
   },
 ];
 
-export function VibeCodingStudio() {
+export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
   const router = useRouter();
   const [idea, setIdea] = useState("");
   const IDEA_STARTERS = STARTERS;
@@ -57,11 +56,13 @@ export function VibeCodingStudio() {
   const [kit, setKit] = useState<VibeKitOutput | null>(null);
   const [active, setActive] = useState<DocKey>("prd");
   const [copied, setCopied] = useState<DocKey | null>(null);
+  const [step, setStep] = useState<{ done: number; total: number } | null>(null);
 
   async function generate() {
     setPending(true);
     setError(null);
     setKit(null);
+    setStep(null);
     setStatus("Nyambungin...");
 
     try {
@@ -91,12 +92,13 @@ export function VibeCodingStudio() {
             if (!payload) continue;
             try {
               const msg = JSON.parse(payload);
-              if (msg.status) setStatus(msg.status);
-              if (msg.progress) {
-                setStatus(
-                  `Lagi nulis dokumennya... ${Math.round(msg.progress / 1000)}k karakter`,
-                );
+              // The route reports real steps now ("SCHEMA.md kelar", 4 of 7).
+              // The old character counter measured a single giant response that
+              // no longer exists, and told the user nothing they could act on.
+              if (typeof msg.step === "number" && typeof msg.total === "number") {
+                setStep({ done: msg.step, total: msg.total });
               }
+              if (msg.status) setStatus(msg.status);
               if (msg.error) setError(msg.error);
               if (msg.done && msg.kit) {
                 setKit(msg.kit as VibeKitOutput);
@@ -128,6 +130,7 @@ export function VibeCodingStudio() {
     } finally {
       setPending(false);
       setStatus(null);
+      setStep(null);
     }
   }
 
@@ -242,18 +245,39 @@ export function VibeCodingStudio() {
           >
             {pending ? "Lagi mikirin buat lo..." : "Males mikir. Bikinin speknya."}
           </button>
+          {/* Read from app_config, not the compiled-in constant. Vibe pricing
+              became admin-editable but this label kept showing 6, so changing
+              the price in the panel left the UI quoting the old one. */}
           <span className="text-xs text-muted">
-            <span className="tabular font-mono text-ink">
-              {VIBE_KIT_CREDIT_COST}
-            </span>{" "}
-            credit · 6 dokumen sekali jalan
+            <span className="tabular font-mono text-ink">{cost}</span> kredit · 6
+            dokumen sekali jalan
           </span>
         </div>
 
+        {/* Real progress: a step count and a bar that actually advances as each
+            document lands, plus the lava mark so the wait has a heartbeat. */}
         {status && (
-          <p role="status" className="mt-3 text-sm text-ember-lo">
-            {status}
-          </p>
+          <div role="status" aria-live="polite" className="mt-4">
+            <div className="flex items-center gap-3">
+              <span className="lava size-8 shrink-0" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm text-ember-lo">{status}</p>
+                {step && (
+                  <p className="mt-0.5 font-mono text-[11px] text-muted">
+                    {step.done} dari {step.total} langkah
+                  </p>
+                )}
+              </div>
+            </div>
+            {step && (
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-surface">
+                <div
+                  className="h-full bg-ember transition-[width] duration-500 ease-heat"
+                  style={{ width: `${Math.round((step.done / step.total) * 100)}%` }}
+                />
+              </div>
+            )}
+          </div>
         )}
         {error && (
           <p

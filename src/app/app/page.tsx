@@ -130,12 +130,13 @@ export default async function AppPage({
       getCost("hook"),
       getCost("script"),
       getCost("repurpose"),
+      getCost("vibe"),
     ]),
   ]);
 
   if (typeof refillResult === "number") totalCredits = refillResult;
   const pipelineCards = pipelineResult ?? [];
-  const [costIde, costIdea, costHook, costScript, costRepurpose] = costs;
+  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe] = costs;
 
   // Same regression as the pipeline query above: gated on `tab === "profil"`,
   // which is never true when the profile tab is reached by a client-side switch.
@@ -158,10 +159,17 @@ export default async function AppPage({
             created_at: g.created_at as string,
             credits_spent: (g.credits_spent as number) ?? 0,
             performance_rating: (g.performance_rating as number | null) ?? null,
+            // Each module shapes its output differently. Vibe kits carry a
+            // `project_name` and no ideas/hooks/caption, so they were all
+            // showing "(tanpa judul)" in the history list.
             gist: String(
-              ideas?.[0]?.title ??
-                hooks?.[0]?.text ??
-                (typeof o?.caption === "string" ? o.caption : "") ??
+              ideas?.[0]?.title ||
+                hooks?.[0]?.text ||
+                (typeof o?.project_name === "string"
+                  ? `${o.project_name}${typeof o.one_liner === "string" ? ` — ${o.one_liner}` : ""}`
+                  : "") ||
+                (typeof o?.caption === "string" ? o.caption : "") ||
+                (typeof o?.tiktok === "string" ? o.tiktok : "") ||
                 "(tanpa judul)",
             ).slice(0, 160),
           };
@@ -278,7 +286,7 @@ export default async function AppPage({
         </div>
         ),
 
-        vibe: <VibeCodingStudio />,
+        vibe: <VibeCodingStudio cost={costVibe} />,
 
         pipeline: <PipelineBoard initialCards={pipelineCards || []} />,
 
