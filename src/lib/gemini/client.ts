@@ -1,6 +1,8 @@
 import "server-only";
 import { markRateLimited, orderedAttempts, type PoolKey } from "./keys";
 import { recordUsage } from "./quota";
+import { adapterFor, supportsStreaming, type ProviderName } from "./providers";
+import { getProviderConfig } from "@/lib/config";
 
 /**
  * The only place in the codebase that talks to Gemini.
@@ -9,8 +11,6 @@ import { recordUsage } from "./quota";
  * accounting cannot be forgotten at a call site. AGENTS.md rule 1: this file is
  * server-only and the key never leaves it.
  */
-
-const API_ROOT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /** AGENTS.md section 3: exponential backoff on 429 — 1s, 2s, 4s, 8s. */
 const BACKOFF_MS = [1_000, 2_000, 4_000, 8_000];
@@ -38,16 +38,13 @@ export type GenerateArgs = {
   /** Gemini responseSchema. Supplying one makes the model emit strict JSON. */
   schema?: Record<string, unknown>;
   signal?: AbortSignal;
+  /**
+   * Which vendor to talk to. Resolved from app_config by the callers below when
+   * not supplied, so a route does not have to know or care.
+   */
+  provider?: ProviderName;
+  baseUrl?: string;
 };
-
-function body(args: GenerateArgs) {
-  return JSON.stringify({
-    contents: [{ parts: [{ text: args.prompt }] }],
-    generationConfig: args.schema
-      ? { responseMimeType: "application/json", responseSchema: args.schema }
-      : undefined,
-  });
-}
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -66,16 +63,40 @@ async function callOnce(
   args: GenerateArgs,
   stream: boolean,
 ): Promise<Response> {
-  const method = stream ? "streamGenerateContent?alt=sse" : "generateContent";
-  return fetch(`${API_ROOT}/${model}:${method}`, {
+  // The adapter owns URL, auth header and body shape. Rotation, backoff and
+  // accounting stay here because none of that is provider-specific.
+  const provider = args.provider ?? "gemini";
+  const req = adapterFor(provider).buildRequest({
+    apiKey: key.value,
+    model,
+    prompt: args.prompt,
+    schema: args.schema,
+    baseUrl: args.baseUrl,
+    stream: stream && supportsStreaming(provider),
+  });
+  return fetch(req.url, {
     method: "POST",
-    headers: {
-      "x-goog-api-key": key.value,
-      "Content-Type": "application/json",
-    },
-    body: body(args),
+    headers: req.headers,
+    body: req.body,
     signal: args.signal,
   });
+}
+
+/**
+ * Resolve provider settings once per call.
+ *
+ * An admin-set key replaces the pool entirely: rotating a user-configured
+ * OpenAI key across our Gemini key list would send an OpenAI secret to Google.
+ */
+async function resolveProvider(args: GenerateArgs): Promise<GenerateArgs> {
+  if (args.provider) return args;
+  const cfg = await getProviderConfig();
+  return {
+    ...args,
+    provider: cfg.provider,
+    baseUrl: cfg.baseUrl || undefined,
+    byokKey: args.byokKey ?? (cfg.apiKey ? cfg.apiKey : undefined),
+  };
 }
 
 export class GeminiError extends Error {
@@ -154,17 +175,22 @@ export async function generate(args: GenerateArgs): Promise<string> {
   // `args.model` lets app_config drive the choice at runtime; without it we
   // fall back to modelFor(), which reads env. Kept as an override rather than
   // a replacement so this module stays usable with no database.
-  const model = args.model ?? modelFor(args.tier ?? "free");
-  const { res, key } = await withRotation(model, args, false);
+  const a = await resolveProvider(args);
+  const model = a.model ?? modelFor(a.tier ?? "free");
+  const { res, key } = await withRotation(model, a, false);
   const json = await res.json();
 
-  const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-  const tokens: number = json?.usageMetadata?.totalTokenCount ?? 0;
-  await recordUsage({ keyIndex: key.index, model, tokens });
+  const adapter = adapterFor(a.provider ?? "gemini");
+  const text = adapter.extractText(json);
+  await recordUsage({ keyIndex: key.index, model, tokens: adapter.extractTokens(json) });
 
-  if (typeof text !== "string") {
+  if (!text) {
     throw new GeminiError(
-      `Gemini returned no text. finishReason=${json?.candidates?.[0]?.finishReason ?? "unknown"}`,
+      `${a.provider ?? "gemini"} returned no text. finishReason=${
+        (json as { candidates?: { finishReason?: string }[] })?.candidates?.[0]?.finishReason ??
+        (json as { stop_reason?: string })?.stop_reason ??
+        "unknown"
+      }`,
       502,
       false,
     );
@@ -185,8 +211,18 @@ export async function* generateStream(
   // `args.model` lets app_config drive the choice at runtime; without it we
   // fall back to modelFor(), which reads env. Kept as an override rather than
   // a replacement so this module stays usable with no database.
-  const model = args.model ?? modelFor(args.tier ?? "free");
-  const { res, key } = await withRotation(model, args, true);
+  const a = await resolveProvider(args);
+
+  // Only Gemini streams here. OpenAI and Anthropic use different SSE envelopes,
+  // and a half-parsed stream is worse than one call that returns the whole
+  // answer — so those degrade to a single yield rather than breaking.
+  if (!supportsStreaming(a.provider ?? "gemini")) {
+    yield await generate(a);
+    return;
+  }
+
+  const model = a.model ?? modelFor(a.tier ?? "free");
+  const { res, key } = await withRotation(model, a, true);
 
   const reader = res.body?.getReader();
   if (!reader) throw new GeminiError("Gemini returned no stream body", 502, false);
