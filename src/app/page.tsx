@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const MODULES = [
   {
@@ -71,12 +72,18 @@ export default function Home() {
             malesan
           </span>
         </span>
-        <Link
-          href="/masuk"
-          className="rounded-full border border-hairline bg-surface/80 px-4 py-2 font-display text-[13px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
-        >
-          Masuk
-        </Link>
+        {/* The toggle lived only in AppShell, which the landing page does not
+            use — so the first screen anyone sees had no way to switch themes,
+            and the feature looked like it had not shipped. */}
+        <span className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/masuk"
+            className="rounded-full border border-hairline bg-surface/80 px-4 py-2 font-display text-[13px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+          >
+            Masuk
+          </Link>
+        </span>
       </header>
 
       <main className="relative z-10 flex-1">
