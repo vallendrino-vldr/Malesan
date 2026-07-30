@@ -17,6 +17,21 @@ const DAYS = 14;
 
 type DayBucket = { day: string; gens: number; credits: number };
 
+type UserActivity = {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+  role: string;
+  is_pro: boolean;
+  is_banned: boolean;
+  credits_total: number;
+  generations: number;
+  credits_spent: number;
+  modules_used: string[] | null;
+  last_active: string | null;
+  joined: string;
+};
+
 function lastNDays(n: number): string[] {
   const out: string[] = [];
   const now = new Date();
@@ -34,7 +49,7 @@ export default async function AdminStatsPage() {
   since.setDate(since.getDate() - DAYS);
   const sinceIso = since.toISOString();
 
-  const [gensRes, usageRes, ledgerRes] = await Promise.all([
+  const [gensRes, usageRes, ledgerRes, activityRes] = await Promise.all([
     supabase
       .from("generations")
       .select("created_at, module, credits_spent")
@@ -48,6 +63,7 @@ export default async function AdminStatsPage() {
       .select("key_index, request_count, error_count, usage_date")
       .gte("usage_date", sinceIso.slice(0, 10)),
     supabase.from("credit_ledger").select("delta, created_at").gte("created_at", sinceIso).limit(5000),
+    supabase.rpc("admin_user_activity", { p_days: DAYS }),
   ]);
 
   const gens = (gensRes.data ?? []) as { created_at: string; module: string; credits_spent: number }[];
@@ -57,6 +73,7 @@ export default async function AdminStatsPage() {
     error_count: number;
   }[];
   const ledger = (ledgerRes.data ?? []) as { delta: number; created_at: string }[];
+  const activity = (activityRes.data ?? []) as UserActivity[];
 
   const days = lastNDays(DAYS);
   const buckets: Record<string, DayBucket> = Object.fromEntries(
@@ -150,6 +167,88 @@ export default async function AdminStatsPage() {
                     style={{ width: `${Math.max(3, (n / maxModule) * 100)}%` }}
                   />
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Who is actually using this, and for what. The panel could show a user
+          list and a global generation count but nothing joining the two, so
+          there was no way to tell an active user from a dormant one. */}
+      <section>
+        <h2 className="eyebrow mb-2 text-muted">Aktivitas user · {DAYS} hari</h2>
+        {activity.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
+            Belum ada user.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {activity.map((u) => (
+              <div key={u.user_id} className="surface-card rounded-xl p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-ink">
+                      {u.display_name || u.email}
+                    </p>
+                    <p className="truncate text-[11px] text-muted">{u.email}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-mono text-sm text-ember">{u.generations}</p>
+                    <p className="eyebrow text-muted">generate</p>
+                  </div>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  {u.role === "admin" && (
+                    <span className="rounded bg-ember/15 px-2 py-0.5 text-[10px] text-ember">
+                      Admin
+                    </span>
+                  )}
+                  {u.is_banned && (
+                    <span className="rounded bg-danger/10 px-2 py-0.5 text-[10px] text-danger">
+                      Banned
+                    </span>
+                  )}
+                  <span
+                    className={`rounded px-2 py-0.5 text-[10px] ${
+                      u.is_pro ? "bg-success/10 text-success" : "bg-surface-raised text-muted"
+                    }`}
+                  >
+                    {u.is_pro ? "Pro" : "Free"}
+                  </span>
+                  {(u.modules_used ?? []).map((m) => (
+                    <span
+                      key={m}
+                      className="rounded bg-obsidian px-2 py-0.5 text-[10px] text-muted"
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
+
+                <p className="mt-2 flex flex-wrap gap-x-3 text-[10.5px] text-muted">
+                  <span>
+                    Kredit kepakai:{" "}
+                    <span className="font-mono text-ink">{u.credits_spent}</span>
+                  </span>
+                  <span>
+                    Sisa: <span className="font-mono text-ink">{u.credits_total}</span>
+                  </span>
+                  <span>
+                    Terakhir aktif:{" "}
+                    <span className="text-ink">
+                      {u.last_active
+                        ? new Date(u.last_active).toLocaleString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "belum pernah"}
+                    </span>
+                  </span>
+                </p>
               </div>
             ))}
           </div>

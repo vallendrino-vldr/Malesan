@@ -597,6 +597,32 @@ export type Database = {
       };
       // Added by migration `app_config`. Verified present before being written
       // here — see the note on creator_dna above.
+      // Added by migration `error_log_and_user_activity`. Verified present in
+      // information_schema before being written here.
+      error_log: {
+        Row: {
+          id: number;
+          scope: string;
+          module: string | null;
+          key_index: number | null;
+          model: string | null;
+          status: number | null;
+          message: string;
+          user_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          scope: string;
+          message: string;
+          module?: string | null;
+          key_index?: number | null;
+          model?: string | null;
+          status?: number | null;
+          user_id?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
       app_config: {
         Row: {
           key: string;
@@ -706,6 +732,28 @@ export type Database = {
     };
     Views: Record<never, never>;
     Functions: {
+      /**
+       * Admin panel only. One row per user with generation count, credits
+       * spent, which modules they used and when they were last active.
+       * Added by migration `error_log_and_user_activity`.
+       */
+      admin_user_activity: {
+        Args: { p_days?: number };
+        Returns: {
+          user_id: string;
+          email: string;
+          display_name: string | null;
+          role: string;
+          is_pro: boolean;
+          is_banned: boolean;
+          credits_total: number;
+          generations: number;
+          credits_spent: number;
+          modules_used: string[] | null;
+          last_active: string | null;
+          joined: string;
+        }[];
+      };
       /** service_role only. Upserts one Gemini call into gemini_usage. */
       record_gemini_usage: {
         Args: {

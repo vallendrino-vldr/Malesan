@@ -52,6 +52,13 @@ const LINKS = [
     icon: <path d="M4 20h16v-2H6V4H4v16Zm4-4h2v-5H8v5Zm4 0h2V7h-2v9Zm4 0h2v-7h-2v7Z" />,
   },
   {
+    href: "/admin/errors",
+    label: "Error",
+    icon: (
+      <path d="M12 2 1 21h22L12 2Zm0 4.5L19.5 19h-15L12 6.5ZM11 10v4h2v-4h-2Zm0 5v2h2v-2h-2Z" />
+    ),
+  },
+  {
     href: "/admin/config",
     label: "Otak AI",
     icon: (

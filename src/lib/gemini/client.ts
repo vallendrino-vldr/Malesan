@@ -115,20 +115,31 @@ async function withRotation(
       if (res.status === 429) {
         // Only our own keys get cooled; a BYOK user's 429 is their own ceiling.
         if (key.index > 0) markRateLimited(key.index);
-        await recordUsage({ keyIndex: key.index, model, isError: true });
+        // The message is the point. A count of 429s tells an operator nothing;
+        // "quota exceeded for model X" tells them to rotate a key or slow down.
+        await recordUsage({
+          keyIndex: key.index, model, isError: true, status: 429,
+          errorMessage: `rate limited: ${text.slice(0, 500)}`,
+        });
         last = new GeminiError(`Gemini rate limited: ${text.slice(0, 200)}`, 429, true);
         continue;
       }
 
       if (res.status >= 500) {
-        await recordUsage({ keyIndex: key.index, model, isError: true });
+        await recordUsage({
+          keyIndex: key.index, model, isError: true, status: res.status,
+          errorMessage: `upstream ${res.status}: ${text.slice(0, 500)}`,
+        });
         last = new GeminiError(`Gemini unavailable: ${text.slice(0, 200)}`, res.status, true);
         continue;
       }
 
       // 400/403/404 are our bug or a bad key — retrying cannot fix them, and a
       // wrong model id returns 404 even when ListModels still advertises it.
-      await recordUsage({ keyIndex: key.index, model, isError: true });
+      await recordUsage({
+        keyIndex: key.index, model, isError: true, status: res.status,
+        errorMessage: `rejected ${res.status}: ${text.slice(0, 500)}`,
+      });
       throw new GeminiError(`Gemini rejected the request: ${text.slice(0, 300)}`, res.status, false);
     }
 

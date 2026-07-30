@@ -87,6 +87,10 @@ export async function recordUsage(args: {
   model: string;
   tokens?: number;
   isError?: boolean;
+  /** Why it failed. Counted errors with no cause cannot be acted on. */
+  errorMessage?: string;
+  status?: number;
+  module?: string;
 }): Promise<void> {
   try {
     const supabase = createServiceRoleClient();
@@ -96,6 +100,17 @@ export async function recordUsage(args: {
       p_tokens: args.tokens ?? 0,
       p_is_error: args.isError ?? false,
     });
+
+    if (args.isError) {
+      await supabase.from("error_log").insert({
+        scope: "gemini",
+        module: args.module ?? null,
+        key_index: args.keyIndex,
+        model: args.model,
+        status: args.status ?? null,
+        message: (args.errorMessage ?? "unknown Gemini error").slice(0, 2000),
+      });
+    }
   } catch {
     // Accounting must never fail a generation the user already paid for.
     // Undercounting is recoverable; a failed paid request is not.
