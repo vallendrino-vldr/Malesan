@@ -336,11 +336,18 @@ export default async function AppPage({
             >
               Top up credit
             </Link>
+            {/* Was a bare centred label with no icon and no press state, sitting
+                next to a filled primary button — it read as a disabled twin
+                rather than a secondary action. Same physics as the module tiles
+                now: raised surface, chevron, and a press response. */}
             <Link
               href="/app/profile"
-              className="grid place-items-center rounded-xl border border-hairline bg-surface px-5 py-3.5 font-display text-[15px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+              className="skeu skeu-press flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-raised px-5 py-3.5 font-display text-[15px] font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
             >
-              Pengaturan lengkap
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 shrink-0 fill-current">
+                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.4-2.6.1-.9-.1-.9 1.9-1.5-1.9-3.2-2.3.8a7.2 7.2 0 0 0-1.6-.9l-.3-2.4h-3.7l-.4 2.4a7.2 7.2 0 0 0-1.5.9l-2.3-.8L5.4 9.6l1.9 1.5-.1.9.1.9-1.9 1.5 1.8 3.2 2.3-.8c.5.4 1 .7 1.6.9l.3 2.4h3.7l.4-2.4c.5-.2 1-.5 1.5-.9l2.3.8 1.9-3.2-1.9-1.5Z" />
+              </svg>
+              Referral &amp; akun
             </Link>
           </div>
 

@@ -1,6 +1,34 @@
 import { createClient } from "@/lib/supabase/server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CopyField } from "@/components/CopyField";
+
+/**
+ * The referral origin comes from the request, not an env var.
+ *
+ * This page handed out `http://localhost:3000/masuk?ref=...` on the deployed
+ * site, because it read `NEXT_PUBLIC_APP_URL` and that variable was never set in
+ * production — so it silently used the dev fallback. Anyone who shared their
+ * link shared a dead one.
+ *
+ * The rest of the referral chain is intact and was verified: `/masuk` reads
+ * `?ref`, passes it to the sign-in button, `/auth/callback` writes
+ * `referred_by`, and `processReferral` grants 10 credits to each side on the
+ * referee's first generation. The programme has zero rows in `referrals` purely
+ * because the link it distributed could never resolve for anyone else.
+ *
+ * Reading the host from headers means it is correct on localhost, on every
+ * Vercel preview URL, and on a custom domain, with nothing to configure.
+ */
+async function requestOrigin(): Promise<string> {
+  const h = await headers();
+  // Vercel terminates TLS at the edge, so the protocol only survives in
+  // x-forwarded-proto; `host` alone would give the right domain over the wrong
+  // scheme.
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -17,8 +45,7 @@ export default async function ProfilePage() {
   if (!profile) redirect("/login");
 
   const referralCount = profile.referrals[0]?.count || 0;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const referralLink = `${baseUrl}/masuk?ref=${profile.referral_code}`;
+  const referralLink = `${await requestOrigin()}/masuk?ref=${profile.referral_code}`;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">

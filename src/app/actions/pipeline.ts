@@ -92,6 +92,33 @@ export async function rateGeneration(generationId: string, rating: number) {
   revalidatePath("/app");
 }
 
+/**
+ * Delete one generation from history.
+ *
+ * History was read-only, so a bad or embarrassing result sat there forever and
+ * the list turned into clutter the user could not clean. Scoped to the owner:
+ * without the `user_id` filter this would let anyone delete anyone's history.
+ *
+ * A deleted generation also stops feeding `LearnedNote[]`, which is the point —
+ * removing a result is how a creator says "don't learn from this".
+ */
+export async function deleteGeneration(generationId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { error } = await supabase
+    .from("generations")
+    .delete()
+    .eq("id", generationId)
+    .eq("user_id", user.id);
+
+  if (error) throw error;
+  revalidatePath("/app");
+}
+
 export async function ratePerformance(cardId: string, rating: number) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
