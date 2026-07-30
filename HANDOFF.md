@@ -273,12 +273,21 @@ Two clarifications that were never bugs:
   `current_date`, which is **UTC** — between 00:00 and 07:00 WIB it still reports
   yesterday. Worth converting to WIB if the numbers ever look a day behind.
 
+Also closed since: provider adapters (`lib/gemini/providers.ts` — openai,
+anthropic, custom/OpenAI-compatible; streaming stays Gemini-only and other
+providers degrade to one non-streamed call), `/admin/vouchers`, `/app/profile`,
+and the skeuomorphic depth layer in `globals.css`.
+
+Zero banned colour literals remain in `src/` outside explanatory comments.
+
 Still open:
-- **Provider adapter.** `/admin/config` writes provider/baseUrl/apiKey and
-  `getProviderConfig()` reads them, but `lib/gemini/client.ts` still speaks only
-  the Gemini REST shape. Selecting openai/anthropic changes nothing at runtime.
-  This is the one place the panel over-promises — finish it or hide the field.
-- **`/admin/vouchers`** is the last page on the old layout, still using `prompt()`.
+- **Provider adapters are untested against a real OpenAI or Anthropic key.** The
+  Gemini path was re-verified end to end after the refactor; the other two are
+  written from their documented request shapes and have never been called. Test
+  before telling anyone the switch works.
+- Streaming for non-Gemini providers.
+- Vibe's six parallel document calls have not been observed completing on
+  Vercel, only reasoned about against the 60s function limit.
 
 ## EXPLICITLY REQUESTED AND NOT YET BUILT
 
