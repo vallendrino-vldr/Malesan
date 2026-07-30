@@ -8,11 +8,11 @@ import { getProviderConfig } from "@/lib/config";
  * The only place in the codebase that talks to Gemini.
  *
  * Every call goes through here so that key rotation, 429 backoff and usage
- * accounting cannot be forgotten at a call site. AGENTS.md rule 1: this file is
- * server-only and the key never leaves it.
+ * accounting cannot be forgotten at a call site. This module is server-only and
+ * the API key never leaves it.
  */
 
-/** AGENTS.md section 3: exponential backoff on 429 — 1s, 2s, 4s, 8s. */
+/** Exponential backoff on 429 — 1s, 2s, 4s, 8s. */
 const BACKOFF_MS = [1_000, 2_000, 4_000, 8_000];
 
 export type Tier = "free" | "pro";
@@ -22,7 +22,7 @@ export function modelFor(tier: Tier): string {
     tier === "pro" ? process.env.GEMINI_MODEL_PRO : process.env.GEMINI_MODEL_FREE;
   if (!model) {
     throw new Error(
-      `GEMINI_MODEL_${tier.toUpperCase()} is not set. Model IDs live in env, never hardcoded (AGENTS.md rule 5).`,
+      `GEMINI_MODEL_${tier.toUpperCase()} is not set. Model ids live in env, never hardcoded.`,
     );
   }
   return model;

@@ -3,7 +3,7 @@ import "server-only";
 /**
  * The Gemini key pool.
  *
- * AGENTS.md rule 1: no AI provider key ever reaches the browser. `server-only`
+ * No AI provider key ever reaches the browser. `server-only`
  * makes that a build error rather than a code review question — importing this
  * from a client component fails the build.
  *

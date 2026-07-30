@@ -5,8 +5,8 @@ import { getPool } from "./keys";
 /**
  * The quota guard.
  *
- * AGENTS.md section 3: when the pool drops below 20% remaining, serve paid and
- * BYOK users only, and show free users a clear message with a top-up path.
+ * When the pool drops below 20% remaining, serve paid and BYOK users only, and
+ * show free users a clear message with a top-up path.
  *
  * Gemini does not report remaining quota, so "remaining" is inferred: recorded
  * usage against GEMINI_DAILY_CAP_PER_KEY. That number is an assumption, not a

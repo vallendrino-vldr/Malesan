@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     "Buat kreator konten Indonesia. Malesan ngilangin momen bengong depan layar kosong — ide, hook, sama naskah siap eksekusi dalam hitungan detik.",
   applicationName: "Malesan",
   // No metadataBase / canonical URL yet: the domain is unconfirmed.
-  // See HANDOFF.md BLOCKERS before adding one.
+  // Confirm the domain is verified before adding one.
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

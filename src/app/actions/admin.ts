@@ -271,7 +271,7 @@ export async function injectCredits(userId: string, amount: number, bucket: "fre
   if (profileErr || !userProfile) throw new Error("User not found");
 
   // grant_credits validates p_amount > 0 — that check was restored after a
-  // previous agent dropped it. So a deduction cannot go through this path.
+  // enforced in SQL, so a deduction cannot go through this path.
   if (!Number.isInteger(amount) || amount <= 0) {
     throw new Error("Jumlah kredit harus bilangan bulat di atas 0.");
   }

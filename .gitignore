@@ -58,3 +58,6 @@ Thumbs.db
 
 # graphify: rebuilt from src/ by AST at zero LLM cost, so it is a build artifact
 graphify-out/
+
+# Working notes — process docs, not product. Kept local.
+.notes/
