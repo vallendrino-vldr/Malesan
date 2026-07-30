@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   VIBE_KIT_DOCS,
   VIBE_KIT_CREDIT_COST,
@@ -45,6 +46,7 @@ const STARTERS: { label: string; seed: string }[] = [
 ];
 
 export function VibeCodingStudio() {
+  const router = useRouter();
   const [idea, setIdea] = useState("");
   const IDEA_STARTERS = STARTERS;
   const [stack, setStack] = useState("");
@@ -99,6 +101,10 @@ export function VibeCodingStudio() {
               if (msg.done && msg.kit) {
                 setKit(msg.kit as VibeKitOutput);
                 setStatus(null);
+                // The header's credit count is rendered on the server. Without
+                // this it kept showing the pre-generation balance, so a spend
+                // that did happen looked like it had not.
+                router.refresh();
               }
             } catch {
               /* partial frame mid-stream */

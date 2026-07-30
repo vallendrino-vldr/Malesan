@@ -35,7 +35,16 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
 
-  const { data: profile } = await supabase.from("profiles").select("*").single();
+  // Same missing filter as /app had: `.single()` throws once the table holds
+  // more than one readable row, so this returned 404 and the route exited before
+  // spending a single credit. That is why Vibe appeared to generate for free —
+  // it never actually reached the spend, and there is no `generate_vibe_kit` row
+  // anywhere in the ledger to show for it.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
   if (!profile) return new Response("Profile not found", { status: 404 });
   if (profile.is_banned) return new Response("Banned", { status: 403 });
 

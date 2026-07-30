@@ -43,6 +43,12 @@ export default async function AppPage({
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
+    // Scoped by id, not left to RLS. `.single()` errors when the query returns
+    // more than one row, and an admin policy on `profiles` lets an admin read
+    // every row — so the moment a second person signed up, this threw and the
+    // app told its own owner "profil lo belum kebentuk". It worked locally only
+    // because there was exactly one profile in the table.
+    .eq("id", user.id)
     .single();
 
   if (error || !profile) {

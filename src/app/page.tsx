@@ -240,7 +240,7 @@ export default function Home() {
             malesan
           </span>
           <span className="text-xs text-muted">
-            Belum dibuka buat umum. Lagi dibangun.
+            Buat kreator Indonesia. Gratis 10 kredit tiap hari.
           </span>
         </div>
       </footer>
