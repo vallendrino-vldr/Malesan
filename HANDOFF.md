@@ -1,8 +1,31 @@
 # HANDOFF
 
-Last updated: 2026-07-29
-Last agent: Claude Code (studio repair, pipeline, graph, admin batches 1-4, DNA, vibe)
-Last commit: `e7f3639` — fix: admin could not see the transfer proofs
+Last updated: 2026-07-30
+Last agent: Claude Code (studio, pipeline, graph, admin 1-4, DNA, vibe, deploy fixes)
+Last commit: `e4780d1` — fix: unscoped profile query
+
+---
+
+## DEPLOY BLOCKERS THAT ARE NOT CODE — SUPABASE DASHBOARD ONLY
+
+Google sign-in on the Vercel deployment lands on
+`http://localhost:3000/?code=...` and fails. **The code is correct** —
+`GoogleSignInButton` sends `redirectTo: ${window.location.origin}/auth/callback`
+and `/auth/callback` handles the exchange properly. Supabase is falling back to
+its configured Site URL because the Vercel callback is not in the allow-list.
+
+Fix in Supabase → Authentication → URL Configuration:
+- **Site URL**: the Vercel production URL (not localhost).
+- **Redirect URLs**: add `https://<prod-domain>/auth/callback` **and**
+  `https://<project>-*.vercel.app/auth/callback` — preview deployments get a new
+  hostname per commit and will each fail without the wildcard. Keep
+  `http://localhost:3000/auth/callback` for local work.
+
+Also in Google Cloud Console → OAuth client → Authorized redirect URIs, the
+Supabase callback (`https://<ref>.supabase.co/auth/v1/callback`) must be listed.
+
+The Google consent screen is still in **Testing**, so only listed test users can
+sign in at all. That is a separate gate from the redirect problem.
 
 ---
 
