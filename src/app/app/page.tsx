@@ -81,22 +81,60 @@ export default async function AppPage({
     if (count && count >= 1) redirect("/app/onboarding");
   }
 
+  // Everything below used to run in sequence on every single tab change: a
+  // write to claim the refill, a full pipeline read, and five separate config
+  // lookups — each its own round-trip to a database that is not in the same
+  // region as the function. That is what made switching tabs feel broken.
   const serviceRole = createServiceRoleClient();
   let totalCredits = profile.credits_free + profile.credits_paid;
-  try {
-    const { data: refilled } = await serviceRole.rpc("claim_daily_refill", {
-      p_user: user.id,
-    });
-    if (typeof refilled === "number") totalCredits = refilled;
-  } catch {
-    // Keep the current balance if the refill call fails; never block the app.
-  }
 
-  const { data: pipelineCards } = await supabase
-    .from("pipeline_cards")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  // The refill is a WRITE, and it was firing on every navigation. It can only
+  // do anything once per WIB day, so skip it entirely when today's is claimed.
+  const todayWib = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  const needsRefill = profile.last_refill_date !== todayWib;
+
+  const [refillResult, pipelineResult, costs] = await Promise.all([
+    // Supabase's builder is a PromiseLike, not a Promise, so it has no
+    // `.catch` — wrap it before attaching one. Never block the app on a
+    // refill failure.
+    needsRefill
+      ? (async () => {
+          try {
+            const { data } = await serviceRole.rpc("claim_daily_refill", {
+              p_user: user.id,
+            });
+            return data;
+          } catch {
+            return null;
+          }
+        })()
+      : Promise.resolve(null),
+
+    // Only the pipeline tab renders these. Reading every card on the studio,
+    // vibe and profile tabs was pure waste on three navigations out of four.
+    tab === "pipeline"
+      ? supabase
+          .from("pipeline_cards")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .then((r) => r.data)
+      : Promise.resolve([]),
+
+    // Five `await getCost(...)` calls inline in JSX resolved one after another.
+    // They share one 30s cache, so in parallel they cost a single lookup.
+    Promise.all([
+      getCost("ide_hari_ini"),
+      getCost("idea"),
+      getCost("hook"),
+      getCost("script"),
+      getCost("repurpose"),
+    ]),
+  ]);
+
+  if (typeof refillResult === "number") totalCredits = refillResult;
+  const pipelineCards = pipelineResult ?? [];
+  const [costIde, costIdea, costHook, costScript, costRepurpose] = costs;
 
   // History only matters on the profile tab; skip the query everywhere else.
   const history: HistoryItem[] =
@@ -167,14 +205,14 @@ export default async function AppPage({
               href="/app?tab=studio&m=ide"
               title="Ide Hari Ini"
               body="Gak usah ngetik apa-apa. Langsung dapet 3 ide buat hari ini."
-              cost={await getCost("ide_hari_ini")}
+              cost={costIde}
               primary
             />
             <ModuleTile
               href="/app?tab=studio&m=idea"
               title="Idea Engine"
               body="Punya ide mentah? Lempar, balik jadi 5 yang udah mateng."
-              cost={await getCost("idea")}
+              cost={costIdea}
             />
           </div>
 
@@ -182,12 +220,12 @@ export default async function AppPage({
               the start with no way in. Compact row so the dashboard still fits
               one screen — the two primaries stay the headline. */}
           <div className="grid grid-cols-3 gap-2">
-            <MiniTile href="/app?tab=studio&m=hook" title="Hook Lab" cost={await getCost("hook")} />
-            <MiniTile href="/app?tab=studio&m=script" title="Script" cost={await getCost("script")} />
+            <MiniTile href="/app?tab=studio&m=hook" title="Hook Lab" cost={costHook} />
+            <MiniTile href="/app?tab=studio&m=script" title="Script" cost={costScript} />
             <MiniTile
               href="/app?tab=studio&m=repurpose"
               title="Repurpose"
-              cost={await getCost("repurpose")}
+              cost={costRepurpose}
             />
           </div>
 
@@ -226,7 +264,7 @@ export default async function AppPage({
         <div className="reveal space-y-4">
           <ModuleBar />
           {/* Primitives only across the boundary — see the note in ModuleRunner. */}
-          <ModuleRunner moduleKey={mod} cost={await getCost(mod)} />
+          <ModuleRunner moduleKey={mod} cost={mod === "hook" ? costHook : mod === "script" ? costScript : costRepurpose} />
         </div>
       )}
 

@@ -325,3 +325,104 @@
     animation: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Liquid lava loader.
+
+   Pure CSS: two blobs morphing their border-radius while drifting, plus a slow
+   hue-less brightness pulse. No JS, no canvas, no library — DESIGN.md rules out
+   heavy client work on mid-range Android, and a loading state that itself
+   janks is worse than a static one.
+
+   Only `border-radius`, `transform` and `opacity` animate. All three are
+   compositor-friendly; animating width/height here would cost a layout pass on
+   every frame of a spinner that shows on every navigation.
+--------------------------------------------------------------------------- */
+
+@keyframes lava-morph-a {
+  0%,
+  100% {
+    border-radius: 62% 38% 45% 55% / 55% 48% 52% 45%;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  34% {
+    border-radius: 38% 62% 58% 42% / 42% 60% 40% 58%;
+    transform: translate3d(6%, -5%, 0) rotate(52deg);
+  }
+  67% {
+    border-radius: 52% 48% 36% 64% / 62% 38% 62% 38%;
+    transform: translate3d(-5%, 5%, 0) rotate(118deg);
+  }
+}
+
+@keyframes lava-morph-b {
+  0%,
+  100% {
+    border-radius: 44% 56% 60% 40% / 38% 58% 42% 62%;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.88);
+  }
+  40% {
+    border-radius: 60% 40% 38% 62% / 58% 42% 58% 42%;
+    transform: translate3d(-7%, 6%, 0) rotate(-64deg) scale(1);
+  }
+  72% {
+    border-radius: 36% 64% 56% 44% / 46% 62% 38% 54%;
+    transform: translate3d(5%, -6%, 0) rotate(-132deg) scale(0.94);
+  }
+}
+
+@keyframes lava-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+.lava {
+  position: relative;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+.lava::before,
+.lava::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  will-change: transform, border-radius;
+}
+
+.lava::before {
+  background: radial-gradient(
+    circle at 35% 35%,
+    var(--color-ember, #ff7a3d),
+    transparent 68%
+  );
+  animation: lava-morph-a 5.2s ease-in-out infinite,
+    lava-glow 2.6s ease-in-out infinite;
+  filter: blur(2px);
+}
+
+.lava::after {
+  background: radial-gradient(
+    circle at 65% 60%,
+    var(--color-ember-lo, #ffa06b),
+    transparent 62%
+  );
+  animation: lava-morph-b 6.8s ease-in-out infinite,
+    lava-glow 3.4s ease-in-out infinite reverse;
+  filter: blur(4px);
+}
+
+/* Motion is decoration here; the text below it already says what is happening. */
+@media (prefers-reduced-motion: reduce) {
+  .lava::before,
+  .lava::after {
+    animation: lava-glow 2.4s ease-in-out infinite;
+    transform: none;
+  }
+}
