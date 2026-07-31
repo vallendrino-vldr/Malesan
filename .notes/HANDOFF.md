@@ -1,340 +1,342 @@
-# HANDOFF
+# HANDOFF — Malesan
 
-Last updated: 2026-07-30
-Last agent: Claude Code (studio, pipeline, graph, admin 1-4, DNA, vibe, deploy fixes)
-Last commit: `e4780d1` — fix: unscoped profile query
+**Read this whole file before touching anything.** Its only job is to let a new
+session start working without re-auditing the repo, because re-auditing is
+expensive and the owner pays per token.
 
----
-
-## DEPLOY BLOCKERS THAT ARE NOT CODE — SUPABASE DASHBOARD ONLY
-
-Google sign-in on the Vercel deployment lands on
-`http://localhost:3000/?code=...` and fails. **The code is correct** —
-`GoogleSignInButton` sends `redirectTo: ${window.location.origin}/auth/callback`
-and `/auth/callback` handles the exchange properly. Supabase is falling back to
-its configured Site URL because the Vercel callback is not in the allow-list.
-
-Fix in Supabase → Authentication → URL Configuration:
-- **Site URL**: the Vercel production URL (not localhost).
-- **Redirect URLs**: add `https://<prod-domain>/auth/callback` **and**
-  `https://<project>-*.vercel.app/auth/callback` — preview deployments get a new
-  hostname per commit and will each fail without the wildcard. Keep
-  `http://localhost:3000/auth/callback` for local work.
-
-Also in Google Cloud Console → OAuth client → Authorized redirect URIs, the
-Supabase callback (`https://<ref>.supabase.co/auth/v1/callback`) must be listed.
-
-The Google consent screen is still in **Testing**, so only listed test users can
-sign in at all. That is a separate gate from the redirect problem.
+Last updated: **2026-07-31**, after commit `5afdd1b`.
+Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
 
-## READ THIS FIRST
+## 0. The human — read this first, it is where sessions most often go wrong
 
-Start cheap. `graphify-out/graph.json` indexes every symbol in `src/` (193
-nodes, 412 edges) and rebuilds for **zero LLM tokens**. Query it before
-reading source — see `AGENTS.md` §0 "Token discipline". The human is on a
-capped plan and has already lost one build to running out mid-session.
+Owner: **vadlyvldr** (Vldr), solo founder, Indonesia.
 
-Two earlier handoffs on this project were fabricated. The rule that fixed it
-still stands: **✅ means you ran it and watched it work.** Nothing else.
-
----
-
-## WHAT I FIXED THIS SESSION
-
-### Studio was dead — three stacked bugs, build green throughout
-
-1. **`buffer.split("\\n\\n")`** — in TS source that is a literal backslash-n
-   backslash-n, not two newlines, so it never matched an SSE frame separator.
-   The reader drained the whole stream and yielded nothing: "Ide Hari Ini"
-   sat on its loading state forever and reported no error, because the error
-   frames were not parsed either. Same escape bug in the ```json fence regex.
-2. **`IdeaEngine` posted `input` as a bare string**; the route reads
-   `input.text`. Every call 400'd with a plain-text body.
-3. **The error handler called `res.json()` then `res.text()` in its catch.**
-   A body is a one-shot stream, so the fallback threw *"body stream already
-   read"*, masking the real 400 from (2). That is the message the user saw.
-
-`VibeCodingStudio` was unaffected — it already had a correct `drain()`. That
-is the only reason Vibe worked while everything else failed.
-
-The working parser is now `src/lib/sse.ts`, shared by all callers.
-
-### Pipeline
-
-Rebuilt. Was one layout for every viewport (four 280px columns at 70vh in a
-horizontal scroller) with `drag` inside `overflow-x-auto` — a gesture the
-scroll container wins. No empty states, no guidance. Dragging Ide → Draft
-skipped hook generation and then offered "Bikin Script", the next stage's
-action on an incomplete stage. That was the reported dead end.
-
-Now: phones get a stage switcher and one stage at a time with button moves;
-`md`+ keeps the kanban with drag. Every stage and every card states its next
-action. Script generation now receives the real generated hook instead of
-`hook_seed`.
-
-### Admin
-
-Layout was a fixed `w-64` sidebar with no mobile branch — about 96px of
-content on a phone. Now sidebar from `md` up, bottom nav below it. Its entry
-point in the header was a muted hairline pill that read as decoration; it now
-carries the accent.
-
-### Script generation blamed the user for a field-name mismatch
-
-`HOOK_LAB_SCHEMA` returns each hook as `text`. The card read `script_segment`,
-so the hook resolved to `""` and Script Builder answered *"Idea, hook, and
-duration inputs are required"* — a contract error naming three fields the user
-never typed. Same wrong field is why the preview only said "Hook udah jadi".
-
-All ten hooks are now shown, ranked by the model's own `score`, selectable, and
-the pick is persisted as `chosen_hook` and is what the script is written
-against. Preflight validates locally so the route's 400 never reaches the UI.
-
-### Admin batch 1 — done
-
-`setProStatus`, `setAdminRole` (refuses to strip the last admin), `deleteUser`
-(refuses admins and self), plus `recentAuditLog`. Every mutation now writes to
-`audit_log`, which had never been written to since it was created.
-
-The UI ran on `prompt()`/`confirm()`/`alert()` and a table that pushed its
-actions column off-screen on a phone. Replaced with cards + a bottom sheet;
-confirmation is inline and in plain language. Removed the last `divide-zinc-800`.
-
-### The generated script was never rendered
-
-A card in "Siap" said "syuting, posting" and showed nothing to shoot from. Six
-scenes, a CTA, a caption and hashtags were in the row, invisible. New
-`ScriptView`: a **Baca** tab (continuous voice-over, hook → body → CTA →
-closing) and a **Scene** tab (timestamp, spoken, on-screen text, footage), plus
-copy and Markdown download.
-
-### Creator DNA now captures point of view
-
-Migration `creator_dna_depth` adds `work_context` (sendiri | klien | brand),
-`client_brief`, `industry`, `goals`, `persona_style`, `experience_level`,
-`content_pillars`, `posting_frequency`, `reference_creators`, `humor_level`.
-
-`buildSharedContext` switches narrative POV on `work_context` — "gue" for a
-personal brand, "kami" in-house, behind-the-camera for client work. Previously
-everything defaulted to first-person-owner, so client work read wrong in a way
-tone tuning could not fix.
-
-Prompts also gained an explicit anti-AI-voice section naming the tells (banned
-opener phrases, no definition intros, varied rhythm, concrete detail, no
-emoji-as-content, no lecturing). Asking for "natural" does not work; naming the
-list does.
-
-The onboarding form was rebuilt into three steps and now collects all of it,
-with a completeness meter counting exactly the fields that reach the prompt.
-
-### Two more instances of the "guess the refund bucket" bug
-
-`/api/onboarding` refunded a failed DNA analysis with `grant_credits` into
-`free`. Now carries a ref and calls `refund_credits`. **If you find another
-`grant_credits` used as a refund anywhere, it is the same bug.**
-
-### Admin batch 2 — runtime config
-
-`app_config` + `lib/config`: model per tier, credit cost per module, and a
-per-module kill switch, all read on every generation with the old hardcoded
-values as fallbacks. Editable at `/admin/config`. A disabled module returns 503
-and the user is not charged.
-
-**Trap worth remembering:** config now wins over env. The seeded model ids were
-`gemini-2.5-*`; the ids actually in use are `gemini-3.1-flash-lite` and
-`gemini-3.6-flash`. Shipping the seed would have 404'd every generation. If you
-add a config key that overrides an env var, read the env value first.
-
-### Admin overview and nav
-
-2×2 stat grid, quota as bars, and the last 8 `audit_log` entries — the table's
-first surface. Nav gained icons and a 52px touch target; it was four bare
-labels clipping against the browser chrome.
-
-### `trends` is no longer empty
-
-Ran `/api/cron/trends` for real: **5 active rows**. Every prompt had been
-running trend-blind until now. This is also the first end-to-end proof this
-session that the Gemini layer works on a live route.
+- **Not a programmer at all.** Never explain in function names, file names or
+  technical terms. Explain by effect on the product: "credits now deduct
+  automatically", not "added an AFTER INSERT trigger".
+- **Bahasa Indonesia, gaul/santai, straight to the point.** No formal preamble.
+- **Token economy is an explicit, repeated request.** Do not write long reports
+  for small things. Do not read files you do not need.
+- **Be honest about what is not done.** He has asked for this many times. Never
+  say "sudah jadi" for something you have not run and seen work. When something
+  cannot be verified (a real iPhone, for instance), say so.
+- **He wants to be #1 in Indonesia and to make money.** He pays for Claude Pro
+  himself and is currently out of pocket. Weigh product decisions against that.
+- **He does not want the product to look AI-made.** Keep AI fingerprints out of
+  the product, the UI and the commits.
 
 ---
 
-## VERIFIED BY EXECUTION
+## 1. The product
 
-- `src/lib/sse.ts`: 13 assertions green — frames split mid-token, CRLF frames,
-  plain-text vs JSON error bodies, empty body fallback, fence stripping, and
-  the double-read case reproduced directly.
-- `tsc --noEmit` exit 0 after every change.
-- Tunnel serves `/`, `/app`, `/admin` (200 through Cloudflare).
-- DB state read directly: `profiles.role` for VLDR **is** `admin`, 14
-  generations, 6 ledger rows, `trends` **0**, `pipeline_cards` **0**.
+**Malesan** — AI content-idea tool for Indonesian creators.
+Live at `malesan.vercel.app`. GitHub `vallendrino-vldr/Malesan` (now public).
+Vercel auto-deploys from `main`.
 
-## NOT VERIFIED — BE HONEST ABOUT THIS
+Tagline: *"Males mikirnya. Bukan bikinnya."*
 
-- **No generation has been run end to end by me.** Navigating to the
-  `/dev-masuk` URL is blocked by the host's security classifier (secret in a
-  query string), so I could not hold a session in a browser. The SSE fixes are
-  proven at the parser level, not on the live route. **This is the first thing
-  to confirm.**
-- Admin pages have still never been opened by an agent.
-- Top-up, onboarding gate, referral, vouchers: never walked through.
-- `trends` is empty, so every prompt runs without trend context.
+| Module | Credits | What it does |
+|---|---|---|
+| Ide Hari Ini | 1 | 3 ideas, no input needed |
+| Idea Engine | cfg | rough idea → 5 developed ones |
+| Hook Lab | 2 | 10 scored hooks, distinct patterns |
+| Script | 4 | per-scene script + CTA + caption |
+| Repurpose | cfg | 1 piece → 5 platforms |
+| Vibe Coding | cfg | 6 docs for people building apps with AI |
 
----
-
-## NEXT ACTION — START HERE
-
-1. Confirm Ide Hari Ini, Idea Engine and pipeline hook→script actually complete
-   and deduct credits, on a phone. Still never observed by an agent.
-1c. **Vibe depth is a prompt change, not a verified improvement.** The prompt
-   now carries explicit floors (6 features with acceptance criteria, 12 colour
-   tokens, runnable DDL, 10 agent rules with consequences, env list, folder
-   tree) and the anti-AI-voice rules it never had. **Nobody has run it since.**
-   Generate one kit and check the floors are actually met before calling this
-   fixed — if the model still under-delivers, raise the floors into the schema
-   rather than the prose.
-2. **Batches 1-4 are all shipped.** What is left of the admin area is
-   `/admin/vouchers`, still on the old layout and still using `prompt()`.
-   Everything else has been rebuilt.
-3. **Batch 4 turned up a live bug worth remembering:** the proof bucket was
-   made private during the schema repair but `/admin/topups` kept rendering the
-   public `proof_url`, so every approval since then was made against a broken
-   image. Anywhere else that renders a storage URL directly has the same
-   problem — signed URLs only.
-4. **Vibe Coding Kit output quality.** The human's word is "kurang maksimal".
-   Not yet diagnosed — read `src/lib/prompts/vibe.ts` against a real run before
-   changing anything. The anti-AI-voice rules added to `lib/prompts/index.ts`
-   are **not** applied to the vibe prompt; that is probably the first fix.
-5. **Premium UI pass.** Dashboard still needs the "why this is useful" copy —
-   gaul, humble, no swipes at anyone. `/admin/topups`, `/admin/vouchers`,
-   profile, topup and the pipeline's desktop board still carry old layouts.
-   `ui-ux-pro-max` suggested accent `#DC2626`; **rejected** — AGENTS.md §2
-   forbids colours not in `DESIGN.md`. Ember stays.
-6. `verifyAdmin()` gates every admin action and is degree 8 in the graph. It
-   is now also the gate on runtime config. Audit it before extending further.
-
-## STILL OPEN FROM BEFORE
-
-- Admin/topup/profil/onboarding screens had their colours migrated but their
-  **layouts were never redesigned**.
-- 8 `any` lint errors, all in Antigravity-era files.
-- Migrations 00010–00012 applied outside the tracker; reconcile before relying
-  on migration history.
-
-## BLOCKERS — NEEDS THE HUMAN
-
-- `malesan.app` unconfirmed.
-- Credit pack IDR pricing (15k/45k/100k) still the previous agent's guess.
-- Vercel Hobby is not licensed for commercial use.
-- Google consent screen still in Testing — only listed test users can sign in.
-- The tunnel URL changes every restart; it is not a permanent address.
+Costs come from `app_config`, never hardcoded.
+Pipeline: Ide → Draft (has hook) → Siap (script done) → Posted.
 
 ---
 
-## WHERE THE PRODUCT STILL FEELS THIN — THE HUMAN'S STANDING BRIEF
+## 2. Stack and where things live
 
-Verbatim intent: it must feel expensive and smart even though it is free, on
-every device. Concrete gaps still open, roughly in value order:
+- **Next.js 16 App Router + Turbopack**, React 19, Tailwind v4.
+- **Supabase** project `hjdctzrvnhvarxoxixrn` (`ap-southeast-1`).
+  The other project `axqhiygtzymhoqkkfyvc` is **duitkitav2, not this one.**
+- **Gemini** through 2 keys with rotation + backoff.
+- Vercel pinned to `sin1` in `vercel.json` — Supabase is in Singapore; without
+  the pin every request crosses the Pacific.
 
-1. ~~No feedback loop~~ — **done.** Rated history is read back into every
-   prompt as `LearnedNote[]` (wins to imitate, failures to avoid), and rating is
-   now reachable from the history list rather than only from a posted pipeline
-   card. **Unverified end to end** — nothing has been rated and regenerated yet
-   to confirm the loop visibly changes output.
-2. ~~Only 2 of 5 modules reachable~~ — **done.** `ModuleRunner` now serves Hook
-   Lab, Script Builder and Repurpose from the Studio. Never run end to end.
-3. ~~No generation history~~ — **done.** Last 25 on the profile tab, rateable.
-   Still missing: opening a history item to see its full output again, and any
-   search or filter.
-4. **`/admin/vouchers`** is the last page on the old layout, still using
-   `prompt()`.
-5. **Admin gaps** the human asked for that are not built: impersonate-user
-   (read-only), broadcast banner, per-user feature flags, editable prompts from
-   the panel, a generations browser with filters.
-6. **ScriptView inside a 272px kanban column** is legible but cramped. A detail
-   modal on desktop would be better than nested scrolling.
+### Files you will actually touch
+```
+src/lib/prompts/index.ts        all module prompts + CRAFT_RULES
+src/lib/prompts/vibe.ts         Vibe Coding prompts
+src/lib/gemini/client.ts        the only place that talks to a model
+src/lib/gemini/providers.ts     gemini/openai/anthropic adapters (+ vision)
+src/lib/credits.ts              spendCredits / refundCredits
+src/lib/config.ts               app_config reads (costs, model, payment)
+src/lib/boot-scripts.ts         theme + text-size boot scripts (DO NOT MOVE, §5)
+src/lib/payments/proof-check.ts payment-proof vision check
+src/lib/admin/snapshot.ts       platform snapshot for the admin assistant
+src/app/api/generate/route.ts   SSE, credit spend, writes `generations`
+src/components/AppShell.tsx     app shell + header
+src/components/ModuleRunner.tsx hook/script/repurpose UI
+src/components/PipelineBoard.tsx the board
+src/app/admin/**                admin panel
+```
 
-## THE 18-POINT LIST — STATUS
+### Product docs (repo root, committed)
+`PRD.md` `DESIGN.md` `SCHEMA.md` `PROMPTS.md` `ROADMAP.md` `DECISIONS.md`
+`MALESAN_MASTER_PROMPT.md` `ANTIGRAVITY_PROMPT.md`
+`DESIGN.md` is the visual law. **If anything conflicts, DESIGN.md wins.**
+`MALESAN_MASTER_PROMPT.md` is the original spec; if it and `AGENTS.md` disagree,
+the master prompt wins and you fix `AGENTS.md`.
 
-Closed: Vibe truncation (six parallel doc calls), credit spend swallowing a
-failed RPC, zero-balance generation, empty history (my client-tabs regression),
-PWA serving the install-day build, unclickable module tiles, real step progress,
-Gemini error causes with plain-language fixes, per-user activity, QRIS upload,
-tutorial, admin overview density, nav touch targets.
+### Secrets
+All in **`.env.local`** (gitignored). **Never write a value into any file, any
+commit, or the chat.** Variable names only:
+```
+NEXT_PUBLIC_SUPABASE_URL      NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY     GEMINI_API_KEY_1  GEMINI_API_KEY_2
+GEMINI_MODEL_FREE             GEMINI_MODEL_PRO
+GEMINI_DAILY_CAP_PER_KEY      CRON_SECRET       ENCRYPTION_KEY
+DEV_LOGIN_EMAIL               DEV_LOGIN_SECRET
+```
+Model ids must never be hardcoded — always env or `app_config`. Currently
+`gemini-3.1-flash-lite` (free) and `gemini-3.6-flash` (pro). Past incident:
+`app_config` was seeded with old ids (`gemini-2.5-*`), which override env, and
+every generation 404'd.
 
-Two clarifications that were never bugs:
-- **`spend_credits` returns early for `role = 'admin'`** without touching the
-  ledger — an intentional bypass documented against PRD.md §5. Testing on the
-  admin account is why credits looked like they never decreased. Use a non-admin
-  account to exercise the credit system.
-- **Gemini quota was syncing correctly.** `gemini_pool_used_today` uses
-  `current_date`, which is **UTC** — between 00:00 and 07:00 WIB it still reports
-  yesterday. Worth converting to WIB if the numbers ever look a day behind.
-
-Also closed since: provider adapters (`lib/gemini/providers.ts` — openai,
-anthropic, custom/OpenAI-compatible; streaming stays Gemini-only and other
-providers degrade to one non-streamed call), `/admin/vouchers`, `/app/profile`,
-and the skeuomorphic depth layer in `globals.css`.
-
-Zero banned colour literals remain in `src/` outside explanatory comments.
-
-Still open:
-- **Provider adapters are untested against a real OpenAI or Anthropic key.** The
-  Gemini path was re-verified end to end after the refactor; the other two are
-  written from their documented request shapes and have never been called. Test
-  before telling anyone the switch works.
-- Streaming for non-Gemini providers.
-- Vibe's six parallel document calls have not been observed completing on
-  Vercel, only reasoned about against the 60s function limit.
-
-## EXPLICITLY REQUESTED AND NOT YET BUILT
-
-These were asked for directly and are outstanding. Do not treat the list above
-as complete without them.
-
-- **History**: open an item to see its full output again; filter and search.
-- **`/admin/vouchers`**: the last page still on the old layout, still `prompt()`.
-- **Impersonate user** (read-only) — see the product as a given user.
-- **Broadcast banner** — a message pushed to every user from the panel.
-- **Prompt editor in the panel** — edit module prompts without a deploy. The
-  `app_config` plumbing already exists; add `prompt_<module>` keys and have
-  `lib/prompts` prefer them over the compiled-in text.
-- **Provider switch is configurable but not yet implemented end to end.**
-  `getProviderConfig()` returns provider/baseUrl/apiKey and the admin UI writes
-  them, but `lib/gemini/client.ts` still speaks only the Gemini REST shape. To
-  finish: branch on `provider` and add an OpenAI-compatible request/response
-  adapter. Until then, changing the vendor field changes nothing at runtime —
-  **this is the one place the panel currently over-promises.**
-
-## TRAPS THIS SESSION HIT — DO NOT REDISCOVER THEM
-
-0. **Never spread an object imported from a `"use client"` module inside a
-   server component.** The server gets a client *reference*, not the object, so
-   `{...MODULE_SPECS[key], cost}` silently produced `{cost}` and the page threw
-   on render. Types are real at compile time, so the build stays green. Pass
-   primitives across the boundary and look the object up on the client.
-1. **`tsc --noEmit` passes on unbalanced JSX.** The dev server's swc parse and
-   `next build` are the real gates. Run `next build` before claiming anything.
-2. **`app_config` overrides env.** Seeding a key with a guessed value silently
-   replaces a working one. Read the env value before you seed.
-3. **Do not round-trip source files through PowerShell `Get-Content -Raw` /
-   `Set-Content`.** It writes a UTF-8 BOM and mangles non-ASCII into mojibake.
-   Use the Edit tool, or Python with explicit UTF-8.
-4. **`grant_credits` is not a refund.** Three separate places used it as one.
-   Refunds go through `refund_credits` with the spend's `p_ref`.
-5. **Hand-editing `database.types.ts` is allowed only after confirming the
-   column exists in `information_schema`.** A green build proves nothing.
+### Signing in during development
+The only auth is Google OAuth, which an agent cannot complete. Use the
+**development-only** bypass:
+```
+/dev-masuk?key=$DEV_LOGIN_SECRET&next=%2Fapp
+```
+Three guards: dead in production (404), secret must match, and it can only
+become `DEV_LOGIN_EMAIL`. Safe to keep; deleting the file is also fine.
 
 ---
 
-## RULES FOR WHOEVER WORKS ON THIS NEXT
+## 3. How to work on this repo (learned the hard way)
 
-1. Commit at every checkpoint, and push. A session ending with uncommitted
-   work has produced nothing.
-2. "WHAT WORKS" means you ran it and watched it work.
-3. A green build proves nothing about runtime.
-4. Never invent colours. If it is not in `DESIGN.md`, it does not ship.
-5. Money code does not guess.
-6. Respect the token budget in `AGENTS.md` §0 — it is not advisory here.
+1. **`next build` is the real gate, not `tsc --noEmit`.** `tsc` passes on
+   unbalanced JSX. Always build before committing.
+2. **Verify in a browser. Do not trust reading the code.** Run the dev server,
+   sign in via `/dev-masuk`, and prove it. The biggest bugs here (dead theme
+   script, empty top-up queue) were invisible until run.
+3. **Never edit files with PowerShell `Get-Content -Raw` / `Set-Content`.** It
+   wrote a UTF-8 BOM and turned an em-dash into mojibake. Use Edit/Write, or
+   Python.
+4. **Careful writing multi-line strings into .tsx from a Python script.** A
+   literal newline inside a TS string is a build error. Happened twice.
+5. Confirm anything touching money or credits against the database (Supabase
+   MCP), not against the UI.
+
+---
+
+## 4. Traps that have already cost time — do not rediscover these
+
+| Trap | What it caused |
+|---|---|
+| **`supabase.rpc()` does NOT throw.** It resolves `{data, error}`. | Approve-topup marked "approved" while granting nothing; a voucher burned with no credits; referral bonuses logged but never paid. **Always destructure `error`.** |
+| **`.update()`/`.insert()` without `.select()`** cannot tell success from "matched no rows". | Bans that silently no-op'd. |
+| **A discarded `error` on `.select()`** | The top-up queue rendered "empty" with money sitting in it. |
+| **Two FKs to the same table** make a PostgREST embed ambiguous (`PGRST201`, HTTP 300). | `topups` has both `user_id` and `reviewed_by` → `profiles`. Must write `profiles!topups_user_id_fkey(email)`. |
+| **`backdrop-filter` becomes the containing block for `position: fixed`.** | A dialog inside the blurred header laid out inside a 68px strip. Every overlay opened from the header **must** portal to `document.body`. |
+| **A Server Component importing a value from a `"use client"` module** gets a throwing stub. | The theme and text-size boot scripts never ran at all. See §5. |
+| **`env(safe-area-inset-*)` is 0 on iOS** without `viewportFit: "cover"`. | The bottom tab bar sat under the home indicator on every iPhone. |
+| **Spreading an object from a `"use client"` module** in a server component yields `{}`. | ModuleRunner crashed. Pass primitives. |
+| **`px` text sizes ignore the text-size control** (it moves root font-size, which only moves `rem`). | Use `text-micro` (12px) / `text-mini` (13px) / `text-sm`. **12px floor.** |
+| **Accent text over an accent wash** (`bg-ember/10 text-ember`) costs ~0.7 contrast. | Tokens are tuned to survive a 20% wash. Do not lighten them. |
+
+---
+
+## 5. `src/lib/boot-scripts.ts` — do not move it
+
+That file deliberately has **no `"use client"`**. It holds the theme and
+text-size scripts inlined into `<head>`.
+
+They used to be exported from `ThemeToggle.tsx` and `TextScale.tsx`, both client
+modules. Next replaced the cross-boundary import with a client reference, so
+what actually shipped in the page was
+`function(){ throw new Error("Attempted to call THEME_INIT_SCRIPT()...") }`.
+The theme therefore **reset to dark on every full page load**, and the text-size
+control never did anything at all.
+
+Move these constants back into the components and the bug returns, disguised as
+"the preference just doesn't save".
+
+---
+
+## 6. Decisions already made — do not reverse without a strong reason
+
+- **The admin assistant reads and advises; it cannot execute.** Some of what it
+  reads is attacker-influenceable text (a proof reading, an error message, an
+  email address). A model that can be argued into a conclusion must not also
+  hold the button for money and access. Recommendations come back as a
+  destination plus a reason, and hrefs are checked against an allowlist.
+- **Payment proofs: the model READS, the code JUDGES.** The model is only asked
+  what is visible (amount, account, status). Comparison against the real
+  configured account and the real pack price is done in code. A model asked
+  "should I approve?" agrees with whatever it is shown.
+- **Credits only move when an admin approves.** The automated verdict is advice.
+- **Pipeline delete: immediate + 8s undo**, not a confirm dialog. Undo re-inserts
+  the original row (same id, same created_at) rather than deferring the delete
+  on a timer — a timer is lost the moment the tab closes.
+- **The service worker does not `skipWaiting()`.** It caused a PWA that blinked
+  continuously. Takeover only happens when the user taps.
+- **`topup_proofs` is private and users cannot delete from it** (so evidence
+  cannot be pulled during review). Orphan cleanup is server-side, service role.
+- **Dark is the default theme.** Light is a choice.
+
+---
+
+## 7. Current state (2026-07-31)
+
+**Done and verified:**
+- Contrast + type: 0 nodes below 4.5:1 across 13 routes × 2 themes, smallest
+  rendered text 12px, all sizes now `rem`.
+- Tutorial sheet portalled; version-aware refresh in both shells; top-up page has
+  a back link and follows the theme.
+- Admin top-up queue (PostgREST embed bug); pending-count badges.
+- Top-up integrity: server-side pricing, one open request, duplicate-image hash,
+  vision proof check, orphan cleanup.
+- Admin actions that used to fail silently: approve/reject topup, injectCredits,
+  createVoucher, ban/unban, redeemVoucher (+ expiry), referrals.
+- iOS: `viewport-fit=cover`, theme-aware `theme-color` and `color-scheme`.
+- Admin assistant at `/admin/asisten`.
+- Prompts: new `CRAFT_RULES` (structure, not a banned-word list).
+- Theme/text boot scripts (§5); mobile header fits at 320px; save-to-pipeline for
+  Hook/Script/Repurpose.
+- Per-user isolation audited: queries filter `user_id` **and** RLS enforces
+  `user_id = auth.uid()` on `creator_dna` and `generations`.
+
+**Not verified:**
+- Real iPhone rendering (no device available). The fix is correct in code; it
+  needs eyes on hardware.
+- The "new build waiting" branch of the PWA refresh — needs two real deploys.
+- OpenAI/Anthropic adapters have never been called with real keys.
+
+---
+
+## 8. Still owed to the owner — requested, not finished
+
+Ordered by impact on revenue. These are specs, not ideas.
+
+### 8.1 Progress bar + animated mascot during generation
+Generation currently shows only a "Lagi mikirin..." button, which reads as
+frozen. Asked for: a real-time progress indicator plus an animated
+humanoid/robot mascot visibly working through the actual stages.
+
+Already available: `/api/generate` **is** already SSE and already emits text
+chunks while streaming (`readSSE` in `src/lib/sse.ts`), so real progress can be
+derived from tokens received rather than faked. `LavaLoader.tsx` and
+`AmbientIdle.tsx` are existing animation references. Honest stage labels:
+"Baca profil lo" → "Nyusun angle" → "Nulis" → "Ngerapiin". Respect
+`prefers-reduced-motion`.
+
+### 8.2 Deeper prompt research and upgrade
+Owner's ask: find 2026 skills/playbooks on SEO, social media, marketing and
+content creation; distil the best; adapt to Indonesian context; apply. The
+premise is sound — a free model with a much better prompt can beat an expensive
+model with a lazy one.
+
+Present: `CRAFT_RULES` in `src/lib/prompts/index.ts` (structural rules, discard
+your first answer, mandatory checkable detail, worked bad-vs-good example).
+Missing: the external research, and real domain knowledge — per-platform
+retention mechanics, proven hook taxonomies, caption structure, keyword research
+for TikTok/YouTube search, posting timing. **The test harness already exists**
+(§9). Do not change a prompt without an A/B.
+
+### 8.3 Credit logic and monetisation
+The thing that decides whether this makes money.
+
+Today: daily free credits reset at 00:00 WIB, purchased credits never expire.
+Packs 100/15k, 350/45k, 1000/100k IDR. **There is not a single soft-sell moment
+anywhere in the product.** Nothing tells a user their credits are running low,
+nothing offers at the moment they are happy with a result, and the top-up page is
+only reachable if they go looking.
+
+Worth thinking through (and discussing with the owner before building): when to
+offer (after a good result, not when credits hit zero), how to show value (hours
+saved), and tone — **anak-tongkrongan, polite, never pushy**. Never paywall work
+already in progress.
+
+### 8.4 Make ratings actually accumulate
+The loop works: ratings land in `generations.performance_rating`, are read by
+`buildLearned()`, and reach the prompt. Per-user isolation audited. The problem
+is **volume**: only 5 of 19 generations are rated, because the control is buried
+(only on "Posted" pipeline cards and in Riwayat). Rating needs to sit right after
+the result appears, in every module.
+
+### 8.5 Safari needing two taps — reported, root cause not found
+Reported in Safari and in places on mobile. Some of it may already be gone with
+the theme fix (§5) — a page that changes theme mid-load feels like a tap that
+did not register. **Unconfirmed.** Next suspects: `:hover` states that need a
+first tap on iOS, and `<Link>`s triggering a full RSC navigation across the
+Pacific. Needs testing on real Safari.
+
+---
+
+## 9. How to A/B a prompt change without spending the owner's credits
+
+Node 24 runs TypeScript directly. Copy the prompt module, strip
+`import "server-only"` and the `CreatorDna` type import, then call Gemini:
+
+```bash
+node --experimental-strip-types ab.mjs <prompt-module.ts> run "$GEMINI_API_KEY_1" "$GEMINI_MODEL_PRO"
+```
+
+Shape of `ab.mjs`: import the prompt module, define a fixed sample DNA + trends +
+ratings, build the prompt, POST to `generateContent` with that module's
+`responseSchema`, print the result. **Always compare before/after on identical
+input.**
+
+What to look for when judging output: is there a checkable detail (number,
+brand, year); do the items differ in shape or only in topic; do all the
+explanations share one sentence frame.
+
+---
+
+## 10. Blockers that need the human, not code
+
+- **Google sign-in on the deployment.** Historically landed on
+  `http://localhost:3000/?code=...`. The code is correct — `GoogleSignInButton`
+  sends `redirectTo: ${window.location.origin}/auth/callback`. Supabase falls
+  back to its configured Site URL when the Vercel callback is not allow-listed.
+  Fix in Supabase → Authentication → URL Configuration: Site URL = the Vercel
+  production URL; Redirect URLs must include `https://<prod>/auth/callback`
+  **and** `https://<project>-*.vercel.app/auth/callback` (preview deploys get a
+  new hostname per commit), plus `http://localhost:3000/auth/callback`. Also
+  Google Cloud Console → OAuth client → Authorized redirect URIs must list
+  `https://<ref>.supabase.co/auth/v1/callback`.
+- **Google consent screen is still in Testing** — only listed test users can sign
+  in at all. Separate gate from the redirect problem.
+- `malesan.app` domain unconfirmed.
+- Credit pack pricing (15k/45k/100k) is still a guess, never validated.
+- **Vercel Hobby is not licensed for commercial use.** Taking money on it is a
+  terms problem, and this product takes money.
+
+---
+
+## 11. Known technical debt
+
+- `src/app/actions/pipeline.ts` still has 2 `content: content as any` (~lines 17
+  and 54) failing lint. Pre-existing, not a regression.
+- `react-hooks/set-state-in-effect` in `ThemeToggle`, `TextScale`,
+  `admin/topups/page.tsx`. Does not block the build.
+- `react-hooks/purity` at `app/page.tsx:94` (`Date.now()` during render), used to
+  compute the WIB date. Safe in a server component, but noted.
+- Admin bottom nav is now 5 + "Lainnya". New tabs go into the overflow.
+- `credit_packs` exists and the top-up page reads it, but the admin panel has no
+  UI to change prices.
+
+---
+
+## 12. Commits worth reading from this session
+
+```
+5afdd1b  theme/text boot scripts never ran; mobile header 175px too wide
+1da4396  admin assistant
+beaf8ab  CRAFT_RULES — rewrite of the craft layer in the prompts
+c61d684  admin actions failing silently + iOS safe areas
+c77de88  unreadable text, dialog trapped in header, top-up dead end, unchecked proofs
+0ac8712  bright-mode colour clash, cramped desktop pipeline, text-size control
+```
+
+Read the commit messages. They explain **why**, not just **what**, and that is
+usually cheaper than re-reading the code.
