@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
+import { saveToPipeline } from "@/app/actions/pipeline";
 import { ScriptView, type ScriptOutput } from "./ScriptView";
 
 /**
@@ -137,6 +138,9 @@ export function ModuleRunner({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [out, setOut] = useState<unknown>(null);
+  // Kept so a saved pipeline card can point back at the generation it came
+  // from — that link is what lets a rating on the card reach the model.
+  const [genId, setGenId] = useState<string | null>(null);
 
   // Never throw on a bad key again — an unknown module renders a message, not
   // a red error overlay over the whole app.
@@ -151,6 +155,7 @@ export function ModuleRunner({
     setBusy(true);
     setError("");
     setOut(null);
+    setGenId(null);
 
     try {
       const res = await fetch("/api/generate", {
@@ -174,7 +179,9 @@ export function ModuleRunner({
           return true;
         }
         if (msg.done) {
-          setOut((msg.generation as { output?: unknown } | undefined)?.output ?? null);
+          const g = msg.generation as { id?: string; output?: unknown } | undefined;
+          setOut(g?.output ?? null);
+          setGenId(typeof g?.id === "string" ? g.id : null);
           router.refresh();
           return true;
         }
@@ -292,7 +299,14 @@ export function ModuleRunner({
         </button>
       </section>
 
-      {out !== null && <ModuleOutput moduleKey={spec.key} out={out} busy={busy} />}
+      {out !== null && (
+        <>
+          <ModuleOutput moduleKey={spec.key} out={out} busy={busy} />
+          {!busy && (
+            <SaveToPipeline moduleKey={spec.key} out={out} genId={genId} values={values} />
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -384,5 +398,91 @@ function CopyBtn({ text }: { text: string }) {
     >
       {done ? "Kesalin!" : "Salin"}
     </button>
+  );
+}
+
+/**
+ * Send a module result into the pipeline.
+ *
+ * Hook Lab, Script and Repurpose had no route into the pipeline at all — only
+ * the idea cards did. So the board's own empty state told people to "tap Simpan
+ * ke pipeline di kartu hasilnya" on screens where no such control existed, and
+ * a 4-credit script lived in history and nowhere else.
+ *
+ * The card is written in the shape PipelineBoard already reads, so a hook saved
+ * here lands in Draft with its options intact and the Script button unlocked,
+ * and a script lands in Siap ready to shoot. `generation_id` is carried through
+ * so rating the card later still reaches the generation it came from.
+ */
+function SaveToPipeline({
+  moduleKey,
+  out,
+  genId,
+  values,
+}: {
+  moduleKey: ModuleSpec["key"];
+  out: unknown;
+  genId: string | null;
+  values: Record<string, string>;
+}) {
+  const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  if (moduleKey !== "hook" && moduleKey !== "script" && moduleKey !== "repurpose") return null;
+
+  const idea = (values.idea || values.topic || values.content || "").trim();
+  const title =
+    idea.split(/\r?\n/)[0].slice(0, 90) ||
+    ({ hook: "Hook tanpa judul", script: "Script tanpa judul", repurpose: "Repurpose tanpa judul" } as const)[
+      moduleKey
+    ];
+
+  const save = async () => {
+    setState("saving");
+    setError("");
+    try {
+      // Matches what PipelineBoard expects, so the card arrives at the right
+      // stage with the right next action rather than as an inert blob.
+      const content =
+        moduleKey === "hook"
+          ? { angle: idea, generated_hook: out, chosen_hook: 0 }
+          : moduleKey === "script"
+            ? { angle: idea, generated_script: out, hook_seed: values.hook ?? "" }
+            : { angle: idea, repurposed: out };
+      const status = moduleKey === "hook" ? "draft" : moduleKey === "script" ? "siap" : "ide";
+
+      await saveToPipeline(title, content, genId ?? undefined, status);
+      setState("saved");
+      router.refresh();
+    } catch (e: unknown) {
+      setState("idle");
+      setError(e instanceof Error ? e.message : "Gagal nyimpen ke pipeline.");
+    }
+  };
+
+  return (
+    <div className="surface-card rounded-xl p-4">
+      {state === "saved" ? (
+        <p className="text-mini leading-relaxed text-success">
+          Kesimpen di pipeline. Buka tab Pipeline buat lanjutin.
+        </p>
+      ) : (
+        <>
+          <p className="text-mini leading-relaxed text-muted">
+            Simpen ke pipeline biar gak ilang, dan bisa dilanjutin jadi konten
+            jadi.
+          </p>
+          <button
+            onClick={save}
+            disabled={state === "saving"}
+            className="mt-2.5 min-h-11 w-full cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-4 font-display text-mini font-bold text-ember disabled:opacity-50"
+          >
+            {state === "saving" ? "Nyimpen..." : "Simpan ke pipeline"}
+          </button>
+        </>
+      )}
+      {error && <p className="mt-2 text-micro leading-relaxed text-danger">{error}</p>}
+    </div>
   );
 }

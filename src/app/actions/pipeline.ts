@@ -4,7 +4,20 @@ import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { revalidatePath } from "next/cache";
 
-export async function saveToPipeline(title: string, content: unknown, generationId?: string) {
+/**
+ * `status` is a parameter now, not always "ide".
+ *
+ * A hook that has already been generated is not an idea waiting for a hook —
+ * it belongs in Draft with the Script action unlocked. A finished script
+ * belongs in Siap. Forcing everything to "ide" made a saved script show
+ * "Langkah 1 dari 3 — bikin hook dulu" over work that was already done.
+ */
+export async function saveToPipeline(
+  title: string,
+  content: unknown,
+  generationId?: string,
+  status: "ide" | "draft" | "siap" | "posted" = "ide",
+) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
@@ -15,7 +28,7 @@ export async function saveToPipeline(title: string, content: unknown, generation
       user_id: user.id,
       title,
       content: content as any,
-      status: "ide",
+      status,
       generation_id: generationId || null,
     })
     .select()

@@ -2,8 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import { PwaProvider } from "@/components/PwaProvider";
 import "./globals.css";
-import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
-import { TEXT_INIT_SCRIPT } from "@/components/TextScale";
+// From a server-safe module, not from the "use client" components that own
+// these settings — importing them from there turned both scripts into a client
+// reference stub that threw, so neither ever ran. See src/lib/boot-scripts.ts.
+import { THEME_INIT_SCRIPT, TEXT_INIT_SCRIPT } from "@/lib/boot-scripts";
 
 // Display — industrial, engineered. Weights 600-800, tight negative tracking.
 const archivo = Archivo({

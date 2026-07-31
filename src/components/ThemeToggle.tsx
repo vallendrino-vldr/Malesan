@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { THEME_KEY as KEY, THEME_SEEN_KEY as SEEN_KEY } from "@/lib/boot-scripts";
 
 /**
  * Switches between the dark ember theme and the light Soft UI theme.
@@ -25,8 +26,6 @@ import { useEffect, useState } from "react";
  */
 
 type Theme = "dark" | "soft";
-const KEY = "malesan-theme";
-const SEEN_KEY = "malesan-theme-toggle-seen";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("dark");
@@ -146,17 +145,3 @@ export function ThemeToggle() {
   );
 }
 
-/**
- * Applied before first paint to avoid a flash of the wrong theme.
- *
- * Inlined into <head> as a blocking script. It has to run before the body
- * renders, so it cannot be a React effect — and it is written defensively
- * because a throw here would block the whole document. Absence of the stored
- * key is dark by design: this only ever sets `data-theme`, never clears it.
- */
-export const THEME_INIT_SCRIPT = `
-(function(){try{
-  var t = localStorage.getItem(${JSON.stringify(KEY)});
-  if (t === "soft") document.documentElement.setAttribute("data-theme","soft");
-}catch(e){}})();
-`;

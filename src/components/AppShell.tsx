@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { CreditDisplay } from "./CreditDisplay";
-import { TutorialSheet } from "./TutorialSheet";
-import { ThemeToggle } from "./ThemeToggle";
-import { RefreshButton } from "./RefreshButton";
+import { HeaderMenu } from "./HeaderMenu";
 
 /**
  * Native-app shell.
@@ -121,24 +119,29 @@ export function AppShell({
       {/* ---------- header ---------- */}
       <header className="relative z-20 shrink-0 border-b border-hairline/70 bg-obsidian/85 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-3">
+          {/* Mark only on phones. The wordmark is 78px of a 320px bar spent on
+              telling someone which app they already opened. */}
           <Link
             href="/app"
             aria-label="Malesan"
             className="flex min-h-11 shrink-0 items-center"
           >
-            <Logo markClass="size-7" />
+            <span className="sm:hidden">
+              <Logo markClass="size-7" showWord={false} />
+            </span>
+            <span className="hidden sm:inline-flex">
+              <Logo markClass="size-7" />
+            </span>
           </Link>
 
           <div className="flex min-w-0 items-center gap-2">
             {/* Five modules, a three-stage pipeline and a credit system are more
                 than tiles alone can explain. Sits in the header so it is
                 reachable from every tab, not buried in a settings page. */}
-            {/* In the header, not on one tab. An installed PWA has no address
-                bar, so this is the only reload the user has — it has to be
-                reachable from wherever they happen to be stuck. */}
-            <RefreshButton variant="icon" />
-            <ThemeToggle />
-            <TutorialSheet />
+            {/* Refresh, theme and how-to. Inline from `sm` up, behind one
+                button on phones — seven controls in this row needed 565px and
+                pushed the credit balance and the avatar off the screen. */}
+            <HeaderMenu />
             {/* Was a muted hairline pill that read as decoration — the one
                 entry point to the whole admin area, and it went unfound. It is
                 now tinted with the accent so it reads as an action. */}
@@ -165,9 +168,20 @@ export function AppShell({
                 </svg>
                 {/* Filled and counted rather than a bare dot: "3" tells the
                     owner how much money is waiting, a dot only says "something". */}
-                <span className="eyebrow">
+                {/* The word is dropped on phones and the count becomes a
+                    badge on the shield. The signal that matters — "someone is
+                    waiting" — survives; the label was what did not fit. */}
+                <span className="eyebrow hidden sm:inline">
                   {pendingTopups > 0 ? `${pendingTopups} topup` : "Admin"}
                 </span>
+                {pendingTopups > 0 && (
+                  <span
+                    aria-hidden="true"
+                    className="grid min-w-[18px] place-items-center rounded-full bg-obsidian px-1 font-mono text-micro font-bold leading-[18px] text-ember sm:hidden"
+                  >
+                    {pendingTopups > 9 ? "9+" : pendingTopups}
+                  </span>
+                )}
               </Link>
             )}
             <CreditDisplay credits={credits} />

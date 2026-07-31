@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TEXT_KEY as KEY } from "@/lib/boot-scripts";
 
 /**
  * Lets the reader pick a comfortable text size.
@@ -19,7 +20,6 @@ import { useEffect, useState } from "react";
  */
 
 type Scale = "sm" | "md" | "lg" | "xl";
-const KEY = "malesan-text";
 const STEPS: { id: Scale; label: string; hint: string }[] = [
   { id: "sm", label: "Kecil", hint: "Muat lebih banyak" },
   { id: "md", label: "Normal", hint: "Bawaan" },
@@ -92,13 +92,3 @@ export function TextScale() {
   );
 }
 
-/**
- * Applied before first paint, alongside the theme, so text never resizes
- * visibly after load.
- */
-export const TEXT_INIT_SCRIPT = `
-(function(){try{
-  var t = localStorage.getItem(${JSON.stringify(KEY)});
-  if (t && t !== "md") document.documentElement.setAttribute("data-text", t);
-}catch(e){}})();
-`;
