@@ -4,7 +4,7 @@
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-07-31**, after commit `c490d5e`.
+Last updated: **2026-07-31**, after commit `5a183a1`.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -142,6 +142,10 @@ become `DEV_LOGIN_EMAIL`. Safe to keep; deleting the file is also fine.
 | **Spreading an object from a `"use client"` module** in a server component yields `{}`. | ModuleRunner crashed. Pass primitives. |
 | **`px` text sizes ignore the text-size control** (it moves root font-size, which only moves `rem`). | Use `text-micro` (12px) / `text-mini` (13px) / `text-sm`. **12px floor.** |
 | **Accent text over an accent wash** (`bg-ember/10 text-ember`) costs ~0.7 contrast. | Tokens are tuned to survive a 20% wash. Do not lighten them. |
+| **A `<span>` cannot take focus**, so `:focus-visible` on one never fires. | The wordmark's wake-up ignored keyboard users. Key focus off the wrapping `<a>`/`<button>`. |
+| **A service worker fetch handler runs for every request**, even ones it passes through — and an idle worker must boot first. | Return without calling `respondWith` for anything you are not actually handling. |
+| **Renaming the cache is what applies a strategy change.** Old entries survive on their own. | v1 had cached HTML; the offline fallback would have served a stale `/`. |
+| **Hiding controls behind a menu hides the features.** | The "⋯" header menu meant nobody discovered the light theme, the reload, or the tutorial. Named chips instead. |
 
 ---
 
@@ -207,6 +211,11 @@ Move these constants back into the components and the bug returns, disguised as
 - Generation progress figure (elapsed-time based; see below for why not stream
   based), inline rating in every module, the first soft-sell moments, and
   `PLATFORM_MECHANICS` in the prompts.
+- Modules (Hook/Script/Repurpose/Ide/Idea) switch **client-side** via
+  `StudioPanel` — no navigation, no server round trip. Do not turn them back
+  into links; that was the multi-second delay and the double-tap.
+- Service worker: no interception except navigations, cache-first for
+  `/_next/static`, cache name `malesan-v2`.
 - **Gemini does not stream incrementally at these sizes.** Measured against the
   upstream endpoint: 3 SSE frames, first and last both at 5.82s — one burst at
   the end. Any future UI that assumes token-by-token arrival is building on
@@ -241,14 +250,20 @@ hardcodes "post at 19:00" is wrong within a quarter and nobody notices.
 **Retry the web tools in a later session.** If they work, the gap to fill is
 current per-platform specifics, not craft.
 
-### 8.2 Real-device Safari pass
+### 8.2 Watch the header height on small phones
+The phone header is two rows now (~108px): the bar, plus a strip of three named
+chips. That is the cost of the controls being discoverable at all, and it was a
+deliberate trade after the "⋯" menu failed. If it ever needs to come back down,
+the honest lever is dropping a chip — not re-hiding all three.
+
+### 8.3 Real-device Safari pass
 `useLinkStatus` on the module tiles and `cursor-pointer` on the two overlay
 backdrops address the most likely cause of "harus klik 2 kali" (a slow
 navigation with no feedback, plus Safari's rule about which divs may receive
 clicks). **Unconfirmed on hardware.** Also still unverified on a real iPhone:
 safe-area insets and the light theme.
 
-### 8.3 Watch whether the offer converts
+### 8.4 Watch whether the offer converts
 `CreditNudge.tsx` is the first time this product has ever asked for money. Two
 moments only — after a rated-good result (suppressed above 120 credits, once per
 session) and before the balance runs out. There is no analytics on it. Before
@@ -256,13 +271,13 @@ tuning the copy or the thresholds, get numbers: how many people see it, how many
 tap through, how many pay. Guessing at conversion copy without that is how the
 next three sessions get wasted.
 
-### 8.4 Rating volume
+### 8.5 Rating volume
 The control now sits under every result and a rating was verified landing
 (5 → 6 of 21). Check again after real usage: if the share of rated generations
 is still low, the problem is placement, not mechanism — the loop itself is
 proven.
 
-### 8.5 Admin UI for `credit_packs`
+### 8.6 Admin UI for `credit_packs`
 The table exists and the top-up page reads it, but prices can only be changed in
 SQL. The owner has said the pricing is a guess; he cannot test a different price
 without an agent.
@@ -325,6 +340,7 @@ explanations share one sentence frame.
 ## 12. Commits worth reading from this session
 
 ```
+5a183a1  header controls visible again, wordmark redesign, PWA latency
 c490d5e  progress figure, inline rating, first soft-sell, platform mechanics
 5afdd1b  theme/text boot scripts never ran; mobile header 175px too wide
 1da4396  admin assistant
