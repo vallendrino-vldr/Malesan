@@ -138,7 +138,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                       disabled={busy === it.id}
                       aria-label={`Kasih ${s} bintang`}
                       className={`cursor-pointer text-base leading-none transition-colors disabled:opacity-50 ${
-                        s <= rating ? "text-ember" : "text-muted/30 hover:text-muted"
+                        s <= rating ? "text-ember" : "text-muted hover:text-ink"
                       }`}
                     >
                       ★

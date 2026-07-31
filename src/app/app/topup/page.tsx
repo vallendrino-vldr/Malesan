@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { useEffect, useRef, useState } from "react";
 import { submitTopup, redeemVoucher, paymentSettings } from "@/app/actions/payments";
 import type { PaymentConfig } from "@/lib/config";
@@ -175,6 +176,10 @@ export default function TopupPage() {
           <h1 className="min-w-0 flex-1 truncate font-display text-base font-bold text-ink">
             Beli kredit
           </h1>
+          {/* This route has its own header, so without this the one screen
+              where someone is deciding to pay never shows them whose product
+              they are paying for. */}
+          <Logo markClass="size-6" size="0.9375rem" className="shrink-0" />
         </div>
       </header>
 

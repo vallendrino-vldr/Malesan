@@ -27,7 +27,7 @@ import { THEME_KEY as KEY, THEME_SEEN_KEY as SEEN_KEY } from "@/lib/boot-scripts
 
 type Theme = "dark" | "soft";
 
-export function ThemeToggle() {
+export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip" } = {}) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [hint, setHint] = useState(false);
 
@@ -72,6 +72,30 @@ export function ThemeToggle() {
   };
 
   const soft = theme === "soft";
+
+  // On phones the switch moves into the named strip under the header. The
+  // label is the point — a 52px pill with two tiny glyphs told nobody that this
+  // product has a light theme at all.
+  if (variant === "chip") {
+    return (
+      <button
+        onClick={flip}
+        role="switch"
+        aria-checked={soft}
+        className="hchip"
+        aria-label={soft ? "Lagi tema terang. Tap buat ganti gelap." : "Lagi tema gelap. Tap buat ganti terang."}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true" className={`size-4 fill-current ${soft ? "text-ember" : ""}`}>
+          {soft ? (
+            <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-13V2m0 20v-2m8-8h2M2 12h2m12.9-5.9 1.4-1.4M5.7 18.3l1.4-1.4m9.8 1.4 1.4 1.4M5.7 5.7 7.1 7.1" />
+          ) : (
+            <path d="M12 3a9 9 0 1 0 9 9c0-.3 0-.6 0-.9A7 7 0 0 1 12.9 3H12Z" />
+          )}
+        </svg>
+        <span className="truncate">{soft ? "Tema terang" : "Tema gelap"}</span>
+      </button>
+    );
+  }
 
   return (
     <button

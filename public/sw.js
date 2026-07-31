@@ -13,7 +13,16 @@
  * skipWaiting + clients.claim mean a new build takes over on the next load
  * rather than waiting for every tab to close.
  */
-const CACHE = "malesan-v1";
+/**
+ * Bumped to v2 so `activate` purges v1.
+ *
+ * The old worker cached every same-origin GET, including HTML pages. Those
+ * entries survive a strategy change on their own — the new worker never writes
+ * them, but it never removes them either, and a stale `/` sitting in the cache
+ * is exactly what the offline fallback would serve. Renaming the cache is what
+ * makes the switch a clean one.
+ */
+const CACHE = "malesan-v2";
 const OFFLINE_URL = "/";
 
 /**
@@ -52,30 +61,55 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never cache auth or API traffic — a cached session or a cached generation
+  // Never touch auth or API traffic — a cached session or a cached generation
   // would be both wrong and a privacy problem.
   if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/auth/")) return;
+
+  /**
+   * Build assets: cache first, and never revalidate.
+   *
+   * Everything under /_next/static carries a content hash in its filename, so a
+   * given URL's bytes can never change — a new build produces new URLs. That
+   * makes "serve from cache, do not ask the network" not just safe but correct,
+   * and it is the difference between an installed app starting instantly and
+   * one that re-fetches its own JavaScript over mobile data every launch.
+   */
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(
+      (async () => {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        const fresh = await fetch(req);
+        if (fresh.ok) (await caches.open(CACHE)).put(req, fresh.clone());
+        return fresh;
+      })(),
+    );
+    return;
+  }
+
+  /**
+   * Everything else: do not intercept at all.
+   *
+   * This is the fix for the installed app feeling sluggish. A fetch handler that
+   * calls respondWith has to wake the worker first, and a worker that has gone
+   * idle costs real milliseconds to boot — paid once per request, on every
+   * request, including the ones where the handler did nothing but pass the
+   * response straight through. Returning without calling respondWith hands the
+   * request back to the browser's own network stack, which is both faster and
+   * better at HTTP caching than anything reimplemented here.
+   *
+   * Navigations still get an offline fallback, because that is the one case
+   * where the cache genuinely adds something.
+   */
+  if (req.mode !== "navigate") return;
 
   event.respondWith(
     (async () => {
       try {
-        const fresh = await fetch(req);
-        // Skip anything with a query string. RSC payloads (`?_rsc=...`) mint a
-        // new key per navigation, so caching them grew storage without ever
-        // producing a hit.
-        const cacheable = !url.search && fresh && fresh.status === 200 && fresh.type === "basic";
-        if (cacheable) {
-          const cache = await caches.open(CACHE);
-          cache.put(req, fresh.clone());
-        }
-        return fresh;
+        return await fetch(req);
       } catch {
-        const cached = await caches.match(req);
+        const cached = await caches.match(OFFLINE_URL);
         if (cached) return cached;
-        if (req.mode === "navigate") {
-          const fallback = await caches.match(OFFLINE_URL);
-          if (fallback) return fallback;
-        }
         throw new Error("offline");
       }
     })(),

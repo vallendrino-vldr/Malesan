@@ -4,17 +4,14 @@ import Link from "next/link";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AppShell, type TabKey } from "@/components/AppShell";
 import { AmbientIdle } from "@/components/AmbientIdle";
-import { IdeHariIni } from "@/components/IdeHariIni";
-import { IdeaEngine } from "@/components/IdeaEngine";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
-import { ModuleRunner } from "@/components/ModuleRunner";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { RefreshButton } from "@/components/RefreshButton";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
-import { NavTile } from "@/components/NavTile";
+import { StudioPanel, StudioTile, StudioTileBig } from "@/components/StudioPanel";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -207,28 +204,10 @@ export default async function AppPage({
     initial: profile.display_name?.charAt(0).toUpperCase() ?? "?",
   };
 
-  // A module sub-view owns the whole content area, so it stays a real
-  // navigation — the tab bar falls back to links for it.
-  if (mod) {
-    return (
-      <AppShell {...shellProps}>
-        <div className="reveal space-y-4">
-          <ModuleBar />
-          {mod === "ide" ? (
-            <IdeHariIni />
-          ) : mod === "idea" ? (
-            <IdeaEngine />
-          ) : (
-            <ModuleRunner
-              moduleKey={mod}
-              cost={mod === "hook" ? costHook : mod === "script" ? costScript : costRepurpose}
-              credits={totalCredits}
-            />
-          )}
-        </div>
-      </AppShell>
-    );
-  }
+  // The module sub-view branch that used to live here is gone. It re-rendered
+  // the entire page on the server — auth, profile, config, all against
+  // Singapore — to show a component that was already in the browser. StudioPanel
+  // switches locally instead; `mod` now only seeds its initial state.
 
   // All four panels render once; the shell swaps them in the browser with no
   // network at all. This is what removes the multi-second tab delay.
@@ -237,6 +216,17 @@ export default async function AppPage({
       {...shellProps}
       panels={{
         studio: (
+          <StudioPanel
+            initialMod={mod}
+            credits={totalCredits}
+            costs={{
+              ide: costIde,
+              idea: costIdea,
+              hook: costHook,
+              script: costScript,
+              repurpose: costRepurpose,
+            }}
+            home={
         // This used to force everything into `min-h-[calc(100dvh-9.5rem)]` with
         // `justify-center`, back when it held a hero and two tiles. It now holds
         // five tiles and a value strip, and squeezing that into a fixed height
@@ -265,15 +255,15 @@ export default async function AppPage({
           <div className="grid gap-3">
             {/* Costs are admin-editable now, so reading them from config keeps
                 the tile from advertising a price that is no longer charged. */}
-            <ModuleTile
-              href="/app?tab=studio&m=ide"
+            <StudioTileBig
+              mod="ide"
               title="Ide Hari Ini"
               body="Gak usah ngetik apa-apa. Langsung dapet 3 ide buat hari ini."
               cost={costIde}
               primary
             />
-            <ModuleTile
-              href="/app?tab=studio&m=idea"
+            <StudioTileBig
+              mod="idea"
               title="Idea Engine"
               body="Punya ide mentah? Lempar, balik jadi 5 yang udah mateng."
               cost={costIdea}
@@ -284,13 +274,9 @@ export default async function AppPage({
               the start with no way in. Compact row so the dashboard still fits
               one screen — the two primaries stay the headline. */}
           <div className="grid grid-cols-3 gap-2">
-            <NavTile href="/app?tab=studio&m=hook" title="Hook Lab" cost={costHook} />
-            <NavTile href="/app?tab=studio&m=script" title="Script" cost={costScript} />
-            <NavTile
-              href="/app?tab=studio&m=repurpose"
-              title="Repurpose"
-              cost={costRepurpose}
-            />
+            <StudioTile mod="hook" title="Hook Lab" cost={costHook} />
+            <StudioTile mod="script" title="Script" cost={costScript} />
+            <StudioTile mod="repurpose" title="Repurpose" cost={costRepurpose} />
           </div>
 
           {/* The dashboard never said what the product is good for. Three lines,
@@ -309,7 +295,9 @@ export default async function AppPage({
               </li>
             ))}
           </ul>
-        </div>
+            </div>
+            }
+          />
         ),
 
         vibe: <VibeCodingStudio cost={costVibe} />,
@@ -430,51 +418,6 @@ function ModuleBar() {
   );
 }
 
-function ModuleTile({
-  href,
-  title,
-  body,
-  cost,
-  primary = false,
-}: {
-  href: string;
-  title: string;
-  body: string;
-  cost: number;
-  primary?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`surface-card surface-card-interactive group flex items-center gap-4 rounded-2xl border p-4 ${
-        primary ? "border-ember/35" : "border-hairline"
-      }`}
-    >
-      <span
-        aria-hidden="true"
-        className={`grid size-11 shrink-0 place-items-center rounded-xl ${
-          primary ? "btn-ember text-obsidian" : "border border-hairline bg-obsidian text-ember"
-        }`}
-      >
-        <svg viewBox="0 0 24 24" className="size-5 fill-current">
-          <path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2Zm-2 18h4v1a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1Z" />
-        </svg>
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-display text-[1rem] font-bold tracking-display-sm text-ink">
-          {title}
-        </span>
-        <span className="mt-0.5 block text-sm leading-snug text-muted">
-          {body}
-        </span>
-      </span>
-      <span className="shrink-0 text-right">
-        <span className="tabular block font-mono text-sm text-ink">{cost}</span>
-        <span className="block text-micro text-muted">credit</span>
-      </span>
-    </Link>
-  );
-}
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (

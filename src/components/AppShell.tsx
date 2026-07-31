@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { CreditDisplay } from "./CreditDisplay";
-import { HeaderMenu } from "./HeaderMenu";
+import { RefreshButton } from "./RefreshButton";
+import { ThemeToggle } from "./ThemeToggle";
+import { TutorialSheet } from "./TutorialSheet";
 
 /**
  * Native-app shell.
@@ -118,30 +120,28 @@ export function AppShell({
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-obsidian">
       {/* ---------- header ---------- */}
       <header className="relative z-20 shrink-0 border-b border-hairline/70 bg-obsidian/85 backdrop-blur-xl">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-3">
-          {/* Mark only on phones. The wordmark is 78px of a 320px bar spent on
-              telling someone which app they already opened. */}
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
+          {/* The name is always here now.
+              It was dropped on phones to win back 78px, and that was the wrong
+              trade: a product people cannot name is a product they cannot
+              recommend, and the header is the only place the name ever appears. */}
           <Link
             href="/app"
             aria-label="Malesan"
             className="flex min-h-11 shrink-0 items-center"
           >
-            <span className="sm:hidden">
-              <Logo markClass="size-7" showWord={false} />
-            </span>
-            <span className="hidden sm:inline-flex">
-              <Logo markClass="size-7" />
-            </span>
+            <Logo markClass="size-7" size="1rem" />
           </Link>
 
-          <div className="flex min-w-0 items-center gap-2">
-            {/* Five modules, a three-stage pipeline and a credit system are more
-                than tiles alone can explain. Sits in the header so it is
-                reachable from every tab, not buried in a settings page. */}
-            {/* Refresh, theme and how-to. Inline from `sm` up, behind one
-                button on phones — seven controls in this row needed 565px and
-                pushed the credit balance and the avatar off the screen. */}
-            <HeaderMenu />
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+            {/* From `sm` up there is room for these in the bar itself. On a
+                phone they move to the strip below — visible and labelled, not
+                hidden behind a menu. */}
+            <div className="hidden items-center gap-1 sm:flex">
+              <RefreshButton variant="icon" />
+              <ThemeToggle />
+              <TutorialSheet />
+            </div>
             {/* Was a muted hairline pill that read as decoration — the one
                 entry point to the whole admin area, and it went unfound. It is
                 now tinted with the accent so it reads as an action. */}
@@ -208,6 +208,18 @@ export function AppShell({
               </span>
             </Link>
           </div>
+        </div>
+
+        {/* ---------- phones: the same three controls, spelled out ----------
+            A "⋯" button hid these behind a tap nobody had a reason to make, so
+            somebody could use the product for weeks without ever learning it
+            had a light theme, a reload, or an explanation of itself. A row of
+            named chips costs about 34px of height and removes the guessing.
+            Labels, not icons: an icon is a riddle at this size. */}
+        <div className="flex items-stretch gap-1 border-t border-hairline/60 px-3 pb-1.5 sm:hidden">
+          <ThemeToggle variant="chip" />
+          <TutorialSheet variant="chip" />
+          <RefreshButton variant="chip" />
         </div>
       </header>
 
