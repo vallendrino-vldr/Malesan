@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, PanInfo } from "framer-motion";
 import type { PipelineCard } from "@/lib/supabase/database.types";
 import {
   updateCardStatus,
   ratePerformance,
   updateCardContentAndStatus,
+  deletePipelineCard,
+  restorePipelineCard,
 } from "@/app/actions/pipeline";
 import { IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
@@ -34,6 +36,13 @@ import { ScriptView, type ScriptOutput } from "./ScriptView";
  */
 
 type Column = "ide" | "draft" | "siap" | "posted";
+
+/** Long enough to notice and react to; short enough to still feel like "just now". */
+const UNDO_WINDOW_MS = 8000;
+
+/** The server hands cards back newest-first; a restored card has to land back in that order. */
+const byNewest = (list: PipelineCard[]) =>
+  [...list].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
 const COLUMNS: {
   id: Column;
@@ -110,11 +119,21 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
   const [prevInitialCards, setPrevInitialCards] = useState<PipelineCard[]>(initialCards);
   const [cards, setCards] = useState<PipelineCard[]>(initialCards);
   const [mobileStage, setMobileStage] = useState<Column>("ide");
+  const [undoCard, setUndoCard] = useState<PipelineCard | null>(null);
+  const [deleteError, setDeleteError] = useState("");
 
   if (initialCards !== prevInitialCards) {
     setPrevInitialCards(initialCards);
     setCards(initialCards);
   }
+
+  // The undo offer expires on its own. Left up indefinitely it stops reading as
+  // "act now" and starts reading as furniture.
+  useEffect(() => {
+    if (!undoCard) return;
+    const t = setTimeout(() => setUndoCard(null), UNDO_WINDOW_MS);
+    return () => clearTimeout(t);
+  }, [undoCard]);
 
   const colRefs = useRef<{ [key in Column]: HTMLDivElement | null }>({
     ide: null,
@@ -132,6 +151,46 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       await updateCardStatus(cardId, to);
     } catch {
       setCards(snapshot);
+    }
+  };
+
+  /**
+   * Delete goes through on the first tap, with an undo window afterwards,
+   * rather than putting a confirmation in front of it. Confirming every delete
+   * trains people to tap "yes" without reading, and it does not help the case
+   * that actually matters — the tap you did not mean to make. An undo does.
+   */
+  const remove = async (card: PipelineCard) => {
+    setDeleteError("");
+    setCards((prev) => prev.filter((c) => c.id !== card.id));
+    try {
+      await deletePipelineCard(card.id);
+      setUndoCard(card);
+    } catch {
+      // Put it straight back: the board must never show a card as gone when
+      // the database still has it.
+      setCards((prev) => byNewest([...prev, card]));
+      setDeleteError("Kartunya gagal dihapus. Coba lagi bentar lagi.");
+    }
+  };
+
+  const undoDelete = async () => {
+    const card = undoCard;
+    if (!card) return;
+    setUndoCard(null);
+    setCards((prev) => byNewest([...prev, card]));
+    try {
+      await restorePipelineCard({
+        id: card.id,
+        title: card.title,
+        content: card.content,
+        status: card.status as Column,
+        generation_id: card.generation_id ?? null,
+        created_at: card.created_at,
+      });
+    } catch {
+      setCards((prev) => prev.filter((c) => c.id !== card.id));
+      setDeleteError("Gagal balikin kartunya. Kartu itu udah kehapus permanen.");
     }
   };
 
@@ -211,7 +270,13 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 <EmptyStage text={col.empty} />
               ) : (
                 list.map((card) => (
-                  <PipelineCardItem key={card.id} card={card} onMove={move} draggable={false} />
+                  <PipelineCardItem
+                    key={card.id}
+                    card={card}
+                    onMove={move}
+                    onDelete={remove}
+                    draggable={false}
+                  />
                 ))
               )}
             </div>
@@ -254,6 +319,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                       key={card.id}
                       card={card}
                       onMove={move}
+                      onDelete={remove}
                       draggable
                       onDragEnd={(info) => handleDragEnd(card.id, col.id, info)}
                     />
@@ -264,6 +330,47 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           );
         })}
       </div>
+
+      {/* ---------- undo ----------
+          z-40 is the ambient tier in globals.css: above the chrome, below any
+          dialog. Sits clear of the bottom tab bar and the home indicator. */}
+      {undoCard && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+74px)] z-40 flex justify-center px-4"
+        >
+          <div className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-xl border border-hairline bg-surface-raised shadow-lg">
+            <div className="flex items-center gap-3 px-3.5 py-2.5">
+              <p className="min-w-0 flex-1 text-xs leading-snug text-ink">
+                <span className="font-semibold">Kartu dihapus.</span>{" "}
+                <span className="text-muted">{undoCard.title}</span>
+              </p>
+              <button
+                onClick={undoDelete}
+                className="min-h-11 shrink-0 cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-3.5 font-display text-xs font-bold text-ember"
+              >
+                Balikin
+              </button>
+            </div>
+            <div className="h-0.5 bg-hairline">
+              <div
+                className="undo-drain h-full bg-ember"
+                style={{ ["--undo-window" as string]: `${UNDO_WINDOW_MS}ms` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteError && (
+        <p
+          role="alert"
+          className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-xs leading-relaxed text-danger"
+        >
+          {deleteError}
+        </p>
+      )}
     </div>
   );
 }
@@ -279,11 +386,13 @@ function EmptyStage({ text }: { text: string }) {
 function PipelineCardItem({
   card,
   onMove,
+  onDelete,
   draggable,
   onDragEnd,
 }: {
   card: PipelineCard;
   onMove: (cardId: string, to: Column) => void | Promise<void>;
+  onDelete: (card: PipelineCard) => void | Promise<void>;
   draggable: boolean;
   onDragEnd?: (info: PanInfo) => void;
 }) {
@@ -401,7 +510,28 @@ function PipelineCardItem({
 
   const body = (
     <>
-      <h4 className="font-display text-sm font-bold leading-snug text-ink">{card.title}</h4>
+      <div className="flex items-start gap-1">
+        <h4 className="min-w-0 flex-1 font-display text-sm font-bold leading-snug text-ink">
+          {card.title}
+        </h4>
+        {/* Quiet by default — a card you own should be removable in one tap,
+            but the control must not compete with the card's actual content.
+            Negative margins keep the 44px hit area from padding the card out.
+            `stopPropagation` on pointerdown so grabbing the bin on desktop does
+            not start a drag instead of a click. */}
+        <button
+          type="button"
+          onPointerDownCapture={(e) => e.stopPropagation()}
+          onClick={() => onDelete(card)}
+          aria-label={`Hapus kartu ${card.title}`}
+          title="Hapus kartu"
+          className="-mr-2 -mt-2 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/10 hover:text-danger"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+            <path d="M9 3h6l1 2h4v2H4V5h4l1-2ZM6 9h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 9Zm4 2v8h1.5v-8H10Zm3.5 0v8H15v-8h-1.5Z" />
+          </svg>
+        </button>
+      </div>
       {content?.format && (
         <span className="eyebrow mt-2 inline-block rounded bg-obsidian px-2 py-1 text-muted">
           {content.format}

@@ -726,6 +726,34 @@
 }
 
 /* ===========================================================================
+   UNDO WINDOW — draining bar
+   ===========================================================================
+   An undo offer with no visible deadline is a worse offer: the reader has to
+   guess whether they still have time, and guessing wrong costs them the thing
+   they were trying to get back. The bar drains for exactly as long as the undo
+   is live, so the deadline is a fact on screen rather than a hidden timer.
+
+   Reduced motion keeps the bar — it is information, not decoration — and simply
+   stops animating it, leaving the affordance fully visible for its whole life.
+--------------------------------------------------------------------------- */
+@keyframes undo-drain {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.undo-drain {
+  transform-origin: left center;
+  animation: undo-drain var(--undo-window, 8s) linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .undo-drain {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/* ===========================================================================
    TEXT SCALE  —  :root[data-text="sm|md|lg|xl"]
    ===========================================================================
    Browser zoom scales *everything*, including the fixed chrome, so on a phone

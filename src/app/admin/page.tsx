@@ -66,7 +66,9 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <LiveRefresh tables={["topups", "profiles", "generations", "error_log"]} label="Ada aktivitas baru" />
+      {/* `topups` is watched by the admin shell, which announces it there — a
+          second watcher here would toast the same event twice. */}
+      <LiveRefresh tables={["profiles", "generations", "error_log"]} label="Ada aktivitas baru" />
 
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Ringkasan</h1>

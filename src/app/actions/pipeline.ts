@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/database.types";
 import { revalidatePath } from "next/cache";
 
 export async function saveToPipeline(title: string, content: unknown, generationId?: string) {
@@ -117,6 +118,87 @@ export async function deleteGeneration(generationId: string) {
 
   if (error) throw error;
   revalidatePath("/app");
+}
+
+/**
+ * Remove a card from the pipeline.
+ *
+ * The board had no way out. A card that turned out to be a bad idea, a
+ * duplicate, or a test could be moved between the four stages forever but never
+ * removed, so the board filled with things nobody intended to make and the
+ * counts on the stage tabs stopped meaning anything. "Posted" was the only exit
+ * and it is a lie for an idea that was never posted.
+ *
+ * Scoped to the owner. The row is returned so the caller can offer an undo —
+ * see `restorePipelineCard`.
+ */
+export async function deletePipelineCard(cardId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("pipeline_cards")
+    .delete()
+    .eq("id", cardId)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  // `.single()` on a delete that matched nothing throws PGRST116. That is the
+  // honest outcome: nothing was deleted, so the UI must not claim it was.
+  if (error) throw error;
+
+  revalidatePath("/app");
+  return data;
+}
+
+/**
+ * Put a deleted card back exactly as it was.
+ *
+ * Deliberately a real re-insert of the original row rather than a delayed
+ * delete on a timer. A pending delete that only fires when a toast expires is
+ * lost the moment the tab closes, which means the card silently comes back —
+ * the worst of both behaviours. This way the delete is real immediately and the
+ * undo is a real write too, so whatever the screen says is what the database
+ * holds.
+ *
+ * The original `id` is kept so the card returns to the same place in the
+ * ordering and any `generation_id` link survives.
+ */
+export async function restorePipelineCard(card: {
+  id: string;
+  title: string;
+  content: Json;
+  status: "ide" | "draft" | "siap" | "posted";
+  generation_id: string | null;
+  created_at: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("pipeline_cards")
+    .insert({
+      id: card.id,
+      user_id: user.id,
+      title: card.title,
+      content: card.content,
+      status: card.status,
+      generation_id: card.generation_id,
+      created_at: card.created_at,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  revalidatePath("/app");
+  return data;
 }
 
 export async function ratePerformance(cardId: string, rating: number) {

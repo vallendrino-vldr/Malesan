@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,19 +27,33 @@ import { createClient } from "@/lib/supabase/client";
 export function LiveRefresh({
   tables,
   label,
+  onChange,
+  silent,
 }: {
   tables: string[];
   /** Shown when something changed, so the update is not silent. */
   label?: string;
+  /**
+   * For pages that hold their own data in client state. `router.refresh()`
+   * re-runs server components; it does nothing for a `useEffect` fetch, so a
+   * client-side list would show the toast and then not actually change. Passing
+   * a refetch here is what makes those pages honest.
+   */
+  onChange?: () => void;
+  /** Suppress the toast when an ancestor is already announcing the same change. */
+  silent?: boolean;
 }) {
   const router = useRouter();
   const [pulse, setPulse] = useState(false);
+  // Two LiveRefresh instances watching the same table — a layout badge and the
+  // page below it — would otherwise open two channels on one topic.
+  const instance = useId();
 
   useEffect(() => {
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | undefined;
 
-    const channel = supabase.channel(`live:${tables.join("-")}`);
+    const channel = supabase.channel(`live:${tables.join("-")}:${instance}`);
 
     for (const table of tables) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
@@ -47,7 +61,8 @@ export function LiveRefresh({
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           setPulse(true);
-          router.refresh();
+          if (onChange) onChange();
+          else router.refresh();
           setTimeout(() => setPulse(false), 1400);
         }, 400);
       });
@@ -61,9 +76,9 @@ export function LiveRefresh({
     };
     // `tables` is a literal array at every call site; joining it keeps the
     // dependency stable without asking callers to memoise.
-  }, [router, tables.join("-")]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router, instance, onChange, tables.join("-")]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (!pulse) return null;
+  if (!pulse || silent) return null;
 
   return (
     <div

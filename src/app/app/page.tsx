@@ -94,7 +94,9 @@ export default async function AppPage({
   const todayWib = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
   const needsRefill = profile.last_refill_date !== todayWib;
 
-  const [refillResult, pipelineResult, costs] = await Promise.all([
+  const isAdmin = profile.role === "admin";
+
+  const [refillResult, pipelineResult, costs, waitingTopups] = await Promise.all([
     // Supabase's builder is a PromiseLike, not a Promise, so it has no
     // `.catch` — wrap it before attaching one. Never block the app on a
     // refill failure.
@@ -133,6 +135,18 @@ export default async function AppPage({
       getCost("repurpose"),
       getCost("vibe"),
     ]),
+
+    // Owner-only. A bank transfer lands in `topups` and then waits for someone
+    // to look at it — and nothing anywhere told the owner it had arrived unless
+    // they happened to open the admin panel. Counting it here puts the number
+    // on the admin pill in the header of the app they actually use all day.
+    isAdmin
+      ? serviceRole
+          .from("topups")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending")
+          .then((r) => r.count ?? 0)
+      : Promise.resolve(0),
   ]);
 
   if (typeof refillResult === "number") totalCredits = refillResult;
@@ -185,7 +199,8 @@ export default async function AppPage({
   const shellProps = {
     active: tab,
     credits: totalCredits,
-    isAdmin: profile.role === "admin",
+    isAdmin,
+    pendingTopups: waitingTopups,
     avatarUrl: avatar,
     initial: profile.display_name?.charAt(0).toUpperCase() ?? "?",
   };

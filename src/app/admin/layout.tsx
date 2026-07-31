@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { LiveRefresh } from "@/components/LiveRefresh";
 
 /**
  * Admin shell.
@@ -21,7 +22,13 @@ import { Logo } from "@/components/Logo";
  * visually flat, and the labels clipped against the browser's own bottom
  * chrome. It read as unfinished because it was.
  */
-const LINKS = [
+const LINKS: {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+  /** Carries the pending-top-up badge. */
+  counted?: boolean;
+}[] = [
   {
     href: "/admin",
     label: "Ringkasan",
@@ -38,6 +45,9 @@ const LINKS = [
     href: "/admin/topups",
     label: "Topup",
     icon: <path d="M3 6h18v4H3V6Zm0 6h18v6H3v-6Zm2 2v2h6v-2H5Z" />,
+    // The one nav item that can be *waiting on you*. Everything else is
+    // something you go and look at; this one is a person who has paid.
+    counted: true,
   },
   {
     href: "/admin/vouchers",
@@ -85,8 +95,21 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/app");
   }
 
+  // Pending top-ups are money already sent, sitting unacknowledged. Counting it
+  // in the shell means the number is on screen from whichever admin page you
+  // happen to be on — you no longer have to open the Topup tab to discover that
+  // someone is waiting. `is_admin()` covers this read; no service role needed.
+  const { count: pendingTopups } = await supabase
+    .from("topups")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pending");
+
+  const waiting = pendingTopups ?? 0;
+
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-obsidian md:flex-row">
+      {/* Keeps the badge honest while the tab sits open. */}
+      <LiveRefresh tables={["topups"]} label="Ada topup baru masuk" />
       {/* ---------- sidebar (md+) ---------- */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-hairline bg-obsidian md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
@@ -94,15 +117,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <span className="eyebrow text-ember-lo">admin</span>
         </div>
         <nav className="flex-1 space-y-1 px-3">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="block rounded-lg px-4 py-2 text-sm text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink"
-            >
-              {l.label}
-            </Link>
-          ))}
+          {LINKS.map((l) => {
+            const badge = l.counted ? waiting : 0;
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="flex items-center justify-between gap-2 rounded-lg px-4 py-2 text-sm text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink"
+              >
+                <span>{l.label}</span>
+                {badge > 0 && (
+                  <span className="grid min-w-5 place-items-center rounded-full bg-ember px-1.5 py-0.5 font-mono text-[10px] font-bold text-obsidian">
+                    {badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
         <div className="border-t border-hairline p-4">
           <Link
@@ -138,18 +169,32 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         className="shrink-0 skeu-bar border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       >
         <div className="flex">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="group flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-2 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ember"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[19px] fill-current">
-                {l.icon}
-              </svg>
-              <span className="text-[10.5px] font-semibold leading-none">{l.label}</span>
-            </Link>
-          ))}
+          {LINKS.map((l) => {
+            const badge = l.counted ? waiting : 0;
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-label={badge > 0 ? `${l.label} — ${badge} nunggu` : l.label}
+                className="group flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-2 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ember"
+              >
+                <span className="relative">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[19px] fill-current">
+                    {l.icon}
+                  </svg>
+                  {badge > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-2 -top-1.5 grid min-w-[15px] place-items-center rounded-full bg-ember px-1 font-mono text-[9px] font-bold leading-[15px] text-obsidian"
+                    >
+                      {badge > 9 ? "9+" : badge}
+                    </span>
+                  )}
+                </span>
+                <span className="text-[10.5px] font-semibold leading-none">{l.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
     </div>
