@@ -4,7 +4,7 @@
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-07-31**, after commit `5afdd1b`.
+Last updated: **2026-07-31**, after commit `c490d5e`.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -204,6 +204,13 @@ Move these constants back into the components and the bug returns, disguised as
   Hook/Script/Repurpose.
 - Per-user isolation audited: queries filter `user_id` **and** RLS enforces
   `user_id = auth.uid()` on `creator_dna` and `generations`.
+- Generation progress figure (elapsed-time based; see below for why not stream
+  based), inline rating in every module, the first soft-sell moments, and
+  `PLATFORM_MECHANICS` in the prompts.
+- **Gemini does not stream incrementally at these sizes.** Measured against the
+  upstream endpoint: 3 SSE frames, first and last both at 5.82s — one burst at
+  the end. Any future UI that assumes token-by-token arrival is building on
+  something that is not there.
 
 **Not verified:**
 - Real iPhone rendering (no device available). The fix is correct in code; it
@@ -213,64 +220,52 @@ Move these constants back into the components and the bug returns, disguised as
 
 ---
 
-## 8. Still owed to the owner — requested, not finished
+## 8. Still owed to the owner
 
-Ordered by impact on revenue. These are specs, not ideas.
+Most of the previous list shipped in `c490d5e`. What is genuinely left:
 
-### 8.1 Progress bar + animated mascot during generation
-Generation currently shows only a "Lagi mikirin..." button, which reads as
-frozen. Asked for: a real-time progress indicator plus an animated
-humanoid/robot mascot visibly working through the actual stages.
+### 8.1 External research for the prompts — BLOCKED, NOT SKIPPED
+The owner asked for 2026 playbooks on SEO, social media, marketing and content
+creation to be found, distilled and applied. **`WebSearch` and `WebFetch` both
+fail in this environment** with `There's an issue with the selected model
+(all_combo)`. Not a permissions problem, not a query problem — the tools error
+before returning anything.
 
-Already available: `/api/generate` **is** already SSE and already emits text
-chunks while streaming (`readSSE` in `src/lib/sse.ts`), so real progress can be
-derived from tokens received rather than faked. `LavaLoader.tsx` and
-`AmbientIdle.tsx` are existing animation references. Honest stage labels:
-"Baca profil lo" → "Nyusun angle" → "Nulis" → "Ngerapiin". Respect
-`prefers-reduced-motion`.
+What was done instead: `PLATFORM_MECHANICS` in `src/lib/prompts/index.ts`
+encodes durable, non-expiring mechanics (arrival without intent, the three
+drop-off points, loops over likes, comments needing a deliberate gap, muted
+first views, TikTok/IG as search surfaces, captions read half, hashtags as
+labels, never invent a statistic). Deliberately no dated figures — a prompt that
+hardcodes "post at 19:00" is wrong within a quarter and nobody notices.
 
-### 8.2 Deeper prompt research and upgrade
-Owner's ask: find 2026 skills/playbooks on SEO, social media, marketing and
-content creation; distil the best; adapt to Indonesian context; apply. The
-premise is sound — a free model with a much better prompt can beat an expensive
-model with a lazy one.
+**Retry the web tools in a later session.** If they work, the gap to fill is
+current per-platform specifics, not craft.
 
-Present: `CRAFT_RULES` in `src/lib/prompts/index.ts` (structural rules, discard
-your first answer, mandatory checkable detail, worked bad-vs-good example).
-Missing: the external research, and real domain knowledge — per-platform
-retention mechanics, proven hook taxonomies, caption structure, keyword research
-for TikTok/YouTube search, posting timing. **The test harness already exists**
-(§9). Do not change a prompt without an A/B.
+### 8.2 Real-device Safari pass
+`useLinkStatus` on the module tiles and `cursor-pointer` on the two overlay
+backdrops address the most likely cause of "harus klik 2 kali" (a slow
+navigation with no feedback, plus Safari's rule about which divs may receive
+clicks). **Unconfirmed on hardware.** Also still unverified on a real iPhone:
+safe-area insets and the light theme.
 
-### 8.3 Credit logic and monetisation
-The thing that decides whether this makes money.
+### 8.3 Watch whether the offer converts
+`CreditNudge.tsx` is the first time this product has ever asked for money. Two
+moments only — after a rated-good result (suppressed above 120 credits, once per
+session) and before the balance runs out. There is no analytics on it. Before
+tuning the copy or the thresholds, get numbers: how many people see it, how many
+tap through, how many pay. Guessing at conversion copy without that is how the
+next three sessions get wasted.
 
-Today: daily free credits reset at 00:00 WIB, purchased credits never expire.
-Packs 100/15k, 350/45k, 1000/100k IDR. **There is not a single soft-sell moment
-anywhere in the product.** Nothing tells a user their credits are running low,
-nothing offers at the moment they are happy with a result, and the top-up page is
-only reachable if they go looking.
+### 8.4 Rating volume
+The control now sits under every result and a rating was verified landing
+(5 → 6 of 21). Check again after real usage: if the share of rated generations
+is still low, the problem is placement, not mechanism — the loop itself is
+proven.
 
-Worth thinking through (and discussing with the owner before building): when to
-offer (after a good result, not when credits hit zero), how to show value (hours
-saved), and tone — **anak-tongkrongan, polite, never pushy**. Never paywall work
-already in progress.
-
-### 8.4 Make ratings actually accumulate
-The loop works: ratings land in `generations.performance_rating`, are read by
-`buildLearned()`, and reach the prompt. Per-user isolation audited. The problem
-is **volume**: only 5 of 19 generations are rated, because the control is buried
-(only on "Posted" pipeline cards and in Riwayat). Rating needs to sit right after
-the result appears, in every module.
-
-### 8.5 Safari needing two taps — reported, root cause not found
-Reported in Safari and in places on mobile. Some of it may already be gone with
-the theme fix (§5) — a page that changes theme mid-load feels like a tap that
-did not register. **Unconfirmed.** Next suspects: `:hover` states that need a
-first tap on iOS, and `<Link>`s triggering a full RSC navigation across the
-Pacific. Needs testing on real Safari.
-
----
+### 8.5 Admin UI for `credit_packs`
+The table exists and the top-up page reads it, but prices can only be changed in
+SQL. The owner has said the pricing is a guess; he cannot test a different price
+without an agent.
 
 ## 9. How to A/B a prompt change without spending the owner's credits
 
@@ -330,6 +325,7 @@ explanations share one sentence frame.
 ## 12. Commits worth reading from this session
 
 ```
+c490d5e  progress figure, inline rating, first soft-sell, platform mechanics
 5afdd1b  theme/text boot scripts never ran; mobile header 175px too wide
 1da4396  admin assistant
 beaf8ab  CRAFT_RULES — rewrite of the craft layer in the prompts
