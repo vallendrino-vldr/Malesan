@@ -250,8 +250,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
               >
                 {col.label}
                 <span
-                  className={`grid size-4 place-items-center rounded-full text-[9px] ${
-                    on ? "bg-ember/25 text-ember" : "bg-surface-raised text-muted"
+                  // `text-muted` measured 3.7:1 here: the badge sits on
+                  // surface-raised which itself sits on a surface/60 strip, and
+                  // the stack came out lighter than either layer alone.
+                  className={`grid size-5 place-items-center rounded-full text-micro leading-none ${
+                    on ? "bg-ember/25 text-ink" : "bg-surface-raised text-ink"
                   }`}
                 >
                   {countOf(col.id)}
@@ -304,11 +307,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
             >
               <div className="mb-1 flex items-center justify-between">
                 <h3 className="font-display font-semibold text-ink">{col.label}</h3>
-                <span className="grid size-5 place-items-center rounded-full bg-surface-raised text-[10px] text-muted">
+                <span className="grid size-5 place-items-center rounded-full bg-surface-raised text-micro text-ink">
                   {list.length}
                 </span>
               </div>
-              <p className="mb-3 text-[11px] leading-snug text-muted">{col.blurb}</p>
+              <p className="mb-3 text-micro leading-snug text-muted">{col.blurb}</p>
 
               <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
                 {list.length === 0 ? (
@@ -539,12 +542,12 @@ function PipelineCardItem({
       )}
 
       {/* The card always says what it is waiting on. */}
-      <p className="mt-3 text-[11px] leading-relaxed text-ember-lo">
+      <p className="mt-3 text-micro leading-relaxed text-ember-lo">
         {nextStep(card, hasHook)}
       </p>
 
       {error && (
-        <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-[11px] leading-relaxed text-danger">
+        <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-micro leading-relaxed text-danger">
           {error}
         </p>
       )}
@@ -591,7 +594,7 @@ function PipelineCardItem({
                   {hookText(h)}
                 </p>
                 {h.why && on && (
-                  <p className="mt-1.5 text-[10.5px] leading-relaxed text-muted">{h.why}</p>
+                  <p className="mt-1.5 text-micro leading-relaxed text-muted">{h.why}</p>
                 )}
               </button>
             );
@@ -630,7 +633,7 @@ function PipelineCardItem({
 
       {status === "posted" && card.generation_id && !rated && (
         <div className="mt-3 border-t border-hairline pt-3">
-          <p className="mb-2 text-[11px] text-muted">Performanya gimana?</p>
+          <p className="mb-2 text-micro text-muted">Performanya gimana?</p>
           <div className="flex gap-1" onMouseLeave={() => setRatingHover(0)}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -651,7 +654,7 @@ function PipelineCardItem({
       )}
 
       {status === "posted" && rated && (
-        <p className="mt-3 border-t border-hairline pt-3 text-[11px] text-success">
+        <p className="mt-3 border-t border-hairline pt-3 text-micro text-success">
           Makasih — ini kepake buat ide lo berikutnya.
         </p>
       )}
@@ -701,7 +704,7 @@ function StageMover({
     <div className="mt-3 flex justify-end">
       <button
         onClick={() => onMove(back)}
-        className="text-[11px] text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
+        className="text-micro text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
       >
         Balikin ke {COLUMNS.find((c) => c.id === back)?.label}
       </button>

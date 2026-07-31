@@ -124,7 +124,7 @@ export function ThemeToggle() {
       {hint && (
         <span
           role="status"
-          className="pointer-events-none absolute top-full mt-1.5 whitespace-nowrap rounded-md border border-ember/30 bg-obsidian px-2 py-1 text-[10px] font-semibold text-ember-lo shadow-lg"
+          className="pointer-events-none absolute top-full mt-1.5 whitespace-nowrap rounded-md border border-ember/30 bg-obsidian px-2 py-1 text-micro font-semibold text-ember-lo shadow-lg"
         >
           Coba tema terang →
         </span>

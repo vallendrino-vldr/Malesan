@@ -51,7 +51,7 @@ export default async function ProfilePage() {
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <a
         href="/app?tab=profil"
-        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-[12.5px] font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
+        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
           <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
@@ -108,7 +108,7 @@ export default async function ProfilePage() {
               >
                 Edit Creator DNA
               </a>
-              <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              <p className="mt-2 text-micro leading-relaxed text-muted">
                 Makin lengkap DNA lo, makin nyambung hasil generate-nya.
               </p>
             </div>

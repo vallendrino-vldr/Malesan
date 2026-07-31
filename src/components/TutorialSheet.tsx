@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Tutorial.
@@ -13,6 +14,24 @@ import { useState } from "react";
  * Written for someone with no technical background: no jargon, every step in
  * the order they would actually do it, and honest about what costs what.
  * Collapsible sections rather than one wall, because nobody reads a wall.
+ *
+ * ---
+ *
+ * The sheet is portalled to `document.body`, and that is load-bearing rather
+ * than stylistic.
+ *
+ * This button lives in the app header, and that header is `backdrop-blur-xl`.
+ * A `backdrop-filter` establishes a containing block for `position: fixed`
+ * descendants — so `fixed inset-0` was resolving against the *header's* box, a
+ * ~56px strip across the top, instead of the viewport. The panel was being
+ * asked to lay out a full-height dialog inside a strip, which is why it landed
+ * in the wrong place and spilled off-screen with its text unreachable on both
+ * phone and desktop. Nothing about the panel's own CSS was wrong; it was being
+ * measured against the wrong box.
+ *
+ * A portal moves it out from under the blurred ancestor, so `fixed` means the
+ * viewport again. Any future overlay opened from the header needs the same
+ * treatment.
  */
 
 type Section = { q: string; a: React.ReactNode };
@@ -147,6 +166,26 @@ const SECTIONS: Section[] = [
 export function TutorialSheet() {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(0);
+  // A portal cannot render during SSR — there is no document to portal into.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // Escape closes it, and the page behind stops scrolling while it is open.
+  // Without the lock, scrolling past the end of the sheet on a phone scrolls
+  // the app underneath and the sheet appears to drift.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <>
@@ -166,9 +205,9 @@ export function TutorialSheet() {
         </span>
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center"
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center md:p-6"
           role="dialog"
           aria-modal="true"
           aria-label="Cara pakai Malesan"
@@ -176,10 +215,13 @@ export function TutorialSheet() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="max-h-[88dvh] w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-hairline bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] md:max-w-lg md:rounded-2xl"
+            className="flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-hairline bg-surface md:max-h-[80dvh] md:max-w-lg md:rounded-2xl"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
+            {/* Title and close pinned; only the list scrolls. Previously the
+                whole panel was one scroll region, so on a phone the way out
+                scrolled off the top and the sheet felt like a trap. */}
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-hairline px-5 pb-3.5 pt-5">
+              <div className="min-w-0">
                 <p className="eyebrow text-ember">Cara pakai</p>
                 <h2 className="mt-1 font-display text-xl font-bold text-ink">
                   Gak ada yang ribet di sini
@@ -188,13 +230,15 @@ export function TutorialSheet() {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Tutup"
-                className="shrink-0 cursor-pointer rounded-full border border-hairline px-2.5 py-1 text-xs text-muted hover:text-ink"
+                className="-mr-2 -mt-2 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:text-ink"
               >
-                Tutup
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 fill-current">
+                  <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3 1.4 1.4Z" />
+                </svg>
               </button>
             </div>
 
-            <div className="mt-4 space-y-1.5">
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-5 py-4">
               {SECTIONS.map((s, i) => {
                 const on = expanded === i;
                 return (
@@ -210,7 +254,7 @@ export function TutorialSheet() {
                       className="flex w-full cursor-pointer items-center justify-between gap-3 px-3.5 py-3 text-left"
                     >
                       <span
-                        className={`text-[13px] font-semibold ${on ? "text-ember" : "text-ink"}`}
+                        className={`text-sm font-semibold ${on ? "text-ember" : "text-ink"}`}
                       >
                         {s.q}
                       </span>
@@ -225,7 +269,7 @@ export function TutorialSheet() {
                       </svg>
                     </button>
                     {on && (
-                      <div className="px-3.5 pb-3.5 text-[12.5px] leading-relaxed text-muted">
+                      <div className="px-3.5 pb-3.5 text-mini leading-relaxed text-muted">
                         {s.a}
                       </div>
                     )}
@@ -234,11 +278,12 @@ export function TutorialSheet() {
               })}
             </div>
 
-            <p className="mt-4 text-[11px] leading-relaxed text-muted">
+            <p className="shrink-0 border-t border-hairline px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 text-micro leading-relaxed text-muted">
               Masih bingung? Email vadlyvldr@gmail.com — dibales orang, bukan bot.
             </p>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

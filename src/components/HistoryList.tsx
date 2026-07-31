@@ -91,10 +91,10 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="eyebrow text-ember">{MODULE_LABEL[it.module] ?? it.module}</p>
-                <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-ink">{it.gist}</p>
+                <p className="mt-1 line-clamp-2 text-sm leading-snug text-ink">{it.gist}</p>
               </div>
               <span className="shrink-0 text-right">
-                <span className="block font-mono text-[11px] text-muted">
+                <span className="block font-mono text-micro text-muted">
                   {new Date(it.created_at).toLocaleDateString("id-ID", {
                     day: "numeric",
                     month: "short",
@@ -106,20 +106,20 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
 
             {confirmDel === it.id ? (
               <div className="mt-2.5 border-t border-hairline pt-2.5">
-                <p className="text-[11px] leading-relaxed text-ink">
+                <p className="text-micro leading-relaxed text-ink">
                   Hapus dari riwayat? AI juga berhenti belajar dari yang ini.
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => setConfirmDel("")}
-                    className="flex-1 cursor-pointer rounded-lg border border-hairline py-2 text-[11px] font-semibold text-muted hover:text-ink"
+                    className="flex-1 cursor-pointer rounded-lg border border-hairline py-2 text-micro font-semibold text-muted hover:text-ink"
                   >
                     Batal
                   </button>
                   <button
                     onClick={() => remove(it.id)}
                     disabled={busy === it.id}
-                    className="flex-1 cursor-pointer rounded-lg bg-danger py-2 text-[11px] font-bold text-obsidian disabled:opacity-50"
+                    className="flex-1 cursor-pointer rounded-lg bg-danger py-2 text-micro font-bold text-obsidian disabled:opacity-50"
                   >
                     {busy === it.id ? "..." : "Hapus"}
                   </button>
@@ -127,7 +127,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
               </div>
             ) : (
               <div className="mt-2.5 flex items-center gap-2 border-t border-hairline pt-2.5">
-                <span className="min-w-0 flex-1 text-[11px] text-muted">
+                <span className="min-w-0 flex-1 text-micro text-muted">
                   {rating ? "Rating lo" : "Perform-nya gimana?"}
                 </span>
                 <div className="flex gap-0.5">
@@ -167,10 +167,10 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
           rating control is just clutter — and these ratings are the only way the
           model learns what works for this specific creator. */}
       <div className="mt-1 rounded-xl border border-ember/20 bg-ember/5 p-3.5">
-        <p className="text-[12px] font-semibold text-ember-lo">
+        <p className="text-mini font-semibold text-ember-lo">
           Kasih bintang = AI-nya jadi makin pinter
         </p>
-        <p className="mt-1 text-[11px] leading-relaxed text-muted">
+        <p className="mt-1 text-micro leading-relaxed text-muted">
           Tiap hasil yang lo kasih bintang beneran dibaca ulang pas generate
           berikutnya. Yang lo kasih <span className="text-ink">4–5</span> dipakai
           jadi contoh pola yang cocok buat lo. Yang lo kasih{" "}

@@ -335,12 +335,17 @@ export async function setConfig(key: string, value: unknown) {
 export async function signedProofUrl(proofUrl: string): Promise<string | null> {
   await verifyAdmin();
 
-  const parts = proofUrl.split("/topup_proofs/");
-  if (parts.length !== 2) return null;
+  // Historically this column held a full public URL; it now holds the bare
+  // storage path. Accept both — old rows still need to be reviewable, and
+  // silently returning null for them would look like a broken proof.
+  const path = proofUrl.includes("/topup_proofs/")
+    ? proofUrl.split("/topup_proofs/")[1]
+    : proofUrl.replace(/^\/+/, "");
+  if (!path) return null;
 
   const { data, error } = await createServiceRoleClient()
     .storage.from("topup_proofs")
-    .createSignedUrl(parts[1], 300);
+    .createSignedUrl(path, 300);
 
   if (error) {
     console.error("signed url failed", error);

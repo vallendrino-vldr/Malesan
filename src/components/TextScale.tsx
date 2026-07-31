@@ -51,7 +51,7 @@ export function TextScale() {
   return (
     <div>
       <p className="text-sm font-semibold text-ink">Ukuran teks</p>
-      <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+      <p className="mt-0.5 text-micro leading-relaxed text-muted">
         Cuma tulisannya yang berubah — tombol dan menu tetap di tempatnya.
       </p>
       <div
@@ -83,7 +83,7 @@ export function TextScale() {
               >
                 A
               </span>
-              <span className="mt-1 text-[10px] font-semibold leading-none">{s.label}</span>
+              <span className="mt-1 text-micro font-semibold leading-none">{s.label}</span>
             </button>
           );
         })}

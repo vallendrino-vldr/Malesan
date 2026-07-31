@@ -142,7 +142,7 @@ export default async function AdminStatsPage() {
               </div>
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-[10px] text-muted">
+          <div className="mt-2 flex justify-between text-micro text-muted">
             <span>{series[0]?.day.slice(5)}</span>
             <span className="font-mono text-ember">puncak {maxGens}</span>
             <span>{series[series.length - 1]?.day.slice(5)}</span>
@@ -160,7 +160,7 @@ export default async function AdminStatsPage() {
           <div className="space-y-1.5 rounded-xl border border-hairline bg-surface p-3">
             {moduleRows.map(([m, n]) => (
               <div key={m}>
-                <div className="flex items-baseline justify-between text-[11.5px]">
+                <div className="flex items-baseline justify-between text-mini">
                   <span className="text-ink">{m}</span>
                   <span className="font-mono text-muted">{n}</span>
                 </div>
@@ -191,10 +191,10 @@ export default async function AdminStatsPage() {
               <div key={u.user_id} className="surface-card rounded-xl p-3.5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-ink">
+                    <p className="truncate text-sm font-semibold text-ink">
                       {u.display_name || u.email}
                     </p>
-                    <p className="truncate text-[11px] text-muted">{u.email}</p>
+                    <p className="truncate text-micro text-muted">{u.email}</p>
                   </div>
                   <div className="shrink-0 text-right">
                     <p className="font-mono text-sm text-ember">{u.generations}</p>
@@ -204,17 +204,17 @@ export default async function AdminStatsPage() {
 
                 <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {u.role === "admin" && (
-                    <span className="rounded bg-ember/15 px-2 py-0.5 text-[10px] text-ember">
+                    <span className="rounded bg-ember/15 px-2 py-0.5 text-micro text-ember">
                       Admin
                     </span>
                   )}
                   {u.is_banned && (
-                    <span className="rounded bg-danger/10 px-2 py-0.5 text-[10px] text-danger">
+                    <span className="rounded bg-danger/10 px-2 py-0.5 text-micro text-danger">
                       Banned
                     </span>
                   )}
                   <span
-                    className={`rounded px-2 py-0.5 text-[10px] ${
+                    className={`rounded px-2 py-0.5 text-micro ${
                       u.is_pro ? "bg-success/10 text-success" : "bg-surface-raised text-muted"
                     }`}
                   >
@@ -223,14 +223,14 @@ export default async function AdminStatsPage() {
                   {(u.modules_used ?? []).map((m) => (
                     <span
                       key={m}
-                      className="rounded bg-obsidian px-2 py-0.5 text-[10px] text-muted"
+                      className="rounded bg-obsidian px-2 py-0.5 text-micro text-muted"
                     >
                       {m}
                     </span>
                   ))}
                 </div>
 
-                <p className="mt-2 flex flex-wrap gap-x-3 text-[10.5px] text-muted">
+                <p className="mt-2 flex flex-wrap gap-x-3 text-micro text-muted">
                   <span>
                     Kredit kepakai:{" "}
                     <span className="font-mono text-ink">{u.credits_spent}</span>
@@ -258,7 +258,7 @@ export default async function AdminStatsPage() {
         )}
       </section>
 
-      <p className="text-[11px] leading-relaxed text-muted">
+      <p className="text-micro leading-relaxed text-muted">
         Dihitung dari maksimal 5.000 baris terakhir per tabel. Kalau angkanya
         udah mentok segitu, pindahin agregasinya ke SQL.
       </p>
@@ -283,7 +283,7 @@ function Kpi({
       <p className={`mt-1 font-display text-2xl font-bold ${alert ? "text-danger" : "text-ink"}`}>
         {value}
       </p>
-      {note && <p className="mt-1 text-[10.5px] leading-snug text-muted">{note}</p>}
+      {note && <p className="mt-1 text-micro leading-snug text-muted">{note}</p>}
     </div>
   );
 }

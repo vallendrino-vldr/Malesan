@@ -65,11 +65,11 @@ export function VibeQuestions({
               Jawab dulu, {questions.length} pertanyaan aja
             </h3>
           </div>
-          <span className="shrink-0 rounded-full bg-obsidian px-2.5 py-1 font-mono text-[11px] text-muted">
+          <span className="shrink-0 rounded-full bg-obsidian px-2.5 py-1 font-mono text-micro text-muted">
             {answered}/{questions.length}
           </span>
         </div>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+        <p className="mt-2 text-mini leading-relaxed text-muted">
           Tinggal tap jawabannya. Kalau dilewatin, AI-nya bakal nebak sendiri — dan
           tebakan itu yang bikin hasilnya kerasa umum.
         </p>
@@ -83,7 +83,7 @@ export function VibeQuestions({
               <span className="text-muted">{i + 1}.</span> {q.q}
             </p>
             {q.why && (
-              <p className="mt-1 text-[11px] leading-relaxed text-ember-lo">{q.why}</p>
+              <p className="mt-1 text-micro leading-relaxed text-ember-lo">{q.why}</p>
             )}
 
             {q.suggestions.length > 0 && (
@@ -96,7 +96,7 @@ export function VibeQuestions({
                       type="button"
                       onClick={() => toggle(i, s, q.multi)}
                       aria-pressed={on}
-                      className={`skeu-press cursor-pointer rounded-full border px-3 py-1.5 text-[12px] font-medium transition-colors duration-[var(--duration-standard)] ease-heat ${
+                      className={`skeu-press cursor-pointer rounded-full border px-3 py-1.5 text-mini font-medium transition-colors duration-[var(--duration-standard)] ease-heat ${
                         on
                           ? "border-ember/45 bg-ember/10 text-ember"
                           : "border-hairline bg-surface-raised text-muted hover:border-ember/25 hover:text-ink"
@@ -113,11 +113,11 @@ export function VibeQuestions({
               value={custom[i] ?? ""}
               onChange={(e) => setCustom((p) => ({ ...p, [i]: e.target.value }))}
               placeholder={q.multi ? "Atau tulis sendiri..." : "Atau jawab pakai kata lo sendiri..."}
-              className="skeu-inset mt-2.5 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-[13px] text-ink placeholder:text-muted focus:border-ember focus:outline-none"
+              className="skeu-inset mt-2.5 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none"
             />
 
             {q.multi && (
-              <p className="mt-1.5 text-[10.5px] text-muted">Boleh pilih lebih dari satu.</p>
+              <p className="mt-1.5 text-micro text-muted">Boleh pilih lebih dari satu.</p>
             )}
           </div>
         );
@@ -128,7 +128,7 @@ export function VibeQuestions({
           type="button"
           onClick={onSkipAll}
           disabled={busy}
-          className="cursor-pointer rounded-xl border border-hairline px-4 py-3 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-50"
+          className="cursor-pointer rounded-xl border border-hairline px-4 py-3 text-sm font-semibold text-muted transition-colors hover:text-ink disabled:opacity-50"
         >
           Lewatin
         </button>

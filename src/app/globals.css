@@ -19,10 +19,19 @@
      non-interactive element. If everything glows, nothing does. */
   --color-ember: #ff8a3d;
   --color-ember-lo: #ffb067;
-  --color-ember-deep: #c2521a;
+  /* Was #c2521a, which measured 3.71:1 on the page — under the line, and used
+     for the eyebrow labels on the landing page, so the first text a visitor
+     reads was the least legible text in the product. It is also the ::selection
+     background, where a too-dark fill hides the selected text. */
+  --color-ember-deep: #df5e1e;
 
   --color-ink: #f5f0ea;
-  --color-muted: #8a8178;
+  /* Was #8a8178, which measured 4.52:1 on --color-surface-raised — over the
+     4.5:1 line by 0.02, and that line assumes ~16px text. Most of what is
+     actually painted in this colour is 12-13px helper text, where "technically
+     passing" and "readable on a phone in daylight" are not the same claim.
+     #99928a holds 5.62:1 on the lightest surface and 6.44:1 on the page. */
+  --color-muted: #99928a;
 
   /* Confirmations and destructive actions only. Not part of the palette. */
   --color-success: #6fcf97;
@@ -43,8 +52,26 @@
   --tracking-display-lg: -0.022em;
 
   /* Small uppercase eyebrows. Wide tracking is what makes them legible at
-     11-12px; it is the one place letter-spacing should be obvious. */
+     this size; it is the one place letter-spacing should be obvious. */
   --tracking-eyebrow: 0.16em;
+
+  /* ---- small type ----
+     Two named steps replacing eight arbitrary pixel values (10, 10.5, 11,
+     11.5, 12, 12.5, 13, 13.5px). Two problems were stacked here.
+
+     Density: an eight-step scale below 14px is not a scale, it is drift. The
+     same kind of label appeared at three different sizes on one screen.
+
+     Reach: every one of those was written in `px`, and the text-size control
+     works by moving the root font-size, which only moves `rem`. So the control
+     did nothing at all for the ~100 smallest pieces of text in the product —
+     precisely the ones someone would enlarge it to read. These are rem, so
+     they now respond to it.
+
+     12px is the floor. Below that, grey-on-dark stops being small and starts
+     being decorative. */
+  --text-micro: 0.75rem;   /* 12px — eyebrows, counters, timestamps */
+  --text-mini: 0.8125rem;  /* 13px — helper text, captions, card meta */
 
   /* ---- motion ---- DESIGN.md §4
      Only --ease-* is a real Tailwind v4 theme namespace, so the easing lives
@@ -213,7 +240,11 @@
   .eyebrow {
     font-family: var(--font-body);
     font-weight: 600;
-    font-size: 0.6875rem;
+    /* 0.6875rem (11px) was the last sub-12px size left in the product, and it
+       is uppercase with wide tracking — the hardest combination to read small,
+       because uppercase removes the ascender/descender cues that let the eye
+       recognise a word by shape. Uses the same floor as everything else now. */
+    font-size: var(--text-micro);
     line-height: 1;
     letter-spacing: var(--tracking-eyebrow);
     text-transform: uppercase;
@@ -589,19 +620,36 @@
   --color-surface-raised: #faf5f0;
   --color-hairline: #ded3c8;
 
-  /* Search picked the *lightest* value at each hue that still clears AA on the
-     surface, so the palette stays bright instead of muddy. Measured, not eyed:
-       ember 4.54 · ember-lo 4.62 · ink 10.13 · muted 4.57
-       success 4.50 · danger 4.54 · white-on-ember 5.32 */
-  --color-ember: #b04e15;
-  --color-ember-lo: #b24a0e;
-  --color-ember-deep: #8a3a0a;
+  /* Measured against the DARKEST surface, which is the correction.
+     The previous set was tuned against --color-surface (#f2ece6) and cleared
+     AA there — but `body` paints --color-obsidian (#e8e0d8), which is darker,
+     and any text sitting directly on the page rather than inside a card was
+     therefore measuring ~4.1:1. That is the faint text in bright mode: not a
+     perception problem, a token tuned against the wrong background.
+     Every value below now clears 5.0:1 on #e8e0d8, so it cannot matter which
+     of the three surfaces the text lands on:
+       ember 5.04 · ember-lo 5.03 · ink 9.09 · muted 5.01
+       success 5.01 · danger 5.02   (all higher on surface and raised) */
+  /* Deep enough to survive its own wash.
+     The product's selected-state pattern is `bg-ember/10 … text-ember` — accent
+     text on a tint of the same accent. That tint darkens the background the
+     text is measured against, so a token tuned bare at 5.04:1 lands at ~4.35:1
+     the moment it is used the way the design actually uses it, which is what
+     the selected credit pack and the active tab were doing. These clear 4.6:1
+     against the bare page *and* against 5/10/15/20% washes of themselves on
+     all three surfaces, so the pattern is safe wherever it appears. */
+  --color-ember: #833a0f;
+  --color-ember-lo: #84370a;
+  --color-ember-deep: #5e2909;
 
   --color-ink: #3d3630;
-  --color-muted: #736960;
+  /* Same reasoning as the ember tokens above: a selected card is
+     `bg-ember/10`, and its secondary text is muted, so muted has to hold up
+     over an accent wash and not just over the bare surface. */
+  --color-muted: #564e47;
 
-  --color-success: #257a50;
-  --color-danger: #bf3e30;
+  --color-success: #1b5a3b;
+  --color-danger: #8d2e24;
 
   /* Shadows warm too. A blue-grey shade under a warm surface was the second
      half of the clash — it read as dirt rather than depth. */

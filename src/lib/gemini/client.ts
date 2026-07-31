@@ -1,7 +1,12 @@
 import "server-only";
 import { markRateLimited, orderedAttempts, type PoolKey } from "./keys";
 import { recordUsage } from "./quota";
-import { adapterFor, supportsStreaming, type ProviderName } from "./providers";
+import {
+  adapterFor,
+  supportsStreaming,
+  type InlineImage,
+  type ProviderName,
+} from "./providers";
 import { getProviderConfig } from "@/lib/config";
 
 /**
@@ -44,6 +49,12 @@ export type GenerateArgs = {
    */
   provider?: ProviderName;
   baseUrl?: string;
+  /**
+   * Images to reason over. Only used by the payment-proof checker today, but it
+   * belongs here rather than in a second client: rotation, backoff and usage
+   * accounting must apply to a vision call exactly as they do to a text one.
+   */
+  images?: InlineImage[];
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -73,6 +84,7 @@ async function callOnce(
     schema: args.schema,
     baseUrl: args.baseUrl,
     stream: stream && supportsStreaming(provider),
+    images: args.images,
   });
   return fetch(req.url, {
     method: "POST",

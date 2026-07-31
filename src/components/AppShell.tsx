@@ -6,6 +6,7 @@ import { Logo } from "./Logo";
 import { CreditDisplay } from "./CreditDisplay";
 import { TutorialSheet } from "./TutorialSheet";
 import { ThemeToggle } from "./ThemeToggle";
+import { RefreshButton } from "./RefreshButton";
 
 /**
  * Native-app shell.
@@ -120,7 +121,11 @@ export function AppShell({
       {/* ---------- header ---------- */}
       <header className="relative z-20 shrink-0 border-b border-hairline/70 bg-obsidian/85 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-3">
-          <Link href="/app" aria-label="Malesan" className="shrink-0">
+          <Link
+            href="/app"
+            aria-label="Malesan"
+            className="flex min-h-11 shrink-0 items-center"
+          >
             <Logo markClass="size-7" />
           </Link>
 
@@ -128,6 +133,10 @@ export function AppShell({
             {/* Five modules, a three-stage pipeline and a credit system are more
                 than tiles alone can explain. Sits in the header so it is
                 reachable from every tab, not buried in a settings page. */}
+            {/* In the header, not on one tab. An installed PWA has no address
+                bar, so this is the only reload the user has — it has to be
+                reachable from wherever they happen to be stuck. */}
+            <RefreshButton variant="icon" />
             <ThemeToggle />
             <TutorialSheet />
             {/* Was a muted hairline pill that read as decoration — the one
@@ -141,10 +150,14 @@ export function AppShell({
                     ? `Panel admin — ${pendingTopups} topup nunggu di-approve`
                     : "Panel admin"
                 }
-                className={`relative flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1.5 transition-colors duration-[var(--duration-standard)] ease-heat ${
+                // Idle state carries its "this is an action" signal in the
+                // border, not a background tint. A 10% ember wash under
+                // ember-lo text measured 4.41:1 in the light theme — the tint
+                // was eating exactly the contrast the token was chosen for.
+                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-2.5 transition-colors duration-[var(--duration-standard)] ease-heat ${
                   pendingTopups > 0
                     ? "border-ember bg-ember text-obsidian hover:bg-ember-lo"
-                    : "border-ember/35 bg-ember/10 text-ember-lo hover:border-ember/60 hover:bg-ember/20"
+                    : "border-ember/45 bg-surface text-ember hover:border-ember hover:bg-surface-raised"
                 }`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
@@ -234,7 +247,7 @@ export function AppShell({
                   {t.icon}
                 </svg>
                 <span
-                  className={`text-[10.5px] font-semibold leading-none transition-colors duration-[var(--duration-standard)] ease-heat ${
+                  className={`text-micro font-semibold leading-none transition-colors duration-[var(--duration-standard)] ease-heat ${
                     on ? "text-ember" : "text-muted group-hover:text-ink"
                   }`}
                 >

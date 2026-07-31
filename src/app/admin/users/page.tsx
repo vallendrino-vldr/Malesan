@@ -124,7 +124,7 @@ export default function AdminUsersPage() {
                   <p className="truncate text-sm font-semibold text-ink">
                     {u.display_name || u.email}
                   </p>
-                  <p className="truncate text-[11px] text-muted">{u.email}</p>
+                  <p className="truncate text-micro text-muted">{u.email}</p>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     <Badges u={u} />
                   </div>
@@ -162,7 +162,7 @@ export default function AdminUsersPage() {
                         <Avatar user={u} />
                         <div className="min-w-0">
                           <p className="truncate font-medium">{u.display_name || "—"}</p>
-                          <p className="truncate text-[11px] text-muted">{u.email}</p>
+                          <p className="truncate text-micro text-muted">{u.email}</p>
                         </div>
                       </div>
                     </td>
@@ -209,13 +209,13 @@ function Badges({ u }: { u: Profile }) {
   return (
     <>
       {u.is_banned && (
-        <span className="rounded bg-danger/10 px-2 py-0.5 text-[10px] text-danger">Banned</span>
+        <span className="rounded bg-danger/10 px-2 py-0.5 text-micro text-danger">Banned</span>
       )}
       {u.role === "admin" && (
-        <span className="rounded bg-ember/15 px-2 py-0.5 text-[10px] text-ember">Admin</span>
+        <span className="rounded bg-ember/15 px-2 py-0.5 text-micro text-ember">Admin</span>
       )}
       <span
-        className={`rounded px-2 py-0.5 text-[10px] ${
+        className={`rounded px-2 py-0.5 text-micro ${
           u.is_pro ? "bg-success/10 text-success" : "bg-surface-raised text-muted"
         }`}
       >
@@ -303,7 +303,7 @@ function UserSheet({
 
         {/* ---- credits ---- */}
         <Section title="Tambah kredit">
-          <p className="mb-2 text-[11px] leading-relaxed text-muted">
+          <p className="mb-2 text-micro leading-relaxed text-muted">
             Cuma bisa nambah, gak bisa ngurangin — biar ledger-nya tetap cocok.
             Paid gak pernah hangus; free kereset tiap hari.
           </p>
@@ -353,7 +353,7 @@ function UserSheet({
 
         {/* ---- tier ---- */}
         <Section title="Tier">
-          <p className="mb-2 text-[11px] leading-relaxed text-muted">
+          <p className="mb-2 text-micro leading-relaxed text-muted">
             Pro pakai model yang lebih kuat dan pool kuota terpisah.
           </p>
           <Action
@@ -414,7 +414,7 @@ function UserSheet({
 function Stat({ label, value, small }: { label: string; value: string | number; small?: boolean }) {
   return (
     <div className="rounded-lg border border-hairline bg-obsidian px-2 py-2">
-      <p className={`font-mono text-ink ${small ? "text-[11px]" : "text-base"}`}>{value}</p>
+      <p className={`font-mono text-ink ${small ? "text-micro" : "text-base"}`}>{value}</p>
       <p className="eyebrow mt-0.5 text-muted">{label}</p>
     </div>
   );
@@ -482,7 +482,7 @@ function ConfirmRow({
       }`}
     >
       <p className="text-xs leading-relaxed text-ink">{text}</p>
-      {hint && <p className="mt-1 text-[11px] text-muted">{hint}</p>}
+      {hint && <p className="mt-1 text-micro text-muted">{hint}</p>}
       <div className="mt-3 flex gap-2">
         <button
           onClick={onCancel}

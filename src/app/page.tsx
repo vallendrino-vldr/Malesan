@@ -68,7 +68,7 @@ export default function Home() {
             aria-hidden="true"
             className="size-1.5 rounded-full bg-ember shadow-[0_0_10px_2px_color-mix(in_oklab,var(--color-ember)_60%,transparent)]"
           />
-          <span className="font-display text-[17px] font-bold tracking-display-sm text-ink">
+          <span className="font-display text-[1.0625rem] font-bold tracking-display-sm text-ink">
             malesan
           </span>
         </span>
@@ -79,7 +79,7 @@ export default function Home() {
           <ThemeToggle />
           <Link
             href="/masuk"
-            className="rounded-full border border-hairline bg-surface/80 px-4 py-2 font-display text-[13px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+            className="rounded-full border border-hairline bg-surface/80 px-4 py-2 font-display text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
           >
             Masuk
           </Link>
@@ -117,13 +117,13 @@ export default function Home() {
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/masuk"
-                className="btn-ember inline-flex items-center justify-center rounded-xl px-6 py-3.5 font-display text-[15px] font-bold text-obsidian"
+                className="btn-ember inline-flex items-center justify-center rounded-xl px-6 py-3.5 font-display text-[0.9375rem] font-bold text-obsidian"
               >
                 Males mikir. Kasih ide.
               </Link>
               <a
                 href="#beda"
-                className="inline-flex items-center justify-center rounded-xl border border-hairline bg-surface px-6 py-3.5 font-display text-[15px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"
+                className="inline-flex items-center justify-center rounded-xl border border-hairline bg-surface px-6 py-3.5 font-display text-[0.9375rem] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"
               >
                 Emang beda sama ChatGPT?
               </a>
@@ -133,10 +133,10 @@ export default function Home() {
           <Reveal index={4}>
             {/* Mono is reserved for real data. The numeral keeps it; the prose
                 around it does not. */}
-            <p className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted">
+            <p className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
               <span className="tabular font-mono text-ink">10</span>
               <span>credit gratis tiap hari</span>
-              <span aria-hidden="true" className="text-hairline">
+              <span aria-hidden="true" className="text-muted/70">
                 •
               </span>
               <span>login pakai Google, gak pake password</span>
@@ -171,10 +171,10 @@ export default function Home() {
                       <span className="eyebrow text-ember-deep transition-colors duration-[var(--duration-standard)] ease-heat group-hover:text-ember">
                         {m.tag}
                       </span>
-                      <h3 className="mt-3 font-display text-[19px] font-bold tracking-display-sm text-ink">
+                      <h3 className="mt-3 font-display text-[1.1875rem] font-bold tracking-display-sm text-ink">
                         {m.name}
                       </h3>
-                      <p className="mt-2.5 flex-1 text-[13.5px] leading-relaxed text-muted">
+                      <p className="mt-2.5 flex-1 text-sm leading-relaxed text-muted">
                         {m.body}
                       </p>
                       <div className="mt-5 flex items-center gap-1.5 border-t border-hairline/70 pt-4">
@@ -216,7 +216,10 @@ export default function Home() {
                   <div className="h-full bg-obsidian p-6 sm:p-7">
                     <span
                       aria-hidden="true"
-                      className="tabular font-display text-2xl font-bold leading-none text-ember/25"
+                      // aria-hidden, so WCAG's text rules do not bind it — but
+                      // at 25% it was effectively invisible, which means it was
+                      // costing layout space and returning nothing.
+                      className="tabular font-display text-2xl font-bold leading-none text-ember/50"
                     >
                       0{i + 1}
                     </span>

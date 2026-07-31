@@ -171,7 +171,7 @@ export default function OnboardingPage() {
 
         {/* completeness */}
         <div className="mt-5">
-          <div className="flex items-center justify-between text-[11px]">
+          <div className="flex items-center justify-between text-micro">
             <span className="text-muted">Kelengkapan profil</span>
             <span className="font-mono text-ember">{pct}%</span>
           </div>
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
             <button
               key={s}
               onClick={() => setStep(i)}
-              className={`flex-1 cursor-pointer rounded-lg py-2 text-[11.5px] font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+              className={`flex-1 cursor-pointer rounded-lg py-2 text-mini font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                 i === step ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
               }`}
             >
@@ -230,7 +230,7 @@ export default function OnboardingPage() {
                         <p className={`text-sm font-semibold ${on ? "text-ember" : "text-ink"}`}>
                           {w.label}
                         </p>
-                        <p className="mt-1 text-[11px] leading-relaxed text-muted">{w.hint}</p>
+                        <p className="mt-1 text-micro leading-relaxed text-muted">{w.hint}</p>
                       </button>
                     );
                   })}
@@ -448,7 +448,7 @@ function Field({
         {label}
         {required && <span className="ml-1 text-ember">*</span>}
       </label>
-      {hint && <p className="mt-1 text-[11px] leading-relaxed text-muted">{hint}</p>}
+      {hint && <p className="mt-1 text-micro leading-relaxed text-muted">{hint}</p>}
       <div className="mt-2">{children}</div>
     </div>
   );

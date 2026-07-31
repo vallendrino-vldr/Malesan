@@ -31,13 +31,13 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
       <div className="flex items-center gap-2">
         {/* `break-all` and `min-w-0`: without them a long link pushes the button
             off the edge of a 360px screen. */}
-        <code className="min-w-0 flex-1 break-all font-mono text-[12px] leading-relaxed text-ember-lo">
+        <code className="min-w-0 flex-1 break-all font-mono text-mini leading-relaxed text-ember-lo">
           {value}
         </code>
         <button
           onClick={copy}
           aria-label={`Salin ${label ?? "nilai"}`}
-          className="shrink-0 cursor-pointer rounded-lg border border-hairline bg-surface px-3 py-2 text-[11px] font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember"
+          className="shrink-0 cursor-pointer rounded-lg border border-hairline bg-surface px-3 py-2 text-micro font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember"
         >
           {copied ? "Kesalin!" : "Salin"}
         </button>

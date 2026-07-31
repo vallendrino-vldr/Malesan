@@ -48,7 +48,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       <div className="mt-4 space-y-3">
         {idea.angle && (
           <div>
-            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ember">Angle</span>
+            <span className="font-mono text-micro uppercase tracking-[0.14em] text-ember">Angle</span>
             <p className="mt-1 text-sm leading-relaxed text-ink/90">
               {isStreaming ? <StreamingText text={idea.angle} /> : idea.angle}
             </p>
@@ -57,7 +57,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
         
         {idea.why_now && (
           <div>
-            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ember">Why Now</span>
+            <span className="font-mono text-micro uppercase tracking-[0.14em] text-ember">Why Now</span>
             <p className="mt-1 text-sm leading-relaxed text-ink/90">
               {isStreaming ? <StreamingText text={idea.why_now} /> : idea.why_now}
             </p>
@@ -66,7 +66,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
 
         {idea.hook_seed && (
           <div className="rounded-lg bg-obsidian p-3 border border-hairline">
-            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-ember">Hook Seed</span>
+            <span className="font-mono text-micro uppercase tracking-[0.14em] text-ember">Hook Seed</span>
             <p className="mt-1 text-sm font-semibold text-ink">
               {isStreaming ? <StreamingText text={idea.hook_seed} /> : idea.hook_seed}
             </p>
@@ -76,17 +76,17 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
 
       <div className="mt-6 flex flex-wrap gap-2">
         {idea.format && (
-          <span className="rounded bg-surface-raised px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted">
+          <span className="rounded bg-surface-raised px-2 py-1 font-mono text-micro uppercase tracking-wider text-muted">
             Format: {idea.format}
           </span>
         )}
         {idea.est_duration && (
-          <span className="rounded bg-surface-raised px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted">
+          <span className="rounded bg-surface-raised px-2 py-1 font-mono text-micro uppercase tracking-wider text-muted">
             Durasi: {idea.est_duration}
           </span>
         )}
         {idea.difficulty && (
-          <span className="rounded bg-surface-raised px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-muted">
+          <span className="rounded bg-surface-raised px-2 py-1 font-mono text-micro uppercase tracking-wider text-muted">
             Effort: {idea.difficulty}
           </span>
         )}

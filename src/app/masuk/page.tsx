@@ -63,7 +63,7 @@ export default async function MasukPage({
           <GoogleSignInButton next={safeNext} referralCode={ref} />
         </div>
 
-        <p className="mt-6 font-mono text-[11px] leading-relaxed text-muted">
+        <p className="mt-6 font-mono text-micro leading-relaxed text-muted">
           Masuk pertama kali langsung dapet 5 credit. Tiap hari nambah 10 lagi.
         </p>
       </main>

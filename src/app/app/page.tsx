@@ -246,7 +246,7 @@ export default async function AppPage({
               <p className="eyebrow text-ember">
                 {greet()}, {profile.display_name?.split(" ")[0] ?? "kreator"}
               </p>
-              <h1 className="mt-2 font-display text-[21px] font-bold leading-tight tracking-display-md text-ink sm:text-2xl">
+              <h1 className="mt-2 font-display text-[1.3125rem] font-bold leading-tight tracking-display-md text-ink sm:text-2xl">
                 Gak usah mikir. Tinggal pilih.
               </h1>
             </div>
@@ -295,7 +295,7 @@ export default async function AppPage({
             ].map((x) => (
               <li key={x.k} className="min-w-0 text-center">
                 <p className="eyebrow text-ember">{x.k}</p>
-                <p className="mt-1 text-[10.5px] leading-snug text-muted">{x.v}</p>
+                <p className="mt-1 text-micro leading-snug text-muted">{x.v}</p>
               </li>
             ))}
           </ul>
@@ -354,7 +354,7 @@ export default async function AppPage({
           <div className="grid gap-3 sm:grid-cols-2">
             <Link
               href="/app/topup"
-              className="btn-ember grid place-items-center rounded-xl px-5 py-3.5 font-display text-[15px] font-bold text-obsidian"
+              className="btn-ember grid place-items-center rounded-xl px-5 py-3.5 font-display text-[0.9375rem] font-bold text-obsidian"
             >
               Top up credit
             </Link>
@@ -364,7 +364,7 @@ export default async function AppPage({
                 now: raised surface, chevron, and a press response. */}
             <Link
               href="/app/profile"
-              className="skeu skeu-press flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-raised px-5 py-3.5 font-display text-[15px] font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
+              className="skeu skeu-press flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-raised px-5 py-3.5 font-display text-[0.9375rem] font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 shrink-0 fill-current">
                 <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.4-2.6.1-.9-.1-.9 1.9-1.5-1.9-3.2-2.3.8a7.2 7.2 0 0 0-1.6-.9l-.3-2.4h-3.7l-.4 2.4a7.2 7.2 0 0 0-1.5.9l-2.3-.8L5.4 9.6l1.9 1.5-.1.9.1.9-1.9 1.5 1.8 3.2 2.3-.8c.5.4 1 .7 1.6.9l.3 2.4h3.7l.4-2.4c.5-.2 1-.5 1.5-.9l2.3.8 1.9-3.2-1.9-1.5Z" />
@@ -401,7 +401,7 @@ function MiniTile({ href, title, cost }: { href: string; title: string; cost: nu
       className="skeu skeu-press group flex min-h-[68px] cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center hover:border-ember/45"
     >
       <span className="flex items-center justify-center gap-1">
-        <span className="truncate text-[12.5px] font-bold text-ink group-hover:text-ember-lo">
+        <span className="truncate text-mini font-bold text-ink group-hover:text-ember-lo">
           {title}
         </span>
         <svg
@@ -412,7 +412,7 @@ function MiniTile({ href, title, cost }: { href: string; title: string; cost: nu
           <path d="M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6-1.4-1.4Z" />
         </svg>
       </span>
-      <span className="mt-1 block font-mono text-[10px] text-ember-lo">{cost} kredit</span>
+      <span className="mt-1 block font-mono text-micro text-ember-lo">{cost} kredit</span>
     </Link>
   );
 }
@@ -430,7 +430,7 @@ function ModuleBar() {
     <div className="flex items-center justify-between">
       <Link
         href="/app?tab=studio"
-        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-[12.5px] font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
+        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
       >
         <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
           <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
@@ -473,16 +473,16 @@ function ModuleTile({
         </svg>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-display text-[16px] font-bold tracking-display-sm text-ink">
+        <span className="block font-display text-[1rem] font-bold tracking-display-sm text-ink">
           {title}
         </span>
-        <span className="mt-0.5 block text-[13px] leading-snug text-muted">
+        <span className="mt-0.5 block text-sm leading-snug text-muted">
           {body}
         </span>
       </span>
       <span className="shrink-0 text-right">
         <span className="tabular block font-mono text-sm text-ink">{cost}</span>
-        <span className="block text-[10px] text-muted">credit</span>
+        <span className="block text-micro text-muted">credit</span>
       </span>
     </Link>
   );

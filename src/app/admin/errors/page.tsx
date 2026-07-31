@@ -116,30 +116,30 @@ export default async function AdminErrorsPage() {
               <div key={i} className="surface-card rounded-xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-display text-[15px] font-bold text-ink">
+                    <p className="font-display text-[0.9375rem] font-bold text-ink">
                       {g.info.title}
                     </p>
-                    <p className="mt-0.5 flex flex-wrap gap-x-2 text-[11px] text-muted">
+                    <p className="mt-0.5 flex flex-wrap gap-x-2 text-micro text-muted">
                       {latest.status && <span className="text-danger">HTTP {latest.status}</span>}
                       {latest.model && <span>{latest.model}</span>}
                       {latest.key_index != null && <span>key {latest.key_index}</span>}
                       <span>{timeAgo(latest.created_at)}</span>
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-danger/10 px-2.5 py-1 font-mono text-[11px] text-danger">
+                  <span className="shrink-0 rounded-full bg-danger/10 px-2.5 py-1 font-mono text-micro text-danger">
                     {g.rows.length}×
                   </span>
                 </div>
 
-                <p className="mt-2.5 rounded-lg border border-ember/20 bg-ember/5 px-3 py-2 text-[12px] leading-relaxed text-ember-lo">
+                <p className="mt-2.5 rounded-lg border border-ember/20 bg-ember/5 px-3 py-2 text-mini leading-relaxed text-ember-lo">
                   {g.info.fix}
                 </p>
 
                 <details className="mt-2">
-                  <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">
+                  <summary className="cursor-pointer text-micro text-muted hover:text-ink">
                     Pesan asli dari Google
                   </summary>
-                  <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-obsidian p-2.5 font-mono text-[10.5px] leading-relaxed text-muted">
+                  <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-obsidian p-2.5 font-mono text-micro leading-relaxed text-muted">
                     {latest.message}
                   </pre>
                 </details>

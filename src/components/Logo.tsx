@@ -65,7 +65,7 @@ export function Logo({
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <LogoMark className={markClass} />
       {showWord && (
-        <span className="font-display text-[17px] font-bold tracking-display-sm text-ink">
+        <span className="font-display text-[1.0625rem] font-bold tracking-display-sm text-ink">
           malesan
         </span>
       )}

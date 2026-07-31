@@ -23,6 +23,12 @@ export type ProviderRequest = {
   body: string;
 };
 
+/**
+ * An image sent alongside the prompt. `data` is raw base64, no data: prefix —
+ * every provider below wants it that way and adds its own envelope.
+ */
+export type InlineImage = { mimeType: string; data: string };
+
 export type Adapter = {
   /** OpenAI-compatible providers can stream, but we only use non-stream here. */
   buildRequest(opts: {
@@ -32,6 +38,7 @@ export type Adapter = {
     schema?: Record<string, unknown>;
     baseUrl?: string;
     stream: boolean;
+    images?: InlineImage[];
   }): ProviderRequest;
   /** Returns the assistant text, or "" when the response carried none. */
   extractText(json: unknown): string;
@@ -58,14 +65,22 @@ function toJsonSchema(s: unknown): unknown {
 }
 
 const gemini: Adapter = {
-  buildRequest({ apiKey, model, prompt, schema, stream, baseUrl }) {
+  buildRequest({ apiKey, model, prompt, schema, stream, baseUrl, images }) {
     const root = baseUrl?.trim() || GEMINI_ROOT;
     const method = stream ? "streamGenerateContent?alt=sse" : "generateContent";
+    // Image parts come before the text so the instruction reads as being about
+    // the picture rather than the picture being an afterthought to the prompt.
+    const parts = [
+      ...(images ?? []).map((i) => ({
+        inline_data: { mime_type: i.mimeType, data: i.data },
+      })),
+      { text: prompt },
+    ];
     return {
       url: `${root}/${model}:${method}`,
       headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts }],
         generationConfig: schema
           ? { responseMimeType: "application/json", responseSchema: schema }
           : undefined,
@@ -81,8 +96,20 @@ const gemini: Adapter = {
 
 /** OpenAI chat-completions. Also covers most "custom" OpenAI-compatible hosts. */
 const openai: Adapter = {
-  buildRequest({ apiKey, model, prompt, schema, baseUrl }) {
+  buildRequest({ apiKey, model, prompt, schema, baseUrl, images }) {
     const root = baseUrl?.trim() || "https://api.openai.com/v1";
+    // A plain string is the documented shape for text-only; the array form is
+    // only needed once an image is attached, and some OpenAI-compatible hosts
+    // reject the array form for text, so keep both paths.
+    const content = images?.length
+      ? [
+          ...images.map((i) => ({
+            type: "image_url" as const,
+            image_url: { url: `data:${i.mimeType};base64,${i.data}` },
+          })),
+          { type: "text" as const, text: prompt },
+        ]
+      : prompt;
     return {
       url: `${root.replace(/\/$/, "")}/chat/completions`,
       headers: {
@@ -91,7 +118,7 @@ const openai: Adapter = {
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content }],
         // json_schema needs a name and rejects unknown keys, so send the
         // translated schema under a fixed wrapper.
         response_format: schema
@@ -110,13 +137,22 @@ const openai: Adapter = {
 };
 
 const anthropic: Adapter = {
-  buildRequest({ apiKey, model, prompt, schema, baseUrl }) {
+  buildRequest({ apiKey, model, prompt, schema, baseUrl, images }) {
     const root = baseUrl?.trim() || "https://api.anthropic.com/v1";
     // Anthropic has no response_format. Asking for JSON in the prompt is the
     // documented approach; the caller already strips fences via parseJson.
     const text = schema
       ? `${prompt}\n\nBalas HANYA JSON valid yang cocok dengan skema ini, tanpa penjelasan dan tanpa code fence:\n${JSON.stringify(toJsonSchema(schema))}`
       : prompt;
+    const content = images?.length
+      ? [
+          ...images.map((i) => ({
+            type: "image" as const,
+            source: { type: "base64" as const, media_type: i.mimeType, data: i.data },
+          })),
+          { type: "text" as const, text },
+        ]
+      : text;
     return {
       url: `${root.replace(/\/$/, "")}/messages`,
       headers: {
@@ -127,7 +163,7 @@ const anthropic: Adapter = {
       body: JSON.stringify({
         model,
         max_tokens: 8192,
-        messages: [{ role: "user", content: text }],
+        messages: [{ role: "user", content }],
       }),
     };
   },

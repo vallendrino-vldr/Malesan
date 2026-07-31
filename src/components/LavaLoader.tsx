@@ -33,7 +33,7 @@ export function LavaLoader({
         style={{ width: size, height: size }}
         aria-hidden="true"
       />
-      <p className="text-[12.5px] font-medium text-muted">{label}</p>
+      <p className="text-mini font-medium text-muted">{label}</p>
     </div>
   );
 }

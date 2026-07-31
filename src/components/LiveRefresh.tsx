@@ -86,7 +86,7 @@ export function LiveRefresh({
       aria-live="polite"
       className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center px-4"
     >
-      <span className="rounded-full border border-ember/35 bg-ember/15 px-3 py-1.5 text-[11px] font-semibold text-ember-lo backdrop-blur-sm">
+      <span className="rounded-full border border-ember/35 bg-ember/15 px-3 py-1.5 text-micro font-semibold text-ember-lo backdrop-blur-sm">
         {label ?? "Data baru masuk"}
       </span>
     </div>

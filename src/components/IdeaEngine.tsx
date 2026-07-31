@@ -115,7 +115,7 @@ export function IdeaEngine() {
 
       {(ideas.length > 0 || isGenerating) && (
         <div className="space-y-4">
-          <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted ml-1">
+          <h3 className="font-mono text-micro uppercase tracking-[0.14em] text-muted ml-1">
             Hasil
           </h3>
           <div className="grid gap-4">

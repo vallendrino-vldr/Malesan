@@ -111,7 +111,7 @@ export default async function AdminDashboardPage() {
                       style={{ width: `${Math.max(pct, 2)}%` }}
                     />
                   </div>
-                  <p className="mt-1.5 text-[11px] text-muted">
+                  <p className="mt-1.5 text-micro text-muted">
                     {pct}% kepakai
                     {u.errors > 0 && <span className="text-danger"> · {u.errors} error</span>}
                   </p>
@@ -139,7 +139,7 @@ export default async function AdminDashboardPage() {
                   <p className="text-xs font-semibold text-ink">
                     {ACTION_LABEL[a.action] ?? a.action}
                   </p>
-                  <p className="truncate text-[11px] text-muted">
+                  <p className="truncate text-micro text-muted">
                     {typeof a.metadata?.reason === "string"
                       ? String(a.metadata.reason)
                       : typeof a.metadata?.email === "string"
@@ -147,7 +147,7 @@ export default async function AdminDashboardPage() {
                         : (a.target_id ?? "").slice(0, 8)}
                   </p>
                 </div>
-                <span className="shrink-0 text-[10.5px] text-muted">{timeAgo(a.created_at)}</span>
+                <span className="shrink-0 text-micro text-muted">{timeAgo(a.created_at)}</span>
               </li>
             ))}
           </ol>
@@ -178,7 +178,7 @@ function Stat({
       <p className={`mt-1 font-display text-2xl font-bold ${alert ? "text-ember" : "text-ink"}`}>
         {value}
       </p>
-      {note && <p className="mt-1 text-[10.5px] leading-snug text-muted">{note}</p>}
+      {note && <p className="mt-1 text-micro leading-snug text-muted">{note}</p>}
     </div>
   );
 }

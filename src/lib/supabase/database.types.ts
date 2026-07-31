@@ -12,6 +12,13 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+/**
+ * Outcome of the automated payment-proof reading. Stored as plain text in
+ * Postgres — narrowed here because every consumer switches on it.
+ * See src/lib/payments/proof-check.ts.
+ */
+export type ProofVerdict = "pass" | "suspect" | "fail" | "error" | "unchecked";
+
 export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
@@ -393,6 +400,10 @@ export type Database = {
           credits: number;
           method: "bank_transfer" | "qris" | "voucher" | "manual_admin";
           proof_url: string | null;
+          proof_path: string | null;
+          proof_hash: string | null;
+          check_verdict: ProofVerdict;
+          check_detail: Json | null;
           status: "pending" | "approved" | "rejected";
           reviewed_by: string | null;
           reviewed_at: string | null;
@@ -406,6 +417,10 @@ export type Database = {
           credits: number;
           method: "bank_transfer" | "qris" | "voucher" | "manual_admin";
           proof_url?: string | null;
+          proof_path?: string | null;
+          proof_hash?: string | null;
+          check_verdict?: ProofVerdict;
+          check_detail?: Json | null;
           status?: "pending" | "approved" | "rejected";
           reviewed_by?: string | null;
           reviewed_at?: string | null;
@@ -419,6 +434,10 @@ export type Database = {
           credits?: number;
           method?: "bank_transfer" | "qris" | "voucher" | "manual_admin";
           proof_url?: string | null;
+          proof_path?: string | null;
+          proof_hash?: string | null;
+          check_verdict?: ProofVerdict;
+          check_detail?: Json | null;
           status?: "pending" | "approved" | "rejected";
           reviewed_by?: string | null;
           reviewed_at?: string | null;

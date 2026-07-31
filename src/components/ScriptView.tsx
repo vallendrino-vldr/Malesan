@@ -117,7 +117,7 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
             key={t}
             onClick={() => setTab(t)}
             aria-pressed={tab === t}
-            className={`flex-1 cursor-pointer rounded-lg py-1.5 text-[11px] font-bold transition-colors duration-[var(--duration-standard)] ease-heat ${
+            className={`flex-1 cursor-pointer rounded-lg py-1.5 text-micro font-bold transition-colors duration-[var(--duration-standard)] ease-heat ${
               tab === t ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
             }`}
           >
@@ -142,12 +142,12 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
                   <p className="mt-1.5 text-xs leading-relaxed text-ink/90">{sc.spoken}</p>
                 )}
                 {sc.on_screen_text && (
-                  <p className="mt-2 rounded bg-obsidian px-2 py-1 text-[11px] text-ink/70">
+                  <p className="mt-2 rounded bg-obsidian px-2 py-1 text-micro text-ink/70">
                     Teks layar: {sc.on_screen_text}
                   </p>
                 )}
                 {sc.visual && (
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-muted">
+                  <p className="mt-1.5 text-micro leading-relaxed text-muted">
                     Footage: {sc.visual}
                   </p>
                 )}
@@ -164,7 +164,7 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
         )}
 
         {!!script.hashtags?.length && (
-          <p className="mt-2 text-[11px] leading-relaxed text-ember-lo">
+          <p className="mt-2 text-micro leading-relaxed text-ember-lo">
             {script.hashtags.join(" ")}
           </p>
         )}
@@ -182,7 +182,7 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
         <Btn label="Unduh" onClick={download} />
       </div>
       {copied === "gagal" && (
-        <p className="px-3 pb-2 text-[11px] text-danger">
+        <p className="px-3 pb-2 text-micro text-danger">
           Browser-nya nolak akses clipboard. Pakai Unduh aja.
         </p>
       )}
@@ -194,7 +194,7 @@ function Btn({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex-1 cursor-pointer rounded-lg bg-surface px-2 py-2 text-[11px] font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised hover:text-ink"
+      className="flex-1 cursor-pointer rounded-lg bg-surface px-2 py-2 text-micro font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised hover:text-ink"
     >
       {label}
     </button>

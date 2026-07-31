@@ -71,7 +71,7 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
             />
           ))}
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-muted">
+        <p className="mt-2 text-micro leading-relaxed text-muted">
           Salah nulis id model bikin Gemini balikin 404 dan semua generate gagal.
           Cek dulu id-nya bener sebelum simpan.
         </p>
@@ -101,7 +101,7 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
       {/* ---- provider ---- */}
       <section>
         <h2 className="eyebrow mb-2 text-muted">Provider AI</h2>
-        <p className="mb-2 text-[11px] leading-relaxed text-muted">
+        <p className="mb-2 text-micro leading-relaxed text-muted">
           Mau ganti otaknya ke vendor lain? Ganti di sini. Kalau API key
           dikosongin, sistem balik pakai rotasi key Gemini dari env — jadi form
           setengah jadi gak bikin generate mati.
@@ -152,7 +152,7 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
       {/* ---- payment ---- */}
       <section>
         <h2 className="eyebrow mb-2 text-muted">Pembayaran</h2>
-        <p className="mb-2 text-[11px] leading-relaxed text-muted">
+        <p className="mb-2 text-micro leading-relaxed text-muted">
           Yang lo ubah di sini langsung kelihatan di halaman top up user.
         </p>
 
@@ -217,7 +217,7 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
       {/* ---- kill switches ---- */}
       <section>
         <h2 className="eyebrow mb-2 text-muted">Saklar modul</h2>
-        <p className="mb-2 text-[11px] leading-relaxed text-muted">
+        <p className="mb-2 text-micro leading-relaxed text-muted">
           Matiin modul yang lagi rusak tanpa deploy. User dapet pesan sopan,
           bukan error mentah, dan kreditnya gak kepotong.
         </p>
@@ -279,9 +279,9 @@ function TextRow({
     <div className="rounded-xl border border-hairline bg-surface p-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-semibold text-ink">{label}</label>
-        {saved && <span className="text-[11px] text-success">Tersimpan</span>}
+        {saved && <span className="text-micro text-success">Tersimpan</span>}
       </div>
-      {hint && <p className="mt-0.5 text-[11px] text-muted">{hint}</p>}
+      {hint && <p className="mt-0.5 text-micro text-muted">{hint}</p>}
       <div className="mt-2 flex gap-2">
         <input
           value={v}
@@ -325,9 +325,9 @@ function SecretRow({
       <div className="flex items-center justify-between">
         <label className="text-sm font-semibold text-ink">{label}</label>
         {saved ? (
-          <span className="text-[11px] text-success">Tersimpan</span>
+          <span className="text-micro text-success">Tersimpan</span>
         ) : (
-          <span className="text-[11px] text-muted">
+          <span className="text-micro text-muted">
             {hasValue ? "Udah keisi · ●●●●●●" : "Belum diisi"}
           </span>
         )}
@@ -356,7 +356,7 @@ function SecretRow({
         <button
           onClick={() => onSave("")}
           disabled={busy}
-          className="mt-2 cursor-pointer text-[11px] text-muted underline-offset-2 hover:text-danger hover:underline"
+          className="mt-2 cursor-pointer text-micro text-muted underline-offset-2 hover:text-danger hover:underline"
         >
           Hapus key (balik ke rotasi Gemini dari env)
         </button>
@@ -385,8 +385,8 @@ function NumberRow({
   return (
     <div className="rounded-xl border border-hairline bg-surface p-3">
       <div className="flex items-center justify-between gap-1">
-        <label className="truncate text-[11.5px] font-semibold text-ink">{label}</label>
-        {saved && <span className="text-[10px] text-success">✓</span>}
+        <label className="truncate text-mini font-semibold text-ink">{label}</label>
+        {saved && <span className="text-micro text-success">✓</span>}
       </div>
       <div className="mt-2 flex gap-1.5">
         <input
@@ -401,7 +401,7 @@ function NumberRow({
         <button
           onClick={() => onSave(n)}
           disabled={!dirty || busy}
-          className="shrink-0 cursor-pointer rounded-lg bg-ember px-2.5 py-2 text-[11px] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 cursor-pointer rounded-lg bg-ember px-2.5 py-2 text-micro font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? "..." : "OK"}
         </button>
@@ -449,9 +449,9 @@ function QrisUpload({ current, onDone }: { current: string; onDone: () => void }
     <div className="rounded-xl border border-hairline bg-surface p-3">
       <div className="flex items-center justify-between">
         <label className="text-sm font-semibold text-ink">Upload QRIS</label>
-        {ok && <span className="text-[11px] text-success">Keunggah</span>}
+        {ok && <span className="text-micro text-success">Keunggah</span>}
       </div>
-      <p className="mt-0.5 text-[11px] leading-relaxed text-muted">
+      <p className="mt-0.5 text-micro leading-relaxed text-muted">
         Pilih gambar QRIS-nya langsung — gak perlu bikin link dulu. PNG atau JPG,
         maksimal 2MB.
       </p>
@@ -483,7 +483,7 @@ function QrisUpload({ current, onDone }: { current: string; onDone: () => void }
       </label>
 
       {err && (
-        <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-[11px] text-danger">
+        <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-micro text-danger">
           {err}
         </p>
       )}

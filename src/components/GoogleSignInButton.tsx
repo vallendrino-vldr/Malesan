@@ -37,7 +37,7 @@ export function GoogleSignInButton({ next = "/", referralCode }: { next?: string
         type="button"
         onClick={signIn}
         disabled={pending}
-        className="btn-ember inline-flex w-full items-center justify-center gap-3 rounded-xl px-6 py-3.5 font-display text-[15px] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-ember inline-flex w-full items-center justify-center gap-3 rounded-xl px-6 py-3.5 font-display text-[0.9375rem] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-60"
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0">
           <path

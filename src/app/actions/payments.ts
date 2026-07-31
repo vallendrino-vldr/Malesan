@@ -14,24 +14,112 @@ export async function paymentSettings(): Promise<PaymentConfig> {
 }
 
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/database.types";
+import { checkProof } from "@/lib/payments/proof-check";
 import { revalidatePath } from "next/cache";
 
-export async function submitTopup(amountIdr: number, credits: number, method: "bank_transfer" | "qris" | "voucher" | "manual_admin", proofUrl: string) {
+/**
+ * Submit a bank-transfer top-up for review.
+ *
+ * The previous signature was `submitTopup(amountIdr, credits, method, proofUrl)`
+ * — every one of those came from the browser and was inserted as given. A
+ * server action is a public HTTP endpoint, so anyone could call it directly
+ * with `credits: 1_000_000, amountIdr: 1` and land a plausible-looking row in
+ * the approval queue. The admin's own UI would then show it as a real request.
+ *
+ * So the client now sends only two things it is allowed to know: which pack it
+ * picked, and where it just uploaded its own file. Price and credit count are
+ * read from `credit_packs` server-side, and the storage path is required to sit
+ * under the caller's own user id so one account cannot claim another's upload.
+ *
+ * The proof is then read by `checkProof` and the verdict stored on the row. It
+ * decides nothing — no credits move without an admin — but the queue is no
+ * longer a wall of undifferentiated screenshots.
+ */
+export async function submitTopup(
+  packId: string,
+  storagePath: string,
+  proofHash: string,
+): Promise<{ flagged: boolean }> {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesi lo abis. Masuk lagi ya.");
 
-  const { error } = await supabase.from("topups").insert({
+  // The upload went to `${user.id}/...` under RLS; require the claim to match
+  // so a path belonging to someone else cannot be attached to this row.
+  if (!storagePath.startsWith(`${user.id}/`)) {
+    throw new Error("Bukti transfernya gak valid. Coba upload ulang.");
+  }
+  if (!/^[a-f0-9]{64}$/.test(proofHash)) {
+    throw new Error("Bukti transfernya gak valid. Coba upload ulang.");
+  }
+
+  const serviceRole = createServiceRoleClient();
+
+  const { data: pack } = await serviceRole
+    .from("credit_packs")
+    .select("credits, price_idr")
+    .eq("id", packId)
+    .eq("is_active", true)
+    .single();
+
+  if (!pack) throw new Error("Paketnya udah gak tersedia. Muat ulang halamannya.");
+
+  // One open request at a time. Without this, a queue can be filled with
+  // hundreds of pending rows faster than anyone can reject them.
+  const { count: openCount } = await serviceRole
+    .from("topups")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "pending");
+
+  if ((openCount ?? 0) > 0) {
+    throw new Error(
+      "Masih ada topup lo yang belum di-review. Tunggu yang itu kelar dulu ya.",
+    );
+  }
+
+  // The same image bytes submitted twice — by this account or any other — is
+  // the cheapest possible fraud, and it is invisible to a human reviewer who
+  // cannot remember last month's receipts.
+  const { data: seen } = await serviceRole
+    .from("topups")
+    .select("id, user_id")
+    .eq("proof_hash", proofHash)
+    .limit(1)
+    .maybeSingle();
+
+  if (seen) {
+    throw new Error(
+      "Bukti transfer ini udah pernah dipakai sebelumnya. Kirim struk yang asli ya.",
+    );
+  }
+
+  const check = await checkProof({
+    storagePath,
+    expectedAmountIdr: pack.price_idr,
+  });
+
+  const { error } = await serviceRole.from("topups").insert({
     user_id: user.id,
-    amount_idr: amountIdr,
-    credits,
-    method,
-    proof_url: proofUrl,
+    amount_idr: pack.price_idr,
+    credits: pack.credits,
+    method: "bank_transfer",
+    proof_url: storagePath,
+    proof_path: storagePath,
+    proof_hash: proofHash,
+    check_verdict: check.verdict,
+    check_detail: check as unknown as Json,
     status: "pending",
   });
 
-  if (error) throw new Error("Failed to submit topup");
+  if (error) throw new Error("Gagal nyimpen topupnya. Coba lagi bentar lagi.");
+
   revalidatePath("/app/topup");
+  revalidatePath("/admin/topups");
+  return { flagged: check.verdict !== "pass" };
 }
 
 export async function redeemVoucher(code: string) {

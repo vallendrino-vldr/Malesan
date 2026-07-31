@@ -91,14 +91,14 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
   return (
     <div className="space-y-5">
       <section className="surface-card rounded-2xl p-4">
-        <h2 className="font-display text-[15px] font-bold text-ink">Bikin voucher baru</h2>
-        <p className="mt-1 text-[11px] leading-relaxed text-muted">
+        <h2 className="font-display text-[0.9375rem] font-bold text-ink">Bikin voucher baru</h2>
+        <p className="mt-1 text-micro leading-relaxed text-muted">
           Kode yang lo kasih ke user buat nambah kredit. Sekali kepakai, mati.
         </p>
 
         <div className="mt-3 space-y-2">
           <div>
-            <label className="text-[11px] font-semibold text-muted">Kode</label>
+            <label className="text-micro font-semibold text-muted">Kode</label>
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -108,7 +108,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[11px] font-semibold text-muted">Kredit</label>
+              <label className="text-micro font-semibold text-muted">Kredit</label>
               <input
                 type="number"
                 min={1}
@@ -119,7 +119,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
               />
             </div>
             <div>
-              <label className="text-[11px] font-semibold text-muted">Berlaku (hari)</label>
+              <label className="text-micro font-semibold text-muted">Berlaku (hari)</label>
               <input
                 type="number"
                 min={1}
@@ -177,9 +177,9 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
                       >
                         {copied === v.code ? "Kesalin!" : v.code}
                       </button>
-                      <span className={`rounded px-2 py-0.5 text-[10px] ${s.cls}`}>{s.label}</span>
+                      <span className={`rounded px-2 py-0.5 text-micro ${s.cls}`}>{s.label}</span>
                     </div>
-                    <p className="mt-2 flex gap-3 text-[11px] text-muted">
+                    <p className="mt-2 flex gap-3 text-micro text-muted">
                       <span>
                         <span className="font-mono text-ink">+{v.credits}</span> kredit
                       </span>
@@ -217,7 +217,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
                         </td>
                         <td className="px-5 py-3 font-mono">+{v.credits}</td>
                         <td className="px-5 py-3">
-                          <span className={`rounded px-2 py-0.5 text-[11px] ${s.cls}`}>
+                          <span className={`rounded px-2 py-0.5 text-micro ${s.cls}`}>
                             {s.label}
                           </span>
                         </td>

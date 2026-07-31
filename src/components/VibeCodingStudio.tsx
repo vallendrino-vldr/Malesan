@@ -197,7 +197,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
     <section className="space-y-6">
       <header>
         <p className="eyebrow text-ember">Buat yang mau vibe coding</p>
-        <h2 className="mt-3 font-display text-[26px] font-bold leading-tight tracking-display-md text-ink sm:text-3xl">
+        <h2 className="mt-3 font-display text-[1.625rem] font-bold leading-tight tracking-display-md text-ink sm:text-3xl">
           Ceritain aplikasinya. Speknya gue yang bikin.
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
@@ -219,7 +219,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
           onChange={(e) => setIdea(e.target.value)}
           rows={4}
           placeholder="Contoh: aplikasi buat nyatet pengeluaran harian bareng pasangan, bisa split bill, ada grafik bulanan."
-          className="mt-2 w-full resize-y skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-3 text-[15px] leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+          className="mt-2 w-full resize-y skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-3 text-[0.9375rem] leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
         />
 
         {/* A blank textarea is the hardest thing to face on this screen. These
@@ -228,14 +228,14 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
             like, not just to fill the box. */}
         {!idea.trim() && (
           <div className="mt-2.5">
-            <p className="text-[11px] text-muted">Belum kepikiran? Mulai dari sini:</p>
+            <p className="text-micro text-muted">Belum kepikiran? Mulai dari sini:</p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {IDEA_STARTERS.map((s) => (
                 <button
                   key={s.label}
                   type="button"
                   onClick={() => setIdea(s.seed)}
-                  className="cursor-pointer rounded-full border border-hairline px-3 py-1.5 text-[11.5px] font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+                  className="cursor-pointer rounded-full border border-hairline px-3 py-1.5 text-mini font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
                 >
                   {s.label}
                 </button>
@@ -277,7 +277,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
             type="button"
             onClick={ask}
             disabled={pending || asking || idea.trim().length < 12}
-            className="btn-ember inline-flex items-center justify-center rounded-xl px-5 py-3 font-display text-[15px] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-ember inline-flex items-center justify-center rounded-xl px-5 py-3 font-display text-[0.9375rem] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-50"
           >
             {asking ? "Nyiapin pertanyaan..." : pending ? "Lagi mikirin buat lo..." : "Males mikir. Bikinin speknya."}
           </button>
@@ -310,7 +310,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-ember-lo">{status}</p>
                 {step && (
-                  <p className="mt-0.5 font-mono text-[11px] text-muted">
+                  <p className="mt-0.5 font-mono text-micro text-muted">
                     {step.done} dari {step.total} langkah
                   </p>
                 )}
@@ -345,12 +345,12 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               className="surface-card rounded-xl border border-hairline p-4"
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-display text-[15px] font-bold tracking-display-sm text-ink">
+                <span className="font-display text-[0.9375rem] font-bold tracking-display-sm text-ink">
                   {d.label}
                 </span>
-                <span className="font-mono text-[11px] text-muted">{d.file}</span>
+                <span className="font-mono text-micro text-muted">{d.file}</span>
               </div>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
                 {d.blurb}
               </p>
             </li>
@@ -375,7 +375,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               <button
                 type="button"
                 onClick={downloadAll}
-                className="shrink-0 rounded-xl border border-hairline bg-surface px-4 py-2.5 font-display text-[13px] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+                className="shrink-0 rounded-xl border border-hairline bg-surface px-4 py-2.5 font-display text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
               >
                 Download semua
               </button>
@@ -396,7 +396,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
                   role="tab"
                   aria-selected={active === d.key}
                   onClick={() => setActive(d.key)}
-                  className={`whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-[13px] font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                  className={`whitespace-nowrap rounded-full border px-3.5 py-2 font-display text-sm font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                     active === d.key
                       ? "border-ember/50 bg-ember/10 text-ember-lo"
                       : "border-hairline bg-surface text-muted hover:text-ink"
@@ -432,7 +432,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
                   </button>
                 </div>
               </div>
-              <pre className="max-h-[60vh] overflow-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed text-ink/90">
+              <pre className="max-h-[60vh] overflow-auto px-4 py-4 font-mono text-mini leading-relaxed text-ink/90">
                 {kit.docs[d.key]}
               </pre>
             </div>

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { RefreshButton } from "@/components/RefreshButton";
 
 /**
  * Admin shell.
@@ -127,7 +128,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               >
                 <span>{l.label}</span>
                 {badge > 0 && (
-                  <span className="grid min-w-5 place-items-center rounded-full bg-ember px-1.5 py-0.5 font-mono text-[10px] font-bold text-obsidian">
+                  <span className="grid min-w-5 place-items-center rounded-full bg-ember px-1.5 py-0.5 font-mono text-micro font-bold text-obsidian">
                     {badge}
                   </span>
                 )}
@@ -135,10 +136,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             );
           })}
         </nav>
-        <div className="border-t border-hairline p-4">
+        <div className="space-y-2 border-t border-hairline p-4">
+          <RefreshButton />
           <Link
             href="/app"
-            className="text-sm text-muted transition-colors hover:text-ink"
+            className="block text-sm text-muted transition-colors hover:text-ink"
           >
             &larr; Balik ke app
           </Link>
@@ -152,9 +154,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Logo markClass="size-6" />
             <span className="eyebrow text-ember-lo">admin</span>
           </div>
-          <Link href="/app" className="eyebrow rounded-full border border-hairline px-3 py-1.5 text-muted">
-            Balik
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <RefreshButton variant="icon" />
+            <Link
+              href="/app"
+              className="eyebrow flex min-h-11 items-center rounded-full border border-hairline px-3 text-muted"
+            >
+              Balik
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -185,13 +193,13 @@ export default async function AdminLayout({ children }: { children: React.ReactN
                   {badge > 0 && (
                     <span
                       aria-hidden="true"
-                      className="absolute -right-2 -top-1.5 grid min-w-[15px] place-items-center rounded-full bg-ember px-1 font-mono text-[9px] font-bold leading-[15px] text-obsidian"
+                      className="absolute -right-2.5 -top-2 grid min-w-[17px] place-items-center rounded-full bg-ember px-1 font-mono text-micro font-bold leading-[17px] text-obsidian"
                     >
                       {badge > 9 ? "9+" : badge}
                     </span>
                   )}
                 </span>
-                <span className="text-[10.5px] font-semibold leading-none">{l.label}</span>
+                <span className="text-micro font-semibold leading-none">{l.label}</span>
               </Link>
             );
           })}
