@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { IdeaCard, type IdeaData } from "./IdeaCard";
+import { GenerationProgress } from "./GenerationProgress";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 
@@ -10,6 +11,9 @@ export function IdeaEngine() {
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   const [generationId, setGenerationId] = useState<string | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
+  // Real characters received, so the progress figure moves because the
+  // model is producing text — not because a timer is running.
+  const [chars, setChars] = useState(0);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -18,6 +22,7 @@ export function IdeaEngine() {
     if (!input.trim()) return;
 
     setIsGenerating(true);
+    setChars(0);
     setError("");
     setIdeas([]);
     setGenerationId(undefined);
@@ -55,6 +60,7 @@ export function IdeaEngine() {
         }
         if (typeof msg.chunk === "string") {
           acc += msg.chunk;
+          setChars(acc.length);
           try {
             const partial = JSON.parse(stripFence(acc.trim()));
             if (Array.isArray(partial.ideas)) setIdeas(partial.ideas);
@@ -112,6 +118,12 @@ export function IdeaEngine() {
           </button>
         </div>
       </form>
+
+      {isGenerating && (
+
+        <GenerationProgress moduleKey="idea" chars={chars} label="Lagi ngembangin idenya" />
+
+      )}
 
       {(ideas.length > 0 || isGenerating) && (
         <div className="space-y-4">

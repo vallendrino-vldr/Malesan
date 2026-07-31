@@ -1,6 +1,9 @@
+"use client";
+
 import { useState } from "react";
 import { StreamingText } from "./StreamingText";
 import { saveToPipeline } from "@/app/actions/pipeline";
+import { RateResult } from "./RateResult";
 
 export type IdeaData = {
   title: string;
@@ -93,18 +96,23 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       </div>
 
       {!isStreaming && idea.title && (
-        <div className="mt-4 pt-4 border-t border-hairline flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={isSaving || saved}
-            className={`font-display text-xs font-semibold transition-colors ${
-              saved
-                ? "text-success cursor-default"
-                : "text-ember hover:text-ember-lo"
-            }`}
-          >
-            {saved ? "✓ Tersimpan di Pipeline" : isSaving ? "Menyimpan..." : "+ Simpan ke Pipeline"}
-          </button>
+        <div className="mt-4 space-y-3 border-t border-hairline pt-4">
+          <div className="flex justify-end">
+            <button
+              onClick={handleSave}
+              disabled={isSaving || saved}
+              className={`min-h-11 cursor-pointer font-display text-xs font-semibold transition-colors ${
+                saved ? "cursor-default text-success" : "text-ember hover:text-ember-lo"
+              }`}
+            >
+              {saved ? "✓ Tersimpan di Pipeline" : isSaving ? "Menyimpan..." : "+ Simpan ke Pipeline"}
+            </button>
+          </div>
+          {/* Rating lives here, next to the result, rather than only on a
+              pipeline card that has already been marked Posted. Asking someone
+              to come back later and grade their own homework is why only five
+              of nineteen generations had ever been rated. */}
+          <RateResult generationId={generationId ?? null} />
         </div>
       )}
     </div>

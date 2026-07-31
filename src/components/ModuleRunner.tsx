@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 import { saveToPipeline } from "@/app/actions/pipeline";
+import { GenerationProgress } from "./GenerationProgress";
+import { RateResult } from "./RateResult";
+import { OfferAfterWin } from "./CreditNudge";
 import { ScriptView, type ScriptOutput } from "./ScriptView";
 
 /**
@@ -126,9 +129,12 @@ type RepurposeOut = Record<string, string>;
 export function ModuleRunner({
   moduleKey,
   cost,
+  credits,
 }: {
   moduleKey: ModuleSpec["key"];
   cost: number;
+  /** Current balance. Only used to decide whether an offer is worth showing. */
+  credits: number;
 }) {
   const base = MODULE_SPECS[moduleKey];
   const spec: ModuleSpec | null = base ? { ...base, cost } : null;
@@ -141,6 +147,12 @@ export function ModuleRunner({
   // Kept so a saved pipeline card can point back at the generation it came
   // from — that link is what lets a rating on the card reach the model.
   const [genId, setGenId] = useState<string | null>(null);
+  // Characters actually received. Drives GenerationProgress — a bar fed by a
+  // timer keeps filling after a dead request, which is worse than none.
+  const [chars, setChars] = useState(0);
+  // The offer only appears after someone says the output was useful — that is
+  // the one moment the value is not hypothetical.
+  const [rated, setRated] = useState<null | "good" | "bad">(null);
 
   // Never throw on a bad key again — an unknown module renders a message, not
   // a red error overlay over the whole app.
@@ -156,6 +168,8 @@ export function ModuleRunner({
     setError("");
     setOut(null);
     setGenId(null);
+    setChars(0);
+    setRated(null);
 
     try {
       const res = await fetch("/api/generate", {
@@ -187,6 +201,7 @@ export function ModuleRunner({
         }
         if (typeof msg.chunk === "string") {
           acc += msg.chunk;
+          setChars(acc.length);
           try {
             setOut(JSON.parse(stripFence(acc.trim())));
           } catch {
@@ -299,11 +314,21 @@ export function ModuleRunner({
         </button>
       </section>
 
+      {busy && (
+        <GenerationProgress moduleKey={spec.key} chars={chars} label={spec.busy} />
+      )}
+
       {out !== null && (
         <>
           <ModuleOutput moduleKey={spec.key} out={out} busy={busy} />
           {!busy && (
-            <SaveToPipeline moduleKey={spec.key} out={out} genId={genId} values={values} />
+            <>
+              <SaveToPipeline moduleKey={spec.key} out={out} genId={genId} values={values} />
+              <div className="surface-card rounded-xl p-4">
+                <RateResult generationId={genId} onRated={setRated} />
+              </div>
+              {rated === "good" && <OfferAfterWin credits={credits} />}
+            </>
           )}
         </>
       )}
