@@ -207,7 +207,7 @@ export function TutorialSheet() {
 
       {open && mounted && createPortal(
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center md:p-6"
+          className="fixed inset-0 z-[60] flex cursor-pointer items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center md:p-6"
           role="dialog"
           aria-modal="true"
           aria-label="Cara pakai Malesan"

@@ -13,6 +13,8 @@ import { ModuleRunner } from "@/components/ModuleRunner";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { RefreshButton } from "@/components/RefreshButton";
 import { TextScale } from "@/components/TextScale";
+import { LowCreditNotice } from "@/components/CreditNudge";
+import { NavTile } from "@/components/NavTile";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -220,6 +222,7 @@ export default async function AppPage({
             <ModuleRunner
               moduleKey={mod}
               cost={mod === "hook" ? costHook : mod === "script" ? costScript : costRepurpose}
+              credits={totalCredits}
             />
           )}
         </div>
@@ -240,6 +243,13 @@ export default async function AppPage({
         // is what made it read as cramped and colliding. Natural flow with real
         // spacing instead — scrolling a little beats crushing everything.
         <div className="reveal flex flex-col gap-4 py-1">
+          {/* A heads-up while they can still finish something, not a wall at
+              zero. Hides itself entirely above the threshold. */}
+          <LowCreditNotice
+            credits={totalCredits}
+            mostExpensive={Math.max(costIde, costIdea, costHook, costScript, costRepurpose, costVibe)}
+          />
+
           <section className="surface-card relative overflow-hidden rounded-2xl border border-hairline px-5 pb-5 pt-5">
             <AmbientIdle className="mx-auto size-28 sm:size-40" />
             <div className="mt-1 text-center">
@@ -274,9 +284,9 @@ export default async function AppPage({
               the start with no way in. Compact row so the dashboard still fits
               one screen — the two primaries stay the headline. */}
           <div className="grid grid-cols-3 gap-2">
-            <MiniTile href="/app?tab=studio&m=hook" title="Hook Lab" cost={costHook} />
-            <MiniTile href="/app?tab=studio&m=script" title="Script" cost={costScript} />
-            <MiniTile
+            <NavTile href="/app?tab=studio&m=hook" title="Hook Lab" cost={costHook} />
+            <NavTile href="/app?tab=studio&m=script" title="Script" cost={costScript} />
+            <NavTile
               href="/app?tab=studio&m=repurpose"
               title="Repurpose"
               cost={costRepurpose}
@@ -394,28 +404,6 @@ export default async function AppPage({
  * tappable; `active:scale` gives the touch feedback that sells it on a phone,
  * where there is no hover to hint with.
  */
-function MiniTile({ href, title, cost }: { href: string; title: string; cost: number }) {
-  return (
-    <Link
-      href={href}
-      className="skeu skeu-press group flex min-h-[68px] cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center hover:border-ember/45"
-    >
-      <span className="flex items-center justify-center gap-1">
-        <span className="truncate text-mini font-bold text-ink group-hover:text-ember-lo">
-          {title}
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="size-3 shrink-0 fill-muted transition-colors group-hover:fill-ember"
-        >
-          <path d="M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6-1.4-1.4Z" />
-        </svg>
-      </span>
-      <span className="mt-1 block font-mono text-micro text-ember-lo">{cost} kredit</span>
-    </Link>
-  );
-}
 
 /**
  * Back and refresh as a matched pair.

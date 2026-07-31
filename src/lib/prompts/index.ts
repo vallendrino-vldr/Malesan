@@ -250,6 +250,7 @@ function buildSharedContext(
   context += `- Jangan pernah nyaranin konten clickbait bohong atau menyesatkan.\n`;
 
   context += CRAFT_RULES;
+  context += PLATFORM_MECHANICS;
 
   context += `\nBalas HANYA JSON valid. Tanpa \`\`\`json, tanpa penjelasan tambahan.\n`;
 
@@ -339,6 +340,80 @@ CONTOH BEDANYA (niche motor bekas):
     why_now: "Stok Beat karbu 2014-2016 lagi banjir di lapak dan mayoritas bekas ojol"
   Kenapa bagus: ada angka, ada tindakan yang bisa langsung dilakukan penonton,
   dan alasannya bawa informasi baru — bukan mengulang judul.
+`;
+
+/**
+ * How the platforms actually behave.
+ *
+ * CRAFT_RULES governs how a sentence should read. This governs what the thing
+ * has to do to survive a feed, and the two are different problems — well-written
+ * output that ignores retention mechanics still dies at second three.
+ *
+ * The premise the owner raised is correct and worth stating: a cheap model with
+ * a prompt carrying real domain knowledge beats an expensive model with a vague
+ * one, because the expensive model is only guessing at this too. What it cannot
+ * guess is which specifics matter, and that is what this block supplies.
+ *
+ * Everything here is durable mechanics — how discovery feeds work, where
+ * viewers leave, what a caption is for — rather than numbers that go stale with
+ * the next algorithm change. Deliberately: a prompt that hardcodes "post at
+ * 19:00" is wrong within a quarter and nobody notices.
+ */
+const PLATFORM_MECHANICS = `
+CARA KERJA PLATFORMNYA — INI YANG NENTUIN KONTEN HIDUP ATAU MATI:
+
+PENONTON DATANG TANPA NIAT.
+Beda sama YouTube yang orang cari sendiri, di TikTok/Reels konten nyamperin
+orang yang lagi gak nyari apa-apa. Artinya lo gak punya kredit perhatian sama
+sekali di awal. Gak ada "halo semuanya", gak ada intro, gak ada penjelasan
+konteks. Kalimat pertama harus udah jadi isinya.
+
+TIGA TITIK ORANG KABUR — desain kontennya di sekitar ini:
+  1. Detik 0-2  : mereka mutusin ini buat gue atau bukan. Kalau hook-nya umum,
+                  selesai. Sebut hal spesifik yang bikin orang yang tepat
+                  ngerasa kesenggol.
+  2. Sepertiga  : rasa penasaran awal udah lunas dan belum ada yang baru.
+                  Taruh belokan di sini — bantahan, angka yang gak diduga, atau
+                  pertanyaan baru yang belum kejawab.
+  3. Sebelum CTA: begitu kerasa mau jualan, orang pergi. Makanya CTA harus
+                  nyambung sama isinya, bukan tempelan yang bisa dipindah ke
+                  video lain.
+
+LOOP DAN TONTON ULANG ITU SINYAL PALING KUAT.
+Video yang ditonton sampai habis lalu mengulang dihitung jauh lebih tinggi
+daripada yang di-like. Praktisnya: bikin yang pendek benar-benar padat, dan
+kalau bisa akhir yang nyambung balik ke awal.
+
+KOMENTAR LEBIH BERHARGA DARIPADA LIKE.
+Like itu satu ketukan tanpa risiko. Komentar butuh orang berhenti dan berpikir.
+Sisakan satu celah yang orang pengin isi — pendapat yang bisa dibantah,
+pilihan yang bisa diadu, atau satu hal yang sengaja gak lo sebutin.
+
+TEKS DI LAYAR ITU BUKAN SALINAN OMONGAN.
+Mayoritas orang nonton tanpa suara di awal. Teks layar harus bisa berdiri
+sendiri sebagai alasan buat tetap nonton — isinya angka, nama, atau satu kata
+penekanan. Kalau cuma mengulang omongan, itu cuma bikin layar rame.
+
+ORANG NYARI DI TIKTOK DAN INSTAGRAM SEPERTI DI MESIN PENCARI.
+Judul, kalimat pertama caption, dan teks layar itu terbaca sebagai kata kunci.
+Jadi pakai istilah yang orang beneran ketik — nama produk, tahun, harga,
+masalah yang dirasain — bukan istilah pemasaran. "Motor bekas murah" itu dicari
+orang; "solusi mobilitas terjangkau" tidak pernah dicari siapa pun.
+
+CAPTION DIBACA SETENGAH.
+Kalimat pertama muncul sebelum tombol "selengkapnya". Kalimat itu harus bisa
+berdiri sendiri. Sisanya baru konteks.
+
+TAGAR ITU LABEL, BUKAN DOA.
+Beberapa yang benar-benar menggambarkan isinya lebih berguna daripada dua puluh
+tagar populer yang gak nyambung. Tagar yang gak nyambung malah bikin konten
+disodorkan ke orang yang salah, dan mereka nge-skip — yang justru menurunkan
+sebarannya.
+
+JANGAN NGARANG ANGKA.
+Kalau lo gak tau angkanya, jangan bikin. Suruh kreatornya isi sendiri, atau
+pakai hal konkret yang gak butuh angka (nama part, tahun keluaran, merek).
+Statistik palsu itu cara tercepat kehilangan kepercayaan penonton.
 `;
 
 export function buildIdeHariIniPrompt(dna: CreatorDna | null, trends: TrendCard[], learned?: LearnedNote[]): string {

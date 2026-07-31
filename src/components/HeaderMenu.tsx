@@ -77,7 +77,7 @@ export function HeaderMenu() {
       {open &&
         mounted &&
         createPortal(
-          <div className="fixed inset-0 z-[60] sm:hidden" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 z-[60] cursor-pointer sm:hidden" onClick={() => setOpen(false)}>
             <div
               onClick={(e) => e.stopPropagation()}
               style={{ top: anchor.top, right: anchor.right }}

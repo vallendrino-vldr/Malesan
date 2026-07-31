@@ -780,6 +780,59 @@
 }
 
 /* ===========================================================================
+   WORKING MASCOT — the generation progress figure
+   ===========================================================================
+   Generation used to be a button that said "Lagi mikirin…" and then nothing
+   for eight seconds, which reads as frozen rather than busy — people tapped
+   again, and a second tap on a streaming request is a wasted credit.
+
+   The figure is driven by the same stream the text arrives on, so its arms move
+   because bytes are actually landing. That distinction matters: a spinner that
+   animates on a timer keeps animating after the request has died, which is
+   worse than no spinner at all because it lies for as long as you watch it.
+
+   Reduced motion keeps the figure and the bar and stops the limbs. The progress
+   information survives; only the performance of it goes away.
+--------------------------------------------------------------------------- */
+@keyframes ml-type-a {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(2.5px) rotate(-7deg); }
+}
+@keyframes ml-type-b {
+  0%, 100% { transform: translateY(2.5px) rotate(-7deg); }
+  50%      { transform: translateY(0) rotate(0deg); }
+}
+@keyframes ml-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+@keyframes ml-antenna {
+  0%, 100% { opacity: 0.35; r: 2; }
+  50%      { opacity: 1; r: 2.8; }
+}
+@keyframes ml-scan {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+.mascot-arm-a { animation: ml-type-a 0.52s ease-in-out infinite; transform-origin: 50% 20%; }
+.mascot-arm-b { animation: ml-type-b 0.52s ease-in-out infinite; transform-origin: 50% 20%; }
+.mascot-body  { animation: ml-bob 1.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.mascot-led   { animation: ml-antenna 1.1s ease-in-out infinite; }
+/* Sweeps the visor so the figure reads as "reading" even while its arms rest. */
+.mascot-scan  { animation: ml-scan 2.1s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-arm-a,
+  .mascot-arm-b,
+  .mascot-body,
+  .mascot-led,
+  .mascot-scan {
+    animation: none;
+  }
+}
+
+/* ===========================================================================
    UNDO WINDOW — draining bar
    ===========================================================================
    An undo offer with no visible deadline is a worse offer: the reader has to
