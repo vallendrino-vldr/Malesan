@@ -118,6 +118,35 @@ export async function deleteUser(userId: string) {
   revalidatePath("/admin/users");
 }
 
+/**
+ * Storage path for a proof, from either storage format.
+ *
+ * `proof_url` used to hold a full public URL and now holds a bare path. A
+ * split that assumed the URL form silently found nothing for new rows, so the
+ * cleanup below stopped running and private bank screenshots accumulated in the
+ * bucket forever.
+ */
+function proofPathOf(topup: { proof_url: string | null; proof_path?: string | null; user_id: string }) {
+  const raw = topup.proof_path || topup.proof_url;
+  if (!raw) return null;
+  const path = raw.includes("/topup_proofs/")
+    ? raw.split("/topup_proofs/")[1]
+    : raw.replace(/^\/+/, "");
+  // Never delete outside the owner's folder, whatever the column contains.
+  return path && path.startsWith(`${topup.user_id}/`) ? path : null;
+}
+
+/**
+ * Approve a top-up and hand over the credits.
+ *
+ * The order here is deliberate and was wrong before. The row was marked
+ * `approved` first and the credits granted second, with neither result checked
+ * — and `supabase.rpc()` resolves with `{data, error}` rather than throwing, so
+ * a failed grant was invisible. The outcome was a top-up shown as approved,
+ * an admin told it had worked, and a paying user with no credits and no way to
+ * prove it. Credits move first now, and nothing is marked approved until they
+ * have actually landed.
+ */
 export async function approveTopup(topupId: string) {
   const adminId = await verifyAdmin();
   const serviceRole = createServiceRoleClient();
@@ -129,44 +158,58 @@ export async function approveTopup(topupId: string) {
     .single();
 
   if (fetchErr || !topup || topup.status !== "pending") {
-    throw new Error("Topup not found or already processed");
+    throw new Error("Topupnya udah gak pending — mungkin barusan keproses.");
   }
 
-  // Update topup status
-  await serviceRole
+  const { error: grantErr } = await serviceRole.rpc("grant_credits", {
+    p_user: topup.user_id,
+    p_amount: topup.credits,
+    p_bucket: "paid",
+    p_reason: `topup_${topupId}`,
+  });
+
+  if (grantErr) {
+    throw new Error(
+      `Kreditnya gagal masuk, jadi topupnya gak jadi di-approve: ${grantErr.message}`,
+    );
+  }
+
+  // Scoped to `pending` so two admins tapping Approve at the same moment
+  // cannot both pass the check above and grant twice.
+  const { data: marked, error: markErr } = await serviceRole
     .from("topups")
     .update({
       status: "approved",
       reviewed_by: adminId,
-      reviewed_at: new Date().toISOString()
+      reviewed_at: new Date().toISOString(),
     })
-    .eq("id", topupId);
+    .eq("id", topupId)
+    .eq("status", "pending")
+    .select("id");
 
-  // Grant credits
-  await serviceRole.rpc("grant_credits", {
-    p_user: topup.user_id,
-    p_amount: topup.credits,
-    p_bucket: "paid",
-    p_reason: `topup_${topupId}`
-  });
-
-  // Permanently delete proof image
-  if (topup.proof_url) {
-    try {
-      // url format: https://.../storage/v1/object/public/topup_proofs/userId/timestamp.jpg
-      const urlParts = topup.proof_url.split("/topup_proofs/");
-      if (urlParts.length === 2) {
-        const path = urlParts[1];
-        if (path.startsWith(`${topup.user_id}/`)) {
-          await serviceRole.storage.from("topup_proofs").remove([path]);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to delete proof image", e);
-    }
+  if (markErr || !marked?.length) {
+    throw new Error(
+      "Kreditnya udah masuk tapi statusnya gagal diupdate. Jangan approve lagi — cek dulu di daftar user.",
+    );
   }
 
+  // The proof is a bank screenshot with an account number on it, so it is
+  // deleted once it has served its purpose. A failure here must not undo an
+  // approval that already happened.
+  const path = proofPathOf(topup);
+  if (path) {
+    const { error: rmErr } = await serviceRole.storage.from("topup_proofs").remove([path]);
+    if (rmErr) console.error("proof cleanup failed", topupId, rmErr.message);
+  }
+
+  await audit(adminId, "topup.approve", topupId, {
+    credits: topup.credits,
+    amount_idr: topup.amount_idr,
+    verdict: topup.check_verdict,
+  });
+
   revalidatePath("/admin/topups");
+  revalidatePath("/admin");
 }
 
 export async function rejectTopup(topupId: string, note?: string) {
@@ -180,45 +223,52 @@ export async function rejectTopup(topupId: string, note?: string) {
     .single();
 
   if (fetchErr || !topup || topup.status !== "pending") {
-    throw new Error("Topup not found or already processed");
+    throw new Error("Topupnya udah gak pending — mungkin barusan keproses.");
   }
 
-  await serviceRole
+  const { data: marked, error: markErr } = await serviceRole
     .from("topups")
     .update({
       status: "rejected",
       note,
       reviewed_by: adminId,
-      reviewed_at: new Date().toISOString()
+      reviewed_at: new Date().toISOString(),
     })
-    .eq("id", topupId);
+    .eq("id", topupId)
+    .eq("status", "pending")
+    .select("id");
 
-  // Permanently delete proof image
-  if (topup.proof_url) {
-    try {
-      const urlParts = topup.proof_url.split("/topup_proofs/");
-      if (urlParts.length === 2) {
-        const path = urlParts[1];
-        if (path.startsWith(`${topup.user_id}/`)) {
-          await serviceRole.storage.from("topup_proofs").remove([path]);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to delete proof image", e);
-    }
+  if (markErr || !marked?.length) {
+    throw new Error(`Gagal nge-reject topupnya: ${markErr?.message ?? "udah keproses"}`);
   }
 
+  const path = proofPathOf(topup);
+  if (path) {
+    const { error: rmErr } = await serviceRole.storage.from("topup_proofs").remove([path]);
+    if (rmErr) console.error("proof cleanup failed", topupId, rmErr.message);
+  }
+
+  await audit(adminId, "topup.reject", topupId, { note: note ?? "", amount_idr: topup.amount_idr });
+
   revalidatePath("/admin/topups");
+  revalidatePath("/admin");
 }
 
 export async function banUser(userId: string, reason: string) {
   const adminId = await verifyAdmin();
   const serviceRole = createServiceRoleClient();
 
-  await serviceRole
+  // `.select()` so a write that matched no row is distinguishable from one that
+  // worked. Without it a ban on a stale user id reported success and the person
+  // carried on using the product.
+  const { data, error } = await serviceRole
     .from("profiles")
     .update({ is_banned: true, ban_reason: reason })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select("id");
+
+  if (error) throw new Error(`Gagal nge-ban: ${error.message}`);
+  if (!data?.length) throw new Error("Usernya gak ketemu — mungkin udah kehapus.");
 
   await audit(adminId, "user.ban", userId, { reason });
   revalidatePath("/admin/users");
@@ -228,10 +278,14 @@ export async function unbanUser(userId: string) {
   const adminId = await verifyAdmin();
   const serviceRole = createServiceRoleClient();
 
-  await serviceRole
+  const { data, error } = await serviceRole
     .from("profiles")
     .update({ is_banned: false, ban_reason: null })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select("id");
+
+  if (error) throw new Error(`Gagal buka ban: ${error.message}`);
+  if (!data?.length) throw new Error("Usernya gak ketemu — mungkin udah kehapus.");
 
   await audit(adminId, "user.unban", userId, {});
   revalidatePath("/admin/users");
@@ -241,19 +295,38 @@ export async function createVoucher(code: string, credits: number, daysValid: nu
   const adminId = await verifyAdmin();
   const serviceRole = createServiceRoleClient();
 
+  const clean = code.trim().toUpperCase();
+  if (clean.length < 4) throw new Error("Kodenya minimal 4 karakter.");
+  if (!Number.isInteger(credits) || credits <= 0) {
+    throw new Error("Kreditnya harus bilangan bulat di atas 0.");
+  }
+  if (!Number.isInteger(daysValid) || daysValid <= 0) {
+    throw new Error("Masa berlakunya harus lebih dari 0 hari.");
+  }
+
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + daysValid);
 
-  await serviceRole
-    .from("vouchers")
-    .insert({
-      code: code.toUpperCase(),
-      credits,
-      created_by: adminId,
-      expires_at: expiresAt.toISOString(),
-      is_redeemed: false
-    });
+  const { error } = await serviceRole.from("vouchers").insert({
+    code: clean,
+    credits,
+    created_by: adminId,
+    expires_at: expiresAt.toISOString(),
+    is_redeemed: false,
+  });
 
+  // The insert error was discarded. `code` is the primary key, so re-using one
+  // failed silently and the screen reported a voucher that did not exist —
+  // which is what "voucher-nya gak jalan" looks like from the other side.
+  if (error) {
+    throw new Error(
+      error.code === "23505"
+        ? `Kode "${clean}" udah pernah dibikin. Pakai kode lain.`
+        : `Gagal bikin voucher: ${error.message}`,
+    );
+  }
+
+  await audit(adminId, "voucher.create", clean, { credits, daysValid });
   revalidatePath("/admin/vouchers");
 }
 
@@ -276,15 +349,21 @@ export async function injectCredits(userId: string, amount: number, bucket: "fre
     throw new Error("Jumlah kredit harus bilangan bulat di atas 0.");
   }
 
-  await serviceRole.rpc("grant_credits", {
+  // `.rpc()` resolves with {data, error}; it does not throw. Unchecked, a
+  // failed grant left an audit entry claiming credits were handed out and an
+  // admin who had no reason to doubt it.
+  const { error: grantErr } = await serviceRole.rpc("grant_credits", {
     p_user: userId,
     p_amount: amount,
     p_bucket: bucket,
-    p_reason: `admin_injection_by_${adminId}_reason_${reason}`
+    p_reason: `admin_injection_by_${adminId}_reason_${reason}`,
   });
+
+  if (grantErr) throw new Error(`Kreditnya gagal ditambah: ${grantErr.message}`);
 
   await audit(adminId, "credits.grant", userId, { amount, bucket, reason });
   revalidatePath("/admin/users");
+  revalidatePath("/app");
 }
 
 /**

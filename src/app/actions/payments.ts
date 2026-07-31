@@ -58,6 +58,20 @@ export async function submitTopup(
 
   const serviceRole = createServiceRoleClient();
 
+  /**
+   * Drop the object the client uploaded a moment ago.
+   *
+   * The upload happens before this action runs, so every rejection below would
+   * otherwise strand a private bank screenshot in storage that no row
+   * references and nothing will ever clean up. Users deliberately cannot delete
+   * from this bucket — that would let someone pull the evidence out from under
+   * a pending review — so the tidying has to happen here.
+   */
+  const discardUpload = async () => {
+    const { error } = await serviceRole.storage.from("topup_proofs").remove([storagePath]);
+    if (error) console.error("orphan proof cleanup failed", storagePath, error.message);
+  };
+
   const { data: pack } = await serviceRole
     .from("credit_packs")
     .select("credits, price_idr")
@@ -65,7 +79,10 @@ export async function submitTopup(
     .eq("is_active", true)
     .single();
 
-  if (!pack) throw new Error("Paketnya udah gak tersedia. Muat ulang halamannya.");
+  if (!pack) {
+    await discardUpload();
+    throw new Error("Paketnya udah gak tersedia. Muat ulang halamannya.");
+  }
 
   // One open request at a time. Without this, a queue can be filled with
   // hundreds of pending rows faster than anyone can reject them.
@@ -76,9 +93,8 @@ export async function submitTopup(
     .eq("status", "pending");
 
   if ((openCount ?? 0) > 0) {
-    throw new Error(
-      "Masih ada topup lo yang belum di-review. Tunggu yang itu kelar dulu ya.",
-    );
+    await discardUpload();
+    throw new Error("Masih ada topup lo yang belum di-review. Tunggu yang itu kelar dulu ya.");
   }
 
   // The same image bytes submitted twice — by this account or any other — is
@@ -92,9 +108,8 @@ export async function submitTopup(
     .maybeSingle();
 
   if (seen) {
-    throw new Error(
-      "Bukti transfer ini udah pernah dipakai sebelumnya. Kirim struk yang asli ya.",
-    );
+    await discardUpload();
+    throw new Error("Bukti transfer ini udah pernah dipakai sebelumnya. Kirim struk yang asli ya.");
   }
 
   const check = await checkProof({
@@ -115,7 +130,10 @@ export async function submitTopup(
     status: "pending",
   });
 
-  if (error) throw new Error("Gagal nyimpen topupnya. Coba lagi bentar lagi.");
+  if (error) {
+    await discardUpload();
+    throw new Error("Gagal nyimpen topupnya. Coba lagi bentar lagi.");
+  }
 
   revalidatePath("/app/topup");
   revalidatePath("/admin/topups");
@@ -128,36 +146,48 @@ export async function redeemVoucher(code: string) {
   if (!user) throw new Error("Unauthorized");
 
   const serviceRole = createServiceRoleClient();
-  
-  // Need a transaction-like approach: mark voucher as redeemed, then grant credits
-  // We can't do true transaction easily from edge functions without RPC, but we can try an optimistic update
-  const { data: voucher, error: fetchError } = await serviceRole
+  const clean = code.trim().toUpperCase();
+
+  // Claim the voucher first, conditionally. `is_redeemed = false` in the WHERE
+  // clause is what makes two simultaneous redemptions of one code impossible:
+  // the second update matches no row.
+  //
+  // The expiry test is new. `expires_at` was written at creation and then never
+  // read, so every voucher was effectively permanent — a campaign code from
+  // three months ago still paid out.
+  const { data: voucher, error: claimError } = await serviceRole
     .from("vouchers")
-    .update({ is_redeemed: true, redeemed_by: user.id, redeemed_at: new Date().toISOString() })
-    .eq("code", code)
+    .update({
+      is_redeemed: true,
+      redeemed_by: user.id,
+      redeemed_at: new Date().toISOString(),
+    })
+    .eq("code", clean)
     .eq("is_redeemed", false)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .select()
     .single();
 
-  if (fetchError || !voucher) {
-    throw new Error("Voucher invalid or already redeemed");
+  if (claimError || !voucher) {
+    throw new Error("Kodenya gak valid, udah kepakai, atau udah lewat masa berlakunya.");
   }
 
-  // Grant credits
-  try {
-    await serviceRole.rpc("grant_credits", {
-      p_user: user.id,
-      p_amount: voucher.credits,
-      p_bucket: "paid",
-      p_reason: `voucher_redemption_${code}`
-    });
-  } catch (err) {
-    // If credit grant fails, rollback voucher
+  const { error: grantErr } = await serviceRole.rpc("grant_credits", {
+    p_user: user.id,
+    p_amount: voucher.credits,
+    p_bucket: "paid",
+    p_reason: `voucher_redemption_${clean}`,
+  });
+
+  // This rollback used to live in a `catch`, which never ran: `.rpc()` resolves
+  // with {data, error} instead of throwing. So a failed grant burned the
+  // voucher and handed over nothing.
+  if (grantErr) {
     await serviceRole
       .from("vouchers")
       .update({ is_redeemed: false, redeemed_by: null, redeemed_at: null })
-      .eq("code", code);
-    throw new Error("Failed to grant credits");
+      .eq("code", clean);
+    throw new Error("Kreditnya gagal masuk. Vouchernya masih bisa dipakai, coba lagi.");
   }
 
   revalidatePath("/app");
@@ -197,19 +227,36 @@ export async function processReferral(refereeId: string) {
       throw insertError;
     }
 
-    // Grant credits to both
-    await serviceRole.rpc("grant_credits", {
-      p_user: profile.referred_by,
-      p_amount: 10,
-      p_bucket: "paid",
-      p_reason: `referral_bonus_from_${refereeId}`
-    });
+    // Both sides, and both results checked. `.rpc()` does not throw, so an
+    // unchecked call here meant a `referrals` row marked "credited" next to two
+    // people who never received anything — and because the row exists, the
+    // `if (!existingRef)` guard above ensures it is never retried.
+    const [a, b] = await Promise.all([
+      serviceRole.rpc("grant_credits", {
+        p_user: profile.referred_by,
+        p_amount: 10,
+        p_bucket: "paid",
+        p_reason: `referral_bonus_from_${refereeId}`,
+      }),
+      serviceRole.rpc("grant_credits", {
+        p_user: refereeId,
+        p_amount: 10,
+        p_bucket: "paid",
+        p_reason: `referral_bonus_joined_via_${profile.referred_by}`,
+      }),
+    ]);
 
-    await serviceRole.rpc("grant_credits", {
-      p_user: refereeId,
-      p_amount: 10,
-      p_bucket: "paid",
-      p_reason: `referral_bonus_joined_via_${profile.referred_by}`
-    });
+    if (a.error || b.error) {
+      // Mark it for a human rather than leaving a silent "credited" lie. The
+      // referral itself stays recorded so the pair is not double-credited by a
+      // later retry.
+      await serviceRole
+        .from("referrals")
+        .update({
+          status: "voided",
+          void_reason: `grant failed: ${a.error?.message ?? ""} ${b.error?.message ?? ""}`.trim(),
+        })
+        .eq("referee_id", refereeId);
+    }
   }
 }

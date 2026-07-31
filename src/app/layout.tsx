@@ -44,8 +44,32 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0a09",
-  colorScheme: "dark",
+  /**
+   * `viewportFit: "cover"` is what makes `env(safe-area-inset-*)` return real
+   * numbers on an iPhone. Without it iOS reports every inset as 0 — and this
+   * product pads the bottom tab bar, the admin nav, the undo toast, the install
+   * banner and the tutorial sheet with exactly those values. So on any iPhone
+   * with a home indicator the tab bar sat underneath it and its bottom row of
+   * targets was partly unreachable, while the CSS looked correct in review
+   * because it is correct; it was being fed zeroes.
+   */
+  viewportFit: "cover",
+  /**
+   * Both themes declared. A single dark value painted the iOS status-bar area
+   * and the Android chrome dark while the light theme rendered a near-white
+   * page underneath it.
+   */
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0b0a09" },
+    { media: "(prefers-color-scheme: light)", color: "#e8e0d8" },
+  ],
+  /**
+   * Not "dark". This tells the browser how to paint form controls, scrollbars
+   * and the default caret; pinned to dark, those stayed dark-on-light in the
+   * bright theme. The actual per-theme value is set on <html> by the theme
+   * script — this is the pair the browser is allowed to choose from.
+   */
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({

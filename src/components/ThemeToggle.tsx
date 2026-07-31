@@ -50,6 +50,19 @@ export function ThemeToggle() {
     setHint(false);
     if (next === "soft") document.documentElement.setAttribute("data-theme", "soft");
     else document.documentElement.removeAttribute("data-theme");
+
+    // The `theme-color` pair in the layout is keyed on `prefers-color-scheme`,
+    // which is the *system* setting — it cannot know about this toggle. Someone
+    // on a dark phone who picks the light theme would otherwise get a black iOS
+    // status bar and a black Android chrome above a near-white page.
+    document
+      .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+      .forEach((m) => m.remove());
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = next === "soft" ? "#e8e0d8" : "#0b0a09";
+    document.head.appendChild(meta);
+
     try {
       localStorage.setItem(KEY, next);
       localStorage.setItem(SEEN_KEY, "1");

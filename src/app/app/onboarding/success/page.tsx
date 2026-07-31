@@ -17,8 +17,10 @@ export default function OnboardingSuccessPage() {
     }
   }, []);
 
+  // dvh, not vh: on mobile Safari `100vh` is the viewport with the URL bar
+  // hidden, so a vh-sized page is taller than what you can actually see.
   return (
-    <div className="flex min-h-screen items-center justify-center bg-obsidian px-5 py-12">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-obsidian px-5 py-12">
       <main className="w-full max-w-xl reveal text-center">
         <div className="mx-auto mb-8 flex h-20 w-20 items-center justify-center rounded-full bg-ember/10 border border-ember/20">
           <svg

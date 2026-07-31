@@ -90,10 +90,16 @@
   }
 
   html {
-    /* Dark-only product. Tells the UA to render form controls and
-       scrollbars dark instead of guessing from the system. */
+    /* Follows the theme rather than being pinned. Left at `dark` while the
+       light theme existed, Safari and Chrome kept painting native controls,
+       scrollbars and the caret for a dark page — dark-on-light select menus and
+       an invisible text cursor in the bright theme. */
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
+  }
+
+  :root[data-theme="soft"] {
+    color-scheme: light;
   }
 
   * {
