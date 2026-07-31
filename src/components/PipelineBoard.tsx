@@ -643,7 +643,7 @@ function PipelineCardItem({
                 onMouseEnter={() => setRatingHover(star)}
                 onClick={() => handleRate(star)}
                 className={`text-lg transition-colors ${
-                  star <= ratingHover ? "text-ember" : "text-muted/30"
+                  star <= ratingHover ? "text-ember" : "text-muted"
                 }`}
               >
                 ★

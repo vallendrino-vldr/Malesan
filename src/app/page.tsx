@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/Logo";
 import { Reveal } from "@/components/Reveal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -63,15 +64,9 @@ export default function Home() {
         {/* The wordmark carries the brand on every screen, so it gets an actual
             treatment: an ember dot that reads as the "heat" in the concept,
             and normal tracking so the letters breathe. */}
-        <span className="flex items-center gap-2">
-          <span
-            aria-hidden="true"
-            className="size-1.5 rounded-full bg-ember shadow-[0_0_10px_2px_color-mix(in_oklab,var(--color-ember)_60%,transparent)]"
-          />
-          <span className="font-display text-[1.0625rem] font-bold tracking-display-sm text-ink">
-            malesan
-          </span>
-        </span>
+        {/* Was a hand-rolled dot plus plain text — a third variant of the
+            wordmark that drifted from the two real ones. One component now. */}
+        <Logo markClass="size-6" size="1.0625rem" />
         {/* The toggle lived only in AppShell, which the landing page does not
             use — so the first screen anyone sees had no way to switch themes,
             and the feature looked like it had not shipped. */}
@@ -246,9 +241,7 @@ export default function Home() {
 
       <footer className="relative z-10 border-t border-hairline">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <span className="font-display text-sm font-bold tracking-display-sm text-ink">
-            malesan
-          </span>
+          <Logo markClass="size-5" size="0.875rem" />
           <span className="text-xs text-muted">
             Buat kreator Indonesia. Gratis 10 kredit tiap hari.
           </span>

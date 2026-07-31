@@ -69,8 +69,8 @@ export function RefreshButton({
   variant = "pill",
 }: {
   label?: string;
-  /** `icon` for the app chrome, `pill` for inside a page. */
-  variant?: "pill" | "icon";
+  /** `icon` for the desktop bar, `chip` for the phone strip, `pill` in a page. */
+  variant?: "pill" | "icon" | "chip";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -111,6 +111,15 @@ export function RefreshButton({
       <path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z" />
     </svg>
   );
+
+  if (variant === "chip") {
+    return (
+      <button onClick={go} disabled={spinning} className="hchip" aria-label="Muat ulang">
+        {spinner}
+        <span className="truncate">{note || "Muat ulang"}</span>
+      </button>
+    );
+  }
 
   if (variant === "icon") {
     return (

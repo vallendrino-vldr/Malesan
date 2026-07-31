@@ -52,21 +52,44 @@ export function LogoMark({ className = "size-7" }: { className?: string }) {
   );
 }
 
+/**
+ * The wordmark.
+ *
+ * "Malesan" means lazy, and the old wordmark was bold display type with tight
+ * tracking — which reads as "engineered", the opposite of the name, and looked
+ * like every other startup logo. Nothing in it was ours.
+ *
+ * So the last letter slouches: it sits low, leans, and carries the ember while
+ * the rest of the word stands up straight. One letter that cannot be bothered
+ * is the entire brand in a single detail. It wakes up when you touch it — the
+ * product's promise as a gesture — then slumps back on its own.
+ *
+ * Styling lives in globals.css under WORDMARK rather than in classes here,
+ * because the interaction needs `:hover`, `:active` and `:focus-visible` on the
+ * parent, which utility classes cannot express on a child.
+ *
+ * `size` is a rem string, not a Tailwind class, so the wordmark scales with the
+ * text-size control like everything else.
+ */
 export function Logo({
   className = "",
   markClass = "size-7",
   showWord = true,
+  size = "1.0625rem",
 }: {
   className?: string;
   markClass?: string;
   showWord?: boolean;
+  size?: string;
 }) {
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`}>
+    <span className={`inline-flex items-center gap-2 ${className}`}>
       <LogoMark className={markClass} />
       {showWord && (
-        <span className="font-display text-[1.0625rem] font-bold tracking-display-sm text-ink">
-          malesan
+        <span className="wordmark" style={{ fontSize: size }}>
+          <span className="wordmark__rest">malesa</span>
+          <span className="wordmark__slouch">n</span>
+          <span aria-hidden="true" className="wordmark__bead" />
         </span>
       )}
     </span>
