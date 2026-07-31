@@ -31,6 +31,16 @@ const LINKS: {
   counted?: boolean;
 }[] = [
   {
+    // First, not last. This is the screen that answers "what do I do now";
+    // every other tab answers "what is the number for X", which is only useful
+    // once you already know where to look.
+    href: "/admin/asisten",
+    label: "Asisten",
+    icon: (
+      <path d="M12 2 9.9 8.1 4 10.2l5.9 2.1L12 18.4l2.1-6.1 5.9-2.1-5.9-2.1L12 2ZM5 16l-.9 2.6L1.5 19.5l2.6.9L5 23l.9-2.6 2.6-.9-2.6-.9L5 16Zm14 0-.7 2-2 .7 2 .7.7 2 .7-2 2-.7-2-.7-.7-2Z" />
+    ),
+  },
+  {
     href: "/admin",
     label: "Ringkasan",
     icon: <path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z" />,
@@ -77,6 +87,37 @@ const LINKS: {
     ),
   },
 ];
+
+type NavLink = (typeof LINKS)[number];
+
+/** The five you reach for; the rest sit behind "Lainnya" on phones. */
+const PRIMARY = LINKS.slice(0, 5);
+const OVERFLOW = LINKS.slice(5);
+
+function NavItem({ link, badge }: { link: NavLink; badge: number }) {
+  return (
+    <Link
+      href={link.href}
+      aria-label={badge > 0 ? `${link.label} — ${badge} nunggu` : link.label}
+      className="group flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-2 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ember"
+    >
+      <span className="relative">
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[19px] fill-current">
+          {link.icon}
+        </svg>
+        {badge > 0 && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-2.5 -top-2 grid min-w-[17px] place-items-center rounded-full bg-ember px-1 font-mono text-micro font-bold leading-[17px] text-obsidian"
+          >
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </span>
+      <span className="text-micro font-semibold leading-none">{link.label}</span>
+    </Link>
+  );
+}
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -176,33 +217,42 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         aria-label="Navigasi admin"
         className="shrink-0 skeu-bar border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
       >
+        {/* Five in the bar, the rest behind one more tap.
+            Eight items across a 375px phone gives each about 47 pixels — enough
+            for the glyph and nothing else, so "Ringkasan" and "Voucher" were
+            being crushed or clipped. Five is the usual ceiling for a bottom bar
+            for exactly this reason. The overflow uses <details>, so it needs no
+            client JavaScript and this layout stays a server component. */}
         <div className="flex">
-          {LINKS.map((l) => {
-            const badge = l.counted ? waiting : 0;
-            return (
-              <Link
-                key={l.href}
-                href={l.href}
-                aria-label={badge > 0 ? `${l.label} — ${badge} nunggu` : l.label}
-                className="group flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 py-2 text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ember"
-              >
-                <span className="relative">
-                  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[19px] fill-current">
+          {PRIMARY.map((l) => (
+            <NavItem key={l.href} link={l} badge={l.counted ? waiting : 0} />
+          ))}
+
+          <details className="group relative flex-1 [&_summary::-webkit-details-marker]:hidden">
+            <summary
+              aria-label="Menu lainnya"
+              className="flex min-h-[52px] cursor-pointer list-none flex-col items-center justify-center gap-1 py-2 text-muted transition-colors duration-[var(--duration-standard)] ease-heat group-open:text-ember"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-[19px] fill-current">
+                <path d="M6 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z" />
+              </svg>
+              <span className="text-micro font-semibold leading-none">Lainnya</span>
+            </summary>
+            <div className="absolute bottom-full right-1 mb-1 w-44 overflow-hidden rounded-xl border border-hairline bg-surface-raised shadow-lg">
+              {OVERFLOW.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="flex min-h-11 items-center gap-2.5 border-b border-hairline px-3.5 text-mini font-semibold text-ink last:border-b-0 hover:bg-surface"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 shrink-0 fill-muted">
                     {l.icon}
                   </svg>
-                  {badge > 0 && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -right-2.5 -top-2 grid min-w-[17px] place-items-center rounded-full bg-ember px-1 font-mono text-micro font-bold leading-[17px] text-obsidian"
-                    >
-                      {badge > 9 ? "9+" : badge}
-                    </span>
-                  )}
-                </span>
-                <span className="text-micro font-semibold leading-none">{l.label}</span>
-              </Link>
-            );
-          })}
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </details>
         </div>
       </nav>
     </div>
