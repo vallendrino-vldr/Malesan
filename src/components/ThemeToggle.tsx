@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { THEME_KEY as KEY, THEME_SEEN_KEY as SEEN_KEY } from "@/lib/boot-scripts";
+import {
+  THEME_KEY as KEY,
+  THEME_SEEN_KEY as SEEN_KEY,
+  THEME_CHROME,
+  THEME_META_MARK,
+} from "@/lib/boot-scripts";
 
 /**
  * Switches between the dark ember theme and the light Soft UI theme.
@@ -27,6 +32,36 @@ import { THEME_KEY as KEY, THEME_SEEN_KEY as SEEN_KEY } from "@/lib/boot-scripts
 
 type Theme = "dark" | "soft";
 
+/**
+ * Repaints the iOS status bar and the Android address bar to match the theme.
+ *
+ * The `theme-color` pair in the layout is keyed on `prefers-color-scheme`, which
+ * is the *system* setting — it cannot know about this toggle. Someone on a dark
+ * phone who picks the light theme would otherwise get a black status bar above a
+ * near-white page.
+ *
+ * This used to delete every theme-color meta and append a fresh one. Two of
+ * those metas are rendered by Next from the `viewport` export, so React owns
+ * them: removing them left React holding orphaned nodes, and the next commit
+ * that unmounted one crashed with "Cannot read properties of null (reading
+ * 'removeChild')". Nothing is removed now — we own exactly one meta, marked with
+ * an attribute, and update it in place. Being the head's first child is what
+ * makes it win: the browser takes the first theme-color whose `media` matches,
+ * and ours has no `media`.
+ */
+function setChromeColor(next: Theme) {
+  let meta = document.head.querySelector<HTMLMetaElement>(
+    `meta[name="theme-color"][${THEME_META_MARK}]`,
+  );
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.setAttribute(THEME_META_MARK, "");
+    document.head.insertBefore(meta, document.head.firstChild);
+  }
+  meta.content = THEME_CHROME[next];
+}
+
 export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip" } = {}) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [hint, setHint] = useState(false);
@@ -35,7 +70,13 @@ export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip
     // The inline script already applied the stored value; read it back so the
     // button renders in the right state rather than assuming a default.
     const current = document.documentElement.getAttribute("data-theme");
-    setTheme(current === "soft" ? "soft" : "dark");
+    const active: Theme = current === "soft" ? "soft" : "dark";
+    setTheme(active);
+    // Re-assert the chrome colour on mount, not only on click. A client-side
+    // navigation re-renders the head from the new route's metadata, which drops
+    // our override — so after moving between pages the status bar fell back to
+    // the system preference while the page stayed on the chosen theme.
+    setChromeColor(active);
     try {
       setHint(!localStorage.getItem(SEEN_KEY));
     } catch {
@@ -50,17 +91,7 @@ export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip
     if (next === "soft") document.documentElement.setAttribute("data-theme", "soft");
     else document.documentElement.removeAttribute("data-theme");
 
-    // The `theme-color` pair in the layout is keyed on `prefers-color-scheme`,
-    // which is the *system* setting — it cannot know about this toggle. Someone
-    // on a dark phone who picks the light theme would otherwise get a black iOS
-    // status bar and a black Android chrome above a near-white page.
-    document
-      .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
-      .forEach((m) => m.remove());
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = next === "soft" ? "#e8e0d8" : "#0b0a09";
-    document.head.appendChild(meta);
+    setChromeColor(next);
 
     try {
       localStorage.setItem(KEY, next);
