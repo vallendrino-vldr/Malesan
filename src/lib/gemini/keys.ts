@@ -7,9 +7,9 @@ import "server-only";
  * makes that a build error rather than a code review question — importing this
  * from a client component fails the build.
  *
- * Free-tier quota is enforced per Google Cloud **project**, not per key. Two
- * keys only widen the pool if they come from two separate projects; two keys in
- * one project share one quota and this rotation buys nothing. See DECISIONS.md.
+ * Free-tier quota is enforced per Google Cloud **project**, not per key. Keys
+ * only widen the pool if they come from separate projects; two keys in one
+ * project share one quota and this rotation buys nothing. See DECISIONS.md.
  */
 
 export type PoolKey = {
@@ -18,21 +18,34 @@ export type PoolKey = {
   value: string;
 };
 
+/**
+ * How many `GEMINI_API_KEY_n` slots are looked at.
+ *
+ * Adding a key must be an env change, not a code change — the same reasoning as
+ * the model ids in AGENTS.md §5. The ceiling only exists so this is a bounded
+ * loop rather than an open scan of `process.env`.
+ */
+const MAX_KEY_SLOTS = 10;
+
 /** A key that returned 429 is rested rather than retried into the same wall. */
 const COOLDOWN_MS = 60_000;
 const cooldownUntil = new Map<number, number>();
 
 export function getPool(): PoolKey[] {
   const pool: PoolKey[] = [];
-  if (process.env.GEMINI_API_KEY_1) {
-    pool.push({ index: 1, value: process.env.GEMINI_API_KEY_1 });
+
+  // A gap is allowed: setting slots 1 and 3 but not 2 yields indices 1 and 3.
+  // The index is what `gemini_usage.key_index` is keyed on, so it must stay
+  // pinned to the slot — renumbering to close a gap would silently re-attribute
+  // every historical row for that key to a different one.
+  for (let slot = 1; slot <= MAX_KEY_SLOTS; slot++) {
+    const value = process.env[`GEMINI_API_KEY_${slot}`];
+    if (value) pool.push({ index: slot, value });
   }
-  if (process.env.GEMINI_API_KEY_2) {
-    pool.push({ index: 2, value: process.env.GEMINI_API_KEY_2 });
-  }
+
   if (pool.length === 0) {
     throw new Error(
-      "No Gemini keys configured. Set GEMINI_API_KEY_1 (and ideally GEMINI_API_KEY_2, from a different Google Cloud project) in .env.local.",
+      "No Gemini keys configured. Set GEMINI_API_KEY_1 in .env.local, and ideally GEMINI_API_KEY_2 and GEMINI_API_KEY_3, each from a different Google Cloud project.",
     );
   }
   return pool;

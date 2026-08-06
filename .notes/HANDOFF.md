@@ -56,7 +56,10 @@ Pipeline: Ide → Draft (has hook) → Siap (script done) → Posted.
 - **Next.js 16 App Router + Turbopack**, React 19, Tailwind v4.
 - **Supabase** project `hjdctzrvnhvarxoxixrn` (`ap-southeast-1`).
   The other project `axqhiygtzymhoqkkfyvc` is **duitkitav2, not this one.**
-- **Gemini** through 2 keys with rotation + backoff.
+- **Gemini** through a key pool with rotation + backoff. Slots `GEMINI_API_KEY_1`
+  … `GEMINI_API_KEY_10` are read; whichever are set form the pool. Three are
+  provisioned. A slot number is what `gemini_usage.key_index` records against, so
+  a key that has served traffic must never be moved to a different slot.
 - Vercel pinned to `sin1` in `vercel.json` — Supabase is in Singapore; without
   the pin every request crosses the Pacific.
 
@@ -90,7 +93,8 @@ All in **`.env.local`** (gitignored). **Never write a value into any file, any
 commit, or the chat.** Variable names only:
 ```
 NEXT_PUBLIC_SUPABASE_URL      NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY     GEMINI_API_KEY_1  GEMINI_API_KEY_2
+SUPABASE_SERVICE_ROLE_KEY
+GEMINI_API_KEY_1  GEMINI_API_KEY_2  GEMINI_API_KEY_3   (slots 1..10 are read)
 GEMINI_MODEL_FREE             GEMINI_MODEL_PRO
 GEMINI_DAILY_CAP_PER_KEY      CRON_SECRET       ENCRYPTION_KEY
 DEV_LOGIN_EMAIL               DEV_LOGIN_SECRET
