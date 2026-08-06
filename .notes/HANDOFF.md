@@ -423,6 +423,72 @@ explanations share one sentence frame.
 
 ---
 
+## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
+
+The owner asked on 2026-08-06 for "fitur keren di dashboard user supaya jadi
+nomer 1 di dunia". These are proposals, not work in progress. Nothing here is
+built. Ranked by the only question that matters: **what can Malesan do that a
+creator cannot get free from ChatGPT in thirty seconds?**
+
+### P1 — Close the rating loop. Highest value, lowest cost, already half built.
+
+`generations.performance_rating` is collected today and **read by nothing**. The
+control shipped, ratings are landing, and every one of them is discarded.
+
+Feed the user's own top-rated generations back into their prompt as few-shot
+examples: *"hook yang dulu tembus di akun lo bentuknya kayak gini"*. A creator's
+personal hit history is the one asset ChatGPT structurally cannot hold, and it
+compounds — the product gets better the longer they stay, which is also the
+retention argument.
+
+Cost: one query in the prompt builder plus a block in `CRAFT_RULES`. Roughly
+40–60 lines. No schema change; the column and the data exist.
+
+Risk: with few ratings it will over-fit to two or three examples. Gate it behind
+a minimum (say 5 rated generations) and fall back to today's behaviour below
+that.
+
+### P2 — "Kenapa ini bakal jalan" on every idea.
+
+Each generated idea currently arrives as an assertion. Attach one line of
+reasoning tied to the actual mechanic — which drop-off point it survives, why
+the hook earns the second second. `PLATFORM_MECHANICS` already encodes these.
+
+This is the difference between a tool that gives answers and one that teaches,
+and taught users defend the subscription internally. It also makes a weak idea
+visibly weak, which builds trust faster than a good idea does.
+
+Cost: a field in the response schema and a paragraph in the prompt. ~20 lines.
+Raises token spend per generation slightly — measure before shipping wide.
+
+### P3 — Pipeline nudges: "3 ide nyangkut di Draft lima hari".
+
+`pipeline_cards` has `status` and `created_at`. Nothing notices when a card
+stops moving. A creator's real failure mode is not "no ideas", it is ideas that
+never ship — and the product can already see that happening.
+
+Cost: one query plus a card on the dashboard. ~50 lines. No schema change.
+Deliberately not a notification system; a line on the dashboard is the whole
+feature.
+
+### P4 — Streak, but honest.
+
+`profiles.last_refill_date` already trains a daily return. A streak counter on
+*posted* cards — not logins — would reward the behaviour the product exists to
+cause. A login streak rewards opening an app, which is vanity.
+
+Cost: one derived query. ~30 lines. Only worth doing if P3 ships first; a streak
+with nothing to be consistent about is decoration.
+
+### Not proposed, and why
+
+No gamification beyond P4, no social feed, no template marketplace. Each adds a
+surface to maintain before the core loop — idea → posted — is proven to retain
+anyone. §8.4 still applies: `CreditNudge` has no analytics, so nobody knows
+whether the product converts at all yet. **Numbers before features.**
+
+---
+
 ## 10. Blockers that need the human, not code
 
 - **A GitHub personal access token is embedded in the git remote URL.** `git
