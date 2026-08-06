@@ -4,7 +4,7 @@
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-07-31**, after commit `5a183a1`.
+Last updated: **2026-08-06**, after commit `31d240d`.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -149,6 +149,7 @@ become `DEV_LOGIN_EMAIL`. Safe to keep; deleting the file is also fine.
 | **A `<span>` cannot take focus**, so `:focus-visible` on one never fires. | The wordmark's wake-up ignored keyboard users. Key focus off the wrapping `<a>`/`<button>`. |
 | **A service worker fetch handler runs for every request**, even ones it passes through — and an idle worker must boot first. | Return without calling `respondWith` for anything you are not actually handling. |
 | **Renaming the cache is what applies a strategy change.** Old entries survive on their own. | v1 had cached HTML; the offline fallback would have served a stale `/`. |
+| **The service worker caches `/_next/static` cache-first — in development too.** | Cost most of a session. A CSS change was correct on disk, `next build` was clean, `.next` was deleted and the dev server restarted twice, and the browser still served the old stylesheet: `.rail` rules that no longer existed anywhere in the repo. Ctrl+Shift+R does not help — the worker answers before the network does. Clear it before concluding a style change "did not apply": `navigator.serviceWorker.getRegistrations()` → `unregister()`, then `caches.keys()` → `caches.delete()`. |
 | **Hiding controls behind a menu hides the features.** | The "⋯" header menu meant nobody discovered the light theme, the reload, or the tutorial. Named chips instead. |
 
 ---
@@ -193,9 +194,57 @@ Move these constants back into the components and the bug returns, disguised as
 
 ---
 
-## 7. Current state (2026-07-31)
+## 7. Current state (2026-08-06)
 
-**Done and verified:**
+### Session of 2026-08-06
+
+The owner reported that a previous session had run out of quota and been
+continued by an "antigravity gemini" agent, and expected to find damage.
+**There is none — that agent never touched this repo.** `git reflog` ends at
+`f9f586a` with no resets, no stashes, no commits by anyone else; the working
+tree was clean and identical to `origin/main`; `next build`, `tsc --noEmit` and
+the 29-route static generation all passed before anything was changed. The
+9 lint errors are the pre-existing ones already listed in §11. Do not re-audit
+for gemini damage — this has been checked.
+
+**Shipped and verified in a browser this session:**
+- Gemini key pool reads `GEMINI_API_KEY_1..10` instead of two hardcoded ifs.
+  `GEMINI_API_KEY_3` slot exists in `.env.local` and is **empty** — the third
+  key still has to be pasted in, and again in Vercel's env for production.
+- The trends cron went through the shared client for the first time: it used to
+  call `fetch` with `GEMINI_API_KEY_1` directly (no rotation, no backoff,
+  invisible to the quota guard) and carried a hardcoded `gemini-2.5-flash`
+  fallback. It also deactivated live trends *before* generating, so a failure
+  left the product with zero trends, and it discarded its insert error.
+- Magazine grid in `AppShell`, measured at 1280px: `240px | 800px | 240px`,
+  only `main` scrolls, document does not scroll. Rails are `lg`-and-up (see the
+  commit for the measurement that forced that).
+- Header chips: 16px radius, resting surface + shadow, gradient hover.
+  `--header-surface` is `#f4f5f7` in the light theme only.
+- `backdrop-blur-xl` removed from header and tab bar — it was blurring a solid
+  background, since nothing ever renders behind either bar.
+
+**Verified how:** a throwaway `src/app/shellcheck/page.tsx` rendering `AppShell`
+with fake props, so the layout could be seen without a signed-in session and
+without putting `DEV_LOGIN_SECRET` anywhere. Deleted before committing. That
+trick is worth repeating.
+
+**Not done, and why — read before assuming these were skipped:**
+- **The owner referred to an attached screenshot for the header design. No image
+  came through.** Everything implemented is from the written spec
+  (`grid-template-areas`, 16px radius, `linear-gradient` hover, `#F4F5F7`, soft
+  shadow). "Persis kayak gambar" is unverifiable until the image arrives.
+- Where the 16px radius belongs was a judgement call: it is on the chips, not on
+  the header bar, because a 16px radius on a full-bleed bar rounds its corners
+  against the screen edge. If the screenshot shows a floating inset header
+  instead, that is a small change to `.area-header`.
+- The rails have no content. They are wired (`railLeft` / `railRight` props) and
+  measured, but nothing passes them yet, so in the real app the grid currently
+  renders as the same header/main/footer stack as before.
+- Core Web Vitals: only the `backdrop-blur` removal is real work. No Lighthouse
+  run, no field data, no bundle analysis. Do not report this as done.
+
+**Done and verified (earlier sessions):**
 - Contrast + type: 0 nodes below 4.5:1 across 13 routes × 2 themes, smallest
   rendered text 12px, all sizes now `rem`.
 - Tutorial sheet portalled; version-aware refresh in both shells; top-up page has
@@ -307,6 +356,23 @@ explanations share one sentence frame.
 ---
 
 ## 10. Blockers that need the human, not code
+
+- **A GitHub personal access token is embedded in the git remote URL.** `git
+  remote -v` prints it in full, so it lands in any pasted terminal output, any
+  screen share and any agent transcript. It is a classic `ghp_` token, which
+  carries whatever scopes it was created with — for this account that is at
+  least full control of a repo that takes money. `.git/config` is not committed,
+  so this is not public, but it is one careless paste away from being so.
+  **Revoke it at github.com/settings/tokens and re-point the remote at the plain
+  URL**, letting Git Credential Manager hold the credential:
+  `git remote set-url origin https://github.com/vallendrino-vldr/Malesan.git`.
+  Not done here — rotating someone's credential without asking would have
+  broken pushing mid-session.
+- **`GEMINI_API_KEY_3` is an empty slot.** The code reads it; there is no value
+  in it. It also has to be added to Vercel's environment variables, or
+  production keeps running on two keys. And it only widens real capacity if the
+  key came from a *third* Google Cloud project — quota is per project, not per
+  key (§3).
 
 - **Google sign-in on the deployment.** Historically landed on
   `http://localhost:3000/?code=...`. The code is correct — `GoogleSignInButton`
