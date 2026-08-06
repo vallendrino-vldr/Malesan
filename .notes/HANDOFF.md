@@ -271,8 +271,46 @@ trick is worth repeating.
 - The rails have no content. They are wired (`railLeft` / `railRight` props) and
   measured, but nothing passes them yet, so in the real app the grid currently
   renders as the same header/main/footer stack as before.
-- Core Web Vitals: only the `backdrop-blur` removal is real work. No Lighthouse
-  run, no field data, no bundle analysis. Do not report this as done.
+### Core Web Vitals — measured 2026-08-06, and the answer is "leave it alone"
+
+Landing page, **production build** (`npm start`), service worker cleared first so
+it could not serve a stale bundle:
+
+```
+TTFB 41ms · DOMContentLoaded 78ms · load 189ms
+LCP  248ms  (element: the <h1>, i.e. text — not an image)
+CLS  0
+long tasks (>50ms): none
+transfer 680KB = 483KB script (8 chunks) + 197KB css/fonts
+```
+
+All three vitals are inside "Good" with two orders of magnitude of headroom.
+**There is no Core Web Vitals problem on this page**, and time spent optimising
+it is time not spent on something that matters. Specifically already correct:
+
+- Fonts are `next/font/google`, self-hosted, `display: swap`, latin subset,
+  weights pinned. That is why CLS is 0 — Next generates the fallback metric
+  overrides automatically. Do not "optimise" this; it is already the fix.
+- `framer-motion` is imported only by `PipelineBoard` and the topup page, so it
+  is code-split away from the landing page. Confirmed by grep, not assumed.
+
+Caveats before anyone quotes those numbers: localhost has no network, so TTFB
+and transfer time are not what an Indonesian phone on 4G sees. The figure that
+would still bite there is the 680KB, and the honest lever on that is Next/React
+baseline, not anything this repo is doing wrong.
+
+**The real perceived-speed problem is not page load, it is generation.** §7
+records the measurement: Gemini returns one burst at ~5.8s, it does not stream
+incrementally at these sizes. DESIGN.md §5 calls perceived speed the most
+important decision in the product. A user waiting 6 seconds for ideas will not
+notice 200ms of LCP either way. If someone is told to "make it faster", that is
+where to look.
+
+**Not attempted, deliberately:** Speculation Rules prerendering (the skill's
+main remaining suggestion). A naive `href_matches: "/*"` would prerender
+`/auth/signout` on hover, which signs the user out. It needs an explicit
+allowlist of safe destinations, and that is a change worth doing carefully
+rather than in passing.
 
 **Done and verified (earlier sessions):**
 - Contrast + type: 0 nodes below 4.5:1 across 13 routes × 2 themes, smallest
