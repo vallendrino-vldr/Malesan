@@ -61,3 +61,13 @@ graphify-out/
 
 # Working notes — process docs, not product. Kept local.
 .notes/
+
+# Agent tooling installed per-machine by `npx skills add`. These are the
+# operator's toolbox, not the product — they are re-installable, they are large
+# (a few hundred files), and committing them buries a real diff. `.claude/` is
+# excluded except launch.json, which is project config and was already tracked.
+.agents/
+.hermes/
+skills-lock.json
+.claude/*
+!.claude/launch.json

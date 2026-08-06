@@ -101,7 +101,7 @@ Violating any of these is a critical defect.
 | Motion | Framer Motion |
 | Backend / DB / Auth | Supabase (free tier) |
 | Auth method | Google OAuth **only** — no email/password, no magic links (anti-abuse decision) |
-| AI | Google Gemini API, free tier, two keys from **two separate Google Cloud projects** |
+| AI | Google Gemini API, free tier, keys from **separate Google Cloud projects** (slots `GEMINI_API_KEY_1..10`, three in use) |
 | Deploy | Vercel |
 | Cron | Vercel Cron (or `pg_cron` in Supabase if Vercel Hobby limits bite) |
 
@@ -113,6 +113,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=      # server only, never exposed
 GEMINI_API_KEY_1=               # project A
 GEMINI_API_KEY_2=               # project B
+GEMINI_API_KEY_3=               # project C
 GEMINI_MODEL_FREE=              # e.g. the current free Flash-Lite model id
 GEMINI_MODEL_PRO=               # e.g. the current free Flash model id
 CRON_SECRET=
@@ -123,9 +124,11 @@ Anything prefixed `NEXT_PUBLIC_` is world-readable. Nothing secret may ever carr
 
 ### Platform constraints — build around these, do not rediscover them
 
-- Gemini free-tier quota is enforced **per Google Cloud project, not per API key**. Two keys
-  only help because they come from two separate projects. Adding more keys to the same
-  project buys nothing.
+- Gemini free-tier quota is enforced **per Google Cloud project, not per API key**. Keys only
+  help because they come from separate projects. Adding more keys to the same project buys
+  nothing — it adds rotation targets that share one ceiling, so the pool looks bigger to the
+  quota guard while the real capacity is unchanged. Before adding a key, confirm which project
+  issued it.
 - Gemini daily quota resets at **midnight Pacific ≈ 14:00 WIB**, not local midnight.
   Indonesian prime time (19:00–23:00 WIB) therefore runs on partially-consumed quota.
   Implement a **quota guard**: below 20% pool remaining, serve paid and BYOK users only, and
