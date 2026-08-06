@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { GeminiPoolPanel } from "@/components/GeminiPoolPanel";
+import { getPoolReport } from "@/lib/gemini/pool-report";
 
 /**
  * Admin overview.
@@ -14,7 +16,6 @@ import { LiveRefresh } from "@/components/LiveRefresh";
  * gives `audit_log` its first surface.
  */
 
-type QuotaRow = { key_index: number; requests: number; errors: number };
 type AuditRow = {
   id: number;
   action: string;
@@ -22,8 +23,6 @@ type AuditRow = {
   metadata: Record<string, unknown> | null;
   created_at: string;
 };
-
-const FREE_TIER_DAILY = 1500;
 
 const ACTION_LABEL: Record<string, string> = {
   "user.ban": "Ban user",
@@ -34,6 +33,7 @@ const ACTION_LABEL: Record<string, string> = {
   "user.revoke_admin": "Cabut admin",
   "user.delete": "Hapus user",
   "credits.grant": "Tambah kredit",
+  "gemini.probe_keys": "Tes key Gemini",
 };
 
 function timeAgo(iso: string) {
@@ -48,12 +48,16 @@ function timeAgo(iso: string) {
 export default async function AdminDashboardPage() {
   const supabase = createServiceRoleClient();
 
-  const [users, pendingTopups, generations, trends, usageRes, auditRes] = await Promise.all([
+  const [users, pendingTopups, generations, trends, poolReport, auditRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("topups").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("generations").select("*", { count: "exact", head: true }),
     supabase.from("trends").select("*", { count: "exact", head: true }).eq("is_active", true),
-    supabase.rpc("gemini_pool_used_today"),
+    // Roster comes from the environment, usage is joined onto it — so a key
+    // that has never been called still gets a row. The old panel rendered
+    // straight from the usage table and a configured-but-dead key was simply
+    // absent, which is the one thing an operator needs to be able to see.
+    getPoolReport(),
     supabase
       .from("audit_log")
       .select("id, action, target_id, metadata, created_at")
@@ -61,7 +65,6 @@ export default async function AdminDashboardPage() {
       .limit(8),
   ]);
 
-  const usage = (usageRes.data as QuotaRow[] | null) ?? [];
   const audit = (auditRes.data as AuditRow[] | null) ?? [];
 
   return (
@@ -87,40 +90,7 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <section>
-        <h2 className="eyebrow mb-2 text-muted">Kuota Gemini hari ini</h2>
-        {usage.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
-            Belum ada pemakaian hari ini.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {usage.map((u) => {
-              const pct = Math.min(100, Math.round((u.requests / FREE_TIER_DAILY) * 100));
-              return (
-                <div key={u.key_index} className="rounded-xl border border-hairline bg-surface p-3">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-semibold text-ink">Key {u.key_index}</span>
-                    <span className="font-mono text-xs text-muted">
-                      <span className="text-ember">{u.requests}</span> / {FREE_TIER_DAILY}
-                    </span>
-                  </div>
-                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-obsidian">
-                    <div
-                      className={`h-full ${pct > 85 ? "bg-danger" : "bg-ember"}`}
-                      style={{ width: `${Math.max(pct, 2)}%` }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-micro text-muted">
-                    {pct}% kepakai
-                    {u.errors > 0 && <span className="text-danger"> · {u.errors} error</span>}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <GeminiPoolPanel report={poolReport} />
 
       <section>
         <h2 className="eyebrow mb-2 text-muted">Aktivitas admin</h2>
