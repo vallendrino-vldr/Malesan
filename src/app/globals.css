@@ -795,18 +795,50 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  border-radius: 0.5rem;
+  border-radius: var(--header-radius);
   padding-inline: 0.5rem;
   font-size: var(--text-micro);
   font-weight: 600;
   color: var(--color-muted);
   cursor: pointer;
+  /* A resting surface and shadow, so a chip reads as an object before it is
+     touched. It used to be transparent until hover, which meant on a phone —
+     where there is no hover — it never read as a control at all. */
+  background-color: var(--header-surface);
+  box-shadow: var(--header-shadow);
   transition: color var(--duration-standard) var(--ease-heat),
-    background-color var(--duration-standard) var(--ease-heat);
+    background-image var(--duration-standard) var(--ease-heat),
+    box-shadow var(--duration-standard) var(--ease-heat);
 }
-.hchip:hover { color: var(--color-ink); background-color: var(--color-surface); }
-.hchip:active { background-color: var(--color-surface-raised); }
+
+/* One shallow stop, not a multi-stop gradient. The skeuomorphic layer above
+   excludes deep gradients because they cost paint and eat contrast; 6% ink is
+   the same order as `.skeu`'s own gloss and survives the text-contrast floor. */
+.hchip:hover,
+.hchip:focus-visible {
+  color: var(--color-ink);
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-ink) 6%, transparent) 0%,
+    transparent 100%
+  );
+  box-shadow: var(--header-shadow), inset 0 1px 0 0 var(--skeu-gloss);
+}
+
+.hchip:active {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklab, #000 10%, transparent) 0%,
+    transparent 100%
+  );
+  box-shadow: inset 0 2px 4px 0 var(--skeu-shade-soft);
+}
+
 .hchip svg { flex: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hchip { transition: none; }
+}
 
 /* ===========================================================================
    WORDMARK — "malesan"
@@ -999,3 +1031,127 @@ button:active .wordmark__slouch,
 :root[data-text="md"] { font-size: 16px; }
 :root[data-text="lg"] { font-size: 17.5px; }
 :root[data-text="xl"] { font-size: 19px; }
+
+/* ===========================================================================
+   MAGAZINE GRID  —  the app shell's layout system
+   ===========================================================================
+   Mobile first: one column, in source order. The rails come after `main`
+   because on a phone a sidebar is not a sidebar, it is a section further down
+   the page — putting them beside `main` at 360px would give both 160px and
+   make neither readable.
+
+   The rail tracks are `auto`, not a fixed width. An area with nothing in it
+   contributes no size, so the track collapses to zero and the layout is
+   identical to a plain header/main/footer stack. That is what lets a rail be
+   optional without a second set of grid definitions or a `:has()` fallback —
+   the rails size themselves from `.rail`'s width below.
+
+   The shell stays `100dvh` with `overflow: hidden` and exactly one scrolling
+   region (`main`). That is deliberate and predates this grid: it is what stops
+   the app feeling like a web page on a phone, and a magazine layout is a
+   reason to change the column structure, not the scroll model.
+--------------------------------------------------------------------------- */
+
+.magazine {
+  display: grid;
+  block-size: 100dvh;
+  overflow: hidden;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "header"
+    "nav"
+    "main"
+    "left"
+    "right"
+    "footer";
+  /* Only `main` flexes. Everything else is content-sized, so the chrome cannot
+     be squeezed out of view by a long page. */
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto auto;
+}
+
+.area-header { grid-area: header; }
+.area-nav    { grid-area: nav; }
+.area-main   { grid-area: main; min-block-size: 0; overflow-y: auto; overscroll-behavior: contain; }
+.area-left   { grid-area: left; }
+.area-right  { grid-area: right; }
+.area-footer { grid-area: footer; }
+
+/* Rails are desktop-only, and that is a consequence of the shell being a fixed
+   height rather than a preference.
+
+   Measured on the layout harness at 497px: with the rails rendered as `auto`
+   rows below `main`, they took roughly 300px of the 918px viewport, and since
+   `main` is the only scrolling region that height came straight out of it —
+   seven rows of content visible instead of the full screen. In a page that
+   scrolls, a stacked rail flows below the fold and costs nothing. In a shell
+   pinned to 100dvh, "below main" means "instead of main".
+
+   The single-column area order above is kept as specified, so the structure is
+   already correct if this shell ever becomes a scrolling page. Until then the
+   areas are simply empty below `lg`, and an empty area sizes to nothing. */
+.area-left,
+.area-right {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .magazine {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "header header header"
+      "nav    nav    nav"
+      "left   main   right"
+      "footer footer footer";
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  /* `auto` tracks plus an explicit width: a rail that is not rendered leaves
+     its track at zero, so the two-rail, one-rail and no-rail layouts all come
+     from one grid definition. */
+  .area-left,
+  .area-right {
+    display: block;
+    inline-size: 15rem;
+    min-block-size: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+
+/* ===========================================================================
+   PREMIUM HEADER
+   ===========================================================================
+   `--header-surface` is a token, not a literal, because this product ships two
+   themes and dark is the default. The requested #F4F5F7 is the light-theme
+   value; painting it in both would put a cool grey slab on a warm obsidian app.
+
+   One caveat worth knowing: #F4F5F7 is a *cool* grey and the rest of the light
+   theme is warm (surface #f2ece6) for the reason DESIGN.md §2 gives — a cool
+   neutral under the amber accent reads as a clash. It is used here as asked;
+   --header-surface is the single place to warm it if it looks off in place.
+
+   The hover gradient is deliberately shallow. The skeuomorphic layer above
+   excludes heavy multi-stop gradients because they cost paint time and eat
+   contrast; this is one stop of ~6% ink over the existing surface, which is the
+   same order as `.skeu`'s own gloss.
+--------------------------------------------------------------------------- */
+
+:root {
+  --header-surface: var(--color-surface);
+  --header-radius: 16px;
+  --header-shadow:
+    0 1px 2px 0 color-mix(in oklab, #000 28%, transparent),
+    0 8px 24px -12px color-mix(in oklab, #000 45%, transparent);
+}
+
+:root[data-theme="soft"] {
+  --header-surface: #f4f5f7;
+  --header-shadow:
+    0 1px 2px 0 color-mix(in oklab, var(--soft-shade) 30%, transparent),
+    0 8px 24px -12px color-mix(in oklab, var(--soft-shade) 55%, transparent);
+}
+
+/* The controls that consume these tokens are `.hchip`, defined above with the
+   rest of the header. A 16px radius belongs on what a pointer actually lands
+   on — putting it on the full-bleed bar would round corners against the screen
+   edge, where there is nothing for them to round away from. */
