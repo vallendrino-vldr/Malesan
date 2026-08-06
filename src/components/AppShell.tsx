@@ -85,6 +85,8 @@ export function AppShell({
   avatarUrl,
   initial,
   panels,
+  railLeft,
+  railRight,
   children,
 }: {
   active: TabKey;
@@ -100,6 +102,17 @@ export function AppShell({
   initial: string;
   /** One node per tab. Omit to render `children` instead (module sub-views). */
   panels?: Partial<Record<TabKey, ReactNode>>;
+  /**
+   * Magazine rails. Absent by default, and absence is the point: an unrendered
+   * grid area contributes no width, so the layout collapses to the plain
+   * header/main/footer stack rather than reserving an empty column.
+   *
+   * Desktop only. The shell is pinned to 100dvh with `main` as the sole
+   * scrolling region, so below `lg` a stacked rail does not flow below the fold
+   * — it takes its height out of `main`. See the note in globals.css.
+   */
+  railLeft?: ReactNode;
+  railRight?: ReactNode;
   children?: ReactNode;
 }) {
   const [current, setCurrent] = useState<TabKey>(active);
@@ -117,9 +130,16 @@ export function AppShell({
   };
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-obsidian">
+    <div className="magazine w-full bg-obsidian">
       {/* ---------- header ---------- */}
-      <header className="relative z-20 shrink-0 border-b border-hairline/70 bg-obsidian/85 backdrop-blur-xl">
+      {/* `backdrop-blur-xl` used to sit here and on the tab bar. Nothing ever
+          renders behind either of them — `main` is a sibling with its own
+          scroll box, so content scrolls *inside* main, never under the chrome.
+          The filter was blurring the solid page background: a full-width
+          compositing layer repainted on every scroll frame for no visible
+          effect. `/85` over the same colour was likewise indistinguishable from
+          solid. Both are gone; the bars look identical. */}
+      <header className="area-header relative z-20 border-b border-hairline/70 bg-obsidian">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
           {/* The name is always here now.
               It was dropped on phones to win back 78px, and that was the wrong
@@ -216,17 +236,29 @@ export function AppShell({
             had a light theme, a reload, or an explanation of itself. A row of
             named chips costs about 34px of height and removes the guessing.
             Labels, not icons: an icon is a riddle at this size. */}
-        <div className="flex items-stretch gap-1 border-t border-hairline/60 px-3 pb-1.5 sm:hidden">
-          <ThemeToggle variant="chip" />
-          <TutorialSheet variant="chip" />
-          <RefreshButton variant="chip" />
-        </div>
       </header>
+
+      {/* ---------- phones: the same three controls, spelled out ----------
+          A "⋯" button hid these behind a tap nobody had a reason to make, so
+          somebody could use the product for weeks without ever learning it
+          had a light theme, a reload, or an explanation of itself. A row of
+          named chips costs about 34px of height and removes the guessing.
+          Labels, not icons: an icon is a riddle at this size.
+
+          It is its own grid area rather than a strip inside the header. Same
+          position on screen, but the header stops being two unrelated rows
+          glued together, and the row can be given to something else on desktop
+          without unpicking the header. */}
+      <div className="area-nav flex items-stretch gap-1 border-b border-hairline/60 bg-obsidian px-3 pb-1.5 sm:hidden">
+        <ThemeToggle variant="chip" />
+        <TutorialSheet variant="chip" />
+        <RefreshButton variant="chip" />
+      </div>
 
       {/* ---------- content: the only scrollable region ---------- */}
       {/* The pipeline is a four-column board; 3xl leaves each column ~170px,
           which is where the desktop layout collapsed into one word per line. */}
-      <main className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <main className="area-main relative">
         <div
           className={`mx-auto w-full px-4 py-4 ${
             shown === "pipeline" ? "max-w-[1600px]" : "max-w-3xl"
@@ -245,10 +277,20 @@ export function AppShell({
         </div>
       </main>
 
+      {/* ---------- magazine rails ----------
+          Nothing renders unless a rail is passed, so the grid tracks stay
+          collapsed and the shell is byte-for-byte the old stack until one is. */}
+      {railLeft && (
+        <aside className="area-left border-r border-hairline/60 px-4 py-4">{railLeft}</aside>
+      )}
+      {railRight && (
+        <aside className="area-right border-l border-hairline/60 px-4 py-4">{railRight}</aside>
+      )}
+
       {/* ---------- bottom tab bar ---------- */}
       <nav
         aria-label="Navigasi utama"
-        className="relative z-20 shrink-0 skeu-bar border-t border-hairline/70 bg-obsidian/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl"
+        className="area-footer relative z-20 skeu-bar border-t border-hairline/70 bg-obsidian pb-[env(safe-area-inset-bottom)]"
       >
         <div className="mx-auto flex w-full max-w-3xl">
           {TABS.map((t) => {
