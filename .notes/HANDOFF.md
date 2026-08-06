@@ -1,10 +1,40 @@
 # HANDOFF — Malesan
 
+## MULAI DARI SINI — read this block, then stop and decide
+
+If you read nothing else, read these twenty lines. They exist because the owner
+pays per token and has run out mid-build; a session that spends its context
+rediscovering the repo produces nothing.
+
+**What this is.** Production Next.js 16 + Supabase + Gemini app for Indonesian
+creators. Live on Vercel, auto-deploys from `main`, takes real money.
+
+**Is it healthy right now?** Yes. `next build` passes, `tsc --noEmit` passes,
+29 routes generate. `npm run lint` reports **11 problems (9 errors, 2 warnings)**
+— that number is the known baseline listed in §11, not a regression. If you see
+11, nothing is broken. If you see more, you added it.
+
+**Do NOT re-audit for "damage from the antigravity gemini session".** It was
+checked on 2026-08-06 against `git reflog`: that agent never touched this repo.
+
+**Where to go next:** §8 is the outstanding work, §10 is what is blocked on the
+owner rather than on code. Pick from §8 unless the owner says otherwise.
+
+**Before you debug anything, read §4.** It is a table of traps that have already
+cost hours each — `supabase.rpc()` not throwing, `backdrop-filter` breaking
+`position: fixed`, the service worker serving stale CSS *in development*. Most
+strange behaviour in this repo has already happened once.
+
+**Before you finish:** update this file. `AGENTS.md` §2 rule 7 makes it
+mandatory, and it is the only reason the next session starts fast.
+
+---
+
 **Read this whole file before touching anything.** Its only job is to let a new
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-06**, after commit `31d240d`.
+Last updated: **2026-08-06**, after commit `d66f242`.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -368,11 +398,18 @@ explanations share one sentence frame.
   `git remote set-url origin https://github.com/vallendrino-vldr/Malesan.git`.
   Not done here — rotating someone's credential without asking would have
   broken pushing mid-session.
-- **`GEMINI_API_KEY_3` is an empty slot.** The code reads it; there is no value
-  in it. It also has to be added to Vercel's environment variables, or
-  production keeps running on two keys. And it only widens real capacity if the
-  key came from a *third* Google Cloud project — quota is per project, not per
-  key (§3).
+- **`GEMINI_API_KEY_3` is filled locally and PROBED WORKING (200), but it is not
+  in Vercel yet.** Until it is added there, production still runs on two keys.
+  And it only widens real capacity if the key came from a *third* Google Cloud
+  project — quota is per project, not per key (§3). Whether it does is unknown;
+  the owner has not said which project issued it.
+
+  **Gemini API keys are now `AQ.`-prefixed, 53 characters — not `AIzaSy…`.**
+  All three of this project's keys have that shape and all three return 200. A
+  previous session refused the owner's key on the grounds that the format looked
+  wrong, from memory, and was simply mistaken. Do not judge a credential's
+  format from training data; probe it. The admin panel now has a button for
+  exactly this.
 
 - **Google sign-in on the deployment.** Historically landed on
   `http://localhost:3000/?code=...`. The code is correct — `GoogleSignInButton`
