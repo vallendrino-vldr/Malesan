@@ -3,6 +3,7 @@
 import { createServiceRoleClient, createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { invalidateConfigCache } from "@/lib/config";
+import { probePool } from "@/lib/gemini/pool-report";
 
 async function verifyAdmin() {
   const supabase = await createClient();
@@ -485,6 +486,25 @@ export async function uploadQrisImage(form: FormData) {
   revalidatePath("/admin/config");
   revalidatePath("/app/topup");
   return publicUrl;
+}
+
+/**
+ * Calls every configured Gemini key once and reports which answered.
+ *
+ * The counters cannot tell a brand-new working key from a revoked one — both
+ * have no rows. Only a live call can, and after adding a key that is the whole
+ * question. Audited, because it spends real quota (one request per key) and an
+ * operator hammering it should be visible in the trail.
+ */
+export async function probeGeminiKeys() {
+  const adminId = await verifyAdmin();
+  const results = await probePool();
+  await audit(adminId, "gemini.probe_keys", "gemini_pool", {
+    tested: results.length,
+    ok: results.filter((r) => r.ok).length,
+  });
+  revalidatePath("/admin");
+  return results;
 }
 
 /** Recent admin activity, newest first. Powers the trail shown in the panel. */

@@ -375,7 +375,7 @@ guard is guesswork. The human approved adding one.
 ```sql
 create table gemini_usage (
   usage_date    date not null default current_date,
-  key_index     int  not null,        -- 1 or 2: which key, therefore which GCP project
+  key_index     int  not null,        -- the GEMINI_API_KEY_n slot, therefore which GCP project
   model         text not null,
   request_count int  not null default 0,
   error_count   int  not null default 0,
@@ -388,6 +388,22 @@ create table gemini_usage (
 Written **only** by `record_gemini_usage(p_key_index, p_model, p_tokens, p_is_error)`, which
 upserts so concurrent generations cannot lose counts to a read-modify-write race. Read by
 `gemini_pool_used_today()`. Both are `service_role` only. RLS: admin read.
+
+`key_index` is the **env slot number**, not a position in a list. Keys are read from
+`GEMINI_API_KEY_1..10` and whichever are set form the pool, so gaps are legal and a slot must
+never be renumbered — doing so silently re-attributes that key's entire history to another one.
+
+### `gemini_pool_report_today()` — added 2026-08-06 (migration 00015)
+
+Same aggregate as `gemini_pool_used_today()` plus `tokens` and `last_used_at`, for the admin
+key panel. A second function rather than a widened signature, because the quota guard depends
+on the existing shape.
+
+`last_used_at` is the column that makes the panel able to say anything useful: usage rows alone
+cannot distinguish *idle* from *broken*, since a key that was never called and a key that was
+revoked both have no row at all. The panel therefore builds its roster from the environment and
+joins usage onto it, and offers a live probe (`probePool()` in `src/lib/gemini/pool-report.ts`)
+for the one question counters can never answer — "is this key valid right now".
 
 **`usage_date` is a UTC date, which is not the quota day.** Gemini's free-tier quota resets at
 midnight Pacific, roughly 14:00 WIB, so the counter and the real quota window are offset by

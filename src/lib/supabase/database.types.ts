@@ -787,6 +787,21 @@ export type Database = {
         Args: never;
         Returns: { key_index: number; requests: number; errors: number }[];
       };
+      /**
+       * service_role only. Same aggregate as above plus tokens and the last
+       * write, for the admin key panel. Separate rather than a widened
+       * signature because the quota guard depends on the shape above.
+       */
+      gemini_pool_report_today: {
+        Args: never;
+        Returns: {
+          key_index: number;
+          requests: number;
+          errors: number;
+          tokens: number;
+          last_used_at: string | null;
+        }[];
+      };
       gen_referral_code: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
       /** service_role only. Throws INSUFFICIENT_CREDITS. Returns the new total balance. */
