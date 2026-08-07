@@ -32,16 +32,37 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+const SITE_URL = "https://malesan.my.id";
+const TITLE = "Malesan — Males mikirnya. Bukan bikinnya.";
+const DESCRIPTION =
+  "Buat kreator konten Indonesia. Malesan ngilangin momen bengong depan layar kosong — ide, hook, sama naskah siap eksekusi dalam hitungan detik.";
+
 export const metadata: Metadata = {
-  title: "Malesan — Males mikirnya. Bukan bikinnya.",
-  description:
-    "Buat kreator konten Indonesia. Malesan ngilangin momen bengong depan layar kosong — ide, hook, sama naskah siap eksekusi dalam hitungan detik.",
+  // The domain is confirmed and live (malesan.my.id), so relative OG/canonical
+  // URLs now resolve against it — without this, a shared link renders no
+  // preview card at all.
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
   applicationName: "Malesan",
-  // No metadataBase / canonical URL yet: the domain is unconfirmed.
-  // Confirm the domain is verified before adding one.
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
+  },
+  // The og:image itself comes from the file-convention `opengraph-image.tsx`,
+  // which Next injects automatically; this block carries the text and identity.
+  openGraph: {
+    type: "website",
+    siteName: "Malesan",
+    url: SITE_URL,
+    title: TITLE,
+    description: DESCRIPTION,
+    locale: "id_ID",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
   },
 };
 

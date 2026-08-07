@@ -103,11 +103,26 @@ async function callOnce(
 async function resolveProvider(args: GenerateArgs): Promise<GenerateArgs> {
   if (args.provider) return args;
   const cfg = await getProviderConfig();
+  const provider = cfg.provider;
+  const byokKey = args.byokKey ?? (cfg.apiKey ? cfg.apiKey : undefined);
+  // A non-Gemini provider MUST bring its own key. Without this guard the call
+  // falls through to `attemptsFor(undefined)` → the Gemini key pool, and the
+  // OpenAI/Anthropic adapter then sends a Google `AQ.` key to a foreign
+  // endpoint. That is exactly the "Incorrect API key" an admin sees after
+  // switching the provider in /admin/config without pasting a key for it — and
+  // it leaks a real Gemini key to OpenAI in the process. Fail early and clearly.
+  if (provider !== "gemini" && !byokKey) {
+    throw new GeminiError(
+      `Provider "${provider}" dipilih tapi belum ada API key-nya. Isi API key ${provider} di admin (Otak AI), atau balikin provider ke Gemini.`,
+      400,
+      false,
+    );
+  }
   return {
     ...args,
-    provider: cfg.provider,
+    provider,
     baseUrl: cfg.baseUrl || undefined,
-    byokKey: args.byokKey ?? (cfg.apiKey ? cfg.apiKey : undefined),
+    byokKey,
   };
 }
 
