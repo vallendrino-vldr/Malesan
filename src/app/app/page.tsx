@@ -7,7 +7,7 @@ import { MascotStage } from "@/components/MascotStage";
 import { AmbientField } from "@/components/AmbientField";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
-import { getCost } from "@/lib/config";
+import { getCost, getDashboardNotice } from "@/lib/config";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { RefreshButton } from "@/components/RefreshButton";
 import { TextScale } from "@/components/TextScale";
@@ -154,6 +154,10 @@ export default async function AppPage({
   const pipelineCards = pipelineResult ?? [];
   const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe] = costs;
 
+  // Owner's live announcement. Same config cache the costs above just warmed, so
+  // this is a map read, not a round trip.
+  const notice = await getDashboardNotice();
+
   // Same regression as the pipeline query above: gated on `tab === "profil"`,
   // which is never true when the profile tab is reached by a client-side switch.
   const history: HistoryItem[] = (
@@ -240,6 +244,14 @@ export default async function AppPage({
               z-10 by the wrapper class so the blobs stay under it. */}
           <AmbientField />
           <div className="relative z-10 flex flex-col gap-4">
+          {/* Owner-controlled line, edited live in the admin panel. Absent when
+              empty — no empty box, no reserved space. */}
+          {notice && (
+            <p className="rounded-xl border border-ember/30 bg-ember/10 px-4 py-2.5 text-sm leading-relaxed text-ember-lo">
+              {notice}
+            </p>
+          )}
+
           {/* Credits arrive from outside this tab — an admin approving a top-up,
               the daily refill, a referral paying out. Until now the balance only
               moved on reload, so the moment someone paid was the moment the

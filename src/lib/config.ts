@@ -83,6 +83,17 @@ export async function getAllConfig() {
   return load();
 }
 
+/**
+ * The owner's live dashboard announcement. Empty means nothing is shown.
+ * Read on the dashboard's server pass, so editing it in the admin panel takes
+ * effect within the config cache TTL, no redeploy.
+ */
+export async function getDashboardNotice(): Promise<string> {
+  const rows = await load();
+  const v = rows["dashboard_notice"];
+  return typeof v === "string" ? v.trim() : "";
+}
+
 export type PaymentConfig = {
   methods: { bank: boolean; qris: boolean };
   bankName: string;
