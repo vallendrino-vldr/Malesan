@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Mascot } from "./Mascot";
 
 /**
  * What the app shows while the model is working.
@@ -146,114 +147,5 @@ export function GenerationProgress({
         Jangan ditutup dulu. Kalau lo tap tombolnya lagi, kreditnya kepotong dua kali.
       </p>
     </div>
-  );
-}
-
-/**
- * The figure.
- *
- * Deliberately the same construction language as the rest of the product — a
- * rounded slab body, a visor, one ember accent — rather than a stock robot.
- * The arms only type while text is arriving; when the stream pauses they rest,
- * so the animation carries information instead of decorating a wait.
- */
-function Mascot({ working }: { working: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 64 64"
-      aria-hidden="true"
-      className="size-16 shrink-0"
-      // Non-decorative meaning is in the text next to it; this is the flourish.
-    >
-      <g className={working ? "mascot-body" : ""}>
-        {/* antenna */}
-        <line x1="32" y1="8" x2="32" y2="14" stroke="var(--color-hairline)" strokeWidth="2" />
-        <circle
-          cx="32"
-          cy="7"
-          r="2"
-          fill="var(--color-ember)"
-          className={working ? "mascot-led" : ""}
-          opacity={working ? undefined : 0.35}
-        />
-
-        {/* head */}
-        <rect
-          x="17"
-          y="14"
-          width="30"
-          height="21"
-          rx="7"
-          fill="var(--color-surface-raised)"
-          stroke="var(--color-hairline)"
-          strokeWidth="1.5"
-        />
-        {/* visor — clipped so the scan line cannot escape the face */}
-        <clipPath id="ml-visor">
-          <rect x="21" y="19" width="22" height="10" rx="5" />
-        </clipPath>
-        <g clipPath="url(#ml-visor)">
-          <rect x="21" y="19" width="22" height="10" rx="5" fill="var(--color-obsidian)" />
-          {working && (
-            <rect
-              x="21"
-              y="19"
-              width="6"
-              height="10"
-              fill="var(--color-ember)"
-              opacity="0.55"
-              className="mascot-scan"
-            />
-          )}
-          {!working && (
-            <>
-              <circle cx="27" cy="24" r="1.8" fill="var(--color-ember)" opacity="0.7" />
-              <circle cx="37" cy="24" r="1.8" fill="var(--color-ember)" opacity="0.7" />
-            </>
-          )}
-        </g>
-
-        {/* body */}
-        <rect
-          x="21"
-          y="37"
-          width="22"
-          height="17"
-          rx="5"
-          fill="var(--color-surface-raised)"
-          stroke="var(--color-hairline)"
-          strokeWidth="1.5"
-        />
-        <rect x="27" y="42" width="10" height="2" rx="1" fill="var(--color-hairline)" />
-        <rect x="27" y="46" width="6" height="2" rx="1" fill="var(--color-hairline)" />
-
-        {/* arms — the typing */}
-        <g className={working ? "mascot-arm-a" : ""}>
-          <rect
-            x="12"
-            y="39"
-            width="8"
-            height="3.5"
-            rx="1.75"
-            fill="var(--color-ember)"
-            opacity="0.9"
-          />
-        </g>
-        <g className={working ? "mascot-arm-b" : ""}>
-          <rect
-            x="44"
-            y="39"
-            width="8"
-            height="3.5"
-            rx="1.75"
-            fill="var(--color-ember)"
-            opacity="0.9"
-          />
-        </g>
-
-        {/* desk */}
-        <rect x="10" y="54" width="44" height="2.5" rx="1.25" fill="var(--color-hairline)" />
-      </g>
-    </svg>
   );
 }
