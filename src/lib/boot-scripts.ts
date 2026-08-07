@@ -89,3 +89,36 @@ export const TEXT_INIT_SCRIPT = `
   if (t && t !== "md") document.documentElement.setAttribute("data-text", t);
 }catch(e){}})();
 `;
+
+/**
+ * Haptic tap feedback on every button, app-wide.
+ *
+ * One delegated `pointerdown` listener in the capture phase, attached before
+ * hydration for the same reason the theme script is: it must cover the very
+ * first tap, including on pages React has not hydrated yet. `pointerdown`
+ * (not `click`) is deliberate — the buzz has to land the instant the finger
+ * touches, or it feels like lag rather than feedback.
+ *
+ * `navigator.vibrate` only does anything on Android Chrome; iOS Safari has no
+ * web vibration API and silently ignores it, so this is a progressive
+ * enhancement, never a dependency. Wrapped in try/catch because a blocked or
+ * unsupported call can throw, and a boot script must never break the page.
+ *
+ * Scope is buttons and button-like controls (`button`, `[role="button"]`,
+ * `a[href]`), skipping disabled ones. Opt a non-standard control in with
+ * `data-haptic`; opt one out with `data-haptic="off"`.
+ */
+export const HAPTIC_SCRIPT = `
+(function(){try{
+  if (!("vibrate" in navigator)) return;
+  document.addEventListener("pointerdown", function(e){
+    if (!e.isPrimary) return;
+    var el = e.target && e.target.closest
+      ? e.target.closest('button,[role="button"],a[href],[data-haptic]') : null;
+    if (!el) return;
+    if (el.getAttribute("data-haptic") === "off") return;
+    if (el.disabled || el.getAttribute("aria-disabled") === "true") return;
+    try { navigator.vibrate(8); } catch (err) {}
+  }, true);
+}catch(e){}})();
+`;

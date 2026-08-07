@@ -17,6 +17,7 @@
 export function AmbientField() {
   return (
     <div aria-hidden="true" className="ambient-field">
+      <div className="ambient-field__orbit" />
       <div className="ambient-field__blob ambient-field__blob--a" />
       <div className="ambient-field__blob ambient-field__blob--b" />
       <div className="ambient-field__blob ambient-field__blob--c" />

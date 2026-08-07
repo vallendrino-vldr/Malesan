@@ -5,7 +5,7 @@ import "./globals.css";
 // From a server-safe module, not from the "use client" components that own
 // these settings — importing them from there turned both scripts into a client
 // reference stub that threw, so neither ever ran. See src/lib/boot-scripts.ts.
-import { THEME_INIT_SCRIPT, TEXT_INIT_SCRIPT } from "@/lib/boot-scripts";
+import { THEME_INIT_SCRIPT, TEXT_INIT_SCRIPT, HAPTIC_SCRIPT } from "@/lib/boot-scripts";
 
 // Display — industrial, engineered. Weights 600-800, tight negative tracking.
 const archivo = Archivo({
@@ -89,7 +89,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TEXT_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TEXT_INIT_SCRIPT + HAPTIC_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         {children}

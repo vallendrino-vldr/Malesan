@@ -39,15 +39,15 @@ export function Mascot({
       className={`${className} shrink-0`}
       // Non-decorative meaning is in the text next to it; this is the flourish.
     >
-      <g className={working ? "mascot-body" : ""}>
+      <g className={working ? "mascot-body" : face === "idle" ? "mascot-idle-body" : ""}>
         {/* antenna */}
         <line x1="32" y1="8" x2="32" y2="14" stroke="var(--color-hairline)" strokeWidth="2" />
         <circle
           cx="32"
           cy="7"
           r="2"
-          fill="var(--color-ember)"
-          className={working ? "mascot-led" : ""}
+          fill="#ff8a3d"
+          className={working ? "mascot-led" : face === "idle" ? "mascot-idle-led" : ""}
           opacity={working || awake ? undefined : 0.35}
         />
 
@@ -67,34 +67,34 @@ export function Mascot({
           <rect x="21" y="19" width="22" height="10" rx="5" />
         </clipPath>
         <g clipPath="url(#ml-visor)">
-          <rect x="21" y="19" width="22" height="10" rx="5" fill="var(--color-obsidian)" />
+          <rect x="21" y="19" width="22" height="10" rx="5" fill="#0d0b08" />
           {face === "scan" && (
             <rect
               x="21"
               y="19"
               width="6"
               height="10"
-              fill="var(--color-ember)"
+              fill="#ff8a3d"
               opacity="0.55"
               className="mascot-scan"
             />
           )}
           {face === "idle" && (
-            <>
-              <circle cx="27" cy="24" r="1.8" fill="var(--color-ember)" opacity="0.7" />
-              <circle cx="37" cy="24" r="1.8" fill="var(--color-ember)" opacity="0.7" />
-            </>
+            <g className="mascot-idle-eyes">
+              <circle cx="27" cy="24" r="1.8" fill="#ff8a3d" opacity="0.7" />
+              <circle cx="37" cy="24" r="1.8" fill="#ff8a3d" opacity="0.7" />
+            </g>
           )}
           {/* Wide eyes and a small grin. The whole gag is that the lazy one is
               briefly, visibly awake — so it has to be legible at a glance. */}
           {face === "awake" && (
             <>
-              <circle cx="27" cy="23.5" r="2.6" fill="var(--color-ember)" />
-              <circle cx="37" cy="23.5" r="2.6" fill="var(--color-ember)" />
+              <circle cx="27" cy="23.5" r="2.6" fill="#ff8a3d" />
+              <circle cx="37" cy="23.5" r="2.6" fill="#ff8a3d" />
               <path
                 d="M28 27.5q4 2.4 8 0"
                 fill="none"
-                stroke="var(--color-ember)"
+                stroke="#ff8a3d"
                 strokeWidth="1.4"
                 strokeLinecap="round"
               />
@@ -124,7 +124,7 @@ export function Mascot({
             width="8"
             height="3.5"
             rx="1.75"
-            fill="var(--color-ember)"
+            fill="#ff8a3d"
             opacity="0.9"
           />
         </g>
@@ -135,7 +135,7 @@ export function Mascot({
             width="8"
             height="3.5"
             rx="1.75"
-            fill="var(--color-ember)"
+            fill="#ff8a3d"
             opacity="0.9"
           />
         </g>

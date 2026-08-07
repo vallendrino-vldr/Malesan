@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Logo } from "./Logo";
+import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
 import { RefreshButton } from "./RefreshButton";
 import { ThemeToggle } from "./ThemeToggle";
@@ -130,7 +131,15 @@ export function AppShell({
   };
 
   return (
-    <div className="magazine w-full bg-obsidian">
+    <div className="magazine relative w-full bg-obsidian">
+      {/* Warm drifting glow behind the whole app, at the shell level so it fills
+          the black margins around every page's content instead of being trapped
+          inside one column. `relative` on this root makes the field's `inset:0`
+          resolve to the shell box; the chrome bars and `main` carry a z-index so
+          they paint above it, and it is `pointer-events-none` so it never eats a
+          tap. This is the layer that makes the product read as alive at rest. */}
+      <AmbientField />
+
       {/* ---------- header ---------- */}
       {/* `backdrop-blur-xl` used to sit here and on the tab bar. Nothing ever
           renders behind either of them — `main` is a sibling with its own
@@ -249,7 +258,7 @@ export function AppShell({
           position on screen, but the header stops being two unrelated rows
           glued together, and the row can be given to something else on desktop
           without unpicking the header. */}
-      <div className="area-nav flex items-stretch gap-1 border-b border-hairline/60 bg-obsidian px-3 pb-1.5 sm:hidden">
+      <div className="area-nav relative z-20 flex items-stretch gap-1 border-b border-hairline/60 bg-obsidian px-3 pb-1.5 sm:hidden">
         <ThemeToggle variant="chip" />
         <TutorialSheet variant="chip" />
         <RefreshButton variant="chip" />
@@ -258,7 +267,7 @@ export function AppShell({
       {/* ---------- content: the only scrollable region ---------- */}
       {/* The pipeline is a four-column board; 3xl leaves each column ~170px,
           which is where the desktop layout collapsed into one word per line. */}
-      <main className="area-main relative">
+      <main className="area-main relative z-10">
         <div
           className={`mx-auto w-full px-4 py-4 ${
             shown === "pipeline" ? "max-w-[1600px]" : "max-w-3xl"

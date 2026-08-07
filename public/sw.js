@@ -75,6 +75,16 @@ self.addEventListener("fetch", (event) => {
    * one that re-fetches its own JavaScript over mobile data every launch.
    */
   if (url.pathname.startsWith("/_next/static/")) {
+    // The content-hash guarantee above only holds for a production build. The
+    // Turbopack dev server serves /_next/static/ URLs whose bytes change after
+    // every edit *without* the URL changing, so cache-first there serves stale
+    // JS/CSS — the "I fixed it and the browser shows the old thing" trap, which
+    // also surfaces as a hydration mismatch when fresh server HTML meets a stale
+    // client bundle. On localhost, hand the request straight to the network so
+    // dev is always fresh; keep cache-first everywhere else.
+    const isDev =
+      self.location.hostname === "localhost" || self.location.hostname === "127.0.0.1";
+    if (isDev) return;
     event.respondWith(
       (async () => {
         const cached = await caches.match(req);
