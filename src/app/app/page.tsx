@@ -12,6 +12,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
 import { StudioPanel, StudioTile, StudioTileBig } from "@/components/StudioPanel";
+import { LiveRefresh } from "@/components/LiveRefresh";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -233,6 +234,14 @@ export default async function AppPage({
         // is what made it read as cramped and colliding. Natural flow with real
         // spacing instead — scrolling a little beats crushing everything.
         <div className="reveal flex flex-col gap-4 py-1">
+          {/* Credits arrive from outside this tab — an admin approving a top-up,
+              the daily refill, a referral paying out. Until now the balance only
+              moved on reload, so the moment someone paid was the moment the
+              product looked broken. This page is a server component, so a
+              refresh re-runs it and the pill recomputes with no client state to
+              keep in sync. RLS scopes the subscription to the user's own row. */}
+          <LiveRefresh tables={["profiles"]} label="Kredit lo udah masuk" />
+
           {/* A heads-up while they can still finish something, not a wall at
               zero. Hides itself entirely above the threshold. */}
           <LowCreditNotice

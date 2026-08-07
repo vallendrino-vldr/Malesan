@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { LiveRefresh } from "@/components/LiveRefresh";
 import { submitTopup, redeemVoucher, paymentSettings } from "@/app/actions/payments";
 import type { PaymentConfig } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
@@ -44,6 +45,8 @@ export default function TopupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [voucherCode, setVoucherCode] = useState("");
+  /** True between submitting a proof and an admin ruling on it. */
+  const [awaiting, setAwaiting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -64,6 +67,43 @@ export default function TopupPage() {
         setPacks(rows);
         setSelected((s) => s ?? rows[0] ?? null);
       });
+  }, []);
+
+  /**
+   * Watches the top-up the user just submitted until an admin rules on it.
+   *
+   * This is the one screen where somebody is actually sitting and waiting, and
+   * until now it never changed — the "lagi di-review" line stayed put even after
+   * the credits had landed, so the product looked stuck at exactly the moment
+   * the user had paid.
+   *
+   * `onChange` rather than the default `router.refresh()`: this page is a client
+   * component holding its own state, and refreshing the server pass would show
+   * the toast and change nothing. `silent` because the balance pill in the shell
+   * already announces the same approval.
+   *
+   * RLS scopes the read to the user's own rows, so "latest row" is theirs.
+   */
+  const checkVerdict = useCallback(async () => {
+    const { data, error } = await createClient()
+      .from("topups")
+      .select("status")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    // A discarded error here would leave the screen claiming "lagi di-review"
+    // forever, which is the bug this whole block exists to fix.
+    if (error || !data) return;
+
+    if (data.status === "approved") {
+      setSuccess("Udah di-approve. Kreditnya masuk — cek saldo lo di atas.");
+      setAwaiting(false);
+    } else if (data.status === "rejected") {
+      setSuccess("");
+      setError("Bukti transfernya ditolak. Cek lagi nominal sama tujuan transfernya, terus kirim ulang.");
+      setAwaiting(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -131,6 +171,7 @@ export default function TopupPage() {
           ? "Kekirim. Tapi sistem belum yakin sama buktinya, jadi bakal dicek manual — mungkin agak lebih lama."
           : "Kekirim! Lagi di-review. Kreditnya masuk begitu di-approve.",
       );
+      setAwaiting(true);
       setFile(null);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err: unknown) {
@@ -161,6 +202,10 @@ export default function TopupPage() {
 
   return (
     <div className="flex min-h-[100dvh] w-full flex-col bg-obsidian">
+      {/* Only listens while there is actually a verdict to wait for. Mounting it
+          unconditionally would hold a socket open for every visitor reading the
+          pricing, which is the wasteful half of realtime. */}
+      {awaiting && <LiveRefresh tables={["topups"]} onChange={checkVerdict} silent />}
       {/* The way out. Every other screen has the tab bar; this one had nothing. */}
       <header className="sticky top-0 z-20 shrink-0 border-b border-hairline/70 bg-obsidian/90 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-2 px-4 py-2.5">
