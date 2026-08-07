@@ -417,7 +417,7 @@
     inset-inline-start: -6%;
     inline-size: 46%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember) 18%, transparent), transparent 70%);
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember) 34%, transparent), transparent 70%);
     animation: ml-field-a 52s var(--ease-heat) infinite;
   }
   .ambient-field__blob--b {
@@ -425,7 +425,7 @@
     inset-inline-end: -8%;
     inline-size: 52%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-lo) 14%, transparent), transparent 72%);
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-lo) 26%, transparent), transparent 72%);
     animation: ml-field-b 67s var(--ease-heat) infinite;
   }
   .ambient-field__blob--c {
@@ -433,7 +433,7 @@
     inset-inline-start: 55%;
     inline-size: 34%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-deep) 12%, transparent), transparent 68%);
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-deep) 24%, transparent), transparent 68%);
     animation: ml-field-c 43s var(--ease-heat) infinite;
   }
 }
