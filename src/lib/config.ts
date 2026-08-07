@@ -19,7 +19,11 @@ export type ModuleKey =
   | "hook"
   | "script"
   | "repurpose"
-  | "vibe";
+  | "vibe"
+  // Niche engines. Separate module keys rather than a flag on `script`, because
+  // they carry their own price, their own on/off switch and their own schema.
+  | "clip"
+  | "thread";
 
 const FALLBACK_COST: Record<ModuleKey, number> = {
   ide_hari_ini: 1,
@@ -28,6 +32,8 @@ const FALLBACK_COST: Record<ModuleKey, number> = {
   script: 4,
   repurpose: 1,
   vibe: 6,
+  clip: 4,
+  thread: 3,
 };
 
 const TTL_MS = 30_000;
@@ -92,6 +98,37 @@ export async function getDashboardNotice(): Promise<string> {
   const rows = await load();
   const v = rows["dashboard_notice"];
   return typeof v === "string" ? v.trim() : "";
+}
+
+/**
+ * The owner's global instruction, injected into every user generation.
+ *
+ * Deliberately invisible to the user — it is a house style rule ("never open
+ * with 'di era digital ini'"), not a setting they own. Read on the server only:
+ * it must never be echoed back in a response, or it stops being a house rule
+ * and becomes a prompt anyone can work around.
+ */
+export async function getShadowPrompt(): Promise<string> {
+  const rows = await load();
+  const v = rows["shadow_prompt"];
+  return typeof v === "string" ? v.trim() : "";
+}
+
+export type Pricing = { inPerMTok: number; outPerMTok: number };
+
+/**
+ * What the owner actually pays per million tokens, in IDR, set in the admin
+ * panel. Zero means "not configured", and the dashboard says so rather than
+ * drawing a confident Rp0 line — a cost chart that silently reads zero is worse
+ * than no chart, because it looks like profit.
+ */
+export async function getPricing(): Promise<Pricing> {
+  const rows = await load();
+  const num = (k: string) => {
+    const v = rows[k];
+    return typeof v === "number" && v >= 0 ? v : 0;
+  };
+  return { inPerMTok: num("price_in_per_mtok"), outPerMTok: num("price_out_per_mtok") };
 }
 
 export type PaymentConfig = {
