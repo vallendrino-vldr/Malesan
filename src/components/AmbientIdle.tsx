@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { LogoMark } from "./Logo";
 
 /**
@@ -12,7 +13,22 @@ import { LogoMark } from "./Logo";
  *
  * Pure CSS transforms, no JavaScript, no canvas. See globals.css.
  */
-export function AmbientIdle({ className = "" }: { className?: string }) {
+export function AmbientIdle({
+  className = "",
+  /**
+   * What floats at the centre of the rings. Defaults to the mark so the four
+   * existing call sites (404, admin, top-up, dashboard) are untouched; the
+   * dashboard passes the mascot instead.
+   *
+   * A slot rather than a boolean, so this file never has to know what a mascot
+   * is — and so it stays a server component. Making it client to own a tap
+   * handler would ship JavaScript to every surface that only wants the rings.
+   */
+  center,
+}: {
+  className?: string;
+  center?: ReactNode;
+}) {
   return (
     <div
       aria-hidden="true"
@@ -27,7 +43,9 @@ export function AmbientIdle({ className = "" }: { className?: string }) {
 
         <div className="ambient-idle__core absolute size-[46%] rounded-full blur-md" />
 
-        <LogoMark className="relative size-[34%] drop-shadow-[0_0_18px_color-mix(in_oklab,var(--color-ember)_55%,transparent)]" />
+        <div className="relative grid size-[46%] place-items-center drop-shadow-[0_0_18px_color-mix(in_oklab,var(--color-ember)_55%,transparent)]">
+          {center ?? <LogoMark className="size-[74%]" />}
+        </div>
       </div>
     </div>
   );

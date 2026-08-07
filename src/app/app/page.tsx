@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AppShell, type TabKey } from "@/components/AppShell";
-import { AmbientIdle } from "@/components/AmbientIdle";
+import { MascotStage } from "@/components/MascotStage";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
@@ -250,7 +250,7 @@ export default async function AppPage({
           />
 
           <section className="surface-card relative overflow-hidden rounded-2xl border border-hairline px-5 pb-5 pt-5">
-            <AmbientIdle className="mx-auto size-28 sm:size-40" />
+            <MascotStage className="mx-auto size-28 sm:size-40" />
             <div className="mt-1 text-center">
               <p className="eyebrow text-ember">
                 {greet()}, {profile.display_name?.split(" ")[0] ?? "kreator"}
