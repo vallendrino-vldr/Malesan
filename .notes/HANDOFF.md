@@ -669,8 +669,19 @@ whether the product converts at all yet. **Numbers before features.**
 - **Production domain is `malesan.my.id`** (bought on SumoPod, DNS pointed at
   Vercel, live 2026-08-07). This is now the canonical URL — update any doc or
   config still saying `malesan.vercel.app`. The OAuth allow-list above must use
-  it. `layout.tsx` still has no `metadataBase`/canonical; now that the domain is
-  confirmed, one can be added (`https://malesan.my.id`).
+  it. `layout.tsx` now sets `metadataBase: https://malesan.my.id` plus
+  openGraph/twitter, and `src/app/opengraph-image.tsx` renders a 1200×630
+  link-preview card via `next/og` (dark + ember, no font file on purpose).
+
+**Provider-config trap (fixed 2026-08-07).** `/admin/config` (Otak AI) lets the
+owner switch the AI provider to openai/anthropic/custom. If they do that WITHOUT
+pasting a key for it (`ai_api_key` empty), `resolveProvider` used to fall through
+to the Gemini key pool, and the OpenAI adapter then sent a Google `AQ.` key to
+`api.openai.com` → the admin saw `"Incorrect API key"` wrongly labelled "Gemini
+rejected", and a real Gemini key leaked into the OpenAI request. `client.ts` now
+throws early when `provider !== "gemini"` and no key is set. The owner hit this
+during the 503 workaround; `ai_provider` is back to `gemini` in app_config, so a
+redeploy (fresh config cache) clears it.
 - Credit pack pricing (15k/45k/100k) is still a guess, never validated.
 - **Vercel Hobby is not licensed for commercial use.** Taking money on it is a
   terms problem, and this product takes money.
