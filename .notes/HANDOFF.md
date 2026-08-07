@@ -423,6 +423,63 @@ explanations share one sentence frame.
 
 ---
 
+## 9a. Session of 2026-08-07 — the upgrade pass
+
+The owner approved seven items (idle animation + easter egg, better progress
+bar, super-admin, more user-dashboard features, a mascot, an ambient background,
+"best in the world"). A parallel survey of the repo found **three were already
+mostly built**, which changed the plan from "make" to "connect".
+
+**Shipped and verified:**
+
+- **The /app crash is fixed** — see the `05b6298` commit message. Root cause was
+  the theme toggle deleting React-owned `<meta>` nodes. It was introduced in
+  `c61d684` (an earlier session), not by this work, and had been live in
+  production. Six toggles now leave React's two metas attached; console clean.
+- **Credits update without a reload.** `LiveRefresh` on `profiles` in the `home`
+  slot of `app/page.tsx`. The page is a server component, so `router.refresh()`
+  recomputes the balance with no client state to keep in sync.
+- **The top-up screen closes its own loop** — watches `topups`, flips "lagi
+  di-review" to approved/rejected. Uses the `onChange` variant because that page
+  is a client component; `router.refresh()` there would toast and change nothing.
+  Mounted only while a verdict is pending.
+- **The mascot is out of `GenerationProgress`** and is now the dashboard
+  centrepiece via `MascotStage` + a `center` slot on `AmbientIdle`. Tap it three
+  times and it complains. `AmbientIdle` stays a server component on purpose —
+  404, admin and top-up use the rings and should not ship a tap handler.
+- **`StreamingText` rewritten.** It was a real defect, not polish: reveal time
+  scaled with text length (600 chars = 9s of typewriter after the model already
+  took 13-20s). Now one rAF loop over a fixed 800ms.
+
+**Verified against the live database, not assumed:** `supabase_realtime`
+publishes exactly `error_log`, `generations`, `profiles`, `topups`.
+`pipeline_cards` is **not** published — anything realtime on the board needs a
+publication change first.
+
+**Corrections to that survey, checked live — do not spend on these:**
+- `error_log` is **not** leaking. RLS is on, `error_log admin read` exists, and
+  realtime enforces RLS.
+- `DECISIONS.md` has 515 NUL bytes and `file` calls it `data`, but ripgrep and
+  grep both read it fine (39 hits for "2026"). Cosmetic, not an emergency.
+- The `app_config` blanket grants are the Supabase default on **all 17 tables**,
+  not an `app_config` bug. A project-wide revoke would break PostgREST. Revoking
+  on `app_config` alone is safe (only the service-role client reads it).
+
+**Not done yet, in plan order:** reveal for the long modules (Script/Vibe end in
+a wall of finished text — depends on the `StreamingText` fix, which has landed),
+the ambient background field, and the super-admin config surface. See §9b.
+
+**Two schema facts that break naive estimates:** `posted_at` /
+`status_changed_at` exist nowhere, so a "posting streak" needs a migration.
+`is_favorite` exists in the schema with **zero** application code — a free
+feature already paid for.
+
+**A trap worth knowing:** the mascot is deliberately **not** favicon material.
+It is ten-odd shapes and a 10px visor; at 16px it becomes a smudge. `LogoMark`
+is three circles and an arc precisely so it survives that size.
+
+---
+
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 
 The owner asked on 2026-08-06 for "fitur keren di dashboard user supaya jadi
