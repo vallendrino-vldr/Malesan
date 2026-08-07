@@ -43,6 +43,15 @@ export type Adapter = {
   /** Returns the assistant text, or "" when the response carried none. */
   extractText(json: unknown): string;
   extractTokens(json: unknown): number;
+  /**
+   * Input and output token counts, separately.
+   *
+   * The total alone cannot be priced: every vendor charges input and output at
+   * different rates, so a cost estimate built on one number is off by whatever
+   * the ratio happened to be. Returns zeros when the response carried no usage
+   * block, which the caller treats as "unknown", not "free".
+   */
+  extractTokenSplit(json: unknown): { input: number; output: number };
 };
 
 const GEMINI_ROOT = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -92,6 +101,12 @@ const gemini: Adapter = {
       ?.content?.parts?.[0]?.text ?? "",
   extractTokens: (j) =>
     (j as { usageMetadata?: { totalTokenCount?: number } })?.usageMetadata?.totalTokenCount ?? 0,
+  extractTokenSplit: (j) => {
+    const u = (j as {
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+    })?.usageMetadata;
+    return { input: u?.promptTokenCount ?? 0, output: u?.candidatesTokenCount ?? 0 };
+  },
 };
 
 /** OpenAI chat-completions. Also covers most "custom" OpenAI-compatible hosts. */
@@ -134,6 +149,10 @@ const openai: Adapter = {
     (j as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content ?? "",
   extractTokens: (j) =>
     (j as { usage?: { total_tokens?: number } })?.usage?.total_tokens ?? 0,
+  extractTokenSplit: (j) => {
+    const u = (j as { usage?: { prompt_tokens?: number; completion_tokens?: number } })?.usage;
+    return { input: u?.prompt_tokens ?? 0, output: u?.completion_tokens ?? 0 };
+  },
 };
 
 const anthropic: Adapter = {
@@ -177,6 +196,10 @@ const anthropic: Adapter = {
   extractTokens: (j) => {
     const u = (j as { usage?: { input_tokens?: number; output_tokens?: number } })?.usage;
     return (u?.input_tokens ?? 0) + (u?.output_tokens ?? 0);
+  },
+  extractTokenSplit: (j) => {
+    const u = (j as { usage?: { input_tokens?: number; output_tokens?: number } })?.usage;
+    return { input: u?.input_tokens ?? 0, output: u?.output_tokens ?? 0 };
   },
 };
 

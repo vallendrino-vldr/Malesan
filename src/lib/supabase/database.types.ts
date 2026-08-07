@@ -146,6 +146,8 @@ export type Database = {
           error_count: number;
           token_count: number;
           updated_at: string;
+          input_tokens: number;
+          output_tokens: number;
         };
         Insert: {
           usage_date?: string;
@@ -155,6 +157,8 @@ export type Database = {
           error_count?: number;
           token_count?: number;
           updated_at?: string;
+          input_tokens?: number;
+          output_tokens?: number;
         };
         Update: {
           usage_date?: string;
@@ -164,6 +168,8 @@ export type Database = {
           error_count?: number;
           token_count?: number;
           updated_at?: string;
+          input_tokens?: number;
+          output_tokens?: number;
         };
         Relationships: [];
       };
@@ -228,6 +234,9 @@ export type Database = {
           posting_frequency: string | null;
           reference_creators: string | null;
           humor_level: number | null;
+          cta_url: string | null;
+          cta_label: string | null;
+          cta_enabled: boolean;
         };
         Insert: {
           user_id: string;
@@ -250,6 +259,9 @@ export type Database = {
           brand_notes?: string | null;
           ai_persona_summary?: string | null;
           updated_at?: string;
+          cta_url?: string | null;
+          cta_label?: string | null;
+          cta_enabled?: boolean;
         };
         Update: {
           user_id?: string;
@@ -262,6 +274,9 @@ export type Database = {
           brand_notes?: string | null;
           ai_persona_summary?: string | null;
           updated_at?: string;
+          cta_url?: string | null;
+          cta_label?: string | null;
+          cta_enabled?: boolean;
         };
         Relationships: [
           {
@@ -277,7 +292,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread";
           platform: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input: Json | null;
           output: Json | null;
@@ -290,7 +305,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;
@@ -303,7 +318,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
-          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit";
+          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;
@@ -332,6 +347,10 @@ export type Database = {
           status: "ide" | "draft" | "siap" | "posted";
           generation_id: string | null;
           created_at: string;
+          schedule_label: string | null;
+          schedule_reason: string | null;
+          sort_order: number;
+          updated_at: string;
         };
         Insert: {
           id?: string;
@@ -341,6 +360,10 @@ export type Database = {
           status?: "ide" | "draft" | "siap" | "posted";
           generation_id?: string | null;
           created_at?: string;
+          schedule_label?: string | null;
+          schedule_reason?: string | null;
+          sort_order?: number;
+          updated_at?: string;
         };
         Update: {
           id?: string;
@@ -350,6 +373,10 @@ export type Database = {
           status?: "ide" | "draft" | "siap" | "posted";
           generation_id?: string | null;
           created_at?: string;
+          schedule_label?: string | null;
+          schedule_reason?: string | null;
+          sort_order?: number;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -364,6 +391,82 @@ export type Database = {
             columns: ["generation_id"];
             isOneToOne: false;
             referencedRelation: "generations";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      personas: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          voice: string;
+          is_default: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          voice: string;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          voice?: string;
+          is_default?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "personas_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
+      drafts: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          content: string;
+          pipeline_card_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title?: string;
+          content?: string;
+          pipeline_card_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          content?: string;
+          pipeline_card_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "drafts_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
             referencedColumns: ["id"];
           }
         ];
@@ -850,3 +953,5 @@ export type Voucher = Database["public"]["Tables"]["vouchers"]["Row"];
 export type Referral = Database["public"]["Tables"]["referrals"]["Row"];
 export type Trend = Database["public"]["Tables"]["trends"]["Row"];
 export type AuditLog = Database["public"]["Tables"]["audit_log"]["Row"];
+export type Persona = Database["public"]["Tables"]["personas"]["Row"];
+export type Draft = Database["public"]["Tables"]["drafts"]["Row"];

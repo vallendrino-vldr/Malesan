@@ -535,3 +535,83 @@ BYOK generation would have failed with an auth error, while the feature was list
 decrypt falls back to the shared pool rather than failing the request outright: the user asked
 for a generation, and a broken stored key is our problem to surface later, not a reason to
 take their credit and give them nothing.
+
+---
+
+## 2026-08-08 — The workflow-engine pass
+
+### One `PromptExtras` bag, not four more parameters
+
+Four separate things now get injected into a prompt that do not come from the creator's
+DNA, the trends table or their rating history: the owner's shadow prompt, pasted reference
+material, a picked persona, and the creator's CTA link. Each could have been a new
+parameter on all six prompt builders.
+
+They are one optional object instead. The set will keep growing, and a positional parameter
+list that grows is how call sites start silently passing the wrong argument in the right
+slot. `buildSharedContext` is the single place any of them can enter a prompt, so there is
+exactly one ordering to reason about.
+
+### Reference material is fenced and labelled as data
+
+Pasted reference text is wrapped in `<<<REFERENSI … REFERENSI>>>` and preceded by a line
+saying it is facts, not orders, plus an explicit instruction to ignore anything inside it
+that looks like an instruction.
+
+This is not theoretical. The whole point of the feature is that users paste articles they
+found, and an article found on the internet is exactly the vector for text shaped like a
+command. The same reasoning already governs the admin assistant (§6 of HANDOFF): the model
+reads attacker-influenceable text, so what it reads must be framed as evidence, never as a
+brief.
+
+### The shadow prompt goes last, and is never echoed
+
+Placed after CRAFT_RULES and PLATFORM_MECHANICS, immediately before the output contract —
+recency is leverage, and a rule buried mid-prompt is the first thing a long-context model
+drops.
+
+It is read server-side only and never returned in any response. The moment it appears in a
+payload it stops being a house rule and becomes a prompt anyone can work around.
+
+### Zero-cost modules skip `spend_credits` entirely
+
+`cost_autocomplete` and `cost_schedule_tag` seed to 0. The routes treat 0 as "free — do not
+call the spend function", not as "spend zero". Calling `spend_credits` with an amount of 0
+would take the row lock and write a ledger row for a movement that did not happen, which
+makes the ledger stop reconciling — and the ledger reconciling is the only reason anyone
+can trust the credit system.
+
+### The profit dashboard refuses to draw a zero cost line
+
+If the owner has not set `price_in_per_mtok` / `price_out_per_mtok`, the cost series is not
+rendered at all; the panel says the prices are unset instead.
+
+A cost chart that silently reads Rp0 does not look like missing data. It looks like profit.
+This is a money screen for someone who is not a programmer and is currently out of pocket,
+and the failure mode of a confident wrong number here is that he makes a pricing decision
+on it.
+
+### The niche engines are their own modules, not a flag on `script`
+
+`clip` and `thread` each carry their own price, their own on/off switch, their own response
+schema and their own brief. Modelling them as a variant of the script builder would have
+put four conditionals inside a prompt that is already the longest one in the product, and
+made "turn off the thread engine" impossible without turning off scripts.
+
+### Personas do not replace `creator_dna`
+
+`creator_dna` stays the default voice and the source of `ai_persona_summary`. A persona is
+an override picked per generation, and it says so in the prompt: *kalau ini bentrok sama
+profil di atas, yang ini yang menang*. Two identities in one prompt with no stated
+precedence is how a model produces a blend of both, which reads as neither.
+
+### Multi-agent orchestration was used here, against `AGENTS.md` §2 rule 3
+
+That rule says not to spawn workflows unless the human asks. The human enabled ultracode
+for this turn and asked for seven feature areas end-to-end without stopping to confirm,
+which is the ask. The coupled foundation — migration, prompt plumbing, token accounting,
+the generate route — was still written in one head, because those files have to agree with
+each other. Only the UI layer was fanned out, with each agent owning files no other agent
+could touch.
+
+Recorded because the rule is a good one and the exception should not become the habit.

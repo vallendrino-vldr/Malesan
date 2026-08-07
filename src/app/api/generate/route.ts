@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
-import { getCost, isModuleEnabled, getModel } from "@/lib/config";
+import { getCost, isModuleEnabled, getModel, getShadowPrompt } from "@/lib/config";
 import { generateStream } from "@/lib/gemini/client";
 import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
@@ -17,7 +17,14 @@ import {
   HOOK_LAB_SCHEMA,
   SCRIPT_BUILDER_SCHEMA,
   REPURPOSE_SCHEMA,
+  type PromptExtras,
 } from "@/lib/prompts";
+import {
+  buildClipEnginePrompt,
+  buildThreadEnginePrompt,
+  CLIP_ENGINE_SCHEMA,
+  THREAD_ENGINE_SCHEMA,
+} from "@/lib/prompts/engines";
 
 export const maxDuration = 30; // Max execution time for vercel hobby
 
@@ -25,12 +32,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { module, input, platform } = body as {
-      module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose";
+      module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread";
       input?: Record<string, string>;
       platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads";
     };
 
-    if (!module || !["ide_hari_ini", "idea", "hook", "script", "repurpose"].includes(module)) {
+    const MODULES = ["ide_hari_ini", "idea", "hook", "script", "repurpose", "clip", "thread"];
+    if (!module || !MODULES.includes(module)) {
       return new Response("Invalid module", { status: 400 });
     }
 
@@ -48,6 +56,14 @@ export async function POST(request: NextRequest) {
 
     if (module === "repurpose" && (!input?.source_content || input.source_content.trim().length === 0)) {
       return new Response("Source content is required for Repurpose", { status: 400 });
+    }
+
+    if (module === "clip" && (!input?.moment || input.moment.trim().length === 0)) {
+      return new Response("Moment description is required for Clip Engine", { status: 400 });
+    }
+
+    if (module === "thread" && (!input?.bullets || input.bullets.trim().length === 0)) {
+      return new Response("Bullet points are required for Thread Engine", { status: 400 });
     }
 
     // 1. auth.getUser() - Never getSession()
@@ -143,6 +159,46 @@ export async function POST(request: NextRequest) {
       })
       .filter((l) => l.gist.trim());
     
+    /**
+     * Everything injected on top of the creator's own profile.
+     *
+     * Assembled here rather than inside the prompt builders because all three
+     * sources are requests: the owner's house rule from app_config, the picked
+     * voice from `personas`, and the creator's link from `creator_dna`. A prompt
+     * builder that reaches into the database stops being testable.
+     *
+     * The reference material is passed straight through from the request body —
+     * it is the user's own text, fenced and labelled as data inside the prompt.
+     */
+    let persona: { name: string; voice: string } | null = null;
+    if (input?.persona_id) {
+      // Scoped by user_id as well as id: RLS already enforces it, and a second
+      // filter means a guessed uuid cannot even probe for existence.
+      const { data: p } = await supabase
+        .from("personas")
+        .select("name, voice")
+        .eq("id", input.persona_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (p) persona = { name: p.name as string, voice: p.voice as string };
+    }
+
+    const dnaRow = dna as (typeof dna & {
+      cta_enabled?: boolean | null;
+      cta_url?: string | null;
+      cta_label?: string | null;
+    }) | null;
+
+    const extras: PromptExtras = {
+      shadowPrompt: await getShadowPrompt(),
+      reference: typeof input?.reference === "string" ? input.reference : undefined,
+      persona,
+      cta:
+        dnaRow?.cta_enabled && dnaRow?.cta_url
+          ? { url: dnaRow.cta_url, label: dnaRow.cta_label ?? null }
+          : null,
+    };
+
     // Cost and availability come from app_config now, so pricing changes and
     // taking a broken module out of service no longer need a deploy. Both fall
     // back to the previous hardcoded values if the table is unreachable.
@@ -177,20 +233,41 @@ export async function POST(request: NextRequest) {
     let schema = {};
 
     if (module === "ide_hari_ini") {
-      promptText = buildIdeHariIniPrompt(dna, trends || [], learned);
+      promptText = buildIdeHariIniPrompt(dna, trends || [], learned, extras);
       schema = IDE_HARI_INI_SCHEMA;
     } else if (module === "idea") {
-      promptText = buildIdeaEnginePrompt(input!.text, dna, trends || [], learned);
+      promptText = buildIdeaEnginePrompt(input!.text, dna, trends || [], learned, extras);
       schema = IDEA_ENGINE_SCHEMA;
     } else if (module === "hook") {
-      promptText = buildHookLabPrompt(input!.idea, platform || "tiktok", dna, trends || [], learned);
+      promptText = buildHookLabPrompt(input!.idea, platform || "tiktok", dna, trends || [], learned, extras);
       schema = HOOK_LAB_SCHEMA;
     } else if (module === "script") {
-      promptText = buildScriptBuilderPrompt(input!.idea, input!.hook, platform || "tiktok", input!.duration, dna, trends || [], learned);
+      promptText = buildScriptBuilderPrompt(input!.idea, input!.hook, platform || "tiktok", input!.duration, dna, trends || [], learned, extras);
       schema = SCRIPT_BUILDER_SCHEMA;
     } else if (module === "repurpose") {
-      promptText = buildRepurposePrompt(input!.source_content, dna, trends || [], learned);
+      promptText = buildRepurposePrompt(input!.source_content, dna, trends || [], learned, extras);
       schema = REPURPOSE_SCHEMA;
+    } else if (module === "clip") {
+      promptText = buildClipEnginePrompt(
+        input!.moment,
+        platform || "tiktok",
+        input!.duration || "30-60 detik",
+        dna,
+        trends || [],
+        learned,
+        extras,
+      );
+      schema = CLIP_ENGINE_SCHEMA;
+    } else if (module === "thread") {
+      promptText = buildThreadEnginePrompt(
+        input!.bullets,
+        platform || "x",
+        dna,
+        trends || [],
+        learned,
+        extras,
+      );
+      schema = THREAD_ENGINE_SCHEMA;
     }
 
     const encoder = new TextEncoder();

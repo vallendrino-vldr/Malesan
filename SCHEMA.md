@@ -427,3 +427,111 @@ re-enter theirs. There is no recovery path, by design.
 - **creator_dna**: Primary key user_id, references profiles. Stores creator niche, tone, audience, platforms, etc.
 - **generations**: The history of AI outputs. module enum. input/output jsonb. Service-role inserts only to prevent client forging.
 
+
+---
+
+## 10. Step 17 additions — the workflow engine (migration `00017_workflow_engine`)
+
+Applied 2026-08-08 against the live project. Every change is additive; no existing
+column, policy or function changed shape.
+
+### `personas` — several saved voices per creator
+
+```sql
+create table personas (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  name text not null,
+  voice text not null,
+  is_default boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index idx_personas_one_default on personas (user_id) where is_default;
+```
+
+`creator_dna` already holds a voice, and it stays the default — it is the onboarding
+artefact and the thing `ai_persona_summary` is derived from. What it cannot express is a
+creator who runs a personal account and a client account, because switching would mean
+overwriting. So voices that get *picked per generation* live here instead.
+
+**The partial unique index is the whole design.** "At most one default per user" is
+enforced by the database, not by application code, so a server action that sets a new
+default must clear the old one in the same transaction or the write fails loudly. A
+trigger would have made this silent and therefore forgettable.
+
+RLS: owner does all four verbs; admin reads.
+
+### `drafts` — the writing surface
+
+```sql
+create table drafts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references profiles(id) on delete cascade,
+  title text not null default 'Draft tanpa judul',
+  content text not null default '',
+  pipeline_card_id uuid references pipeline_cards(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+```
+
+`on delete set null` on the card link, not cascade: deleting a pipeline card must never
+take the user's written words with it.
+
+RLS: owner only, all four verbs. No admin read — draft prose is the most private thing in
+the product and nothing in the admin panel needs it.
+
+### `creator_dna` — CTA columns
+
+`cta_url`, `cta_label`, `cta_enabled boolean not null default false`.
+
+On `creator_dna` rather than `profiles` for two reasons. It is prompt context, so it is
+read wherever the voice is read. And `profiles` is guarded by the column trigger in §6,
+which would revert writes the user legitimately owns.
+
+Off by default. A link injected into someone's output without them asking is the product
+speaking in their name.
+
+### `pipeline_cards` — schedulable and orderable
+
+`schedule_label`, `schedule_reason`, `sort_order int not null default 0`, `updated_at`.
+
+`sort_order` defaults to 0 for every existing row, so the board must order by
+`(sort_order, created_at)` — otherwise pre-migration cards all tie and shuffle.
+
+### `gemini_usage` — the in/out split
+
+`input_tokens`, `output_tokens` (bigint, default 0), and `record_gemini_usage` now takes
+`p_input_tokens` / `p_output_tokens`.
+
+A single total cannot be priced. Every vendor charges input and output at different rates,
+so a cost estimate built on `token_count` alone is wrong by whatever the ratio happened to
+be — and the profit dashboard is the one screen where a confidently wrong number is worse
+than no number.
+
+**The signature had to be replaced, not extended.** The old one already carried defaults on
+`p_tokens` and `p_is_error`, so adding two more defaulted parameters would have created an
+overload where every existing 4-argument call was ambiguous. The migration drops the
+4-argument function and recreates it with six. Callers pass named arguments and keep
+resolving. `EXECUTE` stays `service_role` only.
+
+### Realtime
+
+`app_config` and `pipeline_cards` were added to the `supabase_realtime` publication, which
+previously carried `error_log`, `generations`, `profiles`, `topups`.
+
+Realtime enforces RLS, so a user still only ever receives their own `pipeline_cards` rows,
+and `app_config` is admin-read.
+
+### `generations.module`
+
+The check constraint now also allows `clip` and `thread`. Widened rather than dropped: an
+unrecognised string in that column is a bug, and the constraint is what catches it.
+
+### New `app_config` keys
+
+`shadow_prompt` (text, empty = off), `price_in_per_mtok`, `price_out_per_mtok` (IDR per
+million tokens, 0 = not configured), `cost_clip`, `cost_thread`, `cost_autocomplete`,
+`cost_schedule_tag`. The last two default to 0, which the routes read as "free — do not
+call spend_credits at all" rather than "spend zero".

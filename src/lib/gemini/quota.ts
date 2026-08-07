@@ -86,6 +86,15 @@ export async function recordUsage(args: {
   keyIndex: number;
   model: string;
   tokens?: number;
+  /**
+   * Split counts, when the provider reports them. Input and output tokens are
+   * priced differently by every vendor, so a single total cannot be turned into
+   * a cost figure — which is what the profit dashboard needs. Both default to 0
+   * and the total keeps its old meaning, so an adapter that reports no split
+   * degrades to exactly the previous behaviour.
+   */
+  inputTokens?: number;
+  outputTokens?: number;
   isError?: boolean;
   /** Why it failed. Counted errors with no cause cannot be acted on. */
   errorMessage?: string;
@@ -99,6 +108,8 @@ export async function recordUsage(args: {
       p_model: args.model,
       p_tokens: args.tokens ?? 0,
       p_is_error: args.isError ?? false,
+      p_input_tokens: args.inputTokens ?? 0,
+      p_output_tokens: args.outputTokens ?? 0,
     });
 
     if (args.isError) {

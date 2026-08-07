@@ -209,7 +209,14 @@ export async function generate(args: GenerateArgs): Promise<string> {
 
   const adapter = adapterFor(a.provider ?? "gemini");
   const text = adapter.extractText(json);
-  await recordUsage({ keyIndex: key.index, model, tokens: adapter.extractTokens(json) });
+  const split = adapter.extractTokenSplit(json);
+  await recordUsage({
+    keyIndex: key.index,
+    model,
+    tokens: adapter.extractTokens(json),
+    inputTokens: split.input,
+    outputTokens: split.output,
+  });
 
   if (!text) {
     throw new GeminiError(
@@ -257,6 +264,11 @@ export async function* generateStream(
   const decoder = new TextDecoder();
   let buffer = "";
   let tokens = 0;
+  // Gemini repeats usageMetadata on later frames with running totals, so the
+  // last value seen is the final one — same reason `tokens` is assigned, not
+  // accumulated.
+  let inTokens = 0;
+  let outTokens = 0;
 
   /**
    * Yields every complete SSE frame in `buffer`, leaving any partial tail
@@ -282,6 +294,8 @@ export async function* generateStream(
         try {
           const json = JSON.parse(payload);
           tokens = json?.usageMetadata?.totalTokenCount ?? tokens;
+          inTokens = json?.usageMetadata?.promptTokenCount ?? inTokens;
+          outTokens = json?.usageMetadata?.candidatesTokenCount ?? outTokens;
           const text: string | undefined =
             json?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) yield text;
@@ -302,7 +316,13 @@ export async function* generateStream(
     buffer += decoder.decode();
     yield* drain(true);
   } finally {
-    await recordUsage({ keyIndex: key.index, model, tokens });
+    await recordUsage({
+      keyIndex: key.index,
+      model,
+      tokens,
+      inputTokens: inTokens,
+      outputTokens: outTokens,
+    });
   }
 }
 
