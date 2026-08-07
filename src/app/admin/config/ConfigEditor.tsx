@@ -55,6 +55,25 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
         </p>
       )}
 
+      {/* ---- dashboard notice ---- */}
+      {byKey["dashboard_notice"] && (
+        <section>
+          <h2 className="eyebrow mb-2 text-muted">Pengumuman dashboard</h2>
+          <p className="mb-2 text-micro leading-relaxed text-muted">
+            Satu baris yang muncul di atas dashboard semua user. Kosongin terus
+            simpan buat nyembunyiin. Berubah tanpa deploy.
+          </p>
+          <TextRow
+            label="Teks pengumuman"
+            initial={String(byKey["dashboard_notice"]?.value ?? "")}
+            allowEmpty
+            busy={busy === "dashboard_notice"}
+            saved={ok === "dashboard_notice"}
+            onSave={(v) => save("dashboard_notice", v)}
+          />
+        </section>
+      )}
+
       {/* ---- models ---- */}
       <section>
         <h2 className="eyebrow mb-2 text-muted">Model per tier</h2>
@@ -264,6 +283,7 @@ function TextRow({
   onSave,
   busy,
   saved,
+  allowEmpty = false,
 }: {
   label: string;
   hint?: string;
@@ -271,6 +291,10 @@ function TextRow({
   onSave: (v: string) => void;
   busy: boolean;
   saved: boolean;
+  /** Let an empty value be saved. Off by default so a required field (a model
+      id, a bank number) cannot be blanked by accident; on for the notice, whose
+      empty state is how you hide it. */
+  allowEmpty?: boolean;
 }) {
   const [v, setV] = useState(initial);
   const dirty = v.trim() !== initial;
@@ -290,7 +314,7 @@ function TextRow({
         />
         <button
           onClick={() => onSave(v.trim())}
-          disabled={!dirty || busy || !v.trim()}
+          disabled={!dirty || busy || (!allowEmpty && !v.trim())}
           className="shrink-0 cursor-pointer rounded-lg bg-ember px-3 py-2 text-xs font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? "..." : "Simpan"}
