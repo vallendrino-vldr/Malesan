@@ -62,7 +62,8 @@ Owner: **vadlyvldr** (Vldr), solo founder, Indonesia.
 ## 1. The product
 
 **Malesan** — AI content-idea tool for Indonesian creators.
-Live at `malesan.vercel.app`. GitHub `vallendrino-vldr/Malesan` (now public).
+Live at `malesan.my.id` (custom domain via SumoPod → Vercel; `malesan.vercel.app`
+still resolves as an alias). GitHub `vallendrino-vldr/Malesan` (now public).
 Vercel auto-deploys from `main`.
 
 Tagline: *"Males mikirnya. Bukan bikinnya."*
@@ -656,15 +657,20 @@ whether the product converts at all yet. **Numbers before features.**
   `http://localhost:3000/?code=...`. The code is correct — `GoogleSignInButton`
   sends `redirectTo: ${window.location.origin}/auth/callback`. Supabase falls
   back to its configured Site URL when the Vercel callback is not allow-listed.
-  Fix in Supabase → Authentication → URL Configuration: Site URL = the Vercel
-  production URL; Redirect URLs must include `https://<prod>/auth/callback`
-  **and** `https://<project>-*.vercel.app/auth/callback` (preview deploys get a
+  Fix in Supabase → Authentication → URL Configuration: Site URL =
+  `https://malesan.my.id`; Redirect URLs must include
+  `https://malesan.my.id/auth/callback` **and**
+  `https://<project>-*.vercel.app/auth/callback` (preview deploys get a
   new hostname per commit), plus `http://localhost:3000/auth/callback`. Also
   Google Cloud Console → OAuth client → Authorized redirect URIs must list
   `https://<ref>.supabase.co/auth/v1/callback`.
 - **Google consent screen is still in Testing** — only listed test users can sign
   in at all. Separate gate from the redirect problem.
-- `malesan.app` domain unconfirmed.
+- **Production domain is `malesan.my.id`** (bought on SumoPod, DNS pointed at
+  Vercel, live 2026-08-07). This is now the canonical URL — update any doc or
+  config still saying `malesan.vercel.app`. The OAuth allow-list above must use
+  it. `layout.tsx` still has no `metadataBase`/canonical; now that the domain is
+  confirmed, one can be added (`https://malesan.my.id`).
 - Credit pack pricing (15k/45k/100k) is still a guess, never validated.
 - **Vercel Hobby is not licensed for commercial use.** Taking money on it is a
   terms problem, and this product takes money.
