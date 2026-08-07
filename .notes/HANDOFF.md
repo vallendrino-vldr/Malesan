@@ -465,9 +465,33 @@ publication change first.
   not an `app_config` bug. A project-wide revoke would break PostgREST. Revoking
   on `app_config` alone is safe (only the service-role client reads it).
 
-**Not done yet, in plan order:** reveal for the long modules (Script/Vibe end in
-a wall of finished text — depends on the `StreamingText` fix, which has landed),
-the ambient background field, and the super-admin config surface. See §9b.
+**Second batch, same session — also shipped and verified:**
+
+- **Mascot reacts on the first tap** (owner changed the spec from three). Added a
+  lead-in line so the escalation still has room. Verified: one tap speaks.
+- **Ambient background field.** `AmbientField` — three low-alpha ember blobs
+  behind the dashboard at z-0, `pointer-events-none`, under a z-10 content
+  wrapper. Server component, CSS-only. Verified live: hit-test at a tile centre
+  returns the tile, never a blob, and reduced-motion kills the drift with
+  `animation: none` rather than the global block's jam-on-a-frame.
+- **Dashboard notice — the super-admin's live frontend edit.** One `app_config`
+  key (`dashboard_notice`, seeded by migration 00016), read on the dashboard's
+  server pass, editable in the admin config panel. Empty hides it. `TextRow`
+  gained `allowEmpty` (off by default so a model id / bank number can't be
+  blanked). Verified the whole loop against the live DB: set → banner shows,
+  blank → banner gone.
+
+**Deliberately NOT done — the reveal for the long modules.** Plan item 5 wanted
+Script (20s) and Vibe (45s) to reveal like the idea cards. They don't render
+free prose — Script is structured scenes (`ScriptView`), Vibe is structured docs
+(`VibeCodingStudio`) — so a character-by-character reveal is the wrong tool and
+would fight the layout. Wrapping only the small hook/repurpose text is marginal
+polish that costs credits to test. Left as a proposal, not built speculatively.
+The `StreamingText` fix (idea cards) already landed and is the high-value part.
+
+**Still open, in plan order:** the super-admin surface can grow (it now does
+model / cost / module switches / payment / provider / notice), and §9b's user
+features (P1 rating-loop especially) remain proposals awaiting a yes.
 
 **Two schema facts that break naive estimates:** `posted_at` /
 `status_changed_at` exist nowhere, so a "posting streak" needs a migration.
