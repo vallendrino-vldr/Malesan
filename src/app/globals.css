@@ -363,6 +363,93 @@
   }
 }
 
+/* ============================================================
+   AMBIENT FIELD — the warmth behind the dashboard
+   ============================================================
+   AmbientIdle is a foreground object that occupies layout space. This is the
+   thing behind everything: a few very-low-alpha ember blobs drifting on long
+   loops so the dashboard sits in warmth rather than on flat black. DESIGN.md §1
+   names exactly this — "a warm ambient glow behind active surfaces" — as the
+   sanctioned way to get depth without WebGL.
+
+   Rules it has to keep, each learned the hard way:
+   - z-index 0. The whole point is "does not collide", and 20/40/60 are spoken
+     for by chrome / toasts / modals. The blobs live at z-0 under z-10 content.
+   - pointer-events: none. It must never eat a tap meant for a tile.
+   - blur is the per-frame cost, so there are only three blobs and the blur is
+     fixed, not animated. Transform and opacity are the only animated properties,
+     so this stays on the compositor.
+   - 40-70s loops. Slower than the idle rings; a background that keeps pace with
+     the foreground reads as busy.
+   ============================================================ */
+
+@keyframes ml-field-a {
+  0%, 100% { transform: translate3d(-6%, 0, 0) scale(1); }
+  50%      { transform: translate3d(6%, -8%, 0) scale(1.12); }
+}
+@keyframes ml-field-b {
+  0%, 100% { transform: translate3d(4%, 4%, 0) scale(1.08); }
+  50%      { transform: translate3d(-5%, -3%, 0) scale(0.94); }
+}
+@keyframes ml-field-c {
+  0%, 100% { transform: translate3d(0, 3%, 0) scale(1); }
+  50%      { transform: translate3d(3%, -5%, 0) scale(1.1); }
+}
+
+@layer utilities {
+  .ambient-field {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .ambient-field__blob {
+    position: absolute;
+    border-radius: 9999px;
+    /* One fixed blur, sized to the blob. Animating filter is the expensive
+       mistake; this stays put and only transform/opacity move. */
+    filter: blur(44px);
+    will-change: transform;
+  }
+  .ambient-field__blob--a {
+    inset-block-start: -8%;
+    inset-inline-start: -6%;
+    inline-size: 46%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember) 18%, transparent), transparent 70%);
+    animation: ml-field-a 52s var(--ease-heat) infinite;
+  }
+  .ambient-field__blob--b {
+    inset-block-end: -12%;
+    inset-inline-end: -8%;
+    inline-size: 52%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-lo) 14%, transparent), transparent 72%);
+    animation: ml-field-b 67s var(--ease-heat) infinite;
+  }
+  .ambient-field__blob--c {
+    inset-block-start: 30%;
+    inset-inline-start: 55%;
+    inline-size: 34%;
+    aspect-ratio: 1;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-deep) 12%, transparent), transparent 68%);
+    animation: ml-field-c 43s var(--ease-heat) infinite;
+  }
+}
+
+/* The global reduced-motion block sets animation-duration to 0.01ms, which
+   freezes an infinite loop on whatever frame it lands on rather than stopping
+   it — so the blobs would jam mid-drift. Kill the animation outright; the static
+   glow is still there and still warm. */
+@media (prefers-reduced-motion: reduce) {
+  .ambient-field__blob--a,
+  .ambient-field__blob--b,
+  .ambient-field__blob--c {
+    animation: none !important;
+  }
+}
+
 /* ---------------------------------------------------------------------------
    Liquid lava loader.
 

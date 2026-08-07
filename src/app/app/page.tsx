@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AppShell, type TabKey } from "@/components/AppShell";
 import { MascotStage } from "@/components/MascotStage";
+import { AmbientField } from "@/components/AmbientField";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost } from "@/lib/config";
@@ -233,7 +234,12 @@ export default async function AppPage({
         // five tiles and a value strip, and squeezing that into a fixed height
         // is what made it read as cramped and colliding. Natural flow with real
         // spacing instead — scrolling a little beats crushing everything.
-        <div className="reveal flex flex-col gap-4 py-1">
+        <div className="reveal relative flex flex-col gap-4 py-1">
+          {/* Behind everything: warmth, drifting slowly. z-0 and pointer-events
+              off, so it never touches a tap. The content below is lifted to
+              z-10 by the wrapper class so the blobs stay under it. */}
+          <AmbientField />
+          <div className="relative z-10 flex flex-col gap-4">
           {/* Credits arrive from outside this tab — an admin approving a top-up,
               the daily refill, a referral paying out. Until now the balance only
               moved on reload, so the moment someone paid was the moment the
@@ -304,6 +310,7 @@ export default async function AppPage({
               </li>
             ))}
           </ul>
+          </div>
             </div>
             }
           />
