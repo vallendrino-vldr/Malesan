@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createVoucher } from "@/app/actions/admin";
+import { createVoucher, deleteVoucher } from "@/app/actions/admin";
 
 /**
  * Vouchers.
@@ -82,6 +82,24 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
       setTimeout(() => setCopied(""), 1500);
     } catch {
       /* clipboard blocked — the code is visible on screen anyway */
+    }
+  };
+
+  const [deleting, setDeleting] = useState("");
+  const del = async (c: string) => {
+    // Deleting a voucher is irreversible and outside the render flow, so it gets
+    // a confirm. Native prompt rather than a modal — this is an admin tool used
+    // by one person, not a surface worth a component.
+    if (!window.confirm(`Hapus voucher ${c}? Gak bisa dibalikin.`)) return;
+    setDeleting(c);
+    setError("");
+    try {
+      await deleteVoucher(c);
+      router.refresh();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Gagal hapus voucher.");
+    } finally {
+      setDeleting("");
     }
   };
 
@@ -179,12 +197,23 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
                       </button>
                       <span className={`rounded px-2 py-0.5 text-micro ${s.cls}`}>{s.label}</span>
                     </div>
-                    <p className="mt-2 flex gap-3 text-micro text-muted">
-                      <span>
-                        <span className="font-mono text-ink">+{v.credits}</span> kredit
-                      </span>
-                      <span>Kedaluwarsa {fmt(v.expires_at)}</span>
-                    </p>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <p className="flex gap-3 text-micro text-muted">
+                        <span>
+                          <span className="font-mono text-ink">+{v.credits}</span> kredit
+                        </span>
+                        <span>Kedaluwarsa {fmt(v.expires_at)}</span>
+                      </p>
+                      {!v.is_redeemed && (
+                        <button
+                          onClick={() => del(v.code)}
+                          disabled={deleting === v.code}
+                          className="shrink-0 cursor-pointer text-micro font-semibold text-muted underline-offset-2 hover:text-danger hover:underline disabled:opacity-50"
+                        >
+                          {deleting === v.code ? "..." : "Hapus"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -199,6 +228,7 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
                     <th className="px-5 py-3 font-medium">Kredit</th>
                     <th className="px-5 py-3 font-medium">Status</th>
                     <th className="px-5 py-3 font-medium">Kedaluwarsa</th>
+                    <th className="px-5 py-3 font-medium sr-only">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-hairline">
@@ -222,6 +252,17 @@ export function VoucherManager({ vouchers }: { vouchers: Voucher[] }) {
                           </span>
                         </td>
                         <td className="px-5 py-3 text-muted">{fmt(v.expires_at)}</td>
+                        <td className="px-5 py-3 text-right">
+                          {!v.is_redeemed && (
+                            <button
+                              onClick={() => del(v.code)}
+                              disabled={deleting === v.code}
+                              className="cursor-pointer text-micro font-semibold text-muted underline-offset-2 hover:text-danger hover:underline disabled:opacity-50"
+                            >
+                              {deleting === v.code ? "..." : "Hapus"}
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}

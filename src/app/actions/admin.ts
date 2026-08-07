@@ -331,6 +331,34 @@ export async function createVoucher(code: string, credits: number, daysValid: nu
   revalidatePath("/admin/vouchers");
 }
 
+/**
+ * Delete a voucher.
+ *
+ * A redeemed voucher is a receipt — deleting it hides that credits were handed
+ * out, so those are kept and only unredeemed codes (expired or still active)
+ * can be removed. `.select()` is what turns "matched no row" into an error the
+ * operator sees, rather than a button that reports success and changes nothing.
+ */
+export async function deleteVoucher(code: string) {
+  const adminId = await verifyAdmin();
+  const clean = code.trim().toUpperCase();
+
+  const { data, error } = await createServiceRoleClient()
+    .from("vouchers")
+    .delete()
+    .eq("code", clean)
+    .eq("is_redeemed", false)
+    .select("code");
+
+  if (error) throw new Error(`Gagal hapus voucher: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error("Voucher gak ketemu, atau udah kepakai — yang udah kepakai gak bisa dihapus.");
+  }
+
+  await audit(adminId, "voucher.delete", clean, {});
+  revalidatePath("/admin/vouchers");
+}
+
 export async function injectCredits(userId: string, amount: number, bucket: "free" | "paid", reason: string) {
   const adminId = await verifyAdmin();
   const serviceRole = createServiceRoleClient();

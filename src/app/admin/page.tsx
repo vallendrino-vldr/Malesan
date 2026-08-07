@@ -34,6 +34,8 @@ const ACTION_LABEL: Record<string, string> = {
   "user.delete": "Hapus user",
   "credits.grant": "Tambah kredit",
   "gemini.probe_keys": "Tes key Gemini",
+  "voucher.create": "Bikin voucher",
+  "voucher.delete": "Hapus voucher",
 };
 
 function timeAgo(iso: string) {
