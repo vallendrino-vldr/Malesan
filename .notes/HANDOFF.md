@@ -504,6 +504,62 @@ is three circles and an arc precisely so it survives that size.
 
 ---
 
+## 9c. Session of 2026-08-07 (batch 3) — the "make it feel alive" pass
+
+Owner wanted the app to look alive/premium and kept reporting "nothing changed".
+Two root causes, both fixed, both worth not rediscovering:
+
+- **The stale-service-worker trap bit again, now fixed at the source.**
+  `public/sw.js` cached `/_next/static/` cache-first with no revalidation —
+  correct in production (hashed filenames), WRONG in dev: Turbopack serves those
+  URLs with changing bytes, so every edit showed stale JS/CSS, and fresh server
+  HTML against a stale client bundle surfaced as a **hydration mismatch** (an
+  `area-nav` className diff). Fix: the `/_next/static/` handler returns early
+  (no intercept) when `self.location.hostname` is `localhost`/`127.0.0.1`;
+  production keeps cache-first. A one-time SW clear was needed to load the new
+  worker. This is the permanent fix for the recurring "I edited it and the
+  browser shows the old thing" in dev.
+- **AmbientField was trapped in the centred column** behind opaque cards, so the
+  black margins the owner actually looked at stayed black. Moved to `AppShell`
+  as a full-bleed layer: `.magazine` is now `relative`, `.ambient-field` is
+  `position: fixed` `inset:0 z-0`, and `area-nav`/`area-main` carry `z-20`/`z-10`
+  so chrome paints above it. Removed the per-page AmbientField + its import so it
+  is not double-mounted. Every app tab now sits in warmth.
+
+Shipped this pass — all CSS/SVG, compositor-only, reduced-motion honored,
+`tsc --noEmit` clean. **NOT yet `next build`, NOT committed, NOT screenshotted by
+the agent.** Owner verifies on localhost (cannot reach it from a phone):
+- **Haptic on every button.** `HAPTIC_SCRIPT` in `boot-scripts.ts`, inlined in
+  `layout.tsx` head. Delegated `pointerdown` → `navigator.vibrate(8)`. Android
+  Chrome only (iOS/desktop have no web vibration API). Opt out `data-haptic="off"`.
+- **Idle mascot life.** `.mascot-idle-body/led/eyes` (globals.css), wired in
+  `Mascot.tsx` for `face==="idle"`: breathing float, antenna pulse, blink.
+- **Ambient upgraded + motion boosted.** Blobs wander over 5 waypoints with an
+  opacity breath; added `.ambient-field__orbit` depth layer (off-centre spot,
+  unidirectional rotate). After "kurang agresif", travel/scale up and durations
+  shortened (a 38s / b 46s / c 30s / orbit 90s). Orbit is a 4th blurred layer —
+  first thing to drop if a low-end phone janks.
+- **Two light-theme bugs, same class: a token that flips value between themes,
+  used where the dark value was assumed.**
+  - Ambient in `[data-theme="soft"]` painted with `--color-ember`, a dark brown
+    (#833a0f) in light → mud on cream. Overridden to fixed light-peach tints at
+    low alpha (unlayered rule beats the `@layer utilities` base).
+  - **Mascot colours** did the same: visor used `--color-obsidian` (flips to
+    cream) and every accent used `--color-ember` (flips to brown). Now hardcoded
+    — visor `#0d0b08`, all glow `#ff8a3d` — so it is a dark-screened,
+    orange-glowing device in BOTH themes. Head/body stay `--color-surface-raised`.
+
+Still open after this pass:
+- **"Not premium / not 3D".** A deliberate design pass, not done. Do it with a
+  throwaway screenshot harness (see §7's shellcheck trick) so it is iterated with
+  eyes, not blind — the agent has guessed wrong on appearance more than once.
+- **"Features feel empty".** The answer is §9b below: **P1 (rating loop)** is the
+  highest-value, lowest-cost, half-built option and is the recommended next build.
+
+A cross-session second brain now also lives in an Obsidian vault at
+`C:\Users\Administrator\Documents\Claude` (Home.md is the index). It is a
+summary layer; this HANDOFF stays canonical.
+
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 
 The owner asked on 2026-08-06 for "fitur keren di dashboard user supaya jadi

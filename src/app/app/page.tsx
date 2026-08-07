@@ -4,7 +4,6 @@ import Link from "next/link";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AppShell, type TabKey } from "@/components/AppShell";
 import { MascotStage } from "@/components/MascotStage";
-import { AmbientField } from "@/components/AmbientField";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost, getDashboardNotice } from "@/lib/config";
@@ -239,10 +238,10 @@ export default async function AppPage({
         // is what made it read as cramped and colliding. Natural flow with real
         // spacing instead — scrolling a little beats crushing everything.
         <div className="reveal relative flex flex-col gap-4 py-1">
-          {/* Behind everything: warmth, drifting slowly. z-0 and pointer-events
-              off, so it never touches a tap. The content below is lifted to
-              z-10 by the wrapper class so the blobs stay under it. */}
-          <AmbientField />
+          {/* Warmth lives at the shell level now (AppShell mounts AmbientField
+              full-bleed behind every tab), so it fills the black margins around
+              this centred column instead of being trapped inside it. Content
+              stays z-10 to sit above that layer. */}
           <div className="relative z-10 flex flex-col gap-4">
           {/* Owner-controlled line, edited live in the admin panel. Absent when
               empty — no empty box, no reserved space. */}

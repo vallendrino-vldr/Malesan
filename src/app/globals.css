@@ -383,17 +383,39 @@
      the foreground reads as busy.
    ============================================================ */
 
+/* Multi-point wander instead of an A-to-B ping-pong. Five waypoints trace a
+   small loop so the blob reads as drifting continuously, never reversing on
+   the same line. Opacity rides along for a slow warmth breath. Still only
+   transform + opacity — both compositor-only. */
 @keyframes ml-field-a {
-  0%, 100% { transform: translate3d(-6%, 0, 0) scale(1); }
-  50%      { transform: translate3d(6%, -8%, 0) scale(1.12); }
+  0%   { transform: translate3d(-10%,  2%,  0) scale(1.00); opacity: 0.80; }
+  25%  { transform: translate3d(  6%,-10%,  0) scale(1.15); opacity: 1.00; }
+  50%  { transform: translate3d( 12%,-12%,  0) scale(1.08); opacity: 0.85; }
+  75%  { transform: translate3d(  2%, -5%,  0) scale(1.18); opacity: 1.00; }
+  100% { transform: translate3d(-10%,  2%,  0) scale(1.00); opacity: 0.80; }
 }
 @keyframes ml-field-b {
-  0%, 100% { transform: translate3d(4%, 4%, 0) scale(1.08); }
-  50%      { transform: translate3d(-5%, -3%, 0) scale(0.94); }
+  0%   { transform: translate3d(  8%,  8%,  0) scale(1.12); opacity: 0.78; }
+  25%  { transform: translate3d( -6%,  3%,  0) scale(0.95); opacity: 0.95; }
+  50%  { transform: translate3d(-10%, -6%,  0) scale(0.90); opacity: 0.82; }
+  75%  { transform: translate3d( -2%,  5%,  0) scale(1.05); opacity: 0.95; }
+  100% { transform: translate3d(  8%,  8%,  0) scale(1.12); opacity: 0.78; }
 }
 @keyframes ml-field-c {
-  0%, 100% { transform: translate3d(0, 3%, 0) scale(1); }
-  50%      { transform: translate3d(3%, -5%, 0) scale(1.1); }
+  0%   { transform: translate3d(  0%,  6%,  0) scale(1.00); opacity: 0.78; }
+  25%  { transform: translate3d(  8%, -4%,  0) scale(1.12); opacity: 0.95; }
+  50%  { transform: translate3d(  6%,-10%,  0) scale(1.15); opacity: 0.82; }
+  75%  { transform: translate3d( -4%, -2%,  0) scale(1.06); opacity: 0.95; }
+  100% { transform: translate3d(  0%,  6%,  0) scale(1.00); opacity: 0.78; }
+}
+/* The depth layer: an off-centre warm spot that rotates a full turn so the
+   glow orbits slowly behind everything. Unidirectional rotation never reverses,
+   which is what makes it read as elegant rather than as a loop. Rotation is a
+   compositor transform; the paint happens once. */
+@keyframes ml-field-orbit {
+  0%   { transform: rotate(0deg)   scale(1.10); }
+  50%  { transform: rotate(180deg) scale(1.20); }
+  100% { transform: rotate(360deg) scale(1.10); }
 }
 
 @layer utilities {
@@ -417,24 +439,44 @@
     inset-inline-start: -6%;
     inline-size: 46%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember) 34%, transparent), transparent 70%);
-    animation: ml-field-a 52s var(--ease-heat) infinite;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember) 44%, transparent), transparent 70%);
+    animation: ml-field-a 38s var(--ease-heat) infinite;
   }
   .ambient-field__blob--b {
     inset-block-end: -12%;
     inset-inline-end: -8%;
     inline-size: 52%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-lo) 26%, transparent), transparent 72%);
-    animation: ml-field-b 67s var(--ease-heat) infinite;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-lo) 34%, transparent), transparent 72%);
+    animation: ml-field-b 46s var(--ease-heat) infinite;
   }
   .ambient-field__blob--c {
     inset-block-start: 30%;
     inset-inline-start: 55%;
     inline-size: 34%;
     aspect-ratio: 1;
-    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-deep) 24%, transparent), transparent 68%);
-    animation: ml-field-c 43s var(--ease-heat) infinite;
+    background: radial-gradient(circle, color-mix(in oklab, var(--color-ember-deep) 32%, transparent), transparent 68%);
+    animation: ml-field-c 30s var(--ease-heat) infinite;
+  }
+  /* Depth layer. One extra element on top of the HANDOFF "three blobs" rule,
+     kept cheap deliberately: the warm spot is off-centre inside the element, so
+     a plain rotate makes it orbit — no per-frame paint, lighter blur than the
+     blobs, low alpha. If a mid-range phone ever janks the dashboard, this is
+     the first thing to drop.
+     ponytail: 4th blurred layer, delete .ambient-field__orbit if fill-rate bites. */
+  .ambient-field__orbit {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: 120%;
+    aspect-ratio: 1;
+    margin-block-start: -60%;
+    margin-inline-start: -60%;
+    border-radius: 9999px;
+    background: radial-gradient(circle at 32% 34%, color-mix(in oklab, var(--color-ember) 26%, transparent), transparent 46%);
+    filter: blur(60px);
+    will-change: transform;
+    animation: ml-field-orbit 90s linear infinite;
   }
 }
 
@@ -445,8 +487,32 @@
 @media (prefers-reduced-motion: reduce) {
   .ambient-field__blob--a,
   .ambient-field__blob--b,
-  .ambient-field__blob--c {
+  .ambient-field__blob--c,
+  .ambient-field__orbit {
     animation: none !important;
+  }
+}
+
+/* Light theme: the field is a warm *glow*, and a glow only works when the
+   accent is bright. In the soft theme `--color-ember` is a dark brown
+   (#833a0f), deepened for text contrast, so painting the blobs with it washed
+   mud across a cream page — the "aneh, maksa" look. Override to a light peach
+   that sits ABOVE the page in lightness, so warmth comes from added light the
+   way a neumorphic surface's depth does, at low alpha so it reads as a hint,
+   not a stain. Higher specificity than the base blob rules, so these win.
+   The dark theme is untouched. */
+@layer utilities {
+  :root[data-theme="soft"] .ambient-field__blob--a {
+    background: radial-gradient(circle, color-mix(in oklab, #ffb583 22%, transparent), transparent 70%);
+  }
+  :root[data-theme="soft"] .ambient-field__blob--b {
+    background: radial-gradient(circle, color-mix(in oklab, #ffc79a 17%, transparent), transparent 72%);
+  }
+  :root[data-theme="soft"] .ambient-field__blob--c {
+    background: radial-gradient(circle, color-mix(in oklab, #ffa869 15%, transparent), transparent 68%);
+  }
+  :root[data-theme="soft"] .ambient-field__orbit {
+    background: radial-gradient(circle at 32% 34%, color-mix(in oklab, #ffb583 11%, transparent), transparent 46%);
   }
 }
 
@@ -1067,6 +1133,48 @@ button:active .wordmark__slouch,
   .mascot-body,
   .mascot-led,
   .mascot-scan {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   IDLE MASCOT — alive while doing nothing.
+
+   The figure used to be frozen unless a generation was running or someone
+   tapped it, which read as a static picture, not a character. Three quiet
+   signs of life, all cheap: the whole figure breathes (a slow rise and a
+   sub-percent scale), the antenna LED glows in and out, and the eyes blink on
+   a long, irregular-feeling cadence. Only transform and opacity animate, so it
+   stays on the compositor; the breathing sits on the outer group so the eyes'
+   own blink composes on top of it.
+
+   Reduced motion stops all of it and leaves the figure fully drawn — the idle
+   face is complete on its own, the motion is the flourish, not the meaning.
+--------------------------------------------------------------------------- */
+@keyframes ml-idle-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-1px) scale(1.015); }
+}
+@keyframes ml-idle-led {
+  0%, 100% { opacity: 0.28; }
+  50%      { opacity: 0.6; }
+}
+/* Open for most of the loop, then one quick double-tick blink near the end.
+   The long open stretch is what keeps it from reading as a nervous flicker. */
+@keyframes ml-idle-blink {
+  0%, 90%, 100% { opacity: 0.7; }
+  93%, 97%      { opacity: 0.08; }
+  95%           { opacity: 0.7; }
+}
+
+.mascot-idle-body { animation: ml-idle-breathe 3.8s ease-in-out infinite; transform-origin: 50% 100%; }
+.mascot-idle-led  { animation: ml-idle-led 2.8s ease-in-out infinite; }
+.mascot-idle-eyes { animation: ml-idle-blink 5.6s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot-idle-body,
+  .mascot-idle-led,
+  .mascot-idle-eyes {
     animation: none;
   }
 }
