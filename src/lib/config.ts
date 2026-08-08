@@ -114,6 +114,20 @@ export async function getShadowPrompt(): Promise<string> {
   return typeof v === "string" ? v.trim() : "";
 }
 
+/**
+ * Credits charged per minute of video for the Auto-CC transcription.
+ *
+ * Priced per minute rather than per call because the cost driver is audio
+ * length, not request count — a 10-second clip and a 5-minute one are not the
+ * same job. Read from app_config so the owner can retune it without a deploy;
+ * falls back to 2 so a missing row never makes the module free by accident.
+ */
+export async function getVideoCostPerMin(): Promise<number> {
+  const rows = await load();
+  const v = rows["cost_video_per_min"];
+  return typeof v === "number" && v > 0 ? Math.round(v) : 2;
+}
+
 export type Pricing = { inPerMTok: number; outPerMTok: number };
 
 /**
