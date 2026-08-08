@@ -10,7 +10,7 @@ rediscovering the repo produces nothing.
 creators. Live on Vercel, auto-deploys from `main`, takes real money.
 
 **Is it healthy right now?** Yes. `next build` passes, `tsc --noEmit` passes,
-33 routes generate (was 29 — see §9d, the workflow-engine pass). `npm run lint` reports **11 problems (9 errors, 2 warnings)**
+35 routes generate (was 29 — see §9d, the workflow-engine pass). `npm run lint` reports **11 problems (9 errors, 2 warnings)**
 — that number is the known baseline listed in §11, not a regression. If you see
 11, nothing is broken. If you see more, you added it.
 
@@ -823,6 +823,33 @@ GONE — do not reintroduce it.
 Add the Groq key locally, `npm run dev`, sign in via `/dev-masuk`, open Studio →
 Video Auto-CC, and run one short real clip end to end. Fix what the browser shows.
 Only then push.
+
+### 9h. Auto-CC quality + admin sync + universal AGENTS.md (2026-08-08 e)
+
+- **Export was grainy** because it captured at the source resolution — often a
+  re-downloaded 144p clip. Now the canvas upscales so the short side is >=1080
+  (captions especially become crisp), records via `captureStream(0)` +
+  `requestFrame` (exact frames, not a timer sampling a half-drawn canvas), sets
+  `imageSmoothingQuality="high"`, and floors the bitrate at ~0.3 bits/pixel so the
+  codec cannot starve the text. Presets are real + platform-labelled: TikTok 12,
+  YouTube 16, Hemat 6 Mbps.
+- **Caption font-size slider** (`CaptionStyle.fontScale`). **Watermark** redrawn as
+  a small elegant top-left pill with real padding off the corner; removing it is a
+  clear "+N kredit" checkbox that charges via `/api/video/no-watermark` and
+  confirms the deduction in the UI.
+- **Admin config now shows Video Auto-CC** — its own price section
+  (`cost_video_per_min`, `cost_no_watermark`, they use their own keys not
+  `cost_<module>`), plus a kill switch the transcribe route honours through
+  `isVideoEnabled()`. That was the reported "admin not synced with new features".
+- **Onboarding for ANY agent:** a **root `AGENTS.md`** now exists. Codex/opencode/
+  Cursor auto-read the ROOT AGENTS.md, and `.notes/AGENTS.md` is not at root (and
+  `.notes/` is gitignored), so new agents were missing the entry point. Root
+  AGENTS.md gives the read order (`.notes/AGENTS.md` -> this HANDOFF -> the vault)
+  so no session ever has to audit the code to orient.
+- **Still NOT browser-verified by the agent** (real-time canvas export needs a
+  real video). Owner tests on prod after redeploy.
+- **Prod env** still needs the owner to add `GEMINI_API_KEY_1..4` +
+  `GROQ_API_KEY_1..4` in Vercel — no agent tool sets those. Grok stays removed.
 
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 
