@@ -675,6 +675,68 @@ failure mode as Hook Lab and Script once had: built, working, unreachable.
 - P1 (the rating loop) from §9b is now **partly obsolete**: `learned` notes already
   feed every prompt. What remains unbuilt is surfacing that back to the user.
 
+## 9e. Session of 2026-08-08 (b) — video Auto-CC (word-level burned-in captions)
+
+Upload a video, AI writes per-word captions, style them, export an .mp4 with the
+text hardcoded in. `tsc` clean, `next build` passes (34 routes). **The entire
+client half has NEVER run in a browser — see the honesty block.** COMMITTED but
+deliberately NOT pushed; it cannot function until two keys are added.
+
+### Architecture (why it is shaped this way)
+Client-heavy on purpose so the server stays cheap: the video is decoded,
+previewed and burned-in entirely in the browser (ffmpeg.wasm). The ONLY thing
+that reaches the server is the extracted 16kHz-mono audio, in transit to Groq.
+- `src/lib/transcribe.ts` — Groq Whisper (whisper-large-v3-turbo),
+  `verbose_json` + `timestamp_granularities[]=word`. Server-only. Gemini is not
+  used: it does not give reliable word-level timing.
+- `src/app/api/video/transcribe/route.ts` — auth, soft credit pre-check on the
+  client's claimed duration, then the authoritative `spend_credits` on the
+  MODEL's reported duration (the client controls its number and this costs money).
+- `src/lib/video/ffmpeg.ts` — one lazily-imported single-threaded ffmpeg.wasm
+  instance. Single-threaded ON PURPOSE: the MT core needs SharedArrayBuffer →
+  COOP/COEP on every response → breaks Google OAuth popups and Google avatar
+  images app-wide. Do not switch to the MT core without scoping isolation to this
+  route alone.
+- `src/lib/video/captions.ts` — grouping + `activeAt()` (live preview) + `buildAss()`.
+  The HTML overlay and the burned-in ASS read the SAME grouping, so preview and
+  export cannot drift.
+- `src/components/VideoEditor.tsx` — the UI. rAF-driven overlay (not the video's
+  throttled `timeupdate`), safe-zone guides, style panel, indeterminate bar for
+  transcription (one server call, no real %). Registered as Studio module `video`.
+
+### Cost
+`cost_video_per_min` in app_config (default 2), read by `getVideoCostPerMin()`.
+Charged per minute because the driver is audio length, not request count. NO admin
+UI row for it yet (like cost_autocomplete / cost_schedule_tag).
+
+### BLOCKERS — it does nothing until these are done (owner action)
+1. **A live Gemini API key was pasted in plain text in chat this session.** Treat
+   it as burned: rotate it in Google Cloud Console. It was NEVER written to any
+   file or commit. The new key goes in `.env.local` + Vercel as `GEMINI_API_KEY_4`
+   — and only widens capacity if it is from a NEW GCP project (quota is per project).
+2. **`GROQ_API_KEY` must be set** (free at console.groq.com/keys) in `.env.local`
+   and Vercel, or every transcription returns 503 "Transkripsi belum aktif".
+
+### NOT VERIFIED — do not trust any of this until run in a browser
+- **ffmpeg.wasm has never loaded here.** Audio extraction, and especially the
+  burn-in export, are unrun. The core is fetched from unpkg at runtime.
+- **The `ass` burn-in filter needs libass IN THE CORE, and libass needs a FONT in
+  the wasm FS.** The default `@ffmpeg/core` may have neither. If export fails with
+  an "ass"/"No such filter" or a no-glyph result, the fix is a libass-enabled core
+  plus a bundled .ttf written into the FS before the run — NOT a rewrite. This is
+  the single most likely thing to not work first try.
+- **Vercel Hobby caps a request body at ~4.5MB.** The route rejects >4MB audio;
+  16kHz mono AAC keeps ~10 min under that, but this is unproven on a real upload.
+  If longer clips are needed, upload audio to Supabase Storage and have the route
+  fetch it, rather than raising the body limit.
+- The transcript editor re-maps typo fixes by word index; changing the word COUNT
+  keeps old timings. Deliberate v1 limitation, stated in its own hint.
+
+### Correct first move next session
+Add the Groq key locally, `npm run dev`, sign in via `/dev-masuk`, open Studio →
+Video Auto-CC, and run one short real clip end to end. Fix what the browser shows.
+Only then push.
+
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 
 The owner asked on 2026-08-06 for "fitur keren di dashboard user supaya jadi
