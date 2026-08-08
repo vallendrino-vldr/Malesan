@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { readErrorBody } from "@/lib/sse";
 import type { Draft } from "@/lib/supabase/database.types";
+import { DraftReactions } from "./DraftReactions";
 
 /**
  * The writing surface.
@@ -393,6 +394,9 @@ export function DraftEditor({
           </p>
         )}
       </section>
+
+      {/* Instant audience test: netizen comments + editor roast on the live draft. */}
+      <DraftReactions text={content} />
     </div>
   );
 }

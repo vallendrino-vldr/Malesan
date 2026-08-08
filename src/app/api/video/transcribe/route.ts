@@ -26,6 +26,13 @@ export const maxDuration = 60;
 const MAX_DURATION_SEC = 600; // 10 minutes
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024;
 
+// Minutes billed for a clip. A nominal "1:00" video almost never measures a flat
+// 60.00s — the container reports 60.2, Whisper reports 60.1 — and a bare ceil
+// then bills it as two minutes (double the price). Absorb ~1.5s of that noise so
+// a one-minute clip stays one minute, then ceil: 1:30 is still 2 minutes.
+const GRACE_SEC = 1.5;
+const billedMinutes = (sec: number) => Math.max(1, Math.ceil((sec - GRACE_SEC) / 60));
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -74,7 +81,7 @@ export async function POST(request: NextRequest) {
   // Soft pre-check against the client's own duration so we do not spend a Groq
   // call on someone who plainly cannot afford the result. The authoritative
   // charge happens after, on the real duration.
-  const estMinutes = Math.max(1, Math.ceil((clientDuration || 60) / 60));
+  const estMinutes = billedMinutes(clientDuration || 60);
   const estCost = estMinutes * perMin;
   if (profile.credits_free + profile.credits_paid < estCost) {
     return json(
@@ -106,7 +113,7 @@ export async function POST(request: NextRequest) {
   }
 
   // The real charge, on the model's own duration.
-  const minutes = Math.max(1, Math.ceil(transcript.duration / 60));
+  const minutes = billedMinutes(transcript.duration);
   const cost = minutes * perMin;
   const spend = await spendCredits(user.id, cost, "video_auto_cc");
   if (!spend.ok) {

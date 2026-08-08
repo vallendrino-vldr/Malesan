@@ -13,6 +13,7 @@ import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
 import { StudioPanel, StudioTile, StudioTileBig } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { RecycleBanner } from "@/components/RecycleBanner";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -155,6 +156,16 @@ export default async function AppPage({
 
   if (typeof refillResult === "number") totalCredits = refillResult;
   const pipelineCards = pipelineResult ?? [];
+
+  // Smart Content Recycle: posted pieces, oldest first, derived from the pipeline
+  // read already in flight — no extra query. The 30-day age cut is applied in the
+  // banner (a client component) so this server render stays pure (no Date.now()).
+  // `created_at` is the proxy for posting age (there is no posted_at column yet).
+  const postedCards = pipelineCards
+    .filter((c) => c.status === "posted")
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    .slice(0, 8)
+    .map((c) => ({ id: c.id, title: c.title ?? "", created_at: c.created_at }));
   const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm] =
     costs;
 
@@ -274,6 +285,10 @@ export default async function AppPage({
             credits={totalCredits}
             mostExpensive={Math.max(costIde, costIdea, costHook, costScript, costRepurpose, costVibe)}
           />
+
+          {/* Content that has been sitting posted for 30+ days, offered for a
+              Gemini re-angle. Renders nothing when there is nothing stale. */}
+          <RecycleBanner cards={postedCards} />
 
           <section className="surface-card relative overflow-hidden rounded-2xl border border-hairline px-5 pb-5 pt-5">
             <MascotStage className="mx-auto size-28 sm:size-40" />
