@@ -6,6 +6,7 @@ import { IdeaEngine } from "./IdeaEngine";
 import { ModuleRunner } from "./ModuleRunner";
 import { ClipEngine } from "./ClipEngine";
 import { ThreadEngine } from "./ThreadEngine";
+import { VideoEditor } from "./VideoEditor";
 
 /**
  * The Studio tab and its five modules, all switched in the browser.
@@ -30,8 +31,8 @@ import { ThreadEngine } from "./ThreadEngine";
  * than walking someone backwards through every tile they tried.
  */
 
-type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread";
-const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread"];
+type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video";
+const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video"];
 
 export type StudioCosts = {
   ide: number;
@@ -46,6 +47,8 @@ export type StudioCosts = {
    */
   clip?: number;
   thread?: number;
+  /** Credits per MINUTE, not flat — the video editor charges by audio length. */
+  video?: number;
 };
 
 export function StudioPanel({
@@ -88,6 +91,7 @@ export function StudioPanel({
 
   const clipCost = costs.clip ?? 4;
   const threadCost = costs.thread ?? 3;
+  const videoCost = costs.video ?? 2;
 
   if (!mod)
     return (
@@ -100,6 +104,7 @@ export function StudioPanel({
         <div className="reveal relative z-10 mt-4 grid grid-cols-2 gap-2">
           <StudioTile mod="clip" title="Clip Engine" cost={clipCost} />
           <StudioTile mod="thread" title="Thread Engine" cost={threadCost} />
+          <StudioTile mod="video" title="Video Auto-CC" cost={videoCost} />
         </div>
       </>
     );
@@ -124,6 +129,8 @@ export function StudioPanel({
         <ClipEngine cost={clipCost} />
       ) : mod === "thread" ? (
         <ThreadEngine cost={threadCost} />
+      ) : mod === "video" ? (
+        <VideoEditor cost={videoCost} />
       ) : (
         <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
       )}
