@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 import { saveToPipeline } from "@/app/actions/pipeline";
 import { GenerationProgress } from "./GenerationProgress";
@@ -111,6 +112,229 @@ export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
 
 const PLATFORMS = ["tiktok", "instagram", "youtube", "x", "threads"] as const;
 
+/* ------------------------------------------------------------------------- *
+ * Otak Kedua + the persona picker
+ *
+ * Two inputs that belong to every module rather than to any one of them, so
+ * they live here once and the other module screens (IdeaEngine, IdeHariIni)
+ * import them instead of growing their own copy.
+ *
+ * Their values are mirrored into sessionStorage because StudioPanel switches
+ * modules by unmounting one component and mounting another. Plain React state
+ * would be wiped by a move from Hook Lab to Script Builder — which is exactly
+ * the moment somebody is feeding the same pasted article to a second module.
+ * sessionStorage and not localStorage: this is material for the session in
+ * front of you, not a preference worth remembering next week.
+ * ------------------------------------------------------------------------- */
+
+/** Mirrors the clip inside buildSharedContext, so what the counter shows is what the model reads. */
+const REFERENCE_MAX = 12_000;
+const REFERENCE_KEY = "malesan:reference";
+const PERSONA_KEY = "malesan:persona";
+
+type PersonaOption = { id: string; name: string; is_default: boolean };
+
+type ExtrasSnapshot = { reference: string; personaId: string };
+
+/**
+ * The two values live outside React on purpose.
+ *
+ * They have to outlive the component that shows them, and `useState` cannot do
+ * that here. They are read by three screens, so a plain module variable cannot
+ * do it either — nothing would re-render. `useSyncExternalStore` is the one
+ * sanctioned way in, and it comes with the SSR answer built in: the server
+ * render gets an explicitly empty snapshot, so the first paint can never
+ * disagree with what sessionStorage holds.
+ */
+const EMPTY_EXTRAS: ExtrasSnapshot = { reference: "", personaId: "" };
+const extrasListeners = new Set<() => void>();
+let extrasSnapshot: ExtrasSnapshot | null = null;
+
+function subscribeExtras(onChange: () => void) {
+  extrasListeners.add(onChange);
+  return () => {
+    extrasListeners.delete(onChange);
+  };
+}
+
+function readExtras(): ExtrasSnapshot {
+  // Hydrated from sessionStorage once per page load and then kept in memory:
+  // this runs on every render, and re-reading a 12 KB string out of storage on
+  // each keystroke is a cost with nothing to buy.
+  extrasSnapshot ??= {
+    reference: sessionStorage.getItem(REFERENCE_KEY) ?? "",
+    personaId: sessionStorage.getItem(PERSONA_KEY) ?? "",
+  };
+  return extrasSnapshot;
+}
+
+function writeExtras(patch: Partial<ExtrasSnapshot>) {
+  extrasSnapshot = { ...readExtras(), ...patch };
+  if (patch.reference !== undefined) sessionStorage.setItem(REFERENCE_KEY, patch.reference);
+  if (patch.personaId !== undefined) sessionStorage.setItem(PERSONA_KEY, patch.personaId);
+  for (const notify of extrasListeners) notify();
+}
+
+export type GenerationExtrasState = {
+  reference: string;
+  setReference: (v: string) => void;
+  personaId: string;
+  setPersonaId: (v: string) => void;
+  personas: PersonaOption[];
+  /** Spread into the POST body's `input`. Undefined when neither control is set. */
+  extraInput: Record<string, string> | undefined;
+};
+
+export function useGenerationExtras(): GenerationExtrasState {
+  const { reference, personaId } = useSyncExternalStore(
+    subscribeExtras,
+    readExtras,
+    () => EMPTY_EXTRAS,
+  );
+  const [personas, setPersonas] = useState<PersonaOption[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!alive || !user) return;
+
+      // Filtered by user_id on top of RLS, per the house rule — RLS is the
+      // guarantee, the filter is what keeps a bug in one policy from becoming
+      // a leak on its own.
+      const { data, error } = await supabase
+        .from("personas")
+        .select("id, name, is_default")
+        .eq("user_id", user.id)
+        .order("is_default", { ascending: false })
+        .order("name");
+
+      // A failed read and an empty table land in the same place deliberately:
+      // the picker never renders. Someone who has never written a persona
+      // should see the one-tap path, not a nag about a feature they did not
+      // ask for — and a network blip should not push an error at them either.
+      if (!alive || error || !data?.length) return;
+      setPersonas(data);
+
+      // An explicit "" is a real choice (ikut profil aja), which is why this
+      // reads storage rather than the snapshot: only a missing key or a persona
+      // that has since been deleted falls back to the default row.
+      const saved = sessionStorage.getItem(PERSONA_KEY);
+      if (saved === null || (saved !== "" && !data.some((p) => p.id === saved))) {
+        writeExtras({ personaId: data.find((p) => p.is_default)?.id ?? "" });
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const extraInput: Record<string, string> = {};
+  const trimmed = reference.trim();
+  if (trimmed) extraInput.reference = trimmed;
+  if (personaId) extraInput.persona_id = personaId;
+
+  return {
+    reference,
+    setReference: (v) => writeExtras({ reference: v }),
+    personaId,
+    setPersonaId: (v) => writeExtras({ personaId: v }),
+    personas,
+    extraInput: Object.keys(extraInput).length ? extraInput : undefined,
+  };
+}
+
+/**
+ * Rendered by every module that generates.
+ *
+ * `<details>` rather than a state-driven panel: collapsed by default is the
+ * whole point — the one-tap path must stay one tap — and the native element is
+ * already keyboard reachable, screen-reader labelled and free of animation to
+ * suppress.
+ */
+export function GenerationExtras({
+  extras,
+  disabled,
+}: {
+  extras: GenerationExtrasState;
+  disabled?: boolean;
+}) {
+  const selectId = useId();
+  const used = extras.reference.length;
+  const hasRef = used > 0;
+  const near = used >= REFERENCE_MAX * 0.9;
+
+  // null until the user opens or closes it themselves, and until then material
+  // restored after a module switch opens the panel on its own. A reference that
+  // is silently in effect but folded out of sight is worse than none — the
+  // creator cannot tell why the answer suddenly changed shape.
+  const [toggled, setToggled] = useState<boolean | null>(null);
+  const open = toggled ?? hasRef;
+
+  return (
+    <div className="space-y-3">
+      {extras.personas.length > 0 && (
+        <div>
+          <label htmlFor={selectId} className="block text-sm font-semibold text-ink">
+            Pakai suara siapa?
+          </label>
+          <select
+            id={selectId}
+            value={extras.personaId}
+            onChange={(e) => extras.setPersonaId(e.target.value)}
+            disabled={disabled}
+            className="mt-2 min-h-11 w-full cursor-pointer rounded-xl border border-hairline bg-obsidian px-3.5 text-sm text-ink focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
+          >
+            <option value="">Ikut profil aja</option>
+            {extras.personas.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <details
+        open={open}
+        onToggle={(e) => setToggled(e.currentTarget.open)}
+        className="rounded-xl border border-hairline bg-obsidian/40"
+      >
+        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
+          <span>Otak Kedua</span>
+          <span className={`tabular text-micro font-normal ${hasRef ? "text-ember" : "text-muted"}`}>
+            {hasRef ? `${used.toLocaleString("id-ID")} karakter nempel` : "Opsional"}
+          </span>
+        </summary>
+
+        <div className="border-t border-hairline px-3.5 pb-3.5 pt-3">
+          <p className="text-micro leading-relaxed text-muted">
+            Tempel bahan mentahnya di sini: artikel, angka hari ini, catatan lo
+            sendiri. Hasilnya bakal ngikutin fakta yang lo tempel, bukan ngarang.
+          </p>
+          <textarea
+            rows={6}
+            value={extras.reference}
+            onChange={(e) => extras.setReference(e.target.value)}
+            maxLength={REFERENCE_MAX}
+            disabled={disabled}
+            placeholder="Tempel di sini..."
+            className="mt-2 w-full resize-none skeu-inset rounded-xl border border-hairline bg-obsidian p-3.5 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
+          />
+          <p className={`mt-1.5 tabular text-micro ${near ? "text-ember" : "text-muted"}`}>
+            {used.toLocaleString("id-ID")} / {REFERENCE_MAX.toLocaleString("id-ID")} karakter
+            {near ? " · lebihnya bakal kepotong" : ""}
+          </p>
+        </div>
+      </details>
+    </div>
+  );
+}
+
 type HookItem = { text?: string; pattern?: string; score?: number; why?: string };
 type RepurposeOut = Record<string, string>;
 
@@ -141,6 +365,7 @@ export function ModuleRunner({
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({});
   const [platform, setPlatform] = useState<string>("tiktok");
+  const extras = useGenerationExtras();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [out, setOut] = useState<unknown>(null);
@@ -177,7 +402,7 @@ export function ModuleRunner({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           module: spec.key,
-          input: values,
+          input: { ...values, ...extras.extraInput },
           ...(spec.platformPicker ? { platform } : {}),
         }),
       });
@@ -295,6 +520,8 @@ export function ModuleRunner({
               </div>
             </div>
           )}
+
+          <GenerationExtras extras={extras} disabled={busy} />
         </div>
 
         {error && (

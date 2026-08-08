@@ -21,8 +21,8 @@ export default async function AdminConfigPage() {
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Otak AI</h1>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Model, harga kredit, dan saklar tiap modul. Berubah langsung — gak
-          perlu deploy ulang.
+          Model, perintah bayangan, harga kredit, dan saklar tiap modul. Berubah
+          langsung — gak perlu deploy ulang.
         </p>
       </header>
 

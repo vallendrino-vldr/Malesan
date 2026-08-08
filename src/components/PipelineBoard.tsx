@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion, PanInfo } from "framer-motion";
+import { motion, useDragControls, type PanInfo } from "framer-motion";
 import type { PipelineCard } from "@/lib/supabase/database.types";
 import {
-  updateCardStatus,
   ratePerformance,
   updateCardContentAndStatus,
   deletePipelineCard,
   restorePipelineCard,
 } from "@/app/actions/pipeline";
+import { createClient } from "@/lib/supabase/client";
+import { LiveRefresh } from "./LiveRefresh";
 import { IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE } from "@/lib/sse";
@@ -33,6 +34,11 @@ import { ScriptView, type ScriptOutput } from "./ScriptView";
  * So: one stage at a time on phones with an explicit stage switcher and button
  * moves, the full kanban with drag from `md` up, and every stage — empty or
  * not — states plainly what it holds and what the next action is.
+ *
+ * Arrangement now persists. `sort_order` is the user's own ordering inside a
+ * column; a drop renumbers that column and writes back only the rows that
+ * actually moved. Every move — drag or button — goes through `place()`, so
+ * there is one path to get right instead of three.
  */
 
 type Column = "ide" | "draft" | "siap" | "posted";
@@ -40,9 +46,19 @@ type Column = "ide" | "draft" | "siap" | "posted";
 /** Long enough to notice and react to; short enough to still feel like "just now". */
 const UNDO_WINDOW_MS = 8000;
 
-/** The server hands cards back newest-first; a restored card has to land back in that order. */
-const byNewest = (list: PipelineCard[]) =>
-  [...list].sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+/** Module-level so the realtime subscription's dependency stays stable. */
+const LIVE_TABLES = ["pipeline_cards"];
+
+/**
+ * The user's own arrangement first, newest-first only to break ties.
+ *
+ * Every existing row was written before `sort_order` existed and sits at 0, so
+ * a board nobody has rearranged still reads exactly as it did before.
+ */
+const byOrder = (list: PipelineCard[]) =>
+  [...list].sort(
+    (a, b) => a.sort_order - b.sort_order || (a.created_at < b.created_at ? 1 : -1),
+  );
 
 const COLUMNS: {
   id: Column;
@@ -76,6 +92,9 @@ const COLUMNS: {
     empty: "Belum ada yang tayang. Geser kartu dari Siap kalau udah lo posting.",
   },
 ];
+
+const ORDER: Column[] = ["ide", "draft", "siap", "posted"];
+const labelOf = (c: Column) => COLUMNS.find((x) => x.id === c)?.label ?? c;
 
 /**
  * One hook as HOOK_LAB_SCHEMA actually returns it: `text`, not `script_segment`.
@@ -115,12 +134,34 @@ function nextStep(card: PipelineCard, hasHook: boolean): string {
   }
 }
 
+/**
+ * Where the pointer actually was when the card was dropped.
+ *
+ * `PanInfo.point` is `pageX/pageY` — it includes the window scroll. Comparing
+ * it against `getBoundingClientRect()`, which is viewport-relative, silently
+ * misses every column the moment the page is scrolled down: the card snaps back
+ * and the drag looks like it did nothing. The native event carries viewport
+ * coordinates directly, so use those and keep `info.point` only as a fallback.
+ */
+function dropPoint(
+  event: MouseEvent | TouchEvent | PointerEvent,
+  info: PanInfo,
+): { x: number; y: number } {
+  const p = event as PointerEvent;
+  if (typeof p.clientX === "number") return { x: p.clientX, y: p.clientY };
+  const t = (event as TouchEvent).changedTouches?.[0];
+  if (t) return { x: t.clientX, y: t.clientY };
+  return { x: info.point.x - window.scrollX, y: info.point.y - window.scrollY };
+}
+
 export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }) {
   const [prevInitialCards, setPrevInitialCards] = useState<PipelineCard[]>(initialCards);
   const [cards, setCards] = useState<PipelineCard[]>(initialCards);
   const [mobileStage, setMobileStage] = useState<Column>("ide");
   const [undoCard, setUndoCard] = useState<PipelineCard | null>(null);
-  const [deleteError, setDeleteError] = useState("");
+  const [boardError, setBoardError] = useState("");
+  const [dragging, setDragging] = useState(false);
+  const [scheduling, setScheduling] = useState<string[]>([]);
 
   if (initialCards !== prevInitialCards) {
     setPrevInitialCards(initialCards);
@@ -142,16 +183,118 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
     posted: null,
   });
 
-  const countOf = (c: Column) => cards.filter((x) => x.status === c).length;
+  const listOf = (c: Column) => byOrder(cards.filter((x) => x.status === c));
 
-  const move = async (cardId: string, to: Column) => {
-    const snapshot = cards;
-    setCards((prev) => prev.map((c) => (c.id === cardId ? { ...c, status: to } : c)));
+  /**
+   * Ask the model for a posting slot once a card reaches Siap.
+   *
+   * Deliberately fire-and-forget from the caller's point of view: a failed tag
+   * is a missing chip, never a move that gets rolled back. The card is where the
+   * user put it either way.
+   */
+  const tagSchedule = async (cardId: string) => {
+    setScheduling((p) => (p.includes(cardId) ? p : [...p, cardId]));
     try {
-      await updateCardStatus(cardId, to);
-    } catch {
-      setCards(snapshot);
+      const res = await fetch("/api/pipeline/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card_id: cardId }),
+      });
+      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal nyariin jam tayangnya."));
+      const json = (await res.json()) as {
+        card?: { schedule_label: string | null; schedule_reason: string | null };
+      };
+      if (!json.card) throw new Error("Gagal nyariin jam tayangnya. Coba geser ulang kartunya.");
+      setCards((prev) =>
+        prev.map((c) =>
+          c.id === cardId
+            ? {
+                ...c,
+                schedule_label: json.card!.schedule_label,
+                schedule_reason: json.card!.schedule_reason,
+              }
+            : c,
+        ),
+      );
+    } catch (err) {
+      setBoardError(
+        err instanceof Error ? err.message : "Gagal nyariin jam tayangnya.",
+      );
+    } finally {
+      setScheduling((p) => p.filter((id) => id !== cardId));
     }
+  };
+
+  /**
+   * Put a card at `index` of column `to` and persist the whole column's order.
+   *
+   * The write goes straight from the browser: `pipeline_cards` is RLS'd to the
+   * owner for update, and the query still filters on `user_id` so the policy is
+   * a second lock rather than the only one. `.select()` is not optional — an
+   * update that matched no rows is indistinguishable from a successful one
+   * without it, and the board would keep showing a move the database refused.
+   *
+   * ponytail: renumbers 0..n-1 and issues one update per row that actually
+   * moved — O(column length) writes per drop. A fractional rank column would cut
+   * it to one write, worth doing only if someone ever keeps hundreds of cards in
+   * one stage.
+   */
+  const place = async (cardId: string, to: Column, index: number) => {
+    const snapshot = cards;
+    const moving = snapshot.find((c) => c.id === cardId);
+    if (!moving) return;
+
+    const target = byOrder(snapshot.filter((c) => c.status === to && c.id !== cardId));
+    target.splice(Math.max(0, Math.min(index, target.length)), 0, { ...moving, status: to });
+
+    const renumbered = target.map((c, i) => ({ ...c, status: to, sort_order: i }));
+    const changed = renumbered.filter((c) => {
+      const before = snapshot.find((s) => s.id === c.id);
+      return !before || before.status !== c.status || before.sort_order !== c.sort_order;
+    });
+    if (changed.length === 0) return;
+
+    const patch = new Map(renumbered.map((c) => [c.id, c]));
+    setCards((prev) => prev.map((c) => patch.get(c.id) ?? c));
+    setBoardError("");
+
+    const supabase = createClient();
+    const results = await Promise.all(
+      changed.map((c) =>
+        supabase
+          .from("pipeline_cards")
+          .update({ status: c.status, sort_order: c.sort_order })
+          .eq("id", c.id)
+          .eq("user_id", c.user_id)
+          .select("id")
+          .single(),
+      ),
+    );
+
+    if (results.some((r) => r.error)) {
+      setCards(snapshot);
+      setBoardError("Kartunya gagal dipindah. Coba lagi bentar lagi.");
+      return;
+    }
+
+    // A card only earns a posting slot when it first becomes shootable, and only
+    // if it has not been tagged already — re-entering Siap should not re-spend.
+    if (to === "siap" && moving.status !== "siap" && !moving.schedule_label) {
+      void tagSchedule(cardId);
+    }
+  };
+
+  const move = (cardId: string, to: Column) => place(cardId, to, 0);
+
+  const reorder = (cardId: string, delta: number) => {
+    const card = cards.find((c) => c.id === cardId);
+    if (!card) return;
+    const list = listOf(card.status as Column);
+    const i = list.findIndex((c) => c.id === cardId);
+    if (i < 0) return;
+    const to = i + delta;
+    if (to < 0 || to >= list.length) return;
+    return place(cardId, card.status as Column, to);
   };
 
   /**
@@ -161,7 +304,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
    * that actually matters — the tap you did not mean to make. An undo does.
    */
   const remove = async (card: PipelineCard) => {
-    setDeleteError("");
+    setBoardError("");
     setCards((prev) => prev.filter((c) => c.id !== card.id));
     try {
       await deletePipelineCard(card.id);
@@ -169,8 +312,8 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
     } catch {
       // Put it straight back: the board must never show a card as gone when
       // the database still has it.
-      setCards((prev) => byNewest([...prev, card]));
-      setDeleteError("Kartunya gagal dihapus. Coba lagi bentar lagi.");
+      setCards((prev) => [...prev, card]);
+      setBoardError("Kartunya gagal dihapus. Coba lagi bentar lagi.");
     }
   };
 
@@ -178,7 +321,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
     const card = undoCard;
     if (!card) return;
     setUndoCard(null);
-    setCards((prev) => byNewest([...prev, card]));
+    setCards((prev) => [...prev, card]);
     try {
       await restorePipelineCard({
         id: card.id,
@@ -188,33 +331,75 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         generation_id: card.generation_id ?? null,
         created_at: card.created_at,
       });
+      // The restore action's signature predates `sort_order` and the schedule
+      // tag, so a straight re-insert would put the card back at the top of its
+      // column with its posting slot wiped. Patch those two back on the way in.
+      // Best effort: the card is already restored, and a failed patch costs the
+      // user its position, not the card.
+      if (card.sort_order !== 0 || card.schedule_label) {
+        const { error } = await createClient()
+          .from("pipeline_cards")
+          .update({
+            sort_order: card.sort_order,
+            schedule_label: card.schedule_label,
+            schedule_reason: card.schedule_reason,
+          })
+          .eq("id", card.id)
+          .eq("user_id", card.user_id)
+          .select("id")
+          .single();
+        if (error) console.error("restore: sort_order/schedule patch failed", error);
+      }
     } catch {
       setCards((prev) => prev.filter((c) => c.id !== card.id));
-      setDeleteError("Gagal balikin kartunya. Kartu itu udah kehapus permanen.");
+      setBoardError("Gagal balikin kartunya. Kartu itu udah kehapus permanen.");
     }
   };
 
-  const handleDragEnd = async (cardId: string, currentStatus: Column, info: PanInfo) => {
-    const { point } = info;
-    let target: Column | null = null;
+  const handleDragEnd = (
+    cardId: string,
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo,
+  ) => {
+    setDragging(false);
+    const p = dropPoint(event, info);
 
-    for (const col of COLUMNS) {
-      const el = colRefs.current[col.id];
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      if (point.x >= r.left && point.x <= r.right && point.y >= r.top && point.y <= r.bottom) {
-        target = col.id;
+    const col = COLUMNS.find((c) => {
+      const r = colRefs.current[c.id]?.getBoundingClientRect();
+      return !!r && p.x >= r.left && p.x <= r.right && p.y >= r.top && p.y <= r.bottom;
+    });
+    if (!col) return;
+
+    // Where in that column the card was dropped: the first card whose midpoint
+    // the pointer is above. Measured from the DOM rather than from state so it
+    // matches what the user is actually looking at, dragged card excluded
+    // because `place()` reinserts it.
+    const siblings = Array.from(
+      colRefs.current[col.id]?.querySelectorAll<HTMLElement>("[data-card-id]") ?? [],
+    ).filter((el) => el.dataset.cardId !== cardId);
+
+    let index = siblings.length;
+    for (let i = 0; i < siblings.length; i++) {
+      const r = siblings[i].getBoundingClientRect();
+      if (p.y < r.top + r.height / 2) {
+        index = i;
         break;
       }
     }
 
-    if (target && target !== currentStatus) await move(cardId, target);
+    void place(cardId, col.id, index);
   };
 
   const total = cards.length;
 
   return (
     <div className="space-y-4">
+      {/* The board is live: `pipeline_cards` is in the realtime publication and
+          RLS scopes events to this user's own rows. Silent, because most events
+          on this table are the user's own drag landing — a toast for your own
+          drop is noise. */}
+      <LiveRefresh tables={LIVE_TABLES} silent />
+
       {/* ---------- what this board is (shown once, only while empty) ---------- */}
       {total === 0 && (
         <div className="surface-card rounded-2xl p-5">
@@ -257,7 +442,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                     on ? "bg-ember/25 text-ink" : "bg-surface-raised text-ink"
                   }`}
                 >
-                  {countOf(col.id)}
+                  {listOf(col.id).length}
                 </span>
               </button>
             );
@@ -265,19 +450,24 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         </div>
 
         {COLUMNS.filter((c) => c.id === mobileStage).map((col) => {
-          const list = cards.filter((c) => c.status === col.id);
+          const list = listOf(col.id);
           return (
             <div key={col.id} className="mt-3 space-y-3">
               <p className="text-xs leading-relaxed text-muted">{col.blurb}</p>
               {list.length === 0 ? (
                 <EmptyStage text={col.empty} />
               ) : (
-                list.map((card) => (
+                list.map((card, i) => (
                   <PipelineCardItem
                     key={card.id}
                     card={card}
+                    index={i}
+                    count={list.length}
                     onMove={move}
+                    onReorder={reorder}
                     onDelete={remove}
+                    onSchedule={tagSchedule}
+                    isScheduling={scheduling.includes(card.id)}
                     draggable={false}
                   />
                 ))
@@ -296,7 +486,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           genuinely cannot fit four at the 290px floor. */}
       <div className="hidden gap-3 overflow-x-auto pb-2 md:flex">
         {COLUMNS.map((col) => {
-          const list = cards.filter((c) => c.status === col.id);
+          const list = listOf(col.id);
           return (
             <div
               key={col.id}
@@ -313,18 +503,32 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
               </div>
               <p className="mb-3 text-micro leading-snug text-muted">{col.blurb}</p>
 
-              <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+              {/* A scroll container clips its children, so a card dragged out of
+                  a tall column was cut in half mid-gesture. Unclip while a drag
+                  is in flight — the column scrolls back to the top when it does,
+                  which is a fair trade for a card you can actually see. */}
+              <div
+                className={`flex min-h-0 flex-1 flex-col gap-3 ${
+                  dragging ? "overflow-visible" : "overflow-y-auto"
+                }`}
+              >
                 {list.length === 0 ? (
                   <EmptyStage text={col.empty} />
                 ) : (
-                  list.map((card) => (
+                  list.map((card, i) => (
                     <PipelineCardItem
                       key={card.id}
                       card={card}
+                      index={i}
+                      count={list.length}
                       onMove={move}
+                      onReorder={reorder}
                       onDelete={remove}
+                      onSchedule={tagSchedule}
+                      isScheduling={scheduling.includes(card.id)}
                       draggable
-                      onDragEnd={(info) => handleDragEnd(card.id, col.id, info)}
+                      onDragStart={() => setDragging(true)}
+                      onDragEnd={(event, info) => handleDragEnd(card.id, event, info)}
                     />
                   ))
                 )}
@@ -366,12 +570,12 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         </div>
       )}
 
-      {deleteError && (
+      {boardError && (
         <p
           role="alert"
           className="rounded-lg border border-danger/25 bg-danger/10 px-3 py-2 text-xs leading-relaxed text-danger"
         >
-          {deleteError}
+          {boardError}
         </p>
       )}
     </div>
@@ -388,16 +592,28 @@ function EmptyStage({ text }: { text: string }) {
 
 function PipelineCardItem({
   card,
+  index,
+  count,
   onMove,
+  onReorder,
   onDelete,
+  onSchedule,
+  isScheduling,
   draggable,
+  onDragStart,
   onDragEnd,
 }: {
   card: PipelineCard;
+  index: number;
+  count: number;
   onMove: (cardId: string, to: Column) => void | Promise<void>;
+  onReorder: (cardId: string, delta: number) => void | Promise<void>;
   onDelete: (card: PipelineCard) => void | Promise<void>;
+  onSchedule: (cardId: string) => void | Promise<void>;
+  isScheduling: boolean;
   draggable: boolean;
-  onDragEnd?: (info: PanInfo) => void;
+  onDragStart?: () => void;
+  onDragEnd?: (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => void;
 }) {
   const content = card.content as unknown as IdeaData & {
     generated_hook?: { hooks?: HookOption[] };
@@ -410,6 +626,7 @@ function PipelineCardItem({
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const dragControls = useDragControls();
 
   const status = card.status as Column;
   // Hook Lab returns ten. Unranked and unbounded that is a wall of buttons on a
@@ -487,6 +704,9 @@ function PipelineCardItem({
           newContent,
           module === "hook" ? "draft" : "siap",
         );
+        // Finishing a script is the main way a card reaches Siap — it earns a
+        // posting slot exactly like a card dragged there does.
+        if (module === "script" && !card.schedule_label) void onSchedule(card.id);
         router.refresh();
       } else {
         // A stream that ends without a terminal frame used to leave the card
@@ -514,6 +734,24 @@ function PipelineCardItem({
   const body = (
     <>
       <div className="flex items-start gap-1">
+        {/* The grip is the only part of a desktop card that starts a drag.
+            Grabbing the whole card meant selecting text in a script, or
+            scrolling the hook list, threw the card across the board instead. */}
+        {draggable && (
+          <span
+            role="presentation"
+            title="Geser buat pindahin"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              dragControls.start(e);
+            }}
+            className="-ml-1 mt-0.5 shrink-0 cursor-grab touch-none px-1 text-muted active:cursor-grabbing"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+              <path d="M9 5h2v2H9V5Zm4 0h2v2h-2V5ZM9 11h2v2H9v-2Zm4 0h2v2h-2v-2Zm-4 6h2v2H9v-2Zm4 0h2v2h-2v-2Z" />
+            </svg>
+          </span>
+        )}
         <h4 className="min-w-0 flex-1 font-display text-sm font-bold leading-snug text-ink">
           {card.title}
         </h4>
@@ -535,10 +773,33 @@ function PipelineCardItem({
           </svg>
         </button>
       </div>
-      {content?.format && (
-        <span className="eyebrow mt-2 inline-block rounded bg-obsidian px-2 py-1 text-muted">
-          {content.format}
-        </span>
+
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {content?.format && (
+          <span className="eyebrow inline-block rounded bg-obsidian px-2 py-1 text-muted">
+            {content.format}
+          </span>
+        )}
+        {/* The posting slot the model picked. Neutral on purpose — ember is for
+            action and heat, and this is information. */}
+        {card.schedule_label && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-hairline bg-obsidian px-2 py-1 text-micro text-ink"
+            title={card.schedule_reason ?? undefined}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3 fill-current">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 10.6V6h-2v7.4l4.7 2.8 1-1.7-3.7-2.2Z" />
+            </svg>
+            {card.schedule_label}
+          </span>
+        )}
+        {isScheduling && !card.schedule_label && (
+          <span className="text-micro text-muted">Lagi nyariin jam tayang...</span>
+        )}
+      </div>
+
+      {card.schedule_label && card.schedule_reason && (
+        <p className="mt-1.5 text-micro leading-relaxed text-muted">{card.schedule_reason}</p>
       )}
 
       {/* The card always says what it is waiting on. */}
@@ -658,6 +919,14 @@ function PipelineCardItem({
           Makasih — ini kepake buat ide lo berikutnya.
         </p>
       )}
+
+      <StageMover
+        status={status}
+        index={index}
+        count={count}
+        onMove={(to) => onMove(card.id, to)}
+        onReorder={(delta) => onReorder(card.id, delta)}
+      />
     </>
   );
 
@@ -665,9 +934,8 @@ function PipelineCardItem({
   // the scroll container wins, and the gesture is hard to land one-handed.
   if (!draggable) {
     return (
-      <div className="surface-card rounded-xl p-4">
+      <div data-card-id={card.id} className="surface-card rounded-xl p-4">
         {body}
-        <StageMover status={status} onMove={(to) => onMove(card.id, to)} />
       </div>
     );
   }
@@ -675,39 +943,91 @@ function PipelineCardItem({
   return (
     <motion.div
       layoutId={card.id}
+      data-card-id={card.id}
       drag
+      dragListener={false}
+      dragControls={dragControls}
       dragSnapToOrigin
-      onDragEnd={(_, info) => onDragEnd?.(info)}
-      whileDrag={{ scale: 1.04, zIndex: 10, cursor: "grabbing" }}
-      className="cursor-grab rounded-xl border border-hairline bg-surface-raised p-4 transition-colors hover:border-ember/30"
+      onDragStart={() => onDragStart?.()}
+      onDragEnd={(event, info) => onDragEnd?.(event, info)}
+      whileDrag={{ scale: 1.04, zIndex: 10 }}
+      className="rounded-xl border border-hairline bg-surface-raised p-4 transition-colors hover:border-ember/30"
     >
       {body}
     </motion.div>
   );
 }
 
-/** Explicit stage movement for touch — the escape hatch when a card is in the wrong place. */
+/**
+ * Every move a drag can do, as buttons.
+ *
+ * Not a fallback — it is the only way to move a card on a phone (where the board
+ * shows one stage at a time), and the only keyboard-reachable way anywhere. A
+ * card must never be stuck because a gesture did not land.
+ */
 function StageMover({
   status,
+  index,
+  count,
   onMove,
+  onReorder,
 }: {
   status: Column;
+  index: number;
+  count: number;
   onMove: (to: Column) => void;
+  onReorder: (delta: number) => void;
 }) {
-  const order: Column[] = ["ide", "draft", "siap", "posted"];
-  const i = order.indexOf(status);
-  const back = i > 0 ? order[i - 1] : null;
+  const i = ORDER.indexOf(status);
+  const back = i > 0 ? ORDER[i - 1] : null;
+  const next = i < ORDER.length - 1 ? ORDER[i + 1] : null;
 
-  if (!back) return null;
+  const arrow =
+    "flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink disabled:cursor-default disabled:opacity-30";
+  const stage =
+    "min-h-11 cursor-pointer rounded-lg px-2.5 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink";
 
   return (
-    <div className="mt-3 flex justify-end">
-      <button
-        onClick={() => onMove(back)}
-        className="text-micro text-muted underline-offset-2 transition-colors hover:text-ink hover:underline"
-      >
-        Balikin ke {COLUMNS.find((c) => c.id === back)?.label}
-      </button>
+    <div className="-mb-1 mt-3 flex items-center justify-between gap-1 border-t border-hairline pt-1">
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => onReorder(-1)}
+          disabled={index === 0}
+          aria-label="Naikin urutan kartu"
+          title="Naikin urutan"
+          className={arrow}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+            <path d="M12 6l6 7h-4v5h-4v-5H6l6-7Z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onClick={() => onReorder(1)}
+          disabled={index >= count - 1}
+          aria-label="Turunin urutan kartu"
+          title="Turunin urutan"
+          className={arrow}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+            <path d="M12 18l-6-7h4V6h4v5h4l-6 7Z" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-0.5">
+        {back && (
+          <button type="button" onClick={() => onMove(back)} className={stage}>
+            ← {labelOf(back)}
+          </button>
+        )}
+        {next && (
+          <button type="button" onClick={() => onMove(next)} className={stage}>
+            {labelOf(next)} →
+          </button>
+        )}
+      </div>
     </div>
   );
 }

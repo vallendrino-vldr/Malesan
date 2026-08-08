@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { CopyField } from "@/components/CopyField";
+import { PersonaManager, CtaSettings } from "@/components/PersonaManager";
 
 /**
  * The referral origin comes from the request, not an env var.
@@ -44,6 +45,23 @@ export default async function ProfilePage() {
 
   if (!profile) redirect("/login");
 
+  // Both reads are owner-scoped and covered by RLS. `personas` legitimately has
+  // no rows for most people — an empty list is the empty state, not a failure —
+  // and `creator_dna` is absent until onboarding runs, hence maybeSingle().
+  const [{ data: personas }, { data: dna }] = await Promise.all([
+    supabase
+      .from("personas")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("creator_dna")
+      .select("cta_url, cta_label, cta_enabled")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
+
   const referralCount = profile.referrals[0]?.count || 0;
   const referralLink = `${await requestOrigin()}/masuk?ref=${profile.referral_code}`;
 
@@ -63,6 +81,16 @@ export default async function ProfilePage() {
       </h1>
 
       <div className="space-y-6">
+        <PersonaManager personas={personas ?? []} />
+
+        <CtaSettings
+          initial={{
+            url: dna?.cta_url ?? "",
+            label: dna?.cta_label ?? "",
+            enabled: dna?.cta_enabled ?? false,
+          }}
+        />
+
         <div className="surface-card rounded-2xl p-5">
           <h2 className="font-display text-lg font-bold text-ink">Program referral</h2>
           <p className="mt-1.5 text-sm leading-relaxed text-muted">Ajak temen pakai Malesan. Lo dapet 10 kredit begitu dia kelar generate konten pertamanya — dan dia juga dapet 10. Gak ada batasnya.</p>

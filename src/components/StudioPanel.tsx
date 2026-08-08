@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { IdeHariIni } from "./IdeHariIni";
 import { IdeaEngine } from "./IdeaEngine";
 import { ModuleRunner } from "./ModuleRunner";
+import { ClipEngine } from "./ClipEngine";
+import { ThreadEngine } from "./ThreadEngine";
 
 /**
  * The Studio tab and its five modules, all switched in the browser.
@@ -28,8 +30,8 @@ import { ModuleRunner } from "./ModuleRunner";
  * than walking someone backwards through every tile they tried.
  */
 
-type Mod = "ide" | "idea" | "hook" | "script" | "repurpose";
-const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose"];
+type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread";
+const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread"];
 
 export type StudioCosts = {
   ide: number;
@@ -37,6 +39,13 @@ export type StudioCosts = {
   hook: number;
   script: number;
   repurpose: number;
+  /**
+   * Optional because the dashboard's server pass does not read them yet. When it
+   * does, drop the `??` fallbacks below — until then these mirror FALLBACK_COST
+   * in lib/config so the tile never advertises a price the route will not charge.
+   */
+  clip?: number;
+  thread?: number;
 };
 
 export function StudioPanel({
@@ -77,7 +86,23 @@ export function StudioPanel({
     document.querySelector("main")?.scrollTo({ top: 0 });
   };
 
-  if (!mod) return <>{home}</>;
+  const clipCost = costs.clip ?? 4;
+  const threadCost = costs.thread ?? 3;
+
+  if (!mod)
+    return (
+      <>
+        {home}
+        {/* The two niche engines, appended here rather than in the dashboard's
+            server pass because that file belongs to another change in flight.
+            Move these into the tile grid in app/page.tsx when it next opens —
+            and delete this block then, or the Studio grows two of each. */}
+        <div className="reveal relative z-10 mt-4 grid grid-cols-2 gap-2">
+          <StudioTile mod="clip" title="Clip Engine" cost={clipCost} />
+          <StudioTile mod="thread" title="Thread Engine" cost={threadCost} />
+        </div>
+      </>
+    );
 
   return (
     <div className="reveal space-y-4">
@@ -95,6 +120,10 @@ export function StudioPanel({
         <IdeHariIni />
       ) : mod === "idea" ? (
         <IdeaEngine />
+      ) : mod === "clip" ? (
+        <ClipEngine cost={clipCost} />
+      ) : mod === "thread" ? (
+        <ThreadEngine cost={threadCost} />
       ) : (
         <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
       )}

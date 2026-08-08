@@ -18,9 +18,22 @@ const MODULE_LABEL: Record<string, string> = {
   script: "Script Builder",
   repurpose: "Repurpose",
   vibe: "Vibe Coding Kit",
+  clip: "Clip Engine",
+  thread: "Thread Engine",
 };
 
-const COST_ORDER = ["ide_hari_ini", "idea", "hook", "script", "repurpose", "vibe"];
+// Drives three lists at once: the credit-price grid, the kill switches, and the
+// order they appear in. A module added here shows up in all of them.
+const COST_ORDER = [
+  "ide_hari_ini",
+  "idea",
+  "hook",
+  "script",
+  "repurpose",
+  "vibe",
+  "clip",
+  "thread",
+];
 
 export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
   const router = useRouter();
@@ -95,6 +108,74 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
           Cek dulu id-nya bener sebelum simpan.
         </p>
       </section>
+
+      {/* ---- shadow prompt ---- */}
+      {byKey["shadow_prompt"] && (
+        <section>
+          <h2 className="eyebrow mb-2 text-muted">Perintah bayangan</h2>
+          <p className="mb-2 text-micro leading-relaxed text-muted">
+            Aturan diam-diam yang nempel ke semua generate, di semua modul. User
+            gak pernah lihat teksnya — mereka cuma ngerasain hasilnya. Kosongin
+            terus simpan buat matiin.
+          </p>
+          <p className="mb-2 text-micro leading-relaxed text-muted">
+            Tulis apa adanya, satu aturan per baris. Contoh:{" "}
+            <span className="text-ink">
+              jangan pernah pakai frasa &quot;di era digital ini&quot;
+            </span>
+            ,{" "}
+            <span className="text-ink">
+              jangan buka tulisan pakai pertanyaan retoris
+            </span>
+            , <span className="text-ink">hindari emoji</span>.
+          </p>
+          <TextRow
+            label="Isi perintah bayangan"
+            initial={String(byKey["shadow_prompt"]?.value ?? "")}
+            allowEmpty
+            multiline
+            busy={busy === "shadow_prompt"}
+            saved={ok === "shadow_prompt"}
+            onSave={(v) => save("shadow_prompt", v)}
+          />
+          <p className="mt-2 text-micro leading-relaxed text-muted">
+            Makin panjang makin mahal — teksnya ikut kehitung token di tiap
+            generate. Beberapa baris udah cukup.
+          </p>
+        </section>
+      )}
+
+      {/* ---- token cost ---- */}
+      {byKey["price_in_per_mtok"] && (
+        <section>
+          <h2 className="eyebrow mb-2 text-muted">Modal token</h2>
+          <p className="mb-2 text-micro leading-relaxed text-muted">
+            Berapa rupiah yang <em className="not-italic text-ink">lo</em> bayar
+            ke vendor AI per 1 juta token. Angkanya ada di halaman harga vendor
+            — kurs-in dulu ke rupiah. Selama masih 0, dashboard untung cuma bisa
+            nunjukin pemasukan, modalnya gak bisa dihitung.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {(
+              [
+                ["price_in_per_mtok", "Token masuk (Rp/1 jt)"],
+                ["price_out_per_mtok", "Token keluar (Rp/1 jt)"],
+              ] as const
+            ).map(([k, label]) => (
+              <NumberRow
+                key={k}
+                label={label}
+                ariaLabel={label}
+                min={0}
+                initial={Number(byKey[k]?.value ?? 0)}
+                busy={busy === k}
+                saved={ok === k}
+                onSave={(v) => save(k, v)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ---- costs ---- */}
       <section>
@@ -284,6 +365,7 @@ function TextRow({
   busy,
   saved,
   allowEmpty = false,
+  multiline = false,
 }: {
   label: string;
   hint?: string;
@@ -295,9 +377,13 @@ function TextRow({
       id, a bank number) cannot be blanked by accident; on for the notice, whose
       empty state is how you hide it. */
   allowEmpty?: boolean;
+  /** Prose that runs to paragraphs (the shadow prompt) instead of one token. */
+  multiline?: boolean;
 }) {
   const [v, setV] = useState(initial);
   const dirty = v.trim() !== initial;
+  const field =
+    "min-w-0 rounded-lg border border-hairline bg-obsidian px-3 py-2 text-xs text-ink focus:border-ember focus:outline-none";
 
   return (
     <div className="rounded-xl border border-hairline bg-surface p-3">
@@ -306,12 +392,22 @@ function TextRow({
         {saved && <span className="text-micro text-success">Tersimpan</span>}
       </div>
       {hint && <p className="mt-0.5 text-micro text-muted">{hint}</p>}
-      <div className="mt-2 flex gap-2">
-        <input
-          value={v}
-          onChange={(e) => setV(e.target.value)}
-          className="min-w-0 flex-1 rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-xs text-ink focus:border-ember focus:outline-none"
-        />
+      <div className={`mt-2 flex gap-2 ${multiline ? "flex-col items-end" : ""}`}>
+        {multiline ? (
+          <textarea
+            value={v}
+            onChange={(e) => setV(e.target.value)}
+            rows={6}
+            aria-label={label}
+            className={`${field} w-full resize-y leading-relaxed`}
+          />
+        ) : (
+          <input
+            value={v}
+            onChange={(e) => setV(e.target.value)}
+            className={`${field} flex-1 font-mono`}
+          />
+        )}
         <button
           onClick={() => onSave(v.trim())}
           disabled={!dirty || busy || (!allowEmpty && !v.trim())}
@@ -395,16 +491,27 @@ function NumberRow({
   onSave,
   busy,
   saved,
+  min = 1,
+  ariaLabel,
 }: {
   label: string;
   initial: number;
   onSave: (v: number) => void;
   busy: boolean;
   saved: boolean;
+  /** Credit prices start at 1 — a free module would be a bug. Token cost is
+      rupiah and 0 is a real answer: "belum diisi". */
+  min?: number;
+  ariaLabel?: string;
 }) {
   const [v, setV] = useState(String(initial));
   const n = Number(v);
-  const dirty = Number.isInteger(n) && n > 0 && n !== initial;
+  // `Number("") === 0`, so a cleared field looked like a deliberate zero. On the
+  // credit prices that was harmless — their min of 1 rejected it — but the token
+  // cost rows pass min 0, where 0 is the value that means "belum diisi" and
+  // switches the profit dashboard's cost line back off. Clearing the box would
+  // have armed the OK button on a visually blank field and saved that.
+  const dirty = v.trim() !== "" && Number.isInteger(n) && n >= min && n !== initial;
 
   return (
     <div className="rounded-xl border border-hairline bg-surface p-3">
@@ -415,11 +522,11 @@ function NumberRow({
       <div className="mt-2 flex gap-1.5">
         <input
           type="number"
-          min={1}
+          min={min}
           inputMode="numeric"
           value={v}
           onChange={(e) => setV(e.target.value)}
-          aria-label={`Harga kredit ${label}`}
+          aria-label={ariaLabel ?? `Harga kredit ${label}`}
           className="w-full min-w-0 rounded-lg border border-hairline bg-obsidian px-2.5 py-2 font-mono text-xs text-ink focus:border-ember focus:outline-none"
         />
         <button

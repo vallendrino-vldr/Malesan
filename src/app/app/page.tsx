@@ -134,6 +134,8 @@ export default async function AppPage({
       getCost("script"),
       getCost("repurpose"),
       getCost("vibe"),
+      getCost("clip"),
+      getCost("thread"),
     ]),
 
     // Owner-only. A bank transfer lands in `topups` and then waits for someone
@@ -151,7 +153,8 @@ export default async function AppPage({
 
   if (typeof refillResult === "number") totalCredits = refillResult;
   const pipelineCards = pipelineResult ?? [];
-  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe] = costs;
+  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread] =
+    costs;
 
   // Owner's live announcement. Same config cache the costs above just warmed, so
   // this is a map read, not a round trip.
@@ -230,6 +233,8 @@ export default async function AppPage({
               hook: costHook,
               script: costScript,
               repurpose: costRepurpose,
+              clip: costClip,
+              thread: costThread,
             }}
             home={
         // This used to force everything into `min-h-[calc(100dvh-9.5rem)]` with
@@ -304,6 +309,32 @@ export default async function AppPage({
             <StudioTile mod="script" title="Script" cost={costScript} />
             <StudioTile mod="repurpose" title="Repurpose" cost={costRepurpose} />
           </div>
+
+          {/* The only door to /app/draft. The editor and its route shipped with
+              nothing linking to them, which is the same failure as Hook Lab and
+              Script above: built, working, and unreachable.
+
+              A real <Link>, not a StudioTile, because the drafts live on their
+              own route rather than in the client-side module switcher — and it
+              carries no credit price, because writing is free. */}
+          <Link
+            href="/app/draft"
+            className="group flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface px-4 py-3 transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-ink">Draft lo</span>
+              <span className="mt-0.5 block text-micro leading-snug text-muted">
+                Nulis sendiri, kesimpen otomatis. Mentok? Tekan Tab, biar gue terusin.
+              </span>
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="size-4 shrink-0 fill-muted transition-colors duration-[var(--duration-standard)] ease-heat group-hover:fill-ember"
+            >
+              <path d="M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6-1.4-1.4Z" />
+            </svg>
+          </Link>
 
           {/* The dashboard never said what the product is good for. Three lines,
               no scroll added, and no swipes at anything else. */}
