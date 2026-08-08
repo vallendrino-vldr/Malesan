@@ -21,6 +21,11 @@ export type CaptionStyle = {
   style: "box" | "outline" | "plain";
   /** 1 = bottom of the safe zone, higher = further up. Fraction of height. */
   position: number;
+  /**
+   * "word": one word on screen at a time — the punchy TikTok style.
+   * "line": the whole caption line shows, the spoken word lit — the readable one.
+   */
+  mode: "word" | "line";
 };
 
 /**
@@ -64,6 +69,7 @@ export const DEFAULT_STYLE: CaptionStyle = {
   highlightColor: "#ff8a3d",
   style: "outline",
   position: 0.72,
+  mode: "word",
 };
 
 export type Line = { words: Word[]; start: number; end: number };

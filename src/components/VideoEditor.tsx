@@ -25,10 +25,10 @@ import { exportBurnedVideo } from "@/lib/video/export";
 
 type Phase = "idle" | "extracting" | "transcribing" | "ready" | "exporting";
 
-const QUALITY = [
-  { label: "Ringan", mbps: 3 },
-  { label: "Standar", mbps: 6 },
-  { label: "Tajam", mbps: 10 },
+const BITRATE_PRESETS = [
+  { label: "TikTok / Reels", mbps: 12, hint: "1080p tegas, tahan re-compress" },
+  { label: "YouTube Shorts", mbps: 16, hint: "paling tajam" },
+  { label: "Hemat data", mbps: 6, hint: "file kecil" },
 ];
 
 export function VideoEditor({ cost }: { cost: number }) {
@@ -41,7 +41,8 @@ export function VideoEditor({ cost }: { cost: number }) {
   const [words, setWords] = useState<Word[]>([]);
   const [style, setStyle] = useState<CaptionStyle>(DEFAULT_STYLE);
   const [safeZones, setSafeZones] = useState(true);
-  const [bitrate, setBitrate] = useState(6);
+  const [bitrate, setBitrate] = useState(12);
+  const [noWatermark, setNoWatermark] = useState(false);
   const [now, setNow] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -140,6 +141,15 @@ export function VideoEditor({ cost }: { cost: number }) {
     setPhase("exporting");
     setStatus("Nge-render caption ke video (real-time, jangan tutup tab)...");
     try {
+      if (noWatermark) {
+        const wm = await fetch("/api/video/no-watermark", { method: "POST" });
+        if (!wm.ok) {
+          const d = (await wm.json().catch(() => null)) as { error?: string } | null;
+          setError(d?.error ?? "Gagal motong kredit buat hapus watermark.");
+          setPhase("ready");
+          return;
+        }
+      }
       const { blob, ext } = await exportBurnedVideo({
         file,
         lines,
@@ -147,6 +157,7 @@ export function VideoEditor({ cost }: { cost: number }) {
         width: w,
         height: h,
         bitrateMbps: bitrate,
+        watermark: !noWatermark,
         onProgress: (r) => setProgress(Math.round(r * 100)),
       });
       const url = URL.createObjectURL(blob);
@@ -164,7 +175,7 @@ export function VideoEditor({ cost }: { cost: number }) {
       setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
     }
-  }, [file, words, lines, style, bitrate]);
+  }, [file, words, lines, style, bitrate, noWatermark]);
 
   const active = activeAt(lines, now);
 
@@ -230,6 +241,18 @@ export function VideoEditor({ cost }: { cost: number }) {
                   bitrate={bitrate}
                   onBitrate={setBitrate}
                 />
+                <label className="flex items-start gap-2 rounded-xl border border-hairline bg-surface px-3 py-2.5 text-mini text-ink">
+                  <input
+                    type="checkbox"
+                    checked={noWatermark}
+                    onChange={(e) => setNoWatermark(e.target.checked)}
+                    className="mt-0.5 accent-ember"
+                  />
+                  <span>
+                    Hapus watermark malesan.my.id
+                    <span className="block text-micro text-muted">Bayar kredit ekstra. Kalau gak dicentang, watermark tetep nempel (gratis).</span>
+                  </span>
+                </label>
                 <button
                   onClick={doExport}
                   disabled={busy}
@@ -303,9 +326,13 @@ function SafeZones() {
 /** Preview overlay: same per-word reveal the export burns in — only spoken
  *  words show, the latest one lit. */
 function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: CaptionStyle }) {
-  const revealed = line.words.filter((w) => w.start <= now + 0.01);
-  if (!revealed.length) return null;
-  const activeIdx = revealed.length - 1;
+  const spoken = line.words.filter((w) => w.start <= now + 0.01).length;
+  if (!spoken) return null;
+  const currentIdx = spoken - 1;
+  const shown =
+    style.mode === "word"
+      ? [{ text: line.words[currentIdx].word, active: true }]
+      : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
   return (
     <div
       className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center"
@@ -316,7 +343,7 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
         style={{
           fontFamily: `"${style.fontFamily}", sans-serif`,
           fontWeight: style.bold ? 800 : 600,
-          fontSize: "clamp(18px, 7vw, 34px)",
+          fontSize: style.mode === "word" ? "clamp(24px, 9vw, 46px)" : "clamp(18px, 7vw, 34px)",
           color: style.textColor,
           textShadow:
             style.style === "outline"
@@ -329,10 +356,10 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
           borderRadius: style.style === "box" ? "0.3em" : 0,
         }}
       >
-        {revealed.map((w, i) => (
-          <span key={i} style={{ color: i === activeIdx ? style.highlightColor : undefined }}>
-            {w.word}
-            {i < revealed.length - 1 ? " " : ""}
+        {shown.map((w, i) => (
+          <span key={i} style={{ color: w.active ? style.highlightColor : undefined }}>
+            {w.text}
+            {i < shown.length - 1 ? " " : ""}
           </span>
         ))}
       </p>
@@ -390,6 +417,25 @@ function StylePanel({
         />
       </div>
 
+      <div>
+        <span className="text-micro text-muted">Munculnya</span>
+        <div className="mt-1 flex gap-1.5">
+          {(["word", "line"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => set({ mode: m })}
+              className={`flex-1 rounded-lg border px-2 py-1.5 text-micro font-semibold transition-colors ${
+                style.mode === m
+                  ? "border-ember bg-ember/15 text-ember"
+                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+              }`}
+            >
+              {m === "word" ? "Per kata" : "Per kalimat"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <label className="block">
         <span className="text-micro text-muted">Font</span>
         <select
@@ -445,22 +491,27 @@ function StylePanel({
       </label>
 
       <div>
-        <span className="text-micro text-muted">Kualitas / ukuran file</span>
-        <div className="mt-1 flex gap-1.5">
-          {QUALITY.map((q) => (
+        <span className="text-micro text-muted">Bitrate / platform</span>
+        <div className="mt-1 grid grid-cols-3 gap-1.5">
+          {BITRATE_PRESETS.map((q) => (
             <button
               key={q.mbps}
               onClick={() => onBitrate(q.mbps)}
-              className={`flex-1 rounded-lg border px-2 py-1.5 text-micro font-semibold transition-colors ${
+              title={q.hint}
+              className={`rounded-lg border px-1 py-1.5 text-micro font-semibold leading-tight transition-colors ${
                 bitrate === q.mbps
                   ? "border-ember bg-ember/15 text-ember"
                   : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
               }`}
             >
               {q.label}
+              <span className="mt-0.5 block font-mono text-[10px] opacity-70">{q.mbps} Mbps</span>
             </button>
           ))}
         </div>
+        <p className="mt-1 text-[10px] leading-snug text-muted">
+          Sosmed nge-compress ulang, jadi kirim bitrate tinggi biar hasil akhirnya gak burik. TikTok/Reels aman di 12, paling tajam 16.
+        </p>
       </div>
     </div>
   );
