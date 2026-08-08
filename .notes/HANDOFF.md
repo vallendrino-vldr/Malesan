@@ -732,6 +732,30 @@ UI row for it yet (like cost_autocomplete / cost_schedule_tag).
 - The transcript editor re-maps typo fixes by word index; changing the word COUNT
   keeps old timings. Deliberate v1 limitation, stated in its own hint.
 
+### 9e-bis. Transcription keys wired + verified (2026-08-08)
+
+- **Groq: 4 keys, from 4 accounts, rotated.** `src/lib/video/groq-keys.ts` mirrors
+  the Gemini pool (`GROQ_API_KEY_1..10`, round-robin offset, 429 cooldown, cooling
+  keys benched not dropped). `transcribe.ts` now rotates across them on 429/5xx.
+  All four keys VERIFIED valid (200 on /models), and the transcriptions endpoint
+  was VERIFIED end-to-end with a real 200 returning the exact
+  `{duration, words:[{word,start,end}]}` shape the parser expects. This is real,
+  not just build-passing.
+- **xAI Grok → admin assistant brain, Gemini fallback.** `/api/admin/assistant`
+  now calls `generateWithGrokFallback`: tries Grok (xAI is OpenAI-compatible, via
+  the `custom` adapter + `https://api.x.ai/v1`) and drops to Gemini on ANY error.
+  Deliberately isolated to admin — off the user money path. **The xAI team has NO
+  credits** (verified: `grok-3`/`grok-4` exist but the API returns "team doesn't
+  have any credits"), so today every Grok call fails and the assistant runs on
+  Gemini. Add credits at console.x.ai and Grok takes over with no code change.
+- **Keys are in `.env.local` (local dev) but NOT in Vercel.** There is no MCP tool
+  to set Vercel env vars — verified. So in PRODUCTION the video transcription and
+  the Grok path do nothing until the owner adds, in Vercel project env:
+  `GROQ_API_KEY_1..4`, `XAI_API_KEY`, `XAI_MODEL=grok-3`, `GEMINI_API_KEY_4`.
+  That dashboard step is the one thing genuinely outside agent access.
+- Still unverified: the ffmpeg.wasm CLIENT half (audio extract + burn-in). Needs a
+  browser + a real video — see the 9e honesty block above.
+
 ### Correct first move next session
 Add the Groq key locally, `npm run dev`, sign in via `/dev-masuk`, open Studio →
 Video Auto-CC, and run one short real clip end to end. Fix what the browser shows.

@@ -1,4 +1,5 @@
 import "server-only";
+import { groqAttempts, hasGroq, markGroqRateLimited } from "./video/groq-keys";
 
 /**
  * Speech-to-text with word-level timestamps.
@@ -55,54 +56,83 @@ const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3-turbo";
  * the per-word array; without the granularity parameter it returns segments
  * only, and the per-word highlight has nothing to sync to.
  */
+/**
+ * POST the audio to Groq, rotating across the key pool.
+ *
+ * A 429 benches that account and moves to the next key immediately — a second
+ * account's quota is independent, so trying it costs nothing and usually
+ * succeeds. 5xx also rolls to the next key. A 4xx that is not 429 is our bug or
+ * a bad request and is not retried. If every key is exhausted, the last error
+ * is surfaced.
+ */
+async function postWithRotation(
+  audio: Blob,
+  filename: string,
+  opts?: { language?: string; signal?: AbortSignal },
+): Promise<Response> {
+  const keys = groqAttempts();
+  let last: TranscribeError | null = null;
+
+  for (const key of keys) {
+    const form = new FormData();
+    form.append("file", audio, filename);
+    form.append("model", GROQ_MODEL);
+    form.append("response_format", "verbose_json");
+    form.append("timestamp_granularities[]", "word");
+    // Indonesian by default — Whisper autodetects when omitted, which is worse
+    // for Indonesian specifically.
+    if (opts?.language) form.append("language", opts.language);
+
+    let res: Response;
+    try {
+      res = await fetch(GROQ_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key.value}` },
+        body: form,
+        signal: opts?.signal,
+      });
+    } catch (e) {
+      last = new TranscribeError(
+        `Gagal nyambung ke layanan transkripsi: ${e instanceof Error ? e.message : "network"}`,
+        502,
+        true,
+      );
+      continue;
+    }
+
+    if (res.ok) return res;
+
+    const body = await res.text().catch(() => "");
+    if (res.status === 429) {
+      markGroqRateLimited(key.index);
+      last = new TranscribeError(`Transkripsi kena limit (429): ${body.slice(0, 120)}`, 429, true);
+      continue;
+    }
+    if (res.status >= 500) {
+      last = new TranscribeError(`Server transkripsi bermasalah (${res.status})`, res.status, true);
+      continue;
+    }
+    // 400/401/413 etc. — retrying a different key cannot fix these.
+    throw new TranscribeError(`Transkripsi ditolak (${res.status}): ${body.slice(0, 160)}`, res.status, false);
+  }
+
+  throw last ?? new TranscribeError("Semua key transkripsi gagal.", 503, true);
+}
+
 export async function transcribeAudio(
   audio: Blob,
   filename: string,
   opts?: { language?: string; signal?: AbortSignal },
 ): Promise<Transcript> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) {
+  if (!hasGroq()) {
     throw new TranscribeError(
-      "Transkripsi belum aktif — GROQ_API_KEY belum diisi di server.",
+      "Transkripsi belum aktif — belum ada GROQ_API_KEY di server.",
       503,
       false,
     );
   }
 
-  const form = new FormData();
-  form.append("file", audio, filename);
-  form.append("model", GROQ_MODEL);
-  form.append("response_format", "verbose_json");
-  form.append("timestamp_granularities[]", "word");
-  // Indonesian by default, but let a caller override — Whisper autodetects when
-  // the field is omitted, which is worse for Indonesian specifically.
-  if (opts?.language) form.append("language", opts.language);
-
-  let res: Response;
-  try {
-    res = await fetch(GROQ_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${key}` },
-      body: form,
-      signal: opts?.signal,
-    });
-  } catch (e) {
-    throw new TranscribeError(
-      `Gagal nyambung ke layanan transkripsi: ${e instanceof Error ? e.message : "network"}`,
-      502,
-      true,
-    );
-  }
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    // 429 and 5xx are worth a retry; a 400/401 is our bug or a bad key and is not.
-    throw new TranscribeError(
-      `Transkripsi ditolak (${res.status}): ${body.slice(0, 200)}`,
-      res.status,
-      res.status === 429 || res.status >= 500,
-    );
-  }
+  const res = await postWithRotation(audio, filename, opts);
 
   const json = (await res.json()) as {
     text?: string;
