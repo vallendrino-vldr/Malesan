@@ -27,15 +27,17 @@ export type ExportOpts = {
   style: CaptionStyle;
   width: number;
   height: number;
-  /** Target video bitrate in Mbps — the "compress" control. */
+  /** Target video bitrate in Mbps — the real quality/compress control. */
   bitrateMbps: number;
+  /** Burn the malesan.my.id mark. False only after the credit was charged. */
+  watermark: boolean;
   onProgress: (ratio: number) => void;
 };
 
 export async function exportBurnedVideo(
   opts: ExportOpts,
 ): Promise<{ blob: Blob; ext: string }> {
-  const { file, lines, style, width: W, height: H, bitrateMbps, onProgress } = opts;
+  const { file, lines, style, width: W, height: H, bitrateMbps, watermark, onProgress } = opts;
 
   const video = document.createElement("video");
   video.src = URL.createObjectURL(file);
@@ -80,7 +82,7 @@ export async function exportBurnedVideo(
     ctx.drawImage(video, 0, 0, W, H);
     const a = activeAt(lines, video.currentTime);
     if (a) drawCaption(ctx, a.line, video.currentTime, style, W, H);
-    drawWatermark(ctx, W, H);
+    if (watermark) drawWatermark(ctx, W, H);
     onProgress(Math.min(0.999, video.currentTime / (video.duration || 1)));
     if (!video.ended) raf = requestAnimationFrame(render);
   };
@@ -151,7 +153,13 @@ function once(el: HTMLElement, ev: string): Promise<void> {
   });
 }
 
-/** Per-word reveal: only words already spoken are shown, the latest one lit. */
+/**
+ * Draw the caption for time `t`.
+ *
+ * "word" mode shows exactly the word being spoken, one at a time. "line" mode
+ * shows the whole caption line at once with the spoken word lit. Same function
+ * the preview mirrors, so what is seen is what is burned.
+ */
 function drawCaption(
   ctx: CanvasRenderingContext2D,
   line: Line,
@@ -160,11 +168,18 @@ function drawCaption(
   W: number,
   H: number,
 ) {
-  const revealed = line.words.filter((w) => w.start <= t + 0.01);
-  if (!revealed.length) return;
-  const activeIdx = revealed.length - 1;
+  const spokenCount = line.words.filter((w) => w.start <= t + 0.01).length;
+  if (!spokenCount) return;
+  const currentIdx = spokenCount - 1;
 
-  const fontPx = Math.round(H * 0.058);
+  // In word mode only the current word is on screen; in line mode the whole
+  // line is, with the current word highlighted.
+  const render =
+    style.mode === "word"
+      ? [{ text: line.words[currentIdx].word, active: true }]
+      : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
+
+  const fontPx = Math.round(H * (style.mode === "word" ? 0.075 : 0.058));
   ctx.font = `${style.bold ? 800 : 600} ${fontPx}px "${style.fontFamily}", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -176,15 +191,15 @@ function drawCaption(
   const rows: { words: { text: string; idx: number; w: number }[]; width: number }[] = [];
   let row: { text: string; idx: number; w: number }[] = [];
   let rowW = 0;
-  revealed.forEach((w, i) => {
-    const tw = ctx.measureText(w.word).width;
+  render.forEach((w, i) => {
+    const tw = ctx.measureText(w.text).width;
     const add = row.length ? space + tw : tw;
     if (rowW + add > maxW && row.length) {
       rows.push({ words: row, width: rowW });
       row = [];
       rowW = 0;
     }
-    row.push({ text: w.word, idx: i, w: tw });
+    row.push({ text: w.text, idx: i, w: tw });
     rowW += row.length === 1 ? tw : space + tw;
   });
   if (row.length) rows.push({ words: row, width: rowW });
@@ -204,7 +219,7 @@ function drawCaption(
     }
     for (const word of r.words) {
       const cx = x + word.w / 2;
-      const color = word.idx === activeIdx ? style.highlightColor : style.textColor;
+      const color = render[word.idx].active ? style.highlightColor : style.textColor;
       if (style.style === "outline") {
         ctx.lineJoin = "round";
         ctx.lineWidth = fontPx * 0.16;
@@ -222,19 +237,46 @@ function drawCaption(
   });
 }
 
-/** The lasting credit: a small mark so a reposted clip still says where it came
- *  from. Subtle enough not to fight the content, always there. */
+/**
+ * The lasting credit — a small, deliberately tasteful pill so a reposted clip
+ * still says where it came from without looking like a stock watermark.
+ *
+ * Bottom-centre and lifted clear of the very edge so it survives the platform
+ * crop; a soft dark pill, an ember dot, the wordmark in the brand's own display
+ * font. Sized to the frame so it is never a giant slab on a portrait video.
+ */
 function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const px = Math.max(14, Math.round(H * 0.022));
+  const px = Math.max(15, Math.round(H * 0.02));
+  const text = "malesan.my.id";
   ctx.save();
-  ctx.font = `700 ${px}px "Archivo", system-ui, sans-serif`;
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  ctx.globalAlpha = 0.75;
+  ctx.font = `700 ${px}px "Anton", "Archivo", system-ui, sans-serif`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+
+  const dot = px * 0.42;
+  const gap = px * 0.5;
+  const padX = px * 0.7;
+  const padY = px * 0.5;
+  const textW = ctx.measureText(text).width;
+  const pillW = padX * 2 + dot + gap + textW;
+  const pillH = px + padY * 2;
+  const x = (W - pillW) / 2;
+  const y = H * 0.945 - pillH; // lifted above the bottom edge / safe area
+
+  ctx.globalAlpha = 0.92;
+  roundRect(ctx, x, y, pillW, pillH, pillH / 2);
+  ctx.fillStyle = "rgba(11,10,9,0.55)";
+  ctx.fill();
+
+  const cy = y + pillH / 2;
+  ctx.beginPath();
+  ctx.arc(x + padX + dot / 2, cy, dot / 2, 0, Math.PI * 2);
+  ctx.fillStyle = "#ff8a3d";
+  ctx.fill();
+
+  ctx.globalAlpha = 0.96;
   ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = "rgba(0,0,0,0.8)";
-  ctx.shadowBlur = px * 0.3;
-  ctx.fillText("malesan.my.id", W - px * 0.8, H - px * 0.8);
+  ctx.fillText(text, x + padX + dot + gap, cy + px * 0.04);
   ctx.restore();
 }
 

@@ -788,6 +788,37 @@ video + wall-clock). Owner should export one clip and confirm the file now shows
 captions. Approach is sound — canvas capture physically cannot output the
 original untouched — but the honest status is unproven-here.
 
+### 9g. Auto-CC round 2 (2026-08-08 d) — mode, watermark option, real bitrate
+
+- **Per-word vs per-sentence is now a choice.** `CaptionStyle.mode: "word" | "line"`.
+  "word" shows one word at a time (bigger); "line" shows the whole line with the
+  spoken word lit. Preview and `export.ts` share the logic. Default "word".
+- **Watermark is now premium + optional.** `drawWatermark` in export.ts is a
+  centred rounded pill (ember dot + wordmark in Anton), lifted above the crop.
+  A "Hapus watermark" checkbox charges credits: `POST /api/video/no-watermark`
+  spends `cost_no_watermark` (app_config, default 5, seeded migration 00020)
+  before a clean export. Free export keeps the mark.
+- **Bitrate presets are real and platform-labelled.** TikTok/Reels 12, YT Shorts
+  16, Hemat 6 Mbps; fed straight to MediaRecorder `videoBitsPerSecond`. Default
+  raised to 12 — the "burik" export was the old 6 Mbps VP8. The hint tells the
+  owner sosmed re-compresses, so send high.
+- Files: `src/lib/video/export.ts` (drawCaption mode + premium watermark + gate),
+  `src/lib/video/captions.ts` (mode on the type), `src/components/VideoEditor.tsx`
+  (mode toggle, watermark checkbox, bitrate presets), `src/lib/config.ts`
+  (getVideoNoWatermarkCost), `src/app/api/video/no-watermark/route.ts`.
+
+**Still NOT browser-verified by the agent** — export is real-time canvas capture
+and needs a real video. Owner tests on prod after redeploy. Approach is sound
+(canvas pixels cannot be the original). If a clip still reads per-sentence, check
+that `style.mode` is "word" and that `groupLines` is not making lines too long.
+
+**Owner's open asks not yet built:** trim/cut video, and any further editing
+tools ("editing lainnya maximal"). Proposed, not started — pick one and say so.
+
+**Env for prod (owner adds in Vercel, agent has no tool for it):** GEMINI_API_KEY_1..4
+(the 4 new keys), GROQ_API_KEY_1..4. A paste-ready file was delivered. Grok/xAI is
+GONE — do not reintroduce it.
+
 ### Correct first move next session
 Add the Groq key locally, `npm run dev`, sign in via `/dev-masuk`, open Studio →
 Video Auto-CC, and run one short real clip end to end. Fix what the browser shows.

@@ -128,6 +128,19 @@ export async function getVideoCostPerMin(): Promise<number> {
   return typeof v === "number" && v > 0 ? Math.round(v) : 2;
 }
 
+/**
+ * Extra credits to remove the malesan.my.id watermark from an export.
+ *
+ * The watermark is free advertising the product gives up when someone pays to
+ * drop it, so it is priced as its own small charge rather than folded into the
+ * per-minute rate. Retunable in app_config; 5 is the safe default.
+ */
+export async function getVideoNoWatermarkCost(): Promise<number> {
+  const rows = await load();
+  const v = rows["cost_no_watermark"];
+  return typeof v === "number" && v >= 0 ? Math.round(v) : 5;
+}
+
 export type Pricing = { inPerMTok: number; outPerMTok: number };
 
 /**
