@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   activeAt,
   groupLines,
@@ -32,6 +33,7 @@ const BITRATE_PRESETS = [
 ];
 
 export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWatermarkCost: number }) {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -108,7 +110,9 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setStatus("AI lagi denger & nulis tiap kata...");
       const form = new FormData();
       form.append("audio", audio, "audio.m4a");
-      form.append("durationSec", String(Math.ceil(durationSec)));
+      // Send the raw duration, not a pre-ceiled one: the server does its own
+      // minute rounding, and ceiling here too billed a 60.04s clip as 2 minutes.
+      form.append("durationSec", String(durationSec));
       form.append("language", "id");
 
       const res = await fetch("/api/video/transcribe", { method: "POST", body: form });
@@ -123,13 +127,16 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setWords(data.words);
       setPhase("ready");
       setStatus("");
+      // Credits were just spent server-side; re-pull so the header balance is
+      // current without waiting on the realtime channel (which can lag or miss).
+      router.refresh();
     } catch (e) {
       setError(
         e instanceof Error ? `Gagal ngolah video: ${e.message}` : "Gagal ngolah video.",
       );
       setPhase("idle");
     }
-  }, [file]);
+  }, [file, router]);
 
   const doExport = useCallback(async () => {
     if (!file || !words.length) return;
@@ -149,6 +156,8 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
           setPhase("ready");
           return;
         }
+        // Watermark credit just came off — update the header now, not on refresh.
+        router.refresh();
       }
       const { blob, ext } = await exportBurnedVideo({
         file,
@@ -178,7 +187,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
     }
-  }, [file, words, lines, style, bitrate, noWatermark]);
+  }, [file, words, lines, style, bitrate, noWatermark, noWatermarkCost, router]);
 
   const active = activeAt(lines, now);
 

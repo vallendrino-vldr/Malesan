@@ -150,6 +150,29 @@ export async function getVideoNoWatermarkCost(): Promise<number> {
   return typeof v === "number" && v >= 0 ? Math.round(v) : 5;
 }
 
+/**
+ * Credits for the instant Groq reactions on a draft — the netizen-comment
+ * simulator and the script roast. Cheap on purpose (a Groq call is fast and
+ * costs the owner little), and `>= 0` so the owner can set either to 0 to make it
+ * free from app_config without a deploy. Defaults to 1.
+ */
+export async function getReactionCost(kind: "netizen" | "roast"): Promise<number> {
+  const rows = await load();
+  const v = rows[`cost_${kind}`];
+  return typeof v === "number" && v >= 0 ? Math.round(v) : 1;
+}
+
+/**
+ * Credits to recycle an old posted piece into fresh angles via Gemini. A real
+ * reasoning generation, so priced a little above the instant reactions. Retunable
+ * in app_config; defaults to 2.
+ */
+export async function getRecycleCost(): Promise<number> {
+  const rows = await load();
+  const v = rows["cost_recycle"];
+  return typeof v === "number" && v >= 0 ? Math.round(v) : 2;
+}
+
 export type Pricing = { inPerMTok: number; outPerMTok: number };
 
 /**

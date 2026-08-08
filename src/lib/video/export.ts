@@ -42,7 +42,12 @@ export async function exportBurnedVideo(
   const video = document.createElement("video");
   video.src = URL.createObjectURL(file);
   video.playsInline = true;
-  video.volume = 0.001;
+  // Muted is what makes play() start reliably: a non-muted programmatic play,
+  // after awaits have broken the click's user-activation, is rejected by the
+  // browser — and then the code awaited "ended" on a video that never started
+  // and hung forever. The audio track is still captured from the element's
+  // stream regardless of muted, so the exported file keeps its sound.
+  video.muted = true;
   await once(video, "loadedmetadata");
 
   // Render at a proper resolution, not the source's. Short-form uploads are
@@ -88,40 +93,149 @@ export async function exportBurnedVideo(
   const floor = Math.round(W * H * 30 * 0.3);
   const bits = Math.max(Math.round(bitrateMbps * 1_000_000), floor);
 
+  // Release every heavy resource the export held. Called on success and on
+  // failure. Stopping the tracks frees the encoder and the captured audio; wiping
+  // the video src releases the decoder buffers; a 0x0 canvas drops its backing
+  // store. Without this, several exports in a row leak until the tab dies.
+  const release = () => {
+    try { canvasStream.getTracks().forEach((t) => t.stop()); } catch {}
+    try { vStream?.getTracks().forEach((t) => t.stop()); } catch {}
+    try { video.pause(); } catch {}
+    try { URL.revokeObjectURL(video.src); } catch {}
+    video.removeAttribute("src");
+    try { video.load(); } catch {}
+    canvas.width = 0;
+    canvas.height = 0;
+  };
+
   const mime = pickMime();
   const rec = new MediaRecorder(canvasStream, { mimeType: mime, videoBitsPerSecond: bits });
-  const chunks: BlobPart[] = [];
+
+  // Stream the encoded output straight to disk instead of piling every chunk on
+  // the JS heap. A multi-minute, high-bitrate export is hundreds of MB; the old
+  // path kept all of it in an array AND, with no timeslice, let MediaRecorder
+  // buffer the whole file internally until stop() — so the heap briefly held the
+  // video twice. That is what OOM-crashed the tab ("Aw Snap") on a phone whatever
+  // its RAM. OPFS keeps the bytes on disk and the download reads them back from a
+  // disk-backed File. No quality is touched: same canvas, same bitrate.
+  const sink = await makeSink(mime);
+  let writeChain: Promise<void> = Promise.resolve();
   rec.ondataavailable = (e) => {
-    if (e.data.size) chunks.push(e.data);
+    if (e.data && e.data.size) {
+      const chunk = e.data;
+      // Serialise the async disk writes so chunks land in order and each is freed
+      // as soon as it is written, rather than queuing on the heap.
+      writeChain = writeChain.then(() => sink.write(chunk));
+    }
   };
   const stopped = new Promise<void>((res) => (rec.onstop = () => res()));
 
-  let raf = 0;
-  const render = () => {
+  const paint = (t: number) => {
     ctx.drawImage(video, 0, 0, W, H);
-    const a = activeAt(lines, video.currentTime);
-    if (a) drawCaption(ctx, a.line, video.currentTime, style, W, H);
+    const a = activeAt(lines, t);
+    if (a) drawCaption(ctx, a.line, t, style, W, H);
     if (watermark) drawWatermark(ctx, W, H);
     vTrack?.requestFrame?.();
-    onProgress(Math.min(0.999, video.currentTime / (video.duration || 1)));
-    if (!video.ended) raf = requestAnimationFrame(render);
+    onProgress(Math.min(0.999, t / (video.duration || 1)));
   };
 
-  rec.start();
-  await video.play();
-  render();
-  await once(video, "ended");
+  // Timeslice: flush an encoded chunk roughly every second so the recorder never
+  // holds the whole video in its internal buffer. This is half the OOM fix — the
+  // sink writing to disk is the other half.
+  rec.start(1000);
+  try {
+    await video.play();
+  } catch {
+    // play() was rejected (autoplay policy). Tear everything down and fail loudly
+    // instead of awaiting an "ended" that will never come.
+    try { rec.stop(); } catch { /* recorder may not have started a track yet */ }
+    await sink.finish().catch(() => {}); // close the writable so it is not left open
+    release();
+    throw new Error("Browser nolak play video buat render. Coba lagi atau pakai Chrome.");
+  }
+
+  // Drive one canvas frame per decoded VIDEO frame via requestVideoFrameCallback:
+  // captures at the source's real FPS (not the display's 60Hz, which duplicated
+  // frames and made 30fps clips look choppy) and stays on the media element's
+  // own clock — the same clock the audio track rides — so the two cannot drift.
+  // rAF is the fallback where rVFC is missing (older Safari).
+  const rvfc = video as HTMLVideoElement & {
+    requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
+  };
+  let raf = 0;
+  await new Promise<void>((resolve) => {
+    const done = () => resolve();
+    video.addEventListener("ended", done, { once: true });
+    if (typeof rvfc.requestVideoFrameCallback === "function") {
+      const step = (_now: number, meta: { mediaTime: number }) => {
+        if (video.ended) return;
+        paint(meta.mediaTime);
+        rvfc.requestVideoFrameCallback!(step);
+      };
+      rvfc.requestVideoFrameCallback!(step);
+    } else {
+      const step = () => {
+        if (video.ended) return;
+        paint(video.currentTime);
+        raf = requestAnimationFrame(step);
+      };
+      step();
+    }
+  });
   cancelAnimationFrame(raf);
+
+  // Paint the final frame so the last moment is not dropped, then close out.
   ctx.drawImage(video, 0, 0, W, H);
   if (watermark) drawWatermark(ctx, W, H);
   vTrack?.requestFrame?.();
   rec.stop();
   await stopped;
-  URL.revokeObjectURL(video.src);
+  await writeChain; // every recorded chunk is flushed to the sink before finishing
+  const blob = await sink.finish();
+  release();
 
   const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
   onProgress(1);
-  return { blob: new Blob(chunks, { type: mime }), ext };
+  return { blob, ext };
+}
+
+type Sink = { write: (b: Blob) => Promise<void>; finish: () => Promise<Blob> };
+
+/**
+ * Where the recorder's output goes.
+ *
+ * OPFS (Origin Private File System) streams it to a real file on disk, so the
+ * encoded video never accumulates on the JS heap — the fix for the mobile
+ * "Aw Snap" out-of-memory crash. `getFile()` then hands back a disk-backed File
+ * the browser downloads by reading from disk, not from the heap. A fixed temp
+ * name is overwritten each run so nothing piles up between exports. Where OPFS is
+ * unavailable (older browsers), it degrades to the in-memory array rather than
+ * failing — correctness first, memory second.
+ */
+async function makeSink(mime: string): Promise<Sink> {
+  try {
+    const root = await navigator.storage?.getDirectory?.();
+    if (root) {
+      const handle = await root.getFileHandle("malesan-export.tmp", { create: true });
+      const writable = await handle.createWritable();
+      return {
+        write: (b) => writable.write(b),
+        finish: async () => {
+          await writable.close();
+          return handle.getFile();
+        },
+      };
+    }
+  } catch {
+    /* OPFS blocked or unsupported — fall through to the in-memory sink */
+  }
+  const chunks: BlobPart[] = [];
+  return {
+    write: async (b) => {
+      chunks.push(b);
+    },
+    finish: async () => new Blob(chunks, { type: mime }),
+  };
 }
 
 const even = (n: number) => (n % 2 === 0 ? n : n - 1);

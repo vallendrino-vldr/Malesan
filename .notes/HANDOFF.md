@@ -10,9 +10,12 @@ rediscovering the repo produces nothing.
 creators. Live on Vercel, auto-deploys from `main`, takes real money.
 
 **Is it healthy right now?** Yes. `next build` passes, `tsc --noEmit` passes,
-35 routes generate (was 29 — see §9d, the workflow-engine pass). `npm run lint` reports **11 problems (9 errors, 2 warnings)**
-— that number is the known baseline listed in §11, not a regression. If you see
-11, nothing is broken. If you see more, you added it.
+37 routes generate (was 35 — §9i added `/api/react` and `/api/recycle`). `npm run lint` reports **14 problems (9 errors, 5 warnings)**.
+The old "11" note was stale: measured pristine on `git stash`, HEAD before §9i was
+already **15** (9 errors, 6 warnings) — the react-hooks rules in Next 16.2.12 got
+stricter (`Date.now()`-during-render and setState-in-effect are now flagged). §9i
+landed at 14 (one fewer warning — a real missing-dep fix), so **14 is the current
+floor, not 11**. If you see 14, nothing is broken. More than 14, you added it.
 
 **Do NOT re-audit for "damage from the antigravity gemini session".** It was
 checked on 2026-08-06 against `git reflog`: that agent never touched this repo.
@@ -34,8 +37,8 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-08**, after the workflow-engine pass (§9d).
-Newest work is §9d; §9c is the "make it feel alive" pass before it.
+Last updated: **2026-08-08**, after the Auto-CC bug-fix + Groq/Gemini feature pass (§9i).
+Newest work is §9i (3 Auto-CC bugs + netizen/roast + smart recycle).
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -850,6 +853,106 @@ Only then push.
   real video). Owner tests on prod after redeploy.
 - **Prod env** still needs the owner to add `GEMINI_API_KEY_1..4` +
   `GROQ_API_KEY_1..4` in Vercel — no agent tool sets those. Grok stays removed.
+
+### 9i. Auto-CC bug fixes + Groq LLM features + Smart Recycle (2026-08-08 f)
+
+Owner reported 3 fatal Auto-CC bugs, then asked to wire Groq for instant text
+features and Gemini for a recycle feature. `next build` passes (37 routes),
+`tsc --noEmit` clean.
+
+**The 3 bugs — fixed and verified as far as this environment allows:**
+
+1. **Credit header stuck until reload.** The dashboard's `LiveRefresh` on
+   `profiles` only fires on the realtime channel, which lags/misses. Now the
+   client calls `router.refresh()` the instant a deduct API returns ok —
+   `VideoEditor` after transcribe and after `/api/video/no-watermark`, and the
+   new reaction/recycle components after their calls. Deterministic, on top of
+   realtime, using the existing server-truth mechanism (no new credit context).
+2. **1:00 video billed 4 credits, not 2.** Double `Math.ceil`: the client sent
+   `Math.ceil(60.04)=61`s and the route did `Math.ceil(61/60)=2` min. Client now
+   sends the raw duration; the route bills through one `billedMinutes(sec)` helper
+   with a 1.5s grace so a nominal minute stays a minute (`ceil((sec-1.5)/60)`,
+   min 1). Boundary table proven with a node assert: 60→2, 60.2→2, 90→4, 120→4,
+   122→6 cr. Used for BOTH the soft pre-check and the real charge, so they agree.
+3. **Export patah/laggy/stuck (esp. the 16 Mbps preset).** Root cause of the
+   *stuck* was `video.play()` being rejected (the element was not muted, and the
+   awaits before `play()` break the click's user-activation) → it then awaited an
+   `"ended"` that never came, forever. Fixes in `src/lib/video/export.ts`:
+   `video.muted = true` (audio is still captured from `captureStream` regardless);
+   `play()` rejection now throws a clear error instead of hanging; and drawing is
+   driven by `requestVideoFrameCallback` (one canvas frame per *decoded* video
+   frame, on the media clock the audio rides) instead of rAF at 60Hz — that
+   preserves the source FPS and kills both the choppiness on 30fps clips and the
+   A/V drift. rAF is the fallback where rVFC is absent (older Safari).
+
+   **Veto exercised (AGENTS.md authority rule):** the owner asked to switch export
+   to `ffmpeg.wasm -c:v libx264 -preset ultrafast`. Did NOT. Export already left
+   ffmpeg (§9f — the `ass` filter was a no-op); a frame-by-frame ffmpeg.wasm
+   encode would be far slower and more likely to OOM/stall on a phone (the exact
+   "stuck" reported). The real freeze was the unmuted-autoplay hang, now fixed.
+   ffmpeg.wasm stays for audio extraction only.
+
+**Mobile export crash ("Aw Snap" / OOM) — fixed the same file.** On a phone the
+export tab crashed on download. Root cause was memory, not the device: the sink
+kept every encoded chunk in a JS array AND `rec.start()` had no timeslice, so
+MediaRecorder buffered the whole file internally until `stop()` and the heap
+briefly held the video twice — hundreds of MB. Fix in `export.ts`, NO quality
+touched (same canvas, same bitrate, per the owner's hard rule): (1) `rec.start(1000)`
+timeslice flushes ~every second so the recorder never holds the whole file;
+(2) `makeSink()` streams each chunk straight to an **OPFS** file on disk
+(`malesan-export.tmp`, overwritten each run) and `getFile()` hands back a
+disk-backed File for the download, so the encoded video never sits on the heap —
+degrades to the old in-memory array only where OPFS is absent; (3) a `release()`
+that stops the stream tracks, wipes `video.src` + `load()`, and 0×0's the canvas so
+nothing leaks across repeated exports. **Verified in a real browser** (not just a
+build): OPFS write→disk→read-back round-trips 10MB with a valid download URL. The
+full real-time export still needs a real video + wall-clock to eyeball, but the
+OOM mechanism is proven and no quality was reduced.
+
+**New infra — Groq now does text, not just Whisper.** `src/lib/groq/llm.ts`
+(`groqChat`) reuses the SAME pool + rotation + 429 cooldown as the Whisper path
+(`video/groq-keys.ts`) — round-robin + circuit breaker, shared not reimplemented.
+Model in env `GROQ_LLM_MODEL` (default `llama-3.3-70b-versatile`). Part 2 of the
+ask (dual round-robin + fallback) was ALREADY DONE for both providers — Gemini
+`client.ts:withRotation` and Groq — so it was verified, not rebuilt.
+
+**New features (all charge via `spend_credits`, refund on model failure):**
+
+| Feature | Provider | Route | UI | Cost key (default) |
+|---|---|---|---|---|
+| Simulasi Netizen (5 persona comments, JSON) | Groq Llama | `POST /api/react` kind=netizen | `DraftReactions` in `DraftEditor` | `cost_netizen` (1) |
+| Roast My Script (galak editor) | Groq Llama | `POST /api/react` kind=roast | same | `cost_roast` (1) |
+| Smart Content Recycle (3 fresh angles) | Gemini pro | `POST /api/recycle` | `RecycleBanner` on dashboard | `cost_recycle` (2) |
+
+- Recycle surfaces `pipeline_cards` with `status='posted'` and `created_at` >30d,
+  derived from the pipeline read already in flight on the dashboard — no extra
+  query. `created_at` is the proxy for posting age (no `posted_at` column yet).
+- All existing text gen stays on Gemini (unchanged) — part 4's second half.
+
+**Verified:** `next build`, `tsc --noEmit`, node assert on the pricing table, and
+the two new UI components rendered on a throwaway `/uicheck` page (deleted) — both
+mount without crashing and their computed colours flip correctly dark↔soft (ink
+245,240,234→61,54,48; card bg transparent→cream), so Dark & Bright both hold.
+
+**NOT verified (same limits as every prior video session):**
+- The authenticated AI calls were NOT run end-to-end here — `/api/react` and
+  `/api/recycle` need a signed-in session (OAuth, which an agent cannot complete;
+  `/dev-masuk` needs a secret not to be extracted). Build + logic + shared-client
+  reuse are the evidence; a real Groq/Gemini round trip through these two routes
+  is unproven in this session. Owner should click both in the draft editor and
+  the dashboard once locally/on prod.
+- The Auto-CC export fix is real-time canvas capture — still needs a real video +
+  wall-clock to eyeball; the freeze root-cause (unmuted autoplay) is definite.
+
+**Env for prod (owner adds in Vercel — no agent tool sets these):** unchanged
+list `GEMINI_API_KEY_1..4`, `GROQ_API_KEY_1..4`, plus optional `GROQ_LLM_MODEL`
+if the default Llama id is ever deprecated. The Groq keys already power both
+Whisper and the new Llama features — no new keys needed.
+
+**Pricing debt (same pattern as `cost_video_per_min` at first):** `cost_netizen`,
+`cost_roast`, `cost_recycle` live in code/app_config with defaults but have NO
+admin-panel row yet, so the owner can only retune them via SQL/config for now.
+Add rows to `/admin/config` next to the video prices on the next admin pass.
 
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 
