@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { spendCredits } from "@/lib/credits";
-import { getVideoCostPerMin } from "@/lib/config";
+import { getVideoCostPerMin, isVideoEnabled } from "@/lib/config";
 import { transcribeAudio, TranscribeError } from "@/lib/transcribe";
 
 /**
@@ -40,6 +40,10 @@ export async function POST(request: NextRequest) {
     .single();
   if (!profile) return json({ error: "Profil gak ketemu." }, 404);
   if (profile.is_banned) return json({ error: "Akun lo lagi dibekuin." }, 403);
+
+  if (!(await isVideoEnabled())) {
+    return json({ error: "Fitur video lagi dimatiin sementara. Coba lagi nanti ya." }, 503);
+  }
 
   let form: FormData;
   try {

@@ -49,6 +49,8 @@ export type StudioCosts = {
   thread?: number;
   /** Credits per MINUTE, not flat — the video editor charges by audio length. */
   video?: number;
+  /** Extra credits to remove the export watermark. */
+  videoNoWm?: number;
 };
 
 export function StudioPanel({
@@ -92,6 +94,7 @@ export function StudioPanel({
   const clipCost = costs.clip ?? 4;
   const threadCost = costs.thread ?? 3;
   const videoCost = costs.video ?? 2;
+  const videoNoWmCost = costs.videoNoWm ?? 5;
 
   if (!mod)
     return (
@@ -135,7 +138,7 @@ export function StudioPanel({
       ) : mod === "thread" ? (
         <ThreadEngine cost={threadCost} />
       ) : mod === "video" ? (
-        <VideoEditor cost={videoCost} />
+        <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} />
       ) : (
         <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
       )}

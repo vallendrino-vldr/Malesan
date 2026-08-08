@@ -20,6 +20,7 @@ const MODULE_LABEL: Record<string, string> = {
   vibe: "Vibe Coding Kit",
   clip: "Clip Engine",
   thread: "Thread Engine",
+  video: "Video Auto-CC",
 };
 
 // Drives three lists at once: the credit-price grid, the kill switches, and the
@@ -33,6 +34,7 @@ const COST_ORDER = [
   "vibe",
   "clip",
   "thread",
+  "video",
 ];
 
 export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
@@ -195,6 +197,28 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
               />
             );
           })}
+        </div>
+      </section>
+
+      {/* ---- video pricing (its own keys, not cost_<module>) ---- */}
+      <section>
+        <h2 className="eyebrow mb-2 text-muted">Video Auto-CC</h2>
+        <div className="grid grid-cols-2 gap-2">
+          <NumberRow
+            label="Per menit"
+            initial={Number(byKey["cost_video_per_min"]?.value ?? 2)}
+            busy={busy === "cost_video_per_min"}
+            saved={ok === "cost_video_per_min"}
+            onSave={(v) => save("cost_video_per_min", v)}
+          />
+          <NumberRow
+            label="Hapus watermark"
+            initial={Number(byKey["cost_no_watermark"]?.value ?? 5)}
+            busy={busy === "cost_no_watermark"}
+            saved={ok === "cost_no_watermark"}
+            onSave={(v) => save("cost_no_watermark", v)}
+            min={0}
+          />
         </div>
       </section>
 

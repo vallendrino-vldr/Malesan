@@ -26,6 +26,8 @@ export type CaptionStyle = {
    * "line": the whole caption line shows, the spoken word lit — the readable one.
    */
   mode: "word" | "line";
+  /** Caption size multiplier (~0.7 small to ~1.6 huge). 1 = the tuned default. */
+  fontScale: number;
 };
 
 /**
@@ -70,6 +72,7 @@ export const DEFAULT_STYLE: CaptionStyle = {
   style: "outline",
   position: 0.72,
   mode: "word",
+  fontScale: 1,
 };
 
 export type Line = { words: Word[]; start: number; end: number };

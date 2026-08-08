@@ -25,9 +25,9 @@ export type ExportOpts = {
   file: File;
   lines: Line[];
   style: CaptionStyle;
-  width: number;
-  height: number;
-  /** Target video bitrate in Mbps — the real quality/compress control. */
+  /** Target video bitrate in Mbps — the real quality/compress control. The
+   *  export resolution is derived from the video itself, upscaled to at least
+   *  1080 on the short side, so it is not a caller concern. */
   bitrateMbps: number;
   /** Burn the malesan.my.id mark. False only after the credit was charged. */
   watermark: boolean;
@@ -37,20 +37,30 @@ export type ExportOpts = {
 export async function exportBurnedVideo(
   opts: ExportOpts,
 ): Promise<{ blob: Blob; ext: string }> {
-  const { file, lines, style, width: W, height: H, bitrateMbps, watermark, onProgress } = opts;
+  const { file, lines, style, bitrateMbps, watermark, onProgress } = opts;
 
   const video = document.createElement("video");
   video.src = URL.createObjectURL(file);
   video.playsInline = true;
-  // Keep audio flowing into the capture; a muted element yields a silent track
-  // in some engines. Volume low so the export does not blast the room.
   video.volume = 0.001;
   await once(video, "loadedmetadata");
 
-  // Make sure the chosen font is actually ready before we draw a single frame,
-  // or the first seconds render in a fallback face.
+  // Render at a proper resolution, not the source's. Short-form uploads are
+  // often tiny (a re-downloaded 144p clip), and capturing at that size is why
+  // the export looked far worse than the preview — the captions in particular
+  // were being drawn into a postage stamp and then scaled up on playback. Upscale
+  // the canvas so the short side is at least 1080; the video pixels do not gain
+  // detail, but the caption text is now drawn crisp and the file is a standard
+  // size. Capped so a already-large source is left alone and memory stays sane.
+  const sw = video.videoWidth || 1080;
+  const sh = video.videoHeight || 1920;
+  const short = Math.min(sw, sh);
+  const scale = Math.min(short < 1080 ? 1080 / short : 1, 2.5);
+  const W = even(Math.round(sw * scale));
+  const H = even(Math.round(sh * scale));
+
   try {
-    await document.fonts.load(`${style.bold ? 800 : 600} ${Math.round(H * 0.055)}px "${style.fontFamily}"`);
+    await document.fonts.load(`${style.bold ? 800 : 600} ${Math.round(H * 0.06)}px "${style.fontFamily}"`);
     await document.fonts.ready;
   } catch {
     /* fonts are a nicety here, not a reason to fail the export */
@@ -61,16 +71,25 @@ export async function exportBurnedVideo(
   canvas.height = H;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas gak kebentuk di browser ini.");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
-  const canvasStream = canvas.captureStream(30);
+  // captureStream(0): frames are produced only when we ask, via requestFrame,
+  // so every recorded frame is an exact snapshot of a finished draw rather than a
+  // timer sampling a half-updated canvas — which is another source of the mush.
+  const canvasStream = canvas.captureStream(0);
+  const vTrack = canvasStream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack | undefined;
   const vStream = getStream(video);
   if (vStream) for (const t of vStream.getAudioTracks()) canvasStream.addTrack(t);
 
+  // Honour the chosen preset but never fall below a bitrate the resolution needs
+  // to look clean. Grain is almost always starvation: ~0.3 bits per pixel per
+  // second is the floor that keeps text edges sharp through the codec.
+  const floor = Math.round(W * H * 30 * 0.3);
+  const bits = Math.max(Math.round(bitrateMbps * 1_000_000), floor);
+
   const mime = pickMime();
-  const rec = new MediaRecorder(canvasStream, {
-    mimeType: mime,
-    videoBitsPerSecond: Math.round(bitrateMbps * 1_000_000),
-  });
+  const rec = new MediaRecorder(canvasStream, { mimeType: mime, videoBitsPerSecond: bits });
   const chunks: BlobPart[] = [];
   rec.ondataavailable = (e) => {
     if (e.data.size) chunks.push(e.data);
@@ -83,6 +102,7 @@ export async function exportBurnedVideo(
     const a = activeAt(lines, video.currentTime);
     if (a) drawCaption(ctx, a.line, video.currentTime, style, W, H);
     if (watermark) drawWatermark(ctx, W, H);
+    vTrack?.requestFrame?.();
     onProgress(Math.min(0.999, video.currentTime / (video.duration || 1)));
     if (!video.ended) raf = requestAnimationFrame(render);
   };
@@ -92,9 +112,9 @@ export async function exportBurnedVideo(
   render();
   await once(video, "ended");
   cancelAnimationFrame(raf);
-  // One last frame so the final word is not clipped, then flush.
   ctx.drawImage(video, 0, 0, W, H);
-  drawWatermark(ctx, W, H);
+  if (watermark) drawWatermark(ctx, W, H);
+  vTrack?.requestFrame?.();
   rec.stop();
   await stopped;
   URL.revokeObjectURL(video.src);
@@ -103,6 +123,8 @@ export async function exportBurnedVideo(
   onProgress(1);
   return { blob: new Blob(chunks, { type: mime }), ext };
 }
+
+const even = (n: number) => (n % 2 === 0 ? n : n - 1);
 
 /** mp4 straight out of MediaRecorder when the browser can (recent Chromium),
  *  else webm. No ffmpeg transcode — the wasm core cannot be relied on to carry
@@ -179,7 +201,7 @@ function drawCaption(
       ? [{ text: line.words[currentIdx].word, active: true }]
       : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
 
-  const fontPx = Math.round(H * (style.mode === "word" ? 0.075 : 0.058));
+  const fontPx = Math.round(H * (style.mode === "word" ? 0.075 : 0.058) * style.fontScale);
   ctx.font = `${style.bold ? 800 : 600} ${fontPx}px "${style.fontFamily}", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -246,37 +268,45 @@ function drawCaption(
  * font. Sized to the frame so it is never a giant slab on a portrait video.
  */
 function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const px = Math.max(15, Math.round(H * 0.02));
+  const px = Math.max(13, Math.round(H * 0.016));
   const text = "malesan.my.id";
   ctx.save();
-  ctx.font = `700 ${px}px "Anton", "Archivo", system-ui, sans-serif`;
+  ctx.font = `600 ${px}px "Poppins", "Archivo", system-ui, sans-serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  const dot = px * 0.42;
-  const gap = px * 0.5;
-  const padX = px * 0.7;
-  const padY = px * 0.5;
+  const dot = px * 0.5;
+  const gap = px * 0.55;
+  const padX = px * 0.85;
+  const padY = px * 0.62;
   const textW = ctx.measureText(text).width;
   const pillW = padX * 2 + dot + gap + textW;
   const pillH = px + padY * 2;
-  const x = (W - pillW) / 2;
-  const y = H * 0.945 - pillH; // lifted above the bottom edge / safe area
 
-  ctx.globalAlpha = 0.92;
-  roundRect(ctx, x, y, pillW, pillH, pillH / 2);
-  ctx.fillStyle = "rgba(11,10,9,0.55)";
-  ctx.fill();
-
+  // Top-left, but kept well clear of the corner: a comfortable margin off both
+  // edges so it never looks stuck to the frame. Roughly 4.5% of the width in,
+  // 3.5% of the height down.
+  const x = Math.round(W * 0.045);
+  const y = Math.round(H * 0.035);
   const cy = y + pillH / 2;
+
+  // A soft frosted pill: low-alpha dark fill + a hairline stroke, the restrained
+  // look, not a shouting badge.
+  ctx.globalAlpha = 1;
+  roundRect(ctx, x, y, pillW, pillH, pillH / 2);
+  ctx.fillStyle = "rgba(11,10,9,0.42)";
+  ctx.fill();
+  ctx.lineWidth = Math.max(1, px * 0.06);
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.stroke();
+
   ctx.beginPath();
   ctx.arc(x + padX + dot / 2, cy, dot / 2, 0, Math.PI * 2);
   ctx.fillStyle = "#ff8a3d";
   ctx.fill();
 
-  ctx.globalAlpha = 0.96;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(text, x + padX + dot + gap, cy + px * 0.04);
+  ctx.fillStyle = "rgba(255,255,255,0.92)";
+  ctx.fillText(text, x + padX + dot + gap, cy + px * 0.03);
   ctx.restore();
 }
 

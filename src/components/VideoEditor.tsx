@@ -31,7 +31,7 @@ const BITRATE_PRESETS = [
   { label: "Hemat data", mbps: 6, hint: "file kecil" },
 ];
 
-export function VideoEditor({ cost }: { cost: number }) {
+export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWatermarkCost: number }) {
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -43,6 +43,7 @@ export function VideoEditor({ cost }: { cost: number }) {
   const [safeZones, setSafeZones] = useState(true);
   const [bitrate, setBitrate] = useState(12);
   const [noWatermark, setNoWatermark] = useState(false);
+  const [doneMsg, setDoneMsg] = useState<string | null>(null);
   const [now, setNow] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -133,10 +134,9 @@ export function VideoEditor({ cost }: { cost: number }) {
   const doExport = useCallback(async () => {
     if (!file || !words.length) return;
     const v = videoRef.current;
-    const w = v?.videoWidth || 1080;
-    const h = v?.videoHeight || 1920;
     if (v && !v.paused) v.pause();
     setError(null);
+    setDoneMsg(null);
     setProgress(0);
     setPhase("exporting");
     setStatus("Nge-render caption ke video (real-time, jangan tutup tab)...");
@@ -154,8 +154,6 @@ export function VideoEditor({ cost }: { cost: number }) {
         file,
         lines,
         style,
-        width: w,
-        height: h,
         bitrateMbps: bitrate,
         watermark: !noWatermark,
         onProgress: (r) => setProgress(Math.round(r * 100)),
@@ -171,6 +169,11 @@ export function VideoEditor({ cost }: { cost: number }) {
       URL.revokeObjectURL(url);
       setPhase("ready");
       setStatus("");
+      setDoneMsg(
+        noWatermark
+          ? `Video kesimpen. ${noWatermarkCost} kredit kepotong buat hapus watermark.`
+          : "Video kesimpen (watermark nempel, gratis).",
+      );
     } catch (e) {
       setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
@@ -249,8 +252,9 @@ export function VideoEditor({ cost }: { cost: number }) {
                     className="mt-0.5 accent-ember"
                   />
                   <span>
-                    Hapus watermark malesan.my.id
-                    <span className="block text-micro text-muted">Bayar kredit ekstra. Kalau gak dicentang, watermark tetep nempel (gratis).</span>
+                    Hapus watermark malesan.my.id{" "}
+                    <span className="text-ember">(+{noWatermarkCost} kredit)</span>
+                    <span className="block text-micro text-muted">Kalau gak dicentang, watermark tetep nempel (gratis). Kreditnya kepotong pas export.</span>
                   </span>
                 </label>
                 <button
@@ -284,6 +288,11 @@ export function VideoEditor({ cost }: { cost: number }) {
       {error && (
         <p className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
+        </p>
+      )}
+      {doneMsg && (
+        <p className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
+          {doneMsg}
         </p>
       )}
     </div>
@@ -343,7 +352,7 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
         style={{
           fontFamily: `"${style.fontFamily}", sans-serif`,
           fontWeight: style.bold ? 800 : 600,
-          fontSize: style.mode === "word" ? "clamp(24px, 9vw, 46px)" : "clamp(18px, 7vw, 34px)",
+          fontSize: `calc(${style.mode === "word" ? "clamp(24px, 9vw, 46px)" : "clamp(18px, 7vw, 34px)"} * ${style.fontScale})`,
           color: style.textColor,
           textShadow:
             style.style === "outline"
@@ -486,6 +495,19 @@ function StylePanel({
           step={0.02}
           value={style.position}
           onChange={(e) => set({ position: Number(e.target.value) })}
+          className="mt-1 w-full accent-ember"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-micro text-muted">Ukuran teks ({Math.round(style.fontScale * 100)}%)</span>
+        <input
+          type="range"
+          min={0.7}
+          max={1.6}
+          step={0.05}
+          value={style.fontScale}
+          onChange={(e) => set({ fontScale: Number(e.target.value) })}
           className="mt-1 w-full accent-ember"
         />
       </label>
