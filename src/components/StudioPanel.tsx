@@ -101,10 +101,15 @@ export function StudioPanel({
             server pass because that file belongs to another change in flight.
             Move these into the tile grid in app/page.tsx when it next opens —
             and delete this block then, or the Studio grows two of each. */}
-        <div className="reveal relative z-10 mt-4 grid grid-cols-2 gap-2">
-          <StudioTile mod="clip" title="Clip Engine" cost={clipCost} />
-          <StudioTile mod="thread" title="Thread Engine" cost={threadCost} />
-          <StudioTile mod="video" title="Video Auto-CC" cost={videoCost} />
+        <div className="reveal relative z-10 mt-4 space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <StudioTile mod="clip" title="Clip Engine" cost={clipCost} />
+            <StudioTile mod="thread" title="Thread Engine" cost={threadCost} />
+          </div>
+          {/* Full width rather than left in a lopsided 3rd grid cell: it is the
+              flashiest tool here and earns the spotlight, and the row reads as
+              intentional instead of half-empty. */}
+          <StudioTile mod="video" title="Video Auto-CC" cost={videoCost} full />
         </div>
       </>
     );
@@ -150,10 +155,13 @@ export function StudioTile({
   mod,
   title,
   cost,
+  full = false,
 }: {
   mod: Mod;
   title: string;
   cost: number;
+  /** Span the row on its own instead of sitting in a grid cell. */
+  full?: boolean;
 }) {
   return (
     <button
@@ -161,7 +169,9 @@ export function StudioTile({
       onClick={() =>
         window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
       }
-      className="skeu skeu-press group flex min-h-[68px] w-full cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45"
+      className={`skeu skeu-press group flex min-h-[68px] w-full cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45 ${
+        full ? "border-ember/30" : ""
+      }`}
     >
       <span className="flex items-center justify-center gap-1">
         <span className="truncate text-mini font-bold text-ink group-hover:text-ember-lo">

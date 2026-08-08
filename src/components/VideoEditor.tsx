@@ -3,32 +3,33 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   activeAt,
-  buildAss,
   groupLines,
   DEFAULT_STYLE,
+  CAPTION_FONTS,
+  CAPTION_FONTS_HREF,
   type CaptionStyle,
+  type Line,
   type Word,
 } from "@/lib/video/captions";
+import { exportBurnedVideo } from "@/lib/video/export";
 
 /**
  * Video Auto-CC editor.
  *
- * The pipeline is deliberately client-heavy so the server stays cheap: the video
- * is decoded, previewed and finally burned-in entirely in the browser, and the
- * only thing that ever reaches our server is the extracted audio, on its way to
- * transcription. ffmpeg.wasm is dynamically imported so its ~30MB never touches
- * anyone who does not open this tab.
- *
- * The live preview is an HTML overlay driven by `requestAnimationFrame` reading
- * the video's own clock — no canvas, no re-encode. Changing a colour or a word
- * is instant because nothing is rendered but text. The burned-in export reuses
- * the exact same grouping (src/lib/video/captions), so the file matches the
- * preview frame for frame.
+ * Pipeline is client-heavy so the server stays cheap: decode, preview and
+ * burn-in all happen in the browser, and only the extracted audio ever reaches
+ * our server, on its way to transcription. ffmpeg.wasm (dynamically imported)
+ * pulls the audio out; the caption burn-in is a canvas capture (see
+ * lib/video/export) so the text is real pixels, in any font, revealed per word.
  */
 
 type Phase = "idle" | "extracting" | "transcribing" | "ready" | "exporting";
 
-const FONTS = ["Arial", "Impact", "Georgia", "Verdana", "Courier New"];
+const QUALITY = [
+  { label: "Ringan", mbps: 3 },
+  { label: "Standar", mbps: 6 },
+  { label: "Tajam", mbps: 10 },
+];
 
 export function VideoEditor({ cost }: { cost: number }) {
   const [file, setFile] = useState<File | null>(null);
@@ -40,6 +41,7 @@ export function VideoEditor({ cost }: { cost: number }) {
   const [words, setWords] = useState<Word[]>([]);
   const [style, setStyle] = useState<CaptionStyle>(DEFAULT_STYLE);
   const [safeZones, setSafeZones] = useState(true);
+  const [bitrate, setBitrate] = useState(6);
   const [now, setNow] = useState(0);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -48,15 +50,23 @@ export function VideoEditor({ cost }: { cost: number }) {
   const lines = useMemo(() => groupLines(words), [words]);
   const busy = phase === "extracting" || phase === "transcribing" || phase === "exporting";
 
-  // Object URLs must be released or every re-selected file leaks one.
+  // Load the caption fonts once, so both the preview and the canvas export can
+  // draw them. A plain stylesheet link — the faces are only ever used here.
+  useEffect(() => {
+    if (document.getElementById("malesan-caption-fonts")) return;
+    const link = document.createElement("link");
+    link.id = "malesan-caption-fonts";
+    link.rel = "stylesheet";
+    link.href = CAPTION_FONTS_HREF;
+    document.head.appendChild(link);
+  }, []);
+
   useEffect(() => {
     return () => {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
 
-  // Drive the caption clock off rAF rather than the video's throttled
-  // `timeupdate` (which fires ~4x/sec) so the active word lands on the beat.
   useEffect(() => {
     const tick = () => {
       const v = videoRef.current;
@@ -85,16 +95,15 @@ export function VideoEditor({ cost }: { cost: number }) {
     const durationSec = v?.duration && isFinite(v.duration) ? v.duration : 0;
     setError(null);
     setProgress(0);
-
     try {
       setPhase("extracting");
-      setStatus("Ngambil audio dari video…");
+      setStatus("Ngambil audio dari video...");
       const { extractAudio } = await import("@/lib/video/ffmpeg");
       const audio = await extractAudio(file, (r) => setProgress(Math.round(r * 100)));
 
       setPhase("transcribing");
       setProgress(0);
-      setStatus("AI lagi denger & nulis tiap kata…");
+      setStatus("AI lagi denger & nulis tiap kata...");
       const form = new FormData();
       form.append("audio", audio, "audio.m4a");
       form.append("durationSec", String(Math.ceil(durationSec)));
@@ -104,7 +113,6 @@ export function VideoEditor({ cost }: { cost: number }) {
       const data = (await res.json().catch(() => null)) as
         | { words?: Word[]; error?: string }
         | null;
-
       if (!res.ok || !data?.words?.length) {
         setError(data?.error ?? "Transkripsi gagal. Coba lagi bentar lagi.");
         setPhase("idle");
@@ -114,12 +122,8 @@ export function VideoEditor({ cost }: { cost: number }) {
       setPhase("ready");
       setStatus("");
     } catch (e) {
-      // The common first-run failure is ffmpeg.wasm not loading (network, or a
-      // core the browser rejects). Say so plainly instead of a blank spinner.
       setError(
-        e instanceof Error
-          ? `Gagal ngolah video di browser: ${e.message}`
-          : "Gagal ngolah video di browser.",
+        e instanceof Error ? `Gagal ngolah video: ${e.message}` : "Gagal ngolah video.",
       );
       setPhase("idle");
     }
@@ -130,18 +134,26 @@ export function VideoEditor({ cost }: { cost: number }) {
     const v = videoRef.current;
     const w = v?.videoWidth || 1080;
     const h = v?.videoHeight || 1920;
+    if (v && !v.paused) v.pause();
     setError(null);
     setProgress(0);
     setPhase("exporting");
-    setStatus("Nge-render video mateng — jangan tutup tab…");
+    setStatus("Nge-render caption ke video (real-time, jangan tutup tab)...");
     try {
-      const { burnInSubtitles } = await import("@/lib/video/ffmpeg");
-      const ass = buildAss(lines, style, w, h);
-      const out = await burnInSubtitles(file, ass, (r) => setProgress(Math.round(r * 100)));
-      const url = URL.createObjectURL(out);
+      const { blob, ext } = await exportBurnedVideo({
+        file,
+        lines,
+        style,
+        width: w,
+        height: h,
+        bitrateMbps: bitrate,
+        onProgress: (r) => setProgress(Math.round(r * 100)),
+      });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = (file.name.replace(/\.[^.]+$/, "") || "malesan") + "-cc.mp4";
+      const base = file.name.replace(/\.[^.]+$/, "").slice(0, 40) || "video";
+      a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -149,14 +161,10 @@ export function VideoEditor({ cost }: { cost: number }) {
       setPhase("ready");
       setStatus("");
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? `Export gagal: ${e.message}. Kalau errornya soal "ass"/filter, core-nya perlu diganti yang ada libass-nya.`
-          : "Export gagal.",
-      );
+      setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
     }
-  }, [file, words, lines, style]);
+  }, [file, words, lines, style, bitrate]);
 
   const active = activeAt(lines, now);
 
@@ -168,7 +176,7 @@ export function VideoEditor({ cost }: { cost: number }) {
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
           Upload video, AI tulisin subtitle-nya per kata, atur gayanya, terus export jadi
-          .mp4 yang teksnya udah nyatu. <span className="text-ember">{cost} kredit / menit.</span>
+          video yang teksnya udah nyatu. <span className="text-ember">{cost} kredit / menit.</span>
         </p>
       </header>
 
@@ -176,7 +184,6 @@ export function VideoEditor({ cost }: { cost: number }) {
         <UploadDrop onPick={onPick} />
       ) : (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-          {/* LEFT / TOP: the player + live caption overlay */}
           <div className="lg:flex-1">
             <div className="relative mx-auto aspect-[9/16] max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black">
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
@@ -188,12 +195,8 @@ export function VideoEditor({ cost }: { cost: number }) {
                 onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
                 className="absolute inset-0 h-full w-full object-contain"
               />
-
               {safeZones && <SafeZones />}
-
-              {active && (
-                <CaptionOverlay line={active.line} wordIdx={active.wordIdx} style={style} />
-              )}
+              {active && <CaptionOverlay line={active.line} now={now} style={style} />}
             </div>
 
             <label className="mt-3 flex cursor-pointer items-center gap-2 text-mini text-muted">
@@ -214,23 +217,30 @@ export function VideoEditor({ cost }: { cost: number }) {
                 Bikinin subtitle
               </button>
             )}
-
             {busy && <ProgressBar phase={phase} progress={progress} status={status} />}
           </div>
 
-          {/* RIGHT / BOTTOM: transcript editor + styling + export */}
           <div className="space-y-4 lg:w-80 lg:shrink-0">
             {words.length > 0 && (
               <>
                 <TranscriptEditor words={words} onChange={setWords} />
-                <StylePanel style={style} onChange={setStyle} />
+                <StylePanel
+                  style={style}
+                  onChange={setStyle}
+                  bitrate={bitrate}
+                  onBitrate={setBitrate}
+                />
                 <button
                   onClick={doExport}
                   disabled={busy}
                   className="w-full cursor-pointer rounded-xl bg-ember px-4 py-3 text-sm font-bold text-obsidian transition-colors hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {phase === "exporting" ? "Lagi render…" : "Export Video Mateng (.mp4)"}
+                  {phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}
                 </button>
+                <p className="text-micro leading-snug text-muted">
+                  Render-nya real-time (video 1 menit ≈ 1 menit proses) karena teksnya
+                  beneran dibakar ke gambar. Nama file otomatis ada tanda malesan.my.id.
+                </p>
               </>
             )}
 
@@ -264,7 +274,9 @@ function UploadDrop({ onPick }: { onPick: (f: File | null) => void }) {
         <path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z" />
       </svg>
       <span className="text-sm font-semibold text-ink">Tap buat pilih video (MP4)</span>
-      <span className="text-mini text-muted">Maksimal ~10 menit. Diproses di HP lo, bukan diupload ke server.</span>
+      <span className="text-mini text-muted">
+        Maksimal ~10 menit. Diproses langsung di perangkat lo (HP atau laptop), gak diupload ke server.
+      </span>
       <input
         type="file"
         accept="video/mp4,video/quicktime,video/webm"
@@ -275,7 +287,6 @@ function UploadDrop({ onPick }: { onPick: (f: File | null) => void }) {
   );
 }
 
-/** The translucent TikTok/Reels unsafe regions: right rail + bottom UI band. */
 function SafeZones() {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
@@ -289,37 +300,39 @@ function SafeZones() {
   );
 }
 
-function CaptionOverlay({
-  line,
-  wordIdx,
-  style,
-}: {
-  line: { words: Word[] };
-  wordIdx: number;
-  style: CaptionStyle;
-}) {
+/** Preview overlay: same per-word reveal the export burns in — only spoken
+ *  words show, the latest one lit. */
+function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: CaptionStyle }) {
+  const revealed = line.words.filter((w) => w.start <= now + 0.01);
+  if (!revealed.length) return null;
+  const activeIdx = revealed.length - 1;
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 flex justify-center px-4 text-center"
-      style={{ bottom: `${(1 - style.position) * 100}%` }}
+      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center"
+      style={{ top: `${style.position * 100}%` }}
     >
       <p
         className="max-w-[92%] leading-tight"
         style={{
-          fontFamily: style.fontFamily,
-          fontWeight: style.bold ? 800 : 500,
-          fontSize: "clamp(16px, 6vw, 30px)",
+          fontFamily: `"${style.fontFamily}", sans-serif`,
+          fontWeight: style.bold ? 800 : 600,
+          fontSize: "clamp(18px, 7vw, 34px)",
           color: style.textColor,
-          textShadow: style.style === "outline" ? "0 0 4px #000, 0 2px 4px #000" : "none",
+          textShadow:
+            style.style === "outline"
+              ? "0 0 3px #000,0 0 3px #000,0 2px 4px #000"
+              : style.style === "plain"
+                ? "0 2px 6px rgba(0,0,0,0.85)"
+                : "none",
           background: style.style === "box" ? "rgba(0,0,0,0.55)" : "transparent",
           padding: style.style === "box" ? "0.15em 0.4em" : 0,
           borderRadius: style.style === "box" ? "0.3em" : 0,
         }}
       >
-        {line.words.map((w, i) => (
-          <span key={i} style={{ color: i === wordIdx ? style.highlightColor : undefined }}>
+        {revealed.map((w, i) => (
+          <span key={i} style={{ color: i === activeIdx ? style.highlightColor : undefined }}>
             {w.word}
-            {i < line.words.length - 1 ? " " : ""}
+            {i < revealed.length - 1 ? " " : ""}
           </span>
         ))}
       </p>
@@ -327,17 +340,7 @@ function CaptionOverlay({
   );
 }
 
-function TranscriptEditor({
-  words,
-  onChange,
-}: {
-  words: Word[];
-  onChange: (w: Word[]) => void;
-}) {
-  // A textarea of the plain text, re-mapped to the existing timings by index on
-  // edit. It fixes typos, which is the job; it does not re-time, so changing the
-  // NUMBER of words keeps the old timings for the words that still line up. Good
-  // enough for corrections, and honest about it in the hint below.
+function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Word[]) => void }) {
   const text = useMemo(() => words.map((w) => w.word).join(" "), [words]);
   return (
     <div className="rounded-xl border border-hairline bg-surface p-3">
@@ -347,9 +350,9 @@ function TranscriptEditor({
         onBlur={(e) => {
           const tokens = e.target.value.trim().split(/\s+/).filter(Boolean);
           onChange(
-            words.map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w)).filter(
-              (_, i) => i < tokens.length,
-            ),
+            words
+              .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
+              .filter((_, i) => i < tokens.length),
           );
         }}
         rows={5}
@@ -365,9 +368,13 @@ function TranscriptEditor({
 function StylePanel({
   style,
   onChange,
+  bitrate,
+  onBitrate,
 }: {
   style: CaptionStyle;
   onChange: (s: CaptionStyle) => void;
+  bitrate: number;
+  onBitrate: (n: number) => void;
 }) {
   const set = (p: Partial<CaptionStyle>) => onChange({ ...style, ...p });
   return (
@@ -390,9 +397,9 @@ function StylePanel({
           onChange={(e) => set({ fontFamily: e.target.value })}
           className="mt-1 w-full rounded-lg border border-hairline bg-obsidian/40 px-2 py-2 text-mini text-ink outline-none focus:border-ember/50"
         >
-          {FONTS.map((f) => (
-            <option key={f} value={f}>
-              {f}
+          {CAPTION_FONTS.map((f) => (
+            <option key={f.family} value={f.family}>
+              {f.label}
             </option>
           ))}
         </select>
@@ -421,21 +428,40 @@ function StylePanel({
           onChange={(e) => set({ bold: e.target.checked })}
           className="accent-ember"
         />
-        Tebal
+        Extra tebal
       </label>
 
       <label className="block">
         <span className="text-micro text-muted">Posisi (naik-turun)</span>
         <input
           type="range"
-          min={0.5}
-          max={0.92}
+          min={0.4}
+          max={0.9}
           step={0.02}
           value={style.position}
           onChange={(e) => set({ position: Number(e.target.value) })}
           className="mt-1 w-full accent-ember"
         />
       </label>
+
+      <div>
+        <span className="text-micro text-muted">Kualitas / ukuran file</span>
+        <div className="mt-1 flex gap-1.5">
+          {QUALITY.map((q) => (
+            <button
+              key={q.mbps}
+              onClick={() => onBitrate(q.mbps)}
+              className={`flex-1 rounded-lg border px-2 py-1.5 text-micro font-semibold transition-colors ${
+                bitrate === q.mbps
+                  ? "border-ember bg-ember/15 text-ember"
+                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+              }`}
+            >
+              {q.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -474,8 +500,6 @@ function ProgressBar({
   progress: number;
   status: string;
 }) {
-  // Transcription has no numeric progress (it is one server call), so its bar is
-  // indeterminate rather than a fake number crawling to 90 and stopping.
   const indeterminate = phase === "transcribing";
   return (
     <div className="mt-3 rounded-xl border border-hairline bg-surface p-3">

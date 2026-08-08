@@ -756,6 +756,38 @@ UI row for it yet (like cost_autocomplete / cost_schedule_tag).
 - Still unverified: the ffmpeg.wasm CLIENT half (audio extract + burn-in). Needs a
   browser + a real video — see the 9e honesty block above.
 
+### 9f. Auto-CC burn-in rewritten; Grok removed (2026-08-08 c)
+
+**Grok is gone.** Owner will never buy xAI credits. `/api/admin/assistant` is back
+to Gemini-only (no generateWithGrokFallback); XAI_* removed from .env.example.
+The 4 Gemini keys the owner supplied are in local `.env.local` as
+GEMINI_API_KEY_1..4; a paste-ready Vercel file was sent (4 Gemini + 4 Groq).
+
+**The export burn-in was a no-op and is fixed.** The ffmpeg `ass` filter silently
+did nothing (the default @ffmpeg/core has no libass and no font), so the
+downloaded mp4 was the untouched original — exactly what the owner reported.
+Replaced with a CANVAS CAPTURE in `src/lib/video/export.ts`: every frame is
+painted to a canvas with the caption drawn on top (browser text engine, so any
+Google Font, any colour, per-word reveal), and MediaRecorder records it. The
+pixels ARE the caption — it cannot no-op. mp4 straight from MediaRecorder when the
+browser supports it (recent Chromium), else webm. ffmpeg.wasm is now only used for
+audio extraction (which was already proven working in prod).
+
+Other Auto-CC changes: per-word reveal (words appear as spoken, latest lit — both
+preview and export share `activeAt` so they match); 8 heavy caption fonts from
+Google Fonts (`CAPTION_FONTS` in captions.ts, loaded via a stylesheet link);
+a `malesan.my.id` watermark burned bottom-right; branded download filename
+("Auto Caption by malesan.my.id - ..."); a quality/bitrate control (compress);
+device-neutral upload copy; Video Auto-CC promoted to a full-width dashboard tile.
+
+`ffmpeg.ts:burnInSubtitles` and `captions.ts:buildAss` are now DEAD (the old
+path). Left in place, unused; delete on the next cleanup pass.
+
+**NOT verified by the agent in a browser** (real-time canvas capture needs a real
+video + wall-clock). Owner should export one clip and confirm the file now shows
+captions. Approach is sound — canvas capture physically cannot output the
+original untouched — but the honest status is unproven-here.
+
 ### Correct first move next session
 Add the Groq key locally, `npm run dev`, sign in via `/dev-masuk`, open Studio →
 Video Auto-CC, and run one short real clip end to end. Fix what the browser shows.
