@@ -5,9 +5,13 @@ import { IdeaCard, type IdeaData } from "./IdeaCard";
 import { GenerationProgress } from "./GenerationProgress";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
+import { GenerationExtras, useGenerationExtras } from "./ModuleRunner";
 
 export function IdeaEngine() {
   const [input, setInput] = useState("");
+  // Reference material and the picked voice are shared with every other module,
+  // so they are defined once next to ModuleRunner rather than copied per screen.
+  const extras = useGenerationExtras();
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   const [generationId, setGenerationId] = useState<string | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,7 +38,10 @@ export function IdeaEngine() {
         // The route reads `input.text`. Sending a bare string made every call
         // fail validation with a 400 whose body was plain text, which is what
         // the double-read error handler then choked on.
-        body: JSON.stringify({ module: "idea", input: { text: input } }),
+        body: JSON.stringify({
+          module: "idea",
+          input: { text: input, ...extras.extraInput },
+        }),
       });
 
       if (!res.ok) {
@@ -98,6 +105,10 @@ export function IdeaEngine() {
             className="w-full resize-none rounded-xl border border-hairline bg-obsidian p-4 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
             rows={4}
           />
+        </div>
+
+        <div className="mt-4">
+          <GenerationExtras extras={extras} disabled={isGenerating} />
         </div>
 
         {error && (

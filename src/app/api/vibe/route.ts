@@ -3,7 +3,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { generate, parseJson } from "@/lib/gemini/client";
-import { getCost, isModuleEnabled, getModel } from "@/lib/config";
+import { getCost, isModuleEnabled, getModel, getShadowPrompt } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import {
@@ -140,12 +140,31 @@ export async function POST(request: NextRequest) {
         const tier = profile.is_pro ? "pro" : "free";
         const model = await getModel(tier);
 
+        /**
+         * The owner's house rule, same as every other module.
+         *
+         * The admin panel tells the owner this instruction lands on "semua
+         * modul", and until now the Vibe kit was the one place it did not — a
+         * rule set once and silently ignored by a module listed on that same
+         * screen with its own price and kill switch. Same framing string as
+         * buildExtras uses in src/lib/prompts/index.ts, deliberately: two
+         * wordings for one concept is how they drift apart.
+         */
+        const shadow = await getShadowPrompt();
+        const shadowBlock = shadow
+          ? `
+ATURAN WAJIB DARI PENGELOLA (paling tinggi, gak bisa ditawar):
+${shadow}
+`
+          : "";
+
         // One short call to name the project, so all six documents agree on it.
         send({ status: "Mikirin konsepnya...", step: 0, total: 7 });
         const identityRaw = await generate({
           prompt:
             buildVibeIdentityPrompt({ idea, stack, audience }, dnaLang, dna) +
-            formatVibeAnswers(answers),
+            formatVibeAnswers(answers) +
+            shadowBlock,
           tier,
           model,
           schema: VIBE_IDENTITY_SCHEMA as unknown as Record<string, unknown>,
@@ -178,7 +197,8 @@ export async function POST(request: NextRequest) {
             const raw = await generate({
               prompt:
                 buildVibeDocPrompt({ idea, stack, audience }, doc, identity, dnaLang, dna) +
-                formatVibeAnswers(answers),
+                formatVibeAnswers(answers) +
+                shadowBlock,
               tier,
               model,
               schema: VIBE_DOC_SCHEMA as unknown as Record<string, unknown>,

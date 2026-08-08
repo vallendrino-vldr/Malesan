@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { getPricing } from "@/lib/config";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { ProfitPanel, type ProfitDay } from "@/components/ProfitPanel";
 
 /**
  * Analytics.
@@ -50,7 +52,7 @@ export default async function AdminStatsPage() {
   since.setDate(since.getDate() - DAYS);
   const sinceIso = since.toISOString();
 
-  const [gensRes, usageRes, ledgerRes, activityRes] = await Promise.all([
+  const [gensRes, usageRes, ledgerRes, activityRes, topupRes, pricing] = await Promise.all([
     supabase
       .from("generations")
       .select("created_at, module, credits_spent")
@@ -61,10 +63,19 @@ export default async function AdminStatsPage() {
     // would guess, and the ledger column is `delta`, not `amount`.
     supabase
       .from("gemini_usage")
-      .select("key_index, request_count, error_count, usage_date")
+      .select("key_index, request_count, error_count, usage_date, input_tokens, output_tokens")
       .gte("usage_date", sinceIso.slice(0, 10)),
     supabase.from("credit_ledger").select("delta, created_at").gte("created_at", sinceIso).limit(5000),
     supabase.rpc("admin_user_activity", { p_days: DAYS }),
+    // Revenue is dated by review, not by submission: a top-up only becomes money
+    // on the day it was approved.
+    supabase
+      .from("topups")
+      .select("amount_idr, reviewed_at")
+      .eq("status", "approved")
+      .gte("reviewed_at", sinceIso)
+      .limit(5000),
+    getPricing(),
   ]);
 
   const gens = (gensRes.data ?? []) as { created_at: string; module: string; credits_spent: number }[];
@@ -72,9 +83,13 @@ export default async function AdminStatsPage() {
     key_index: number;
     request_count: number;
     error_count: number;
+    usage_date: string;
+    input_tokens: number;
+    output_tokens: number;
   }[];
   const ledger = (ledgerRes.data ?? []) as { delta: number; created_at: string }[];
   const activity = (activityRes.data ?? []) as UserActivity[];
+  const topups = (topupRes.data ?? []) as { amount_idr: number; reviewed_at: string | null }[];
 
   const days = lastNDays(DAYS);
   const buckets: Record<string, DayBucket> = Object.fromEntries(
@@ -107,9 +122,53 @@ export default async function AdminStatsPage() {
   const spent = ledger.filter((l) => l.delta < 0).reduce((a, l) => a + Math.abs(l.delta), 0);
   const granted = ledger.filter((l) => l.delta > 0).reduce((a, l) => a + l.delta, 0);
 
+  // Money, per day. Three tables that agree on nothing except the calendar, so
+  // they are bucketed separately and joined on the date string.
+  const profit: Record<string, ProfitDay> = Object.fromEntries(
+    days.map((d) => [d, { day: d, revenue: 0, cost: 0, credits: 0, untracked: false }]),
+  );
+
+  // A key row that served requests but recorded no tokens predates token
+  // tracking. Its cost is unknown, and pretending it is zero is the exact lie
+  // this panel exists to avoid — so the day is flagged and skipped instead.
+  const tokenless: Record<string, { req: number; tok: number }> = {};
+  for (const u of usage) {
+    const k = u.usage_date;
+    const row = profit[k];
+    if (!row) continue;
+    const tin = u.input_tokens ?? 0;
+    const tout = u.output_tokens ?? 0;
+    row.cost += (tin / 1e6) * pricing.inPerMTok + (tout / 1e6) * pricing.outPerMTok;
+    const t = (tokenless[k] ??= { req: 0, tok: 0 });
+    t.req += u.request_count ?? 0;
+    t.tok += tin + tout;
+  }
+  for (const [k, t] of Object.entries(tokenless)) {
+    if (t.req > 0 && t.tok === 0) profit[k].untracked = true;
+  }
+
+  for (const l of ledger) {
+    if (l.delta >= 0) continue;
+    const row = profit[l.created_at.slice(0, 10)];
+    if (row) row.credits += Math.abs(l.delta);
+  }
+
+  for (const t of topups) {
+    if (!t.reviewed_at) continue;
+    const row = profit[t.reviewed_at.slice(0, 10)];
+    if (row) row.revenue += t.amount_idr ?? 0;
+  }
+
+  const profitDays = days.map((d) => profit[d]);
+
+  // A dropped error here would render as Rp0 across the board, which on a profit
+  // panel reads as "no sales" instead of "the query broke". Say which.
+  const profitError =
+    topupRes.error?.message ?? usageRes.error?.message ?? ledgerRes.error?.message ?? null;
+
   return (
     <div className="space-y-6">
-      <LiveRefresh tables={["generations", "profiles"]} label="Data baru masuk" />
+      <LiveRefresh tables={["generations", "profiles", "topups"]} label="Data baru masuk" />
 
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Grafik</h1>
@@ -127,6 +186,8 @@ export default async function AdminStatsPage() {
           note={`${totalErr} dari ${totalReq} request`}
         />
       </div>
+
+      <ProfitPanel days={profitDays} pricing={pricing} error={profitError} />
 
       <section>
         <h2 className="eyebrow mb-2 text-muted">Generasi per hari</h2>

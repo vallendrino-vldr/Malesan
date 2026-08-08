@@ -10,7 +10,7 @@ rediscovering the repo produces nothing.
 creators. Live on Vercel, auto-deploys from `main`, takes real money.
 
 **Is it healthy right now?** Yes. `next build` passes, `tsc --noEmit` passes,
-29 routes generate. `npm run lint` reports **11 problems (9 errors, 2 warnings)**
+33 routes generate (was 29 — see §9d, the workflow-engine pass). `npm run lint` reports **11 problems (9 errors, 2 warnings)**
 — that number is the known baseline listed in §11, not a regression. If you see
 11, nothing is broken. If you see more, you added it.
 
@@ -34,7 +34,8 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-06**, after commit `d66f242`.
+Last updated: **2026-08-08**, after the workflow-engine pass (§9d).
+Newest work is §9d; §9c is the "make it feel alive" pass before it.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -560,6 +561,119 @@ Still open after this pass:
 A cross-session second brain now also lives in an Obsidian vault at
 `C:\Users\Administrator\Documents\Claude` (Home.md is the index). It is a
 summary layer; this HANDOFF stays canonical.
+
+## 9d. Session of 2026-08-08 — the workflow-engine pass
+
+The owner asked for seven feature areas end-to-end — database, backend and UI —
+and explicitly asked not to be stopped for confirmation. Everything below is
+built, `next build` passes (33 routes, up from 30), `tsc --noEmit` is clean.
+
+**Read §9d.4 before believing any of it is finished.** Almost none of it has been
+seen running in a browser.
+
+### 9d.1 Foundation — written in one head, on purpose
+
+Migrations `00017_workflow_engine` and `00018_lock_down_system_functions` are
+APPLIED to the live database. Full detail is in SCHEMA.md §10; the parts that
+will bite someone:
+
+- `personas` enforces one default per user with a **partial unique index**, not a
+  trigger. A server action that sets a new default must clear the old one first
+  or the write fails on the constraint. `setDefaultPersona` does this correctly.
+- `pipeline_cards.sort_order` defaults to **0 for every pre-existing row**, so the
+  board must order by `(sort_order, created_at)` or old cards all tie and shuffle.
+- `record_gemini_usage` was **dropped and recreated** with six parameters. Its old
+  signature already carried defaults, so appending two more would have made every
+  existing four-argument call ambiguous rather than overloaded.
+- `drafts.pipeline_card_id` is `ON DELETE SET NULL`, not cascade. Deleting a card
+  must never take the user's prose with it.
+
+`src/lib/prompts/index.ts` gained one exported `PromptExtras` bag — shadow
+prompt, reference material, persona, CTA — threaded as a trailing optional
+argument through every builder and injected in exactly one place
+(`buildSharedContext`, last before the JSON contract). Reference text is fenced
+in `<<<REFERENSI … REFERENSI>>>` and explicitly labelled as data, not orders,
+because the entire feature is "paste something you found on the internet".
+
+### 9d.2 A real security hole, found by the linter and fixed
+
+Four `SECURITY DEFINER` functions were callable over PostgREST by `anon` and
+`authenticated`: `admin_user_activity`, `gemini_pool_report_today`,
+`rls_auto_enable`, and the **legacy `refund_credits(uuid, integer, text)`** — which
+hands back credits on a heuristic ("assume the loss came from free up to a
+ceiling of 10") rather than by reversing recorded spend rows, so it can grant
+credits that were never taken. All four are called from server code with the
+service-role client only. Each does carry an internal `auth.role()` guard, which
+is why this mattered rather than why it did not — SCHEMA.md §7 records two live
+bugs in this repo where exactly such a guard silently did nothing.
+
+**The first revoke failed silently and reported success.** `REVOKE EXECUTE … FROM
+anon, authenticated` changed nothing, because the grant was to `PUBLIC`, which
+both roles inherit and which a per-role revoke does not touch. It was caught only
+by running `has_function_privilege()` for each role afterwards instead of
+trusting the statement. Migration 00018 revokes from `PUBLIC` and grants back
+`service_role`. Verified per role, per function; the results are in the migration.
+
+`is_admin()` is deliberately still executable by `authenticated`: RLS policies
+call it, and a function invoked inside a policy runs as the caller.
+
+### 9d.3 Features — what exists now
+
+| Area | State |
+|---|---|
+| Shadow prompt (admin) | Textarea on `/admin/config`, `shadow_prompt` in app_config, injected into `/api/generate`, `/api/autocomplete` **and `/api/vibe`** |
+| Token pricing (admin) | `price_in_per_mtok` / `price_out_per_mtok`, feeding the profit panel |
+| Profit dashboard | `ProfitPanel` on `/admin/stats` — revenue vs estimated model cost vs credits burned, 14 days |
+| Reference engine | Collapsible "Otak Kedua" field on the module runners; sent as `input.reference` |
+| Persona picker | Dropdown on the module runners; sent as `input.persona_id` |
+| Persona CRUD + CTA | `PersonaManager` + `CtaSettings` on `/app/profile` |
+| Kanban + AI tagging | `PipelineBoard` drag/reorder + realtime; `POST /api/pipeline/schedule` writes `schedule_label` |
+| Clip / Thread engines | `ClipEngine` / `ThreadEngine`, registered in `StudioPanel`, modules `clip` / `thread` |
+| Draft editor | `/app/draft` + `DraftEditor` (autosave, Tab-to-complete) + `POST /api/autocomplete` |
+
+**Zero-cost modules skip `spend_credits` entirely.** `cost_autocomplete` and
+`cost_schedule_tag` seed to 0, and both routes treat 0 as "free, do not call the
+spend function" rather than "spend zero" — a zero-credit ledger row records a
+movement that did not happen and stops the ledger reconciling. Both routes were
+read and confirmed to do this.
+
+**Three things shipped orphaned and were wired by hand afterwards.** The agent
+that wrote `PersonaManager` never touched the profile page, `/app/draft` had no
+link pointing at it from anywhere, and the dashboard did not pass `clip`/`thread`
+costs to `StudioPanel`, so an admin price change would have moved the charge
+without moving the number on the tile. All three are fixed. It is the same
+failure mode as Hook Lab and Script once had: built, working, unreachable.
+**When a feature lands, grep for an import of it before calling it done.**
+
+### 9d.4 NOT verified — read this before trusting §9d.3
+
+- **Nothing has been rendered in a browser.** `next build` passing is not the same
+  as a working screen, and this pass added nine new UI surfaces.
+- The multi-agent run **hit the account's session limit**: 4 of 10 agents finished,
+  6 died mid-flight. The dead ones had already written their files, which is why
+  the features exist — but **two review passes never ran at all**
+  (`niche-engines`, `admin-profit`), and four features were never reviewed by
+  anything except the typechecker and a targeted manual audit of their credit,
+  auth and scoping paths (which they passed).
+- **Kanban drag on a real touchscreen is unproven.** So is Tab-to-complete's
+  interaction with keyboard focus.
+- The profit dashboard's cost figures have **never been checked against a real
+  Gemini bill**, and `input_tokens`/`output_tokens` are zero for every row written
+  before this migration — the panel excludes those days rather than drawing them
+  as free, but nobody has watched a fresh row get written with a real split.
+- The two niche engines have **never been run against the live model**. Their
+  prompts and schemas are untested against actual output.
+
+### 9d.5 Still open
+
+- The legacy `refund_credits(uuid, integer, text)` is revoked but **not dropped**.
+  Removing a function from a live money system deserves its own change.
+- `cost_autocomplete` and `cost_schedule_tag` exist in the database with **no UI**.
+  They are free right now, which is fine, but the owner cannot price them.
+- "Premium / 3D" visual pass — still not done, still needs a screenshot harness so
+  it is iterated with eyes rather than guessed at.
+- P1 (the rating loop) from §9b is now **partly obsolete**: `learned` notes already
+  feed every prompt. What remains unbuilt is surfacing that back to the user.
 
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 

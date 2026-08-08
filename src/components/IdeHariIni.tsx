@@ -5,9 +5,13 @@ import { IdeaCard, type IdeaData } from "./IdeaCard";
 import { GenerationProgress } from "./GenerationProgress";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
+import { GenerationExtras, useGenerationExtras } from "./ModuleRunner";
 
 export function IdeHariIni() {
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
+  // Shared with every other module — same pasted material, same picked voice,
+  // so switching from here to Hook Lab does not throw the context away.
+  const extras = useGenerationExtras();
   const [generationId, setGenerationId] = useState<string | undefined>();
   const [isGenerating, setIsGenerating] = useState(false);
   // Real characters received, so the progress figure moves because the
@@ -27,7 +31,13 @@ export function IdeHariIni() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ module: "ide_hari_ini" }),
+        // No `input` key at all when both extras are empty: the route stores
+        // whatever it is given on the generation row, and an empty object there
+        // is noise where a null used to say "this module takes no input".
+        body: JSON.stringify({
+          module: "ide_hari_ini",
+          ...(extras.extraInput ? { input: extras.extraInput } : {}),
+        }),
       });
 
       if (!res.ok) {
@@ -83,6 +93,10 @@ export function IdeHariIni() {
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Gak tau mau bikin apa? Klik aja. Malesan bakal ngasih ide yang pas buat hari ini.
         </p>
+
+        <div className="mt-5">
+          <GenerationExtras extras={extras} disabled={isGenerating} />
+        </div>
 
         {error && (
           <p className="mt-4 rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger border border-danger/20">
