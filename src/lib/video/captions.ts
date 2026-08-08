@@ -23,13 +23,47 @@ export type CaptionStyle = {
   position: number;
 };
 
+/**
+ * Curated caption fonts, loaded from Google Fonts at runtime.
+ *
+ * These are the faces short-form captions actually use — heavy, condensed,
+ * high-impact — not the system stack the first version was stuck with. The
+ * `css` value is the exact family name to load and to hand the canvas, and
+ * `weight` is the weight to request so the burned-in text matches the preview.
+ */
+export const CAPTION_FONTS: { label: string; family: string; weight: number }[] = [
+  { label: "Anton", family: "Anton", weight: 400 },
+  { label: "Bebas Neue", family: "Bebas Neue", weight: 400 },
+  { label: "Archivo Black", family: "Archivo Black", weight: 400 },
+  { label: "Montserrat", family: "Montserrat", weight: 800 },
+  { label: "Poppins", family: "Poppins", weight: 700 },
+  { label: "Oswald", family: "Oswald", weight: 700 },
+  { label: "Teko", family: "Teko", weight: 700 },
+  { label: "Rubik Mono", family: "Rubik Mono One", weight: 400 },
+];
+
+/** The Google Fonts href that loads every CAPTION_FONTS face in one request. */
+export const CAPTION_FONTS_HREF =
+  "https://fonts.googleapis.com/css2?" +
+  [
+    "family=Anton",
+    "family=Bebas+Neue",
+    "family=Archivo+Black",
+    "family=Montserrat:wght@800",
+    "family=Poppins:wght@700",
+    "family=Oswald:wght@700",
+    "family=Teko:wght@700",
+    "family=Rubik+Mono+One",
+  ].join("&") +
+  "&display=swap";
+
 export const DEFAULT_STYLE: CaptionStyle = {
-  fontFamily: "Arial",
-  bold: true,
+  fontFamily: "Anton",
+  bold: false,
   textColor: "#ffffff",
   highlightColor: "#ff8a3d",
   style: "outline",
-  position: 0.78,
+  position: 0.72,
 };
 
 export type Line = { words: Word[]; start: number; end: number };

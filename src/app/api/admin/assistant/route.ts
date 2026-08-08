@@ -75,39 +75,6 @@ const ALLOWED_HREFS = new Set([
   "/admin/config",
 ]);
 
-/**
- * Grok first, Gemini as the safety net.
- *
- * Any Grok error — no credits, a bad model id, a rate limit, a network blip —
- * drops through to Gemini, so the assistant answers regardless of the xAI
- * account's state. The Grok attempt is skipped entirely when no key is set, to
- * avoid a guaranteed-failing round trip on every question.
- */
-async function generateWithGrokFallback(
-  prompt: string,
-  schema: Record<string, unknown>,
-): Promise<string> {
-  const xaiKey = process.env.XAI_API_KEY;
-  const xaiModel = process.env.XAI_MODEL || "grok-3";
-
-  if (xaiKey) {
-    try {
-      return await generate({
-        prompt,
-        schema,
-        provider: "custom", // xAI speaks the OpenAI wire format
-        baseUrl: "https://api.x.ai/v1",
-        byokKey: xaiKey,
-        model: xaiModel,
-      });
-    } catch (e) {
-      console.warn("admin assistant: Grok failed, falling back to Gemini", e);
-    }
-  }
-
-  return generate({ prompt, schema, tier: "pro" });
-}
-
 function buildPrompt(snap: Snapshot, question: string) {
   const rupiah = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
 
@@ -209,17 +176,11 @@ export async function POST(req: NextRequest) {
 
   try {
     const snap = await buildSnapshot();
-    const prompt = buildPrompt(snap, question);
-    const schema = SCHEMA as unknown as Record<string, unknown>;
-
-    // The admin assistant runs on Grok (xAI) when it is configured, and falls
-    // back to Gemini on any Grok failure. This is a deliberately isolated home
-    // for the xAI key: admin-only, low-volume, and off the user money path — so
-    // a second brain here cannot destabilise generation or credits. Today the
-    // xAI team has no credits, so every Grok call errors and this quietly runs
-    // on Gemini; the moment credits are added, Grok takes over with no code
-    // change. xAI is OpenAI-compatible, hence the `custom` adapter.
-    const raw = await generateWithGrokFallback(prompt, schema);
+    const raw = await generate({
+      prompt: buildPrompt(snap, question),
+      schema: SCHEMA as unknown as Record<string, unknown>,
+      tier: "pro",
+    });
     const parsed = parseJson<Answer>(raw);
 
     // Drop any destination the model invented. It is reading text that users
