@@ -6,7 +6,7 @@ import { AppShell, type TabKey } from "@/components/AppShell";
 import { MascotStage } from "@/components/MascotStage";
 import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
-import { getCost, getDashboardNotice, getVideoCostPerMin } from "@/lib/config";
+import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCost } from "@/lib/config";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { RefreshButton } from "@/components/RefreshButton";
 import { TextScale } from "@/components/TextScale";
@@ -137,6 +137,7 @@ export default async function AppPage({
       getCost("clip"),
       getCost("thread"),
       getVideoCostPerMin(),
+      getVideoNoWatermarkCost(),
     ]),
 
     // Owner-only. A bank transfer lands in `topups` and then waits for someone
@@ -154,7 +155,7 @@ export default async function AppPage({
 
   if (typeof refillResult === "number") totalCredits = refillResult;
   const pipelineCards = pipelineResult ?? [];
-  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo] =
+  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm] =
     costs;
 
   // Owner's live announcement. Same config cache the costs above just warmed, so
@@ -237,6 +238,7 @@ export default async function AppPage({
               clip: costClip,
               thread: costThread,
               video: costVideo,
+              videoNoWm: costVideoNoWm,
             }}
             home={
         // This used to force everything into `min-h-[calc(100dvh-9.5rem)]` with

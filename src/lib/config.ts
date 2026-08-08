@@ -135,6 +135,15 @@ export async function getVideoCostPerMin(): Promise<number> {
  * drop it, so it is priced as its own small charge rather than folded into the
  * per-minute rate. Retunable in app_config; 5 is the safe default.
  */
+export async function isVideoEnabled(): Promise<boolean> {
+  const rows = await load();
+  const map = rows["enabled_modules"];
+  if (map && typeof map === "object" && "video" in (map as Record<string, unknown>)) {
+    return (map as Record<string, boolean>)["video"] !== false;
+  }
+  return true;
+}
+
 export async function getVideoNoWatermarkCost(): Promise<number> {
   const rows = await load();
   const v = rows["cost_no_watermark"];
