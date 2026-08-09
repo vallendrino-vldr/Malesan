@@ -1350,3 +1350,23 @@ button:active .wordmark__slouch,
    rest of the header. A 16px radius belongs on what a pointer actually lands
    on — putting it on the full-bleed bar would round corners against the screen
    edge, where there is nothing for them to round away from. */
+
+/* Export overlay spinner. Its own keyframes rather than a utility, because the
+   overlay lives on a portal outside the app's normal surfaces and must keep
+   working when the reduced-motion block below stops everything else — a frozen
+   spinner over a multi-minute render reads as a hang, so it degrades to a slow
+   pulse instead of stopping dead. */
+@keyframes export-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.export-spin {
+  animation: export-spin 0.9s linear infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .export-spin {
+    animation: export-spin 2.6s linear infinite;
+  }
+}

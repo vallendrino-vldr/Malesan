@@ -13,6 +13,7 @@ import {
   type Word,
 } from "@/lib/video/captions";
 import { exportBurnedVideo } from "@/lib/video/export";
+import { ExportOverlay } from "./ExportOverlay";
 
 /**
  * Video Auto-CC editor.
@@ -47,6 +48,11 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
   const [noWatermark, setNoWatermark] = useState(false);
   const [doneMsg, setDoneMsg] = useState<string | null>(null);
   const [now, setNow] = useState(0);
+  /** Sub-progress percentage for the blocking export overlay, plus what it is
+   *  doing right now. Kept separate from `progress` so the overlay can show a
+   *  fractional frame-accurate figure while the inline bar stays integer. */
+  const [exportPct, setExportPct] = useState(0);
+  const [exportStage, setExportStage] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const rafRef = useRef<number | null>(null);
@@ -145,8 +151,10 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
     setError(null);
     setDoneMsg(null);
     setProgress(0);
+    setExportPct(0);
+    setExportStage("Nyiapin");
     setPhase("exporting");
-    setStatus("Nge-render caption ke video (real-time, jangan tutup tab)...");
+    setStatus("Nge-render caption ke video, jangan tutup tab...");
     try {
       if (noWatermark) {
         const wm = await fetch("/api/video/no-watermark", { method: "POST" });
@@ -165,7 +173,11 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
         style,
         bitrateMbps: bitrate,
         watermark: !noWatermark,
-        onProgress: (r) => setProgress(Math.round(r * 100)),
+        onProgress: (r) => {
+          setProgress(Math.round(r * 100));
+          setExportPct(r * 100);
+        },
+        onStage: setExportStage,
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -193,6 +205,10 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
 
   return (
     <div className="space-y-4">
+      {/* Blocks the whole screen while frames are being encoded: a stray tap mid
+          render either corrupts the job or looks like a hang. */}
+      <ExportOverlay open={phase === "exporting"} progress={exportPct} stage={exportStage} />
+
       <header>
         <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
           Video Editor — Auto CC
@@ -274,8 +290,9 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
                   {phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}
                 </button>
                 <p className="text-micro leading-snug text-muted">
-                  Render-nya real-time (video 1 menit ≈ 1 menit proses) karena teksnya
-                  beneran dibakar ke gambar. Nama file otomatis ada tanda malesan.my.id.
+                  Tiap frame digambar satu-satu biar hasilnya mulus dan caption-nya pas sama
+                  suara. Prosesnya agak lama — layar bakal dikunci sampai kelar. Kualitas
+                  ngikut aslinya, gak diturunin.
                 </p>
               </>
             )}

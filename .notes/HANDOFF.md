@@ -37,8 +37,10 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-08**, after the Auto-CC bug-fix + Groq/Gemini feature pass (§9i).
-Newest work is §9i (3 Auto-CC bugs + netizen/roast + smart recycle).
+Last updated: **2026-08-09**, after the export-engine rewrite (§9j).
+**Newest work is §9j — the video export is now deterministic frame-by-frame
+(WebCodecs + mp4-muxer), NOT MediaRecorder. Read §9j before touching video.**
+§9i before it: 3 Auto-CC bugs + netizen/roast + smart recycle.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ---
@@ -953,6 +955,99 @@ Whisper and the new Llama features — no new keys needed.
 `cost_roast`, `cost_recycle` live in code/app_config with defaults but have NO
 admin-panel row yet, so the owner can only retune them via SQL/config for now.
 Add rows to `/admin/config` next to the video prices on the next admin pass.
+
+### 9j. Video export rewritten: deterministic frame-by-frame (2026-08-09) — READ THIS FIRST IF YOU TOUCH VIDEO
+
+This is the newest work and it replaced the export engine outright. **Everything
+in §9e–§9i about `MediaRecorder` being the export path is now historical.**
+
+#### The problem it fixed
+After §9i stopped the OOM crash, the owner reported the exported file was
+**choppy, the frame rate was destroyed, and the captions were out of sync with the
+audio**. Root cause was the design, not a parameter: `MediaRecorder` recording a
+canvas is a **real-time** capture. It plays the video and hopes the device can
+paint and encode 30fps. When a phone cannot, frames are silently dropped **while
+the audio clock keeps running** — so the output is choppy AND the captions slide
+away from the speech. No bitrate or codec tuning can fix a design that races the
+wall clock.
+
+#### What it is now
+`src/lib/video/encode.ts` — **WebCodecs, frame by frame, deterministic**:
+1. `probeFps()` measures the source frame rate (plays ~0.7s, reads real
+   presentation times off `requestVideoFrameCallback`, medians the gaps, snaps to
+   a real-world rate). Assuming 30 was itself a defect: 24fps footage walked at 30
+   duplicates frames, 60fps throws half away.
+2. For frame `i`: **seek** the `<video>` to the exact time `i/fps`, wait for
+   `seeked`, draw video + caption + watermark, wrap the canvas in a `VideoFrame`
+   stamped with that **exact timestamp**, `VideoEncoder.encode()`, `frame.close()`.
+   Nothing races anything; a slow phone just takes longer.
+3. Audio is decoded once at its **own sample rate, no downmix or resample**
+   (`decodeAudioData`), encoded to AAC 192k via `AudioEncoder`, muxed on its own
+   true timeline. **Sync is correct by construction**, not by luck.
+4. Muxed with **`mp4-muxer`** (new dependency, v5.2.2, zero deps of its own) via
+   `FileSystemWritableFileStreamTarget` — the MP4 is written **straight into an
+   OPFS file on disk**, so the encoded video never lands on the JS heap. This is
+   what keeps the §9i OOM fix intact at a much higher bitrate.
+
+`src/lib/video/draw.ts` is new: `drawFrame` / `drawCaption` / `drawWatermark` /
+`frameSize` / `bitrateFor`, shared by BOTH export paths so they cannot diverge.
+
+`src/lib/video/export.ts` is now a thin orchestrator: WebCodecs when available,
+otherwise the **old MediaRecorder path, kept deliberately** for Firefox and older
+Safari (no WebCodecs). Only an `UnsupportedEncoder` throw falls back — a mid-render
+failure is reported, because silently restarting on the slow path would look like a
+hang and produce the very file this replaced.
+
+#### Quality rules that are load-bearing — do not "optimise" these away
+The owner's explicit, repeated instruction: **never downscale, never compress
+harder to fix a performance problem.** `frameSize()` never reduces a source; it
+only upscales a small one so the short side reaches 1080 (captions are drawn at
+output size, so this is what keeps text crisp). `bitrateFor()` is the user's own
+preset with a ~0.3 bits/pixel floor. H.264 profile is picked best-first
+(`avc1.640034` High → Main → Baseline) via `isConfigSupported`.
+
+#### The blocking overlay (`src/components/ExportOverlay.tsx`)
+Frame-by-frame is slower than real time, so the UI must say so. Full-screen,
+portalled to `<body>` (an ancestor with `backdrop-filter` becomes the containing
+block for `position: fixed` — §4), blocks pointer + keyboard, locks body scroll,
+`beforeunload` guard, and shows a **frame-accurate percentage** plus the current
+stage. Spinner keyframes are at the end of `globals.css` and slow down rather than
+stop under `prefers-reduced-motion` (a frozen spinner over a long render reads as
+a hang).
+
+#### VERIFIED IN A REAL BROWSER — with numbers
+Not a build-passes claim. A throwaway `/enccheck` harness (deleted) generated a
+real 2.00s source clip in-browser and ran the actual `exportFrameByFrame` on it:
+```
+ftyp: "ftypisom"      -> a real MP4
+playable: 1080x1916, duration 2.00s   -> EXACTLY the source duration
+src 640x1136 -> out 1080p             -> upscaled, nothing downscaled
+stages: Nyiapin video / Nyiapin audio / Nge-render tiap frame
+progress ended at 1.0, took 10.1s for 2s of video
+```
+The output duration matching the source exactly is the direct proof that **no
+frames were dropped** — which is precisely the choppiness and drift being fixed.
+Also verified separately: `avc1.640034` reports supported at 1080x1920 @12Mbps,
+and the OPFS round-trip (write 10MB streamed, read back 10MB, valid download URL).
+
+#### NOT verified — what the next agent should check first
+- **Never run on a real phone, on a real user video, by an agent.** The owner must
+  export one clip on his phone and confirm: smooth, in sync, and no crash. That is
+  the one remaining unknown.
+- **Long-clip audio memory.** `decodeAudioData` holds the whole PCM: ~230MB for a
+  10-minute stereo 48kHz clip. Short-form (<3 min) is fine. If a long clip OOMs,
+  the fix is to demux and copy the original AAC through untouched (needs an MP4
+  demuxer such as mp4box.js) — **not** to downmix or resample, which the owner has
+  forbidden.
+- **Seek-based walking is slow** (~1 seek per frame). Acceptable per the owner
+  ("jangan peduli berapa lama"), but if speed becomes a complaint the correct
+  upgrade is `VideoDecoder` + a demuxer to pull frames sequentially, never going
+  back to real-time capture.
+- `fastStart: false` (index at end of file). Correct for a downloaded local file;
+  only HTTP progressive streaming would care. Do not switch to `'in-memory'` —
+  that buffers the whole MP4 on the heap and reintroduces the OOM.
+- The Groq/Gemini features from §9i (`/api/react`, `/api/recycle`) still have not
+  been exercised against a live model through their routes.
 
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 

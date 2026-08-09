@@ -1,68 +1,78 @@
 "use client";
 
 import { activeAt, type CaptionStyle, type Line } from "./captions";
+import { bitrateFor, drawFrame, frameSize } from "./draw";
+import { canUseWebCodecs, exportFrameByFrame, UnsupportedEncoder } from "./encode";
 
 /**
- * Burn captions into a video in the browser, for real, by drawing every frame.
+ * Burn captions into a video, in the browser, for real.
  *
- * The first version used ffmpeg's `ass` subtitle filter, which silently did
- * nothing: the default ffmpeg.wasm core ships without libass and without a font,
- * so the filter was a no-op and the exported file was the untouched original.
- * That is the bug this replaces.
+ * Two paths, in this order:
  *
- * This path cannot no-op: it paints each video frame onto a canvas, draws the
- * caption on top with the browser's own text engine (so any loaded font, any
- * colour, per-word reveal all just work), and records the canvas with
- * MediaRecorder. The pixels are the caption. It also means we are not at the
- * mercy of what the wasm core was compiled with.
+ * 1. **Deterministic (encode.ts, WebCodecs).** The real one. Walks the video frame
+ *    by frame at exact timestamps and encodes each frame with the time it belongs
+ *    at, muxing straight to disk. Smooth output, captions locked to the audio, no
+ *    dependence on how fast the phone is.
  *
- * Cost: recording is real-time — a 60s clip takes ~60s — because MediaRecorder
- * captures a live stream. That is the honest price of a burn-in that actually
- * happens, and the progress bar tracks it.
+ * 2. **Real-time (below, MediaRecorder).** The old path, kept ONLY for browsers
+ *    with no WebCodecs (Firefox today, older Safari). It plays the video and
+ *    records the canvas, so on a slow device it drops frames and the captions
+ *    drift — which is exactly why it is no longer the default. It still produces a
+ *    usable file, which beats refusing to export at all.
+ *
+ * ffmpeg.wasm is NOT involved in either path; it is used only to extract audio for
+ * transcription. An earlier version burned captions with ffmpeg's `ass` filter and
+ * it silently did nothing (that core carries no libass and no font), so the export
+ * was the untouched original. Drawing the pixels ourselves cannot no-op.
  */
 
 export type ExportOpts = {
   file: File;
   lines: Line[];
   style: CaptionStyle;
-  /** Target video bitrate in Mbps — the real quality/compress control. The
-   *  export resolution is derived from the video itself, upscaled to at least
-   *  1080 on the short side, so it is not a caller concern. */
+  /** Target video bitrate in Mbps. Resolution comes from the source and is never
+   *  reduced — see draw.ts frameSize. */
   bitrateMbps: number;
   /** Burn the malesan.my.id mark. False only after the credit was charged. */
   watermark: boolean;
   onProgress: (ratio: number) => void;
+  /** Short label for the blocking overlay, so the user knows what is happening. */
+  onStage?: (stage: string) => void;
 };
 
 export async function exportBurnedVideo(
   opts: ExportOpts,
 ): Promise<{ blob: Blob; ext: string }> {
-  const { file, lines, style, bitrateMbps, watermark, onProgress } = opts;
+  if (canUseWebCodecs()) {
+    try {
+      return await exportFrameByFrame(opts);
+    } catch (e) {
+      // Only a genuine "this browser cannot" falls back. A mid-render failure is
+      // reported, because silently restarting on the slow path would look like a
+      // hang and produce the choppy file this replaced.
+      if (!(e instanceof UnsupportedEncoder)) throw e;
+    }
+  }
+  return exportRealtime(opts);
+}
+
+/* ------------------------------------------------- legacy real-time fallback */
+
+async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: string }> {
+  const { file, lines, style, bitrateMbps, watermark, onProgress, onStage } = opts;
+  onStage?.("Nge-render (mode kompatibel)");
 
   const video = document.createElement("video");
   video.src = URL.createObjectURL(file);
   video.playsInline = true;
   // Muted is what makes play() start reliably: a non-muted programmatic play,
-  // after awaits have broken the click's user-activation, is rejected by the
-  // browser — and then the code awaited "ended" on a video that never started
-  // and hung forever. The audio track is still captured from the element's
-  // stream regardless of muted, so the exported file keeps its sound.
+  // after awaits have broken the click's user-activation, is rejected — and then
+  // the code awaits an "ended" that never comes and hangs forever. Audio is still
+  // captured from the element's stream regardless of muted.
   video.muted = true;
   await once(video, "loadedmetadata");
 
-  // Render at a proper resolution, not the source's. Short-form uploads are
-  // often tiny (a re-downloaded 144p clip), and capturing at that size is why
-  // the export looked far worse than the preview — the captions in particular
-  // were being drawn into a postage stamp and then scaled up on playback. Upscale
-  // the canvas so the short side is at least 1080; the video pixels do not gain
-  // detail, but the caption text is now drawn crisp and the file is a standard
-  // size. Capped so a already-large source is left alone and memory stays sane.
-  const sw = video.videoWidth || 1080;
-  const sh = video.videoHeight || 1920;
-  const short = Math.min(sw, sh);
-  const scale = Math.min(short < 1080 ? 1080 / short : 1, 2.5);
-  const W = even(Math.round(sw * scale));
-  const H = even(Math.round(sh * scale));
+  const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920);
 
   try {
     await document.fonts.load(`${style.bold ? 800 : 600} ${Math.round(H * 0.06)}px "${style.fontFamily}"`);
@@ -79,24 +89,17 @@ export async function exportBurnedVideo(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  // captureStream(0): frames are produced only when we ask, via requestFrame,
-  // so every recorded frame is an exact snapshot of a finished draw rather than a
-  // timer sampling a half-updated canvas — which is another source of the mush.
+  // captureStream(0): frames are produced only when we ask, via requestFrame, so
+  // every recorded frame is a finished draw rather than a timer sampling a
+  // half-updated canvas.
   const canvasStream = canvas.captureStream(0);
   const vTrack = canvasStream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack | undefined;
   const vStream = getStream(video);
   if (vStream) for (const t of vStream.getAudioTracks()) canvasStream.addTrack(t);
 
-  // Honour the chosen preset but never fall below a bitrate the resolution needs
-  // to look clean. Grain is almost always starvation: ~0.3 bits per pixel per
-  // second is the floor that keeps text edges sharp through the codec.
-  const floor = Math.round(W * H * 30 * 0.3);
-  const bits = Math.max(Math.round(bitrateMbps * 1_000_000), floor);
+  const bits = bitrateFor(bitrateMbps, W, H, 30);
 
-  // Release every heavy resource the export held. Called on success and on
-  // failure. Stopping the tracks frees the encoder and the captured audio; wiping
-  // the video src releases the decoder buffers; a 0x0 canvas drops its backing
-  // store. Without this, several exports in a row leak until the tab dies.
+  // Release every heavy resource this path held, on success and on failure alike.
   const release = () => {
     try { canvasStream.getTracks().forEach((t) => t.stop()); } catch {}
     try { vStream?.getTracks().forEach((t) => t.stop()); } catch {}
@@ -111,61 +114,43 @@ export async function exportBurnedVideo(
   const mime = pickMime();
   const rec = new MediaRecorder(canvasStream, { mimeType: mime, videoBitsPerSecond: bits });
 
-  // Stream the encoded output straight to disk instead of piling every chunk on
-  // the JS heap. A multi-minute, high-bitrate export is hundreds of MB; the old
-  // path kept all of it in an array AND, with no timeslice, let MediaRecorder
-  // buffer the whole file internally until stop() — so the heap briefly held the
-  // video twice. That is what OOM-crashed the tab ("Aw Snap") on a phone whatever
-  // its RAM. OPFS keeps the bytes on disk and the download reads them back from a
-  // disk-backed File. No quality is touched: same canvas, same bitrate.
+  // Stream the encoded output to disk rather than piling every chunk on the JS
+  // heap — with no timeslice and an in-memory array, the heap briefly held the
+  // whole video twice, which is what OOM-crashed phones ("Aw Snap").
   const sink = await makeSink(mime);
   let writeChain: Promise<void> = Promise.resolve();
   rec.ondataavailable = (e) => {
     if (e.data && e.data.size) {
       const chunk = e.data;
-      // Serialise the async disk writes so chunks land in order and each is freed
-      // as soon as it is written, rather than queuing on the heap.
       writeChain = writeChain.then(() => sink.write(chunk));
     }
   };
   const stopped = new Promise<void>((res) => (rec.onstop = () => res()));
 
   const paint = (t: number) => {
-    ctx.drawImage(video, 0, 0, W, H);
-    const a = activeAt(lines, t);
-    if (a) drawCaption(ctx, a.line, t, style, W, H);
-    if (watermark) drawWatermark(ctx, W, H);
+    drawFrame(ctx, video, lines, t, style, W, H, watermark);
     vTrack?.requestFrame?.();
     onProgress(Math.min(0.999, t / (video.duration || 1)));
   };
 
-  // Timeslice: flush an encoded chunk roughly every second so the recorder never
-  // holds the whole video in its internal buffer. This is half the OOM fix — the
-  // sink writing to disk is the other half.
   rec.start(1000);
   try {
     await video.play();
   } catch {
-    // play() was rejected (autoplay policy). Tear everything down and fail loudly
-    // instead of awaiting an "ended" that will never come.
-    try { rec.stop(); } catch { /* recorder may not have started a track yet */ }
-    await sink.finish().catch(() => {}); // close the writable so it is not left open
+    try { rec.stop(); } catch {}
+    await sink.finish().catch(() => {});
     release();
     throw new Error("Browser nolak play video buat render. Coba lagi atau pakai Chrome.");
   }
 
-  // Drive one canvas frame per decoded VIDEO frame via requestVideoFrameCallback:
-  // captures at the source's real FPS (not the display's 60Hz, which duplicated
-  // frames and made 30fps clips look choppy) and stays on the media element's
-  // own clock — the same clock the audio track rides — so the two cannot drift.
-  // rAF is the fallback where rVFC is missing (older Safari).
+  // One canvas frame per decoded video frame where possible, so the capture stays
+  // on the media element's own clock — the same clock the audio rides.
   const rvfc = video as HTMLVideoElement & {
     requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
   };
   let raf = 0;
   await new Promise<void>((resolve) => {
-    const done = () => resolve();
-    video.addEventListener("ended", done, { once: true });
+    video.addEventListener("ended", () => resolve(), { once: true });
     if (typeof rvfc.requestVideoFrameCallback === "function") {
       const step = (_now: number, meta: { mediaTime: number }) => {
         if (video.ended) return;
@@ -184,33 +169,25 @@ export async function exportBurnedVideo(
   });
   cancelAnimationFrame(raf);
 
-  // Paint the final frame so the last moment is not dropped, then close out.
-  ctx.drawImage(video, 0, 0, W, H);
-  if (watermark) drawWatermark(ctx, W, H);
+  drawFrame(ctx, video, lines, video.duration || 0, style, W, H, watermark);
   vTrack?.requestFrame?.();
   rec.stop();
   await stopped;
-  await writeChain; // every recorded chunk is flushed to the sink before finishing
+  await writeChain;
   const blob = await sink.finish();
   release();
 
-  const ext = mime.startsWith("video/mp4") ? "mp4" : "webm";
   onProgress(1);
-  return { blob, ext };
+  return { blob, ext: mime.startsWith("video/mp4") ? "mp4" : "webm" };
 }
 
 type Sink = { write: (b: Blob) => Promise<void>; finish: () => Promise<Blob> };
 
 /**
- * Where the recorder's output goes.
- *
- * OPFS (Origin Private File System) streams it to a real file on disk, so the
- * encoded video never accumulates on the JS heap — the fix for the mobile
- * "Aw Snap" out-of-memory crash. `getFile()` then hands back a disk-backed File
- * the browser downloads by reading from disk, not from the heap. A fixed temp
- * name is overwritten each run so nothing piles up between exports. Where OPFS is
- * unavailable (older browsers), it degrades to the in-memory array rather than
- * failing — correctness first, memory second.
+ * Where the recorder's output goes. OPFS streams it to a real file on disk so the
+ * encoded video never accumulates on the JS heap; `getFile()` then hands back a
+ * disk-backed File the download reads from disk. Degrades to an in-memory array
+ * only where OPFS is unavailable.
  */
 async function makeSink(mime: string): Promise<Sink> {
   try {
@@ -238,11 +215,6 @@ async function makeSink(mime: string): Promise<Sink> {
   };
 }
 
-const even = (n: number) => (n % 2 === 0 ? n : n - 1);
-
-/** mp4 straight out of MediaRecorder when the browser can (recent Chromium),
- *  else webm. No ffmpeg transcode — the wasm core cannot be relied on to carry
- *  an H.264 encoder, and a real webm beats a broken mp4. */
 function pickMime(): string {
   const S = (t: string) =>
     typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported?.(t);
@@ -289,154 +261,6 @@ function once(el: HTMLElement, ev: string): Promise<void> {
   });
 }
 
-/**
- * Draw the caption for time `t`.
- *
- * "word" mode shows exactly the word being spoken, one at a time. "line" mode
- * shows the whole caption line at once with the spoken word lit. Same function
- * the preview mirrors, so what is seen is what is burned.
- */
-function drawCaption(
-  ctx: CanvasRenderingContext2D,
-  line: Line,
-  t: number,
-  style: CaptionStyle,
-  W: number,
-  H: number,
-) {
-  const spokenCount = line.words.filter((w) => w.start <= t + 0.01).length;
-  if (!spokenCount) return;
-  const currentIdx = spokenCount - 1;
-
-  // In word mode only the current word is on screen; in line mode the whole
-  // line is, with the current word highlighted.
-  const render =
-    style.mode === "word"
-      ? [{ text: line.words[currentIdx].word, active: true }]
-      : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
-
-  const fontPx = Math.round(H * (style.mode === "word" ? 0.075 : 0.058) * style.fontScale);
-  ctx.font = `${style.bold ? 800 : 600} ${fontPx}px "${style.fontFamily}", sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-
-  const space = ctx.measureText(" ").width;
-  const maxW = W * 0.9;
-
-  // Wrap revealed words into lines that fit.
-  const rows: { words: { text: string; idx: number; w: number }[]; width: number }[] = [];
-  let row: { text: string; idx: number; w: number }[] = [];
-  let rowW = 0;
-  render.forEach((w, i) => {
-    const tw = ctx.measureText(w.text).width;
-    const add = row.length ? space + tw : tw;
-    if (rowW + add > maxW && row.length) {
-      rows.push({ words: row, width: rowW });
-      row = [];
-      rowW = 0;
-    }
-    row.push({ text: w.text, idx: i, w: tw });
-    rowW += row.length === 1 ? tw : space + tw;
-  });
-  if (row.length) rows.push({ words: row, width: rowW });
-
-  const lineH = fontPx * 1.25;
-  const totalH = rows.length * lineH;
-  const cy0 = H * style.position - totalH / 2 + lineH / 2;
-
-  rows.forEach((r, ri) => {
-    const cy = cy0 + ri * lineH;
-    let x = W / 2 - r.width / 2;
-    if (style.style === "box") {
-      const pad = fontPx * 0.28;
-      roundRect(ctx, x - pad, cy - lineH / 2 + fontPx * 0.12, r.width + pad * 2, lineH * 0.86, fontPx * 0.22);
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
-      ctx.fill();
-    }
-    for (const word of r.words) {
-      const cx = x + word.w / 2;
-      const color = render[word.idx].active ? style.highlightColor : style.textColor;
-      if (style.style === "outline") {
-        ctx.lineJoin = "round";
-        ctx.lineWidth = fontPx * 0.16;
-        ctx.strokeStyle = "rgba(0,0,0,0.9)";
-        ctx.strokeText(word.text, cx, cy);
-      } else if (style.style === "plain") {
-        ctx.shadowColor = "rgba(0,0,0,0.85)";
-        ctx.shadowBlur = fontPx * 0.25;
-      }
-      ctx.fillStyle = color;
-      ctx.fillText(word.text, cx, cy);
-      ctx.shadowBlur = 0;
-      x += word.w + space;
-    }
-  });
-}
-
-/**
- * The lasting credit — a small, deliberately tasteful pill so a reposted clip
- * still says where it came from without looking like a stock watermark.
- *
- * Bottom-centre and lifted clear of the very edge so it survives the platform
- * crop; a soft dark pill, an ember dot, the wordmark in the brand's own display
- * font. Sized to the frame so it is never a giant slab on a portrait video.
- */
-function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const px = Math.max(13, Math.round(H * 0.016));
-  const text = "malesan.my.id";
-  ctx.save();
-  ctx.font = `600 ${px}px "Poppins", "Archivo", system-ui, sans-serif`;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-
-  const dot = px * 0.5;
-  const gap = px * 0.55;
-  const padX = px * 0.85;
-  const padY = px * 0.62;
-  const textW = ctx.measureText(text).width;
-  const pillW = padX * 2 + dot + gap + textW;
-  const pillH = px + padY * 2;
-
-  // Top-left, but kept well clear of the corner: a comfortable margin off both
-  // edges so it never looks stuck to the frame. Roughly 4.5% of the width in,
-  // 3.5% of the height down.
-  const x = Math.round(W * 0.045);
-  const y = Math.round(H * 0.035);
-  const cy = y + pillH / 2;
-
-  // A soft frosted pill: low-alpha dark fill + a hairline stroke, the restrained
-  // look, not a shouting badge.
-  ctx.globalAlpha = 1;
-  roundRect(ctx, x, y, pillW, pillH, pillH / 2);
-  ctx.fillStyle = "rgba(11,10,9,0.42)";
-  ctx.fill();
-  ctx.lineWidth = Math.max(1, px * 0.06);
-  ctx.strokeStyle = "rgba(255,255,255,0.14)";
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.arc(x + padX + dot / 2, cy, dot / 2, 0, Math.PI * 2);
-  ctx.fillStyle = "#ff8a3d";
-  ctx.fill();
-
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.fillText(text, x + padX + dot + gap, cy + px * 0.03);
-  ctx.restore();
-}
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
+// Re-exported so the preview overlay and the export draw from one source.
+export { activeAt };
+export type { CaptionStyle, Line };
