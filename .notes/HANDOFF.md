@@ -1049,6 +1049,38 @@ and the OPFS round-trip (write 10MB streamed, read back 10MB, valid download URL
 - The Groq/Gemini features from §9i (`/api/react`, `/api/recycle`) still have not
   been exercised against a live model through their routes.
 
+### 9k. Script/generate FUNCTION_INVOCATION_TIMEOUT on prod (2026-08-09 b)
+
+Owner hit `FUNCTION_INVOCATION_TIMEOUT` (Vercel, sin1) generating a Script draft on
+his phone. It was NOT a client bug: the serverless function exceeded its duration.
+
+Root cause: `/api/generate` was capped at `maxDuration = 30` while every other
+heavy Gemini route (vibe, recycle, transcribe, admin/assistant) was already 60.
+Script is the heaviest prompt (~20s to generate), and at evening prime time the
+free-tier quota is partially spent (§3), so 429s trigger the key backoff. The old
+backoff was `[1,2,4,8]s` = **15s of pure sleeping** on top of the generation — so
+script gen + backoff blew past 30s and Vercel hard-killed the function. A hard kill
+skips the `catch` in the SSE stream, so **the credit was spent and never refunded**,
+and Vercel's raw error text leaked into the app UI (what the owner saw).
+
+Fixes (all in this commit):
+- `/api/generate` and `/api/onboarding` `maxDuration` 30 -> **60** (Hobby's real
+  cap; matches the other heavy routes).
+- `BACKOFF_MS` in `src/lib/gemini/client.ts`: dropped the 8s round -> `[1,2,4]s`
+  (7s max). On a 60s budget the 8s round risked pushing a retry into a hard
+  timeout; failing a touch sooner but cleanly (with a refund) is better.
+- `/api/generate` passes `signal: AbortSignal.timeout(52_000)` into
+  `generateStream`, so a genuinely hung upstream request aborts ~8s before the
+  60s kill — the `catch` runs, the credit is refunded, and the user gets a clean
+  error instead of Vercel's timeout page.
+
+NOT the fix, deliberately: did not shrink the prompt, trends, or learned-history
+to speed it up — that would cut output quality. If timeouts persist at quota
+exhaustion the honest levers are more Gemini keys from new GCP projects, or the
+quota guard serving free users a clear "sibuk, coba lagi" before spending. Build
++ tsc + lint (14, the floor) all clean. Not reproduced locally — a timeout needs
+real quota pressure — but the change is config + a standard abort deadline.
+
 ## 9b. PROPOSALS — awaiting the owner's yes/no (AGENTS.md §6)
 
 The owner asked on 2026-08-06 for "fitur keren di dashboard user supaya jadi

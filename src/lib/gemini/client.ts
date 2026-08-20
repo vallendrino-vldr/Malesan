@@ -18,7 +18,7 @@ import { getProviderConfig } from "@/lib/config";
  */
 
 /** Exponential backoff on 429 — 1s, 2s, 4s, 8s. */
-const BACKOFF_MS = [1_000, 2_000, 4_000, 8_000];
+const BACKOFF_MS = [1_000, 2_000, 4_000]; // dropped the 8s round: on a 60s function budget it risked a hard timeout (credit lost) instead of a clean refunded failure.
 
 export type Tier = "free" | "pro";
 

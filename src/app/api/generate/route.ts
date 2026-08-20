@@ -26,7 +26,7 @@ import {
   THREAD_ENGINE_SCHEMA,
 } from "@/lib/prompts/engines";
 
-export const maxDuration = 30; // Max execution time for vercel hobby
+export const maxDuration = 60; // Vercel Hobby max. Script gen + key backoff passed 30s and hard-timed-out (which also skips the refund below), so raised to the real cap.
 
 export async function POST(request: NextRequest) {
   try {
@@ -286,6 +286,9 @@ export async function POST(request: NextRequest) {
             tier: profile.is_pro ? "pro" : "free",
             model: await getModel(profile.is_pro ? "pro" : "free"),
             schema: schema,
+            // Give up ~8s before the 60s hard timeout so the catch below runs and the
+            // credit is refunded, rather than the function being killed mid-stream.
+            signal: AbortSignal.timeout(52_000),
             // byokKey: ... we'd decrypt here, but crypto module isn't fully implemented in this PRD section. Leaving out BYOK key decryption for now.
           });
 

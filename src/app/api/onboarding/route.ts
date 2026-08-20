@@ -7,7 +7,7 @@ import {
   CREATOR_DNA_ANALYSIS_SCHEMA,
 } from "@/lib/prompts";
 
-export const maxDuration = 30; // Max execution time for vercel hobby
+export const maxDuration = 60; // heavy Gemini gen, same class as /api/generate
 
 export async function POST(request: NextRequest) {
   try {
