@@ -10,7 +10,8 @@ rediscovering the repo produces nothing.
 creators. Live on Vercel, auto-deploys from `main`, takes real money.
 
 **Is it healthy right now?** Yes. `next build` passes, `tsc --noEmit` passes,
-37 routes generate (was 35 — §9i added `/api/react` and `/api/recycle`). `npm run lint` reports **14 problems (9 errors, 5 warnings)**.
+and the current production build emits 43 app pages/routes. `npm run lint`
+reports **14 problems (9 errors, 5 warnings)**.
 The old "11" note was stale: measured pristine on `git stash`, HEAD before §9i was
 already **15** (9 errors, 6 warnings) — the react-hooks rules in Next 16.2.12 got
 stricter (`Date.now()`-during-render and setState-in-effect are now flagged). §9i
@@ -37,12 +38,124 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-22**, after the AI Provider Management Layer (§9k).
-**Newest work is §9k — providers, models, routing, cost tracking are now database
-rows managed at `/admin/ai`. Read §9k before touching anything AI-related.**
+Last updated: **2026-08-22**, after final AI hardening (§9l).
+**Newest work is §9l — the Global Brain is now the verified path for all
+text/vision AI, with real primary/fallback/refund/cost/PWA/production evidence.**
+Read §9l before touching AI; §9k is the provider-layer foundation beneath it.
 §9j before it: deterministic frame-by-frame video export (WebCodecs + mp4-muxer,
 NOT MediaRecorder). §9i: 3 Auto-CC bugs + netizen/roast + smart recycle.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
+
+---
+
+## §9l — Final AI hardening, live on production (2026-08-22)
+
+**Commit/deploy:** `1f41c3d` on `main`, pushed to GitHub and confirmed serving
+at `malesan.my.id`. Fresh production Chrome registered
+`/sw.js?v=1f41c3d1`, cache `malesan-1f41c3d1`, manifest HTTP 200, worker headers
+`no-cache, no-store, must-revalidate`, no browser console errors. `/dev-masuk`
+is 404 in production. Authenticated production `/admin/ai` returned 200 and
+contained Simple Mode, DeepSeek, Gemini 3.5, and the cost summary.
+
+### Live source of truth
+
+- `app_config.ai_admin_mode = simple`; router/fallback flags true.
+- Global Brain primary: **DeepSeek V4 Flash**
+  (`ipeenkds/deepseek-v4-flash`, TELE/OpenAI-compatible).
+- Brain fallback: **Gemini 3.5 Flash**. Active feature overrides: **0**.
+- `gemini-3.7-flash` is inactive. It repeatedly returned live 429/quota while
+  3.5 succeeded on the same pool (~8s). Do not re-enable 3.7 from its name or
+  from old docs; probe it live first.
+- Hidden emergency `model_free` / `model_pro` also point to 3.5. They are not a
+  second selector and no longer reach `/admin/config`'s client.
+- DeepSeek pricing: prepaid Rp2.238 / 1,000,000 tokens, expiry 2026-09-21.
+  Gemini 3.5 is explicit `free_quota`, not “price missing”.
+- Both live provider rows ended the tests at 0 consecutive failures and a
+  successful last check. The provider currently labelled TELE is the Ipeenk
+  compatible gateway described by the owner.
+
+### Engine/routing changes
+
+- Every text/vision caller uses `runAI()` / `runAIStream()`. Route imports of
+  `getModel`, provider parsers, direct Gemini, and direct Groq Llama are gone.
+  `src/lib/transcribe.ts` remains the intentional audio-only Groq Whisper path.
+- `src/lib/ai/json.ts` is the provider-neutral structured-output parser.
+- All **18** feature specs resolve through the configured Brain. 16 normal text
+  features resolve DeepSeek → Gemini; autocomplete resolves the Brain's fast
+  Gemini candidate; proof-check resolves its vision Gemini candidate. No feature
+  had an empty/legacy candidate chain.
+- `reasoning` is a quality preference, not a hard protocol requirement. Its old
+  hard gate made Vibe/admin assistant bypass the Brain when scan metadata lacked
+  the label.
+- Three consecutive provider failures move it behind healthy backups for five
+  minutes, then traffic probes it again. One timeout does not reroute the fleet.
+- The final fallback is now bounded by the same wall-clock budget. Non-final
+  attempts preserve a 22s backup reserve; every route keeps time to refund and
+  persist before Vercel's hard ceiling.
+- Free/admin/cron calls now get a server request UUID; paid calls reuse the
+  immutable spend ref. Dashboard request counts are distinct by ref, while
+  every provider attempt still contributes tokens/cost.
+- Generate's one JSON-repair call reuses the ref, records zero extra revenue,
+  and runs only when at least 18s remains. History stores the actual served
+  model, never a legacy config guess.
+
+### Owner UI/cost/PWA
+
+- `/admin/ai` is Simple Mode by default. Authenticated mobile Playwright at
+  390×844 saw DeepSeek, TELE, Gemini 3.5, remaining prepaid tokens, modal,
+  requests/token/revenue/margin; no horizontal overflow or console errors.
+  “Ganti” opens one model dropdown and no model-ID textbox.
+- `/admin` already uses `AiHealthCard`; the old per-key `GeminiPoolPanel` is not
+  mounted. Key-level/error detail exists only in advanced/error surfaces.
+- Model registry starts fully collapsed. Provider Advanced cards show rolling
+  24h attempts, success rate, and latency.
+- Cost warning uses each exact `(provider_id, model_id)` price, so two gateways
+  exposing the same model ID cannot borrow one another's price. Free quota is
+  known zero; unknown pricing remains an explicit warning. Prepaid quota also
+  filters by provider + model.
+- PWA update race fixed: registration now notices a worker already installing,
+  and “Muat ulang” waits for `controllerchange`. A real A→B two-build browser
+  test proved the banner/controller transition and deletion of the old cache.
+
+### Real tests (disposable users/data cleaned; 0 `codex-*` users remain)
+
+- Ordinary-user primary: exact DeepSeek model, HTTP 200/done, real tokens and
+  prepaid rupiah cost, ledger **-1**, exactly one revenue entry.
+- Primary disabled: Gemini fallback succeeded, ledger still **-1**, one spend.
+- All providers failed: friendly SSE error, zero successful tokens/revenue,
+  spend + ref refund netted ledger/balance to **0**.
+- Direct refund RPC: exact ref reversal was idempotent and restored the balance.
+- Pipeline schedule: HTTP 200 in **4.585s**, DeepSeek, 212 tokens, Rp0.4745 cost,
+  schedule persisted, credit delta 0 because the feature is configured free.
+- Ide Hari Ini completed repeatedly in ~13–17s; no function timeout.
+- `npm run typecheck` PASS; targeted touched-file lint PASS; `npm run build`
+  PASS (43 pages). Full lint remains the documented baseline **14** (9 errors,
+  5 warnings), all in untouched legacy files.
+
+### Migration and remaining risks
+
+- Added additive `00024_ai_free_quota_pricing.sql`: local migration 00023 did
+  not allow `free_quota` even though code/live data already used it. It only
+  replaces the pricing-mode CHECK; no rows/tables/functions are deleted.
+- The Supabase CLI is not linked on this machine, so 00024 was not written into
+  remote migration history from CLI. Live already accepts and stores
+  `free_quota`; this file reconciles source for future environments.
+- The broader disk↔live migration mismatch from §9k still exists: three old
+  live tables/functions are missing from the narrative files. **Never db reset.**
+- No general per-user rate limiter yet (`rate_limits` remains unused).
+- Long calls use bounded SSE/progress and Vibe parallelism, not a durable job
+  queue. Current measured Ide/Pipeline paths fit; a future >60s workflow needs a
+  queue rather than a larger timeout.
+- PWA was verified in real desktop Chrome and across two worker builds, not as
+  a physical Android/iPhone installed-app acceptance test.
+
+### Files in commit
+
+`src/lib/ai/{engine,brain,router,registry,analytics,types,json}.ts`, all
+text/vision AI route handlers, `src/app/actions/ai-admin.ts`, AI/config admin UI,
+`src/components/PwaProvider.tsx`, payment proof parser, `DECISIONS.md`, and
+`supabase/migrations/00024_ai_free_quota_pricing.sql`. Local `.claude` maps,
+changelog, and backlog were updated too (they are intentionally gitignored).
 
 ---
 
