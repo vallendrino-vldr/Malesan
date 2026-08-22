@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { getCost, isModuleEnabled, getModel, getShadowPrompt } from "@/lib/config";
-import { generateStream } from "@/lib/gemini/client";
+import { runAIStream, type StreamMeta } from "@/lib/ai/engine";
+import { decryptSecret } from "@/lib/gemini/crypto";
 import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import {
@@ -92,15 +93,39 @@ export async function POST(request: NextRequest) {
       return new Response("Banned", { status: 403 });
     }
 
-    // Check for BYOK key
+    /**
+     * BYOK, decrypted.
+     *
+     * This route used to load the row, set `hasByok` from its mere existence,
+     * and then never decrypt or use the key — the call below carried a
+     * commented-out `byokKey` with a note that crypto was unimplemented. It is
+     * implemented, and /api/vibe has been using it. The effect of the gap was
+     * backwards: a BYOK user was waved past the pool guard (because `hasByok`
+     * was true) and then served from the shared pool anyway, spending the
+     * owner's quota instead of their own.
+     *
+     * `hasByok` is now derived from a key that actually decrypted, so a corrupt
+     * or unreadable key can no longer buy a guard bypass it cannot honour.
+     */
+    let byokKey: string | undefined;
     const { data: byok } = await supabase
       .from("user_api_keys")
       .select("key_encrypted, is_active")
       .eq("user_id", user.id)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
-    const hasByok = !!byok;
+    if (byok?.is_active && byok.key_encrypted) {
+      try {
+        byokKey = decryptSecret(byok.key_encrypted);
+      } catch {
+        // Undecryptable is the same as absent: fall back to the pool rather
+        // than failing a request the user is paying for.
+        byokKey = undefined;
+      }
+    }
+
+    const hasByok = Boolean(byokKey);
 
     // 3. checkPoolAdmission from quota module
     const admission = await checkPoolAdmission({ isPro: profile.is_pro, hasByok });
@@ -278,19 +303,36 @@ export async function POST(request: NextRequest) {
         let fullResponse = "";
         let parsed = null;
         let isError = false;
+        // Which provider and model actually answered. Filled by the engine, and
+        // used below so `generations.model_used` records what ran rather than
+        // what we intended to run — those differ the moment a fallback fires.
+        let meta: StreamMeta | null = null;
 
         try {
-          // 6. generateStream -> SSE stream
-          const generator = generateStream({
-            prompt: promptText,
-            tier: profile.is_pro ? "pro" : "free",
-            model: await getModel(profile.is_pro ? "pro" : "free"),
-            schema: schema,
-            // Give up ~8s before the 60s hard timeout so the catch below runs and the
-            // credit is refunded, rather than the function being killed mid-stream.
-            signal: AbortSignal.timeout(52_000),
-            // byokKey: ... we'd decrypt here, but crypto module isn't fully implemented in this PRD section. Leaving out BYOK key decryption for now.
-          });
+          // 6. Route through the provider layer -> SSE stream.
+          //
+          // With no route configured for this module the engine uses the exact
+          // legacy path this line used to call directly, so behaviour is
+          // unchanged until the owner opts the module in from /admin/ai.
+          const generator = runAIStream(
+            {
+              feature: module,
+              prompt: promptText,
+              schema: schema,
+              tier: profile.is_pro ? "pro" : "free",
+              legacyModel: await getModel(profile.is_pro ? "pro" : "free"),
+              userId: user.id,
+              refId: spendRef,
+              creditsCharged: cost,
+              byokKey,
+              // Give up ~8s before the 60s hard timeout so the catch below runs and the
+              // credit is refunded, rather than the function being killed mid-stream.
+              signal: AbortSignal.timeout(52_000),
+            },
+            (m) => {
+              meta = m;
+            },
+          );
 
           for await (const chunk of generator) {
             fullResponse += chunk;
@@ -348,7 +390,9 @@ export async function POST(request: NextRequest) {
                 platform: platform || null,
                 input: input || null,
                 output: parsed,
-                model_used: await getModel(profile.is_pro ? "pro" : "free"),
+                model_used:
+                  (meta as StreamMeta | null)?.modelId ??
+                  (await getModel(profile.is_pro ? "pro" : "free")),
                 credits_spent: cost,
               })
               .select()
