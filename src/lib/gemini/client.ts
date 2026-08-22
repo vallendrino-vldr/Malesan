@@ -65,6 +65,17 @@ export type GenerateArgs = {
    * reports whatever it managed to consume.
    */
   onUsage?: (usage: { input: number; output: number; total: number }) => void;
+  /**
+   * How many extra rounds of key rotation to attempt after the first pass.
+   *
+   * Defaults to the full backoff ladder, which is right when this call is the
+   * only hope. It is wrong when the caller has another gateway to try: a single
+   * -key gateway returning 503 would otherwise burn four rounds and ~7s of
+   * sleeps — about 27s — before failing, leaving no budget for the backup that
+   * would have answered. `0` means one pass over the keys with no sleeping,
+   * which is what the engine passes for every candidate except the last.
+   */
+  maxRounds?: number;
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -162,7 +173,10 @@ async function withRotation(
   const keys = attemptsFor(args.byokKey);
   let last: GeminiError | null = null;
 
-  for (let round = 0; round <= BACKOFF_MS.length; round++) {
+  // Bounded by the caller when it has somewhere else to go. See `maxRounds`.
+  const rounds = Math.max(0, Math.min(args.maxRounds ?? BACKOFF_MS.length, BACKOFF_MS.length));
+
+  for (let round = 0; round <= rounds; round++) {
     for (const key of keys) {
       const res = await callOnce(key, model, args, stream);
 
@@ -201,7 +215,7 @@ async function withRotation(
       throw new GeminiError(`Gemini rejected the request: ${text.slice(0, 300)}`, res.status, false);
     }
 
-    if (round < BACKOFF_MS.length) await sleep(BACKOFF_MS[round]);
+    if (round < rounds) await sleep(BACKOFF_MS[round]);
   }
 
   throw last ?? new GeminiError("Gemini exhausted every key and retry", 503, true);

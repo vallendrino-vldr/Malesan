@@ -95,6 +95,32 @@ export function CostPanel({
       </section>
 
       <section className="space-y-2">
+        <p className="eyebrow text-ember-lo">30 hari terakhir</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Stat label="Panggilan AI" value={String(summary.month.calls)} />
+          <Stat label="Biaya AI" value={formatIdr(summary.month.costIdr)} />
+          <Stat label="Pemasukan" value={formatIdr(summary.month.revenueIdr)} />
+          <Stat
+            label="Untung"
+            value={formatIdr(summary.month.marginIdr)}
+            tone={summary.month.marginIdr < 0 ? "bad" : "good"}
+          />
+        </div>
+        {summary.truncated && (
+          <p className="text-micro text-muted">
+            Catatan: cuma 5.000 panggilan terakhir yang kehitung, jadi angka
+            sebulan ini minimal — aslinya lebih.
+          </p>
+        )}
+        {summary.refundedCalls > 0 && (
+          <p className="text-micro text-muted">
+            {summary.refundedCalls} panggilan kreditnya udah dibalikin ke user —
+            biayanya tetep kehitung, pemasukannya nggak.
+          </p>
+        )}
+      </section>
+
+      <section className="space-y-2">
         <p className="eyebrow text-ember-lo">{summary.days} hari terakhir</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Stat label="Panggilan" value={String(summary.window.calls)} />

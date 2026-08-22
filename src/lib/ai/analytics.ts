@@ -39,12 +39,18 @@ export type CostSummary = {
   rupiahPerCredit: number;
   today: Money & { calls: number };
   window: Money & { calls: number; failures: number; fallbacks: number };
+  /** Rolling 30 days. The number an owner budgets against. */
+  month: Money & { calls: number };
   byFeature: FeatureCost[];
   byModel: ModelCost[];
   /** Providers that failed in the window, worst first. */
   troubled: { providerSlug: string; failures: number; lastError: string | null }[];
   /** True when no priced model has been configured — the dashboard says so. */
   pricingUnconfigured: boolean;
+  /** Requests whose credit was handed back, and therefore earn nothing. */
+  refundedCalls: number;
+  /** True when the row cap was hit, so the totals are a floor, not a total. */
+  truncated: boolean;
 };
 
 /**
@@ -78,29 +84,61 @@ type Row = {
   latency_ms: number | null;
   status: string;
   created_at: string;
+  /** Joins credit_ledger, so a refund can cancel this row's revenue. */
+  ref_id: string | null;
 };
 
+const ROW_CAP = 5000;
+
 export async function costSummary(days = 7): Promise<CostSummary> {
-  const since = new Date(Date.now() - days * 86_400_000).toISOString();
+  // One 30-day fetch feeds all three rollups. Three queries for today, the
+  // window and the month would triple the cost of the page to answer the same
+  // question from the same rows.
+  const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const windowStart = Date.now() - days * 86_400_000;
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [{ data }, perCredit] = await Promise.all([
-    createServiceRoleClient()
+  const db = createServiceRoleClient();
+
+  const [{ data }, perCredit, { data: refundRows }] = await Promise.all([
+    db
       .from("ai_usage_log")
       .select(
-        "feature, provider_slug, model_id, input_tokens, output_tokens, cost_idr, credits_charged, latency_ms, status, created_at",
+        "feature, provider_slug, model_id, input_tokens, output_tokens, cost_idr, credits_charged, latency_ms, status, created_at, ref_id",
       )
-      .gte("created_at", since)
-      // A hard ceiling so one busy week cannot pull an unbounded result set into
-      // a serverless function's memory. Ordered newest-first so the cap drops
-      // the oldest rows, which are the least interesting.
+      .gte("created_at", monthAgo)
+      // A hard ceiling so one busy month cannot pull an unbounded result set
+      // into a serverless function's memory. Ordered newest-first so the cap
+      // drops the oldest rows, which are the least interesting — and the caller
+      // is told when it bit, because a silently truncated total reads as a real
+      // one.
       .order("created_at", { ascending: false })
-      .limit(5000),
+      .limit(ROW_CAP),
     rupiahPerCredit(),
+    // Refunds. A positive ledger delta carrying a ref means the credit taken
+    // under that ref was handed back, so the request earned nothing.
+    //
+    // This matters more than it looks. The engine records credits_charged at the
+    // moment the model answers, but a route can still reject that answer
+    // afterwards — an unparseable JSON body is the common case — and refund. Left
+    // uncorrected, every one of those is counted as revenue and the margin on
+    // this page is a flattering lie.
+    db
+      .from("credit_ledger")
+      .select("ref_id")
+      .gt("delta", 0)
+      .not("ref_id", "is", null)
+      .gte("created_at", monthAgo)
+      .limit(ROW_CAP),
   ]);
 
   const rows = (data ?? []) as Row[];
+  const refunded = new Set(
+    (refundRows ?? []).map((r) => (r as { ref_id: string | null }).ref_id).filter(Boolean) as string[],
+  );
+
+  let refundedCalls = 0;
   const revenueOf = (credits: number) => credits * perCredit;
 
   const zero = (): Money => ({ costIdr: 0, revenueIdr: 0, marginIdr: 0 });
@@ -112,25 +150,42 @@ export async function costSummary(days = 7): Promise<CostSummary> {
 
   const today = { ...zero(), calls: 0 };
   const window = { ...zero(), calls: 0, failures: 0, fallbacks: 0 };
+  const month = { ...zero(), calls: 0 };
   const features = new Map<string, FeatureCost & { latencySum: number; latencyCount: number }>();
   const modelsMap = new Map<string, ModelCost>();
   const troubled = new Map<string, { failures: number; lastError: string | null }>();
 
   for (const r of rows) {
     const cost = Number(r.cost_idr ?? 0);
-    const credits = Number(r.credits_charged ?? 0);
+    // A refunded request cost us the tokens but earned nothing. The cost stays,
+    // the revenue does not — that asymmetry is the whole point of tracking it.
+    const wasRefunded = Boolean(r.ref_id && refunded.has(r.ref_id));
+    const credits = wasRefunded ? 0 : Number(r.credits_charged ?? 0);
+    if (wasRefunded && Number(r.credits_charged ?? 0) > 0) refundedCalls++;
+
+    const at = new Date(r.created_at).getTime();
     const failed = r.status === "error";
     const fellBack = r.status === "fallback";
 
-    add(window, cost, credits);
-    window.calls++;
-    if (failed) window.failures++;
-    if (fellBack) window.fallbacks++;
+    add(month, cost, credits);
+    month.calls++;
 
-    if (new Date(r.created_at) >= startOfToday) {
+    const inWindow = at >= windowStart;
+    if (inWindow) {
+      add(window, cost, credits);
+      window.calls++;
+      if (failed) window.failures++;
+      if (fellBack) window.fallbacks++;
+    }
+
+    if (at >= startOfToday.getTime()) {
       add(today, cost, credits);
       today.calls++;
     }
+
+    // The per-feature and per-model breakdowns describe the window the page
+    // labels, not the 30 days fetched for the monthly total.
+    if (!inWindow) continue;
 
     const fKey = r.feature;
     if (!features.has(fKey)) {
@@ -191,6 +246,9 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     rupiahPerCredit: perCredit,
     today,
     window,
+    month,
+    refundedCalls,
+    truncated: rows.length >= ROW_CAP,
     byFeature,
     byModel: [...modelsMap.values()].sort((a, b) => b.costIdr - a.costIdr),
     troubled: [...troubled.entries()]

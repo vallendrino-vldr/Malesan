@@ -75,6 +75,59 @@ const NO_USAGE: Usage = { input: 0, output: 0 };
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**
+ * How long a non-final candidate gets before we give up on it and try the next
+ * gateway.
+ *
+ * The whole point of a fallback chain is that a sick gateway costs you seconds,
+ * not the request. Without a per-attempt ceiling a gateway that accepts the
+ * connection and then hangs holds the entire 52s budget on its own, and the
+ * backup that would have answered is never called — the chain exists on paper
+ * and does nothing in the incident it was built for.
+ *
+ * Fifteen seconds is comfortably above a healthy first-token time (measured
+ * under a second on the free tier) and well under the function budget, so two
+ * failed gateways still leave room for a third to answer.
+ */
+const FAILOVER_TIMEOUT_MS = 15_000;
+
+/**
+ * A signal that fires when either the caller gives up or this attempt overruns.
+ *
+ * `AbortSignal.any` is Node 20.3+; Next 16 requires Node 20, but the guard costs
+ * one line and degrades to the parent signal rather than throwing on an older
+ * runtime — losing the per-attempt ceiling is a worse fallback chain, not a
+ * broken one.
+ */
+function attemptSignal(
+  parent: AbortSignal | undefined,
+  timeoutMs: number | undefined,
+): AbortSignal | undefined {
+  if (!timeoutMs) return parent;
+  const timeout = AbortSignal.timeout(timeoutMs);
+  if (!parent) return timeout;
+  return typeof AbortSignal.any === "function"
+    ? AbortSignal.any([parent, timeout])
+    : parent;
+}
+
+/**
+ * The retry budget for one candidate in a chain.
+ *
+ * Every candidate except the last gets a single pass over its keys with no
+ * backoff sleeps and a hard time ceiling, so failing over is fast. The last
+ * candidate gets the full ladder, because at that point there is nowhere else
+ * to go and patience is the only remaining strategy.
+ *
+ * A chain of exactly one candidate is therefore identical to the old behaviour,
+ * which is what keeps this from being a silent change to every routed feature.
+ */
+function budgetFor(isLast: boolean, parent: AbortSignal | undefined) {
+  return isLast
+    ? { maxRounds: undefined, signal: parent }
+    : { maxRounds: 0, signal: attemptSignal(parent, FAILOVER_TIMEOUT_MS) };
+}
+
+/**
  * Write one attempt to the cost log.
  *
  * Best-effort, and deliberately so: accounting must never fail a generation the
@@ -143,12 +196,15 @@ function callArgsFor(
   c: Candidate,
   args: RunArgs,
   onUsage?: (u: { input: number; output: number; total: number }) => void,
+  /** Omit for a standalone call (playground); pass for a position in a chain. */
+  budget?: { maxRounds: number | undefined; signal: AbortSignal | undefined },
 ) {
   return {
     prompt: args.prompt,
     schema: args.schema,
     images: args.images,
-    signal: args.signal,
+    signal: budget ? budget.signal : args.signal,
+    maxRounds: budget?.maxRounds,
     provider: c.provider.protocol,
     baseUrl: c.provider.base_url ?? undefined,
     model: c.model.model_id,
@@ -285,7 +341,9 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
     const isLast = i === candidates.length - 1;
 
     try {
-      const res = await generateDetailed(callArgsFor(c, args));
+      const res = await generateDetailed(
+        callArgsFor(c, args, undefined, budgetFor(isLast, args.signal)),
+      );
       const latencyMs = Date.now() - started;
       const usage = { input: res.inputTokens, output: res.outputTokens };
       const cost = costIdr(c.model, usage, usdToIdr);
@@ -539,16 +597,23 @@ export async function* runAIStream(
 
     // A model flagged as non-streaming still works — it just answers in one
     // piece, which the caller cannot tell apart from a very fast stream.
-    const iterator = c.model.supports_streaming
-      ? generateStream(callArgsFor(c, args, capture))[Symbol.asyncIterator]()
-      : (async function* () {
-          const r = await generateDetailed(callArgsFor(c, args));
-          capture({ input: r.inputTokens, output: r.outputTokens });
-          yield r.text;
-        })()[Symbol.asyncIterator]();
-
+    let iterator: AsyncIterator<string>;
     let first: IteratorResult<string>;
     try {
+      // Built INSIDE the try. `callArgsFor` resolves the provider key, which
+      // throws synchronously when a gateway has no key or one that cannot be
+      // decrypted. Constructed outside, that throw escapes the loop and one
+      // misconfigured gateway takes down the whole chain — the opposite of what
+      // a fallback list is for. A broken gateway must be skipped, not fatal.
+      const budget = budgetFor(isLast, args.signal);
+      iterator = c.model.supports_streaming
+        ? generateStream(callArgsFor(c, args, capture, budget))[Symbol.asyncIterator]()
+        : (async function* () {
+            const r = await generateDetailed(callArgsFor(c, args, undefined, budget));
+            capture({ input: r.inputTokens, output: r.outputTokens });
+            yield r.text;
+          })()[Symbol.asyncIterator]();
+
       // The fallback boundary. Everything up to and including the first chunk is
       // retryable on another provider; nothing after it is.
       first = await iterator.next();

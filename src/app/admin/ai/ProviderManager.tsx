@@ -27,13 +27,23 @@ import type { ProviderView, Protocol } from "@/lib/ai/types";
  * otherwise opening the form and saving would wipe a working key.
  */
 
+/**
+ * OpenAI-compatible is first and is the default, because it is the answer for
+ * almost every gateway worth adding: SumoPod, Ipeenk, OpenRouter, Groq,
+ * Together, DeepSeek and any self-hosted proxy all speak that one shape. There
+ * is no per-vendor code anywhere in this system and there should never be — a
+ * new gateway is a Base URL, a key and a model id.
+ *
+ * The other two exist because they are genuinely different wire protocols, not
+ * because they are different brands.
+ */
 const PROTOCOLS: { value: Protocol; label: string; hint: string }[] = [
-  { value: "gemini", label: "Gemini", hint: "Google Generative Language API" },
   {
     value: "openai",
-    label: "OpenAI-compatible",
-    hint: "OpenAI, SumoPod, OpenRouter, Groq, Together, gateway sendiri",
+    label: "OpenAI-compatible (paling umum)",
+    hint: "SumoPod, Ipeenk, OpenRouter, Groq, DeepSeek, gateway sendiri",
   },
+  { value: "gemini", label: "Gemini", hint: "Google Generative Language API langsung" },
   { value: "anthropic", label: "Anthropic", hint: "Claude API langsung" },
 ];
 
@@ -97,24 +107,25 @@ export function ProviderManager({ providers }: { providers: ProviderView[] }) {
     <div className="space-y-5">
       <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="font-display text-xl font-bold text-ink">Provider AI</h1>
+          <h1 className="font-display text-xl font-bold text-ink">Gateway AI</h1>
           <p className="mt-1 text-sm leading-relaxed text-muted">
-            Tambah provider baru tanpa deploy. Yang OpenAI-compatible (SumoPod,
-            OpenRouter, Groq) cukup isi Base URL sama API key.
+            Tambah gateway baru tanpa deploy dan tanpa ngoding. Hampir semua
+            layanan (SumoPod, Ipeenk, OpenRouter, Groq) cuma butuh tiga hal:
+            Base URL, API key, terus tekan Scan model.
           </p>
         </div>
         <button
           onClick={() => setForm(form ? null : { ...EMPTY })}
           className="shrink-0 rounded-full bg-ember px-4 py-2 text-mini font-bold text-obsidian"
         >
-          {form ? "Tutup" : "+ Provider"}
+          {form ? "Tutup" : "+ Gateway"}
         </button>
       </header>
 
       {form && (
         <form onSubmit={submit} className="surface-card space-y-3 rounded-xl p-4">
           <p className="eyebrow text-ember-lo">
-            {form.id ? "Edit provider" : "Provider baru"}
+            {form.id ? "Edit gateway" : "Gateway baru"}
           </p>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -267,7 +278,7 @@ export function ProviderManager({ providers }: { providers: ProviderView[] }) {
       <div className="space-y-2.5">
         {providers.length === 0 && (
           <div className="rounded-xl border border-dashed border-hairline px-4 py-10 text-center">
-            <p className="text-sm text-muted">Belum ada provider. Tambah satu di atas.</p>
+            <p className="text-sm text-muted">Belum ada gateway. Tambah satu di atas.</p>
           </div>
         )}
 
@@ -394,7 +405,7 @@ export function ProviderManager({ providers }: { providers: ProviderView[] }) {
               {p.key_source !== "env_gemini_pool" && (
                 <button
                   onClick={() => {
-                    if (!confirm(`Hapus provider "${p.label}"? Semua modelnya ikut kehapus.`)) return;
+                    if (!confirm(`Hapus gateway "${p.label}"? Semua modelnya ikut kehapus.`)) return;
                     startTransition(async () => {
                       try {
                         await deleteProvider(p.id);
