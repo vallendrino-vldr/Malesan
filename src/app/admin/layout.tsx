@@ -80,6 +80,15 @@ const LINKS: {
     ),
   },
   {
+    // Sits next to "Otak AI" on purpose: that screen tunes how the AI behaves,
+    // this one decides which AI answers at all.
+    href: "/admin/ai",
+    label: "Provider",
+    icon: (
+      <path d="M4 4h7v7H4V4Zm9 0h7v7h-7V4ZM4 13h7v7H4v-7Zm9 0h7v7h-7v-7Zm2 2v3h3v-3h-3Z" />
+    ),
+  },
+  {
     href: "/admin/config",
     label: "Otak AI",
     icon: (
