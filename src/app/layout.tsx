@@ -32,13 +32,15 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
-const SITE_URL = "https://malesan.my.id";
+// Vercel serves www as the canonical origin; the apex permanently redirects
+// there. Keep metadata/share URLs on the final origin instead of adding a hop.
+const SITE_URL = "https://www.malesan.my.id";
 const TITLE = "Malesan — Males mikirnya. Bukan bikinnya.";
 const DESCRIPTION =
   "Buat kreator konten Indonesia. Malesan ngilangin momen bengong depan layar kosong — ide, hook, sama naskah siap eksekusi dalam hitungan detik.";
 
 export const metadata: Metadata = {
-  // The domain is confirmed and live (malesan.my.id), so relative OG/canonical
+  // The domain is confirmed and live (www.malesan.my.id), so relative OG/canonical
   // URLs now resolve against it — without this, a shared link renders no
   // preview card at all.
   metadataBase: new URL(SITE_URL),

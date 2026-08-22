@@ -685,3 +685,11 @@ provider call now aborts with time left before Vercel's ceiling, ffmpeg can retr
 after a failed load, scratch files always clean up, and presets/animation affect
 the actual preview/export pixels. A durable queue remains a separate future
 architecture decision for workloads that must resume after a serverless kill.
+
+## 2026-08-23 — `www` is the production web origin
+
+Vercel returns a permanent 308 from `https://malesan.my.id` to
+`https://www.malesan.my.id`. Metadata/share URLs now use the final `www` origin
+instead of adding a redirect hop. Browser auth already derives its callback from
+`window.location.origin`; Supabase/Google OAuth allow-lists must therefore
+include the `www` callback (and may retain the apex callback as a safety alias).

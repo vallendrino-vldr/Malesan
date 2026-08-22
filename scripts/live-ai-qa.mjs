@@ -58,9 +58,20 @@ const env = loadEnv();
 const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-const base = process.env.MALESAN_QA_BASE ?? "http://127.0.0.1:3100";
+const requestedBase = process.env.MALESAN_QA_BASE ?? "http://127.0.0.1:3100";
 
 invariant(supabaseUrl && anonKey && serviceKey, "Supabase QA env belum lengkap.");
+
+// Production currently canonicalises the apex domain to www. Resolve that
+// origin before attaching cookies: fetch correctly strips Cookie on a
+// cross-origin redirect, which would otherwise turn a valid session into a
+// misleading 401.
+const baseProbe = await fetch(requestedBase, {
+  redirect: "follow",
+  signal: AbortSignal.timeout(15_000),
+});
+invariant(baseProbe.ok, `Base URL QA gagal dengan HTTP ${baseProbe.status}.`);
+const base = new URL(baseProbe.url).origin;
 
 const service = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -126,6 +137,28 @@ try {
     refresh_token: signedIn.session.refresh_token,
   });
   if (sessionError) throw sessionError;
+  const cookieHeader = [...cookieJar.entries()]
+    .map(([name, value]) => `${name}=${value}`)
+    .join("; ");
+
+  const authProbe = await fetch(`${base}/app`, {
+    headers: { Cookie: cookieHeader },
+    redirect: "manual",
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (authProbe.status >= 300 && authProbe.status < 400) {
+    console.log(
+      JSON.stringify({
+        authProbe: authProbe.status,
+        cookieParts: [...cookieJar.entries()].map(([name, value]) => ({
+          name,
+          bytes: value.length,
+        })),
+      }),
+    );
+    throw new Error("Cookie QA tidak diterima aplikasi.");
+  }
+  invariant(authProbe.ok, `Auth probe gagal dengan HTTP ${authProbe.status}.`);
 
   const before = await service
     .from("profiles")
@@ -139,7 +172,7 @@ try {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Cookie: [...cookieJar.entries()].map(([name, value]) => `${name}=${value}`).join("; "),
+      Cookie: cookieHeader,
     },
     body: JSON.stringify({
       module: "idea",

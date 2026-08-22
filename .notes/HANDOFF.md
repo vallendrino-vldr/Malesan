@@ -92,9 +92,10 @@ older disk↔live history mismatch remains and must not be "fixed" by reset.
 
 ### Evidence
 
-- Real disposable ordinary user → `/api/generate` → DeepSeek V4 Flash, 3,568
-  tokens, non-zero prepaid rupiah cost, generation persisted, exactly one
-  credit ledger charge; all test data removed and orphan count verified zero.
+- Real disposable ordinary user → production `/api/generate` → DeepSeek V4
+  Flash, 3,397 tokens, non-zero prepaid rupiah cost, generation persisted,
+  exactly one credit ledger charge; all test data removed. The same test passed
+  locally with 3,568 tokens before deploy.
 - Real Auto-CC browser path: ffmpeg extraction + Groq transcription + style UI.
 - Browser: 13 authenticated routes × 4 viewports passed in Chromium and WebKit;
   no horizontal overflow, unnamed buttons, missing image alt, legacy stats copy,
@@ -1406,19 +1407,20 @@ whether the product converts at all yet. **Numbers before features.**
   `http://localhost:3000/?code=...`. The code is correct — `GoogleSignInButton`
   sends `redirectTo: ${window.location.origin}/auth/callback`. Supabase falls
   back to its configured Site URL when the Vercel callback is not allow-listed.
-  Fix in Supabase → Authentication → URL Configuration: Site URL =
-  `https://malesan.my.id`; Redirect URLs must include
-  `https://malesan.my.id/auth/callback` **and**
+  The live apex now returns 308 to `https://www.malesan.my.id`, so the canonical
+  Site URL is `https://www.malesan.my.id`; Redirect URLs must include
+  `https://www.malesan.my.id/auth/callback`, the apex callback for safety, **and**
   `https://<project>-*.vercel.app/auth/callback` (preview deploys get a
   new hostname per commit), plus `http://localhost:3000/auth/callback`. Also
   Google Cloud Console → OAuth client → Authorized redirect URIs must list
   `https://<ref>.supabase.co/auth/v1/callback`.
 - **Google consent screen is still in Testing** — only listed test users can sign
   in at all. Separate gate from the redirect problem.
-- **Production domain is `malesan.my.id`** (bought on SumoPod, DNS pointed at
-  Vercel, live 2026-08-07). This is now the canonical URL — update any doc or
-  config still saying `malesan.vercel.app`. The OAuth allow-list above must use
-  it. `layout.tsx` now sets `metadataBase: https://malesan.my.id` plus
+- **Production canonical origin is `www.malesan.my.id`**; the apex
+  `malesan.my.id` permanently redirects there (verified 2026-08-23). Both are
+  on Vercel; update any doc/config still saying `malesan.vercel.app`. The OAuth
+  allow-list above must include `www`. `layout.tsx` now sets
+  `metadataBase: https://www.malesan.my.id` plus
   openGraph/twitter, and `src/app/opengraph-image.tsx` renders a 1200×630
   link-preview card via `next/og` (dark + ember, no font file on purpose).
 
