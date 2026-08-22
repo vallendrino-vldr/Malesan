@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { costIdr } from "./cost";
+import { costIdr, isPriced } from "./cost";
 import { FEATURE_MAP, type ModelRow } from "./types";
 
 /**
@@ -43,7 +43,7 @@ export type ModelCost = Money & {
 export type CostSummary = {
   days: number;
   rupiahPerCredit: number;
-  today: Money & { calls: number };
+  today: Money & { calls: number; tokens: number };
   window: Money & { calls: number; failures: number; fallbacks: number };
   /** Rolling 30 days. The number an owner budgets against. */
   month: Money & { calls: number };
@@ -67,6 +67,65 @@ export type CostSummary = {
  * averaging the rates rather than the money would overweight the small pack
  * nobody buys. Falls back to 150 (the 100/Rp15.000 pack) when nothing is active.
  */
+export type Quota = {
+  /** Tokens the package bought. Null when this model is not prepaid. */
+  totalTokens: number | null;
+  /** Tokens we have actually spent on it, from our own usage log. */
+  usedTokens: number;
+  remainingTokens: number | null;
+  /** What the package cost, and what has been consumed of it, in rupiah. */
+  packagePriceIdr: number | null;
+  spentIdr: number;
+  expiresAt: string | null;
+  expired: boolean;
+  /** 0-100. Null when not prepaid. */
+  percentUsed: number | null;
+};
+
+/**
+ * How much of a prepaid package is left.
+ *
+ * Counted from OUR OWN usage log rather than the gateway's balance endpoint, on
+ * purpose. Ipeenk reports `{"total_balance": 99029.9, "currency": "USD"}` for a
+ * package sold as "1,000,000 tokens" — a number in a unit that does not match
+ * what was bought and cannot be reconciled without guessing. Our log records the
+ * exact input and output tokens the provider itself reported on every call, so
+ * this is both more trustworthy and realtime.
+ *
+ * The gateway's own figure is still displayed, labelled as theirs, so a
+ * disagreement is visible rather than hidden.
+ */
+export async function quotaFor(model: ModelRow): Promise<Quota> {
+  const isPrepaid = model.pricing_mode === "prepaid_package";
+  const total = isPrepaid ? Number(model.package_tokens ?? 0) || null : null;
+  const price = isPrepaid ? Number(model.package_price_idr ?? 0) || null : null;
+
+  const { data } = await createServiceRoleClient()
+    .from("ai_usage_log")
+    .select("input_tokens, output_tokens")
+    .eq("model_id", model.model_id)
+    .eq("status", "ok");
+
+  const used = (data ?? []).reduce(
+    (s, r) =>
+      s + Number((r as { input_tokens: number }).input_tokens ?? 0) +
+      Number((r as { output_tokens: number }).output_tokens ?? 0),
+    0,
+  );
+
+  const expiresAt = model.package_expires_at;
+  return {
+    totalTokens: total,
+    usedTokens: used,
+    remainingTokens: total !== null ? Math.max(0, total - used) : null,
+    packagePriceIdr: price,
+    spentIdr: total && price ? (used / total) * price : 0,
+    expiresAt,
+    expired: Boolean(expiresAt && new Date(expiresAt) < new Date()),
+    percentUsed: total ? Math.min(100, (used / total) * 100) : null,
+  };
+}
+
 export type Suggestion = {
   feature: string;
   featureLabel: string;
@@ -101,11 +160,7 @@ export async function savingsSuggestions(
   models: ModelRow[],
   usdToIdr: number,
 ): Promise<Suggestion[]> {
-  const priced = models.filter(
-    (m) =>
-      m.is_active &&
-      (m.input_price_usd_per_mtok > 0 || m.output_price_usd_per_mtok > 0),
-  );
+  const priced = models.filter((m) => m.is_active && isPriced(m));
   if (priced.length === 0) return [];
 
   const out: Suggestion[] = [];
@@ -244,7 +299,7 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     m.marginIdr = m.revenueIdr - m.costIdr;
   };
 
-  const today = { ...zero(), calls: 0 };
+  const today = { ...zero(), calls: 0, tokens: 0 };
   const window = { ...zero(), calls: 0, failures: 0, fallbacks: 0 };
   const month = { ...zero(), calls: 0 };
   const features = new Map<
@@ -280,6 +335,7 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     if (at >= startOfToday.getTime()) {
       add(today, cost, credits);
       today.calls++;
+      today.tokens += Number(r.input_tokens ?? 0) + Number(r.output_tokens ?? 0);
     }
 
     // The per-feature and per-model breakdowns describe the window the page

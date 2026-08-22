@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { saveBrain, setAdminMode } from "@/app/actions/ai-admin";
-import type { BrainView } from "@/lib/ai/brain";
+import type { BrainView, Health } from "@/lib/ai/brain";
+import type { Quota } from "@/lib/ai/analytics";
 import type { AdminMode } from "@/lib/config";
 import type { ModelRow, ProviderView } from "@/lib/ai/types";
+import { formatIdr } from "@/lib/ai/cost";
 
 /**
  * The Global AI Brain — the one control that matters.
@@ -19,17 +21,27 @@ import type { ModelRow, ProviderView } from "@/lib/ai/types";
  * warning the owner believes they moved to DeepSeek while still paying Google.
  */
 
+const HEALTH: Record<Health, { dot: string; text: string; label: string }> = {
+  healthy: { dot: "bg-ember", text: "text-ember-lo", label: "sehat" },
+  warning: { dot: "bg-ember/60", text: "text-ember-lo", label: "ada gangguan" },
+  limit: { dot: "bg-ember/60", text: "text-ember-lo", label: "kena limit" },
+  error: { dot: "bg-danger", text: "text-danger", label: "bermasalah" },
+};
+
 function Row({
   role,
   label,
   provider,
   active,
+  health,
 }: {
   role: string;
   label: string;
   provider: string;
   active: boolean;
+  health: Health;
 }) {
+  const h = HEALTH[active ? health : "error"];
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2.5">
       <div className="min-w-0">
@@ -37,13 +49,27 @@ function Row({
         <p className="mt-0.5 truncate font-display text-mini font-bold text-ink">{label}</p>
         <p className="text-micro text-muted">{provider}</p>
       </div>
-      <span
-        className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-micro ${
-          active ? "bg-ember/10 text-ember-lo" : "bg-danger/10 text-danger"
-        }`}
-      >
-        {active ? "aktif" : "mati"}
+      <span className={`flex shrink-0 items-center gap-1.5 text-micro ${h.text}`}>
+        <span aria-hidden="true" className={`size-2 rounded-full ${h.dot}`} />
+        {active ? h.label : "mati"}
       </span>
+    </div>
+  );
+}
+
+function Bar({ percent }: { percent: number }) {
+  return (
+    <div
+      className="h-1.5 w-full overflow-hidden rounded-full bg-obsidian"
+      role="progressbar"
+      aria-valuenow={Math.round(percent)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+    >
+      <div
+        className={`h-full rounded-full ${percent >= 90 ? "bg-danger" : "bg-ember"}`}
+        style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+      />
     </div>
   );
 }
@@ -53,11 +79,14 @@ export function BrainPanel({
   models,
   providers,
   mode,
+  quota,
 }: {
   brain: BrainView;
   models: ModelRow[];
   providers: ProviderView[];
   mode: AdminMode;
+  /** Prepaid package status for the primary model, when it has one. */
+  quota: Quota | null;
 }) {
   const active = models.filter((m) => m.is_active);
   const [editing, setEditing] = useState(false);
@@ -133,7 +162,46 @@ export function BrainPanel({
                   label={brain.primary.label}
                   provider={brain.primary.provider}
                   active={brain.primary.active}
+                  health={brain.primary.health}
                 />
+
+                {/* The prepaid package, in the only terms that matter: how much
+                    is left, how much of the money is gone, and when it dies. */}
+                {quota && quota.totalTokens !== null && (
+                  <div className="rounded-lg bg-surface px-3 py-2.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-micro text-muted">Sisa token</p>
+                      <p className="font-mono text-mini font-bold text-ink">
+                        {(quota.remainingTokens ?? 0).toLocaleString("id-ID")}
+                        <span className="text-muted">
+                          {" "}
+                          / {quota.totalTokens.toLocaleString("id-ID")}
+                        </span>
+                      </p>
+                    </div>
+                    <div className="mt-2">
+                      <Bar percent={quota.percentUsed ?? 0} />
+                    </div>
+                    <div className="mt-2 flex flex-wrap justify-between gap-x-3 gap-y-1 text-micro text-muted">
+                      <span>
+                        Modal {formatIdr(quota.packagePriceIdr ?? 0)} · kepakai{" "}
+                        {formatIdr(quota.spentIdr)}
+                      </span>
+                      {quota.expiresAt && (
+                        <span className={quota.expired ? "text-danger" : ""}>
+                          {quota.expired ? "Sudah kedaluwarsa" : `Habis ${quota.expiresAt}`}
+                        </span>
+                      )}
+                    </div>
+                    {(quota.percentUsed ?? 0) >= 90 && !quota.expired && (
+                      <p className="mt-2 text-micro text-danger">
+                        Token tinggal dikit. Isi ulang paketnya sebelum habis, atau
+                        pastiin cadangannya nyala.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {brain.fallbacks.map((f, i) => (
                   <Row
                     key={f.modelId}
@@ -141,6 +209,7 @@ export function BrainPanel({
                     label={f.label}
                     provider={f.provider}
                     active={f.active}
+                    health={f.health}
                   />
                 ))}
                 {brain.fallbacks.length === 0 && (

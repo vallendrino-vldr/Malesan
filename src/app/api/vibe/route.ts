@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { getCost, isModuleEnabled, getModel, getShadowPrompt } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { decryptSecret } from "@/lib/gemini/crypto";
@@ -160,15 +161,21 @@ ${shadow}
 
         // One short call to name the project, so all six documents agree on it.
         send({ status: "Mikirin konsepnya...", step: 0, total: 7 });
-        const identityRaw = await generate({
+        const { text: identityRaw } = await runAI({
+          feature: "vibe",
           prompt:
             buildVibeIdentityPrompt({ idea, stack, audience }, dnaLang, dna) +
             formatVibeAnswers(answers) +
             shadowBlock,
           tier,
-          model,
+          legacyModel: model,
           schema: VIBE_IDENTITY_SCHEMA as unknown as Record<string, unknown>,
           byokKey,
+          userId: user.id,
+          refId: spendRef,
+          creditsCharged: cost,
+          isAdmin: profile.role === "admin",
+          signal: AbortSignal.timeout(20_000),
         });
         const identity = parseJson<{
           project_name: string;
@@ -194,15 +201,23 @@ ${shadow}
         let done = 1;
         const results = await Promise.all(
           VIBE_DOC_SPECS.map(async (doc) => {
-            const raw = await generate({
+            const { text: raw } = await runAI({
+              feature: "vibe",
               prompt:
                 buildVibeDocPrompt({ idea, stack, audience }, doc, identity, dnaLang, dna) +
                 formatVibeAnswers(answers) +
                 shadowBlock,
               tier,
-              model,
+              legacyModel: model,
               schema: VIBE_DOC_SCHEMA as unknown as Record<string, unknown>,
               byokKey,
+              userId: user.id,
+              refId: spendRef,
+              // The kit is ONE purchase. Only the identity call carries the
+              // credit figure; six more would sextuple the reported revenue for
+              // a single charge and make every margin on the dashboard fiction.
+              creditsCharged: 0,
+              signal: AbortSignal.timeout(38_000),
             });
             const content = parseJson<{ content: string }>(raw)?.content ?? "";
             done += 1;

@@ -19,6 +19,7 @@ import type {
   ProviderRow,
   ProviderView,
   Protocol,
+  PricingMode,
   RouteMode,
   RoutePrefer,
   RouteRow,
@@ -384,6 +385,11 @@ export type ModelPatch = {
   isActive?: boolean;
   supportsStreaming?: boolean;
   supportsSchema?: boolean;
+  /** "prepaid_package" = bought N tokens for Rp X. "direct_usd" = per-Mtok rates. */
+  pricingMode?: PricingMode;
+  packagePriceIdr?: number | null;
+  packageTokens?: number | null;
+  packageExpiresAt?: string | null;
 };
 
 export async function saveModel(patch: ModelPatch): Promise<void> {
@@ -399,6 +405,22 @@ export async function saveModel(patch: ModelPatch): Promise<void> {
   if (patch.outputPriceUsdPerMtok !== undefined) {
     if (patch.outputPriceUsdPerMtok < 0) throw new Error("Harga gak boleh minus.");
     update.output_price_usd_per_mtok = patch.outputPriceUsdPerMtok;
+  }
+  if (patch.pricingMode !== undefined) update.pricing_mode = patch.pricingMode;
+  if (patch.packagePriceIdr !== undefined) {
+    if (patch.packagePriceIdr !== null && patch.packagePriceIdr < 0) {
+      throw new Error("Harga paket gak boleh minus.");
+    }
+    update.package_price_idr = patch.packagePriceIdr;
+  }
+  if (patch.packageTokens !== undefined) {
+    if (patch.packageTokens !== null && patch.packageTokens <= 0) {
+      throw new Error("Jumlah token harus lebih dari 0.");
+    }
+    update.package_tokens = patch.packageTokens;
+  }
+  if (patch.packageExpiresAt !== undefined) {
+    update.package_expires_at = patch.packageExpiresAt || null;
   }
   if (patch.capabilities !== undefined) update.capabilities = patch.capabilities;
   if (patch.isActive !== undefined) update.is_active = patch.isActive;

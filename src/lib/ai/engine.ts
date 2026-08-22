@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { generateDetailed, generateStream, type Tier } from "@/lib/gemini/client";
 import type { InlineImage } from "@/lib/gemini/providers";
-import { getModel, getUsdToIdr } from "@/lib/config";
+import { getModel, getUsdToIdr, getAdminChargeMode } from "@/lib/config";
 import { resolveRoute } from "./router";
 import { getFleet, markProviderResult, resolveProviderKey } from "./registry";
 import { costIdr } from "./cost";
@@ -55,6 +55,12 @@ export type RunArgs = {
   byokKey?: string;
   /** Overrides the legacy-path model. Used by features that pin the cheap tier. */
   legacyModel?: string;
+  /**
+   * True when the caller is an admin, whose credits `spend_credits` does not
+   * actually take. Without this the cost log counts revenue that never existed
+   * every time the owner tests their own product.
+   */
+  isAdmin?: boolean;
 };
 
 export type Usage = { input: number; output: number };
@@ -73,6 +79,20 @@ export type RunResult = {
 
 const NO_USAGE: Usage = { input: 0, output: 0 };
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+/**
+ * The credit figure to RECORD for this run.
+ *
+ * For a normal user it is simply what the route charged. For an admin it depends
+ * on the configured test mode, because `spend_credits` silently exempts admins:
+ * recording the nominal figure anyway meant every owner test inflated the
+ * revenue and margin on their own dashboard.
+ */
+async function billableCredits(args: RunArgs): Promise<number> {
+  const nominal = args.creditsCharged ?? 0;
+  if (!args.isAdmin || nominal === 0) return nominal;
+  return (await getAdminChargeMode()) === "simulate" ? nominal : 0;
+}
 
 /**
  * How long a non-final candidate gets before we give up on it and try the next
@@ -247,7 +267,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
       modelId: model,
       usage,
       costIdr: 0,
-      creditsCharged: args.creditsCharged ?? 0,
+      creditsCharged: await billableCredits(args),
       latencyMs,
       status: "ok",
       attempt: 1,
@@ -295,7 +315,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
         modelId: model,
         usage,
         costIdr: cost,
-        creditsCharged: args.creditsCharged ?? 0,
+        creditsCharged: await billableCredits(args),
         latencyMs,
         status: "ok",
         attempt: 1,
@@ -357,7 +377,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
           modelId: c.model.model_id,
           usage,
           costIdr: cost,
-          creditsCharged: args.creditsCharged ?? 0,
+          creditsCharged: await billableCredits(args),
           latencyMs,
           status: "ok",
           attempt: i + 1,
@@ -440,7 +460,7 @@ export async function runOnModel(
       modelId: candidate.model.model_id,
       usage,
       costIdr: cost,
-      creditsCharged: args.creditsCharged ?? 0,
+      creditsCharged: await billableCredits(args),
       latencyMs,
       status: "ok",
       attempt: 1,
@@ -543,7 +563,7 @@ export async function* runAIStream(
         modelId: model,
         usage,
         costIdr: cost,
-        creditsCharged: ok ? (args.creditsCharged ?? 0) : 0,
+        creditsCharged: ok ? await billableCredits(args) : 0,
         latencyMs,
         status: ok ? "ok" : "error",
         attempt: 1,
@@ -665,7 +685,7 @@ export async function* runAIStream(
         modelId: c.model.model_id,
         usage,
         costIdr: cost,
-        creditsCharged: failed ? 0 : (args.creditsCharged ?? 0),
+        creditsCharged: failed ? 0 : await billableCredits(args),
         latencyMs,
         status: failed ? "error" : "ok",
         attempt: i + 1,

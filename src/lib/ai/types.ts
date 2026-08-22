@@ -75,6 +75,17 @@ export type ProviderView = Omit<ProviderRow, "api_key_encrypted"> & {
   active_model_count: number;
 };
 
+/**
+ * How a model's cost is known.
+ *
+ * `direct_usd` is what a scan returns — per-million-token rates from OpenAI,
+ * OpenRouter and friends. `prepaid_package` is what an Indonesian owner actually
+ * buys: "Rp2.238 for 1,000,000 tokens, expires in 30 days". Making them convert
+ * that into USD-per-Mtok by hand is why every cost figure read Rp0 — nobody was
+ * ever going to do that arithmetic.
+ */
+export type PricingMode = "direct_usd" | "prepaid_package";
+
 export type ModelRow = {
   id: string;
   provider_id: string;
@@ -88,6 +99,12 @@ export type ModelRow = {
   supports_streaming: boolean;
   supports_schema: boolean;
   source: "manual" | "scan";
+  pricing_mode: PricingMode;
+  /** Prepaid only: what the package cost, in rupiah. */
+  package_price_idr: number | null;
+  /** Prepaid only: how many tokens it bought. */
+  package_tokens: number | null;
+  package_expires_at: string | null;
 };
 
 export type RouteRow = {

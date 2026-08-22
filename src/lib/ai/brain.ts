@@ -81,9 +81,44 @@ export async function resolveBrain(feature: string): Promise<BrainResolution> {
   };
 }
 
+/** Traffic-light health, so a gateway's state is legible at a glance. */
+export type Health = "healthy" | "warning" | "limit" | "error";
+
+export function healthOf(p: {
+  is_active: boolean;
+  consecutive_failures: number;
+  last_error: string | null;
+}): Health {
+  if (!p.is_active) return "error";
+  if (p.consecutive_failures >= 3) return "error";
+  if (p.consecutive_failures > 0) {
+    // 429 and quota language mean "come back later", which is a different
+    // problem from "this is broken" and deserves a different colour.
+    const e = (p.last_error ?? "").toLowerCase();
+    return /429|quota|rate limit|limit|exceeded|503|high demand/.test(e)
+      ? "limit"
+      : "warning";
+  }
+  return "healthy";
+}
+
 export type BrainView = {
-  primary: { modelId: string; label: string; provider: string; active: boolean } | null;
-  fallbacks: { modelId: string; label: string; provider: string; active: boolean }[];
+  primary: {
+    modelId: string;
+    label: string;
+    provider: string;
+    active: boolean;
+    providerId: string;
+    health: Health;
+  } | null;
+  fallbacks: {
+    modelId: string;
+    label: string;
+    provider: string;
+    active: boolean;
+    providerId: string;
+    health: Health;
+  }[];
   /** Features running on the Brain vs. explicitly overridden. */
   followingCount: number;
   overriddenCount: number;
@@ -113,7 +148,11 @@ export async function brainOverview(overriddenFeatures: string[]): Promise<Brain
       modelId: m.id,
       label: m.label ?? m.model_id,
       provider: p?.label ?? "?",
+      providerId: p?.id ?? "",
       active: Boolean(m.is_active && p?.is_active),
+      health: p
+        ? healthOf(p)
+        : ("error" as Health),
     };
   };
 
@@ -127,13 +166,20 @@ export async function brainOverview(overriddenFeatures: string[]): Promise<Brain
   const followingCount = AI_FEATURES.length - overriddenCount;
 
   const healthy = Boolean(primary?.active);
+  const liveFallbacks = fallbacks.filter((f) => f.active).length;
+
+  // "No backup" and "a backup that is switched off" look identical on a
+  // dashboard and are completely different problems. The second one is worse,
+  // because the owner believes they are covered — so it gets said out loud.
   const status = !primary
     ? "Belum diatur — semua fitur masih pakai Gemini bawaan."
     : !primary.active
-      ? "Model utamanya lagi mati. Fitur otomatis balik ke Gemini bawaan."
-      : fallbacks.some((f) => f.active)
-        ? "Aktif, dengan cadangan."
-        : "Aktif, tapi belum ada cadangan.";
+      ? "AI utamanya lagi mati. Fitur otomatis balik ke Gemini bawaan."
+      : liveFallbacks > 0
+        ? `Aktif, dengan ${liveFallbacks} cadangan siap.`
+        : fallbacks.length > 0
+          ? "Aktif, TAPI cadangannya mati semua. Kalau AI utama ngambek, generate bakal gagal."
+          : "Aktif, tapi belum ada cadangan. Kalau AI utama ngambek, generate bakal gagal.";
 
   return { primary, fallbacks, followingCount, overriddenCount, healthy, status };
 }

@@ -114,8 +114,16 @@ export type Database = {
           supports_schema: boolean;
           supports_streaming: boolean;
           updated_at: string;
+          pricing_mode: string;
+          package_price_idr: number | null;
+          package_tokens: number | null;
+          package_expires_at: string | null;
         };
         Insert: {
+          pricing_mode?: string;
+          package_price_idr?: number | null;
+          package_tokens?: number | null;
+          package_expires_at?: string | null;
           capabilities?: string[];
           context_length?: number | null;
           created_at?: string;
@@ -133,6 +141,10 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          pricing_mode?: string;
+          package_price_idr?: number | null;
+          package_tokens?: number | null;
+          package_expires_at?: string | null;
           capabilities?: string[];
           context_length?: number | null;
           created_at?: string;

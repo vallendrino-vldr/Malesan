@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import {
   buildCreatorDnaAnalysisPrompt,
@@ -113,10 +114,15 @@ export async function POST(request: NextRequest) {
     try {
       // For this one, we do a blocking generate (not stream) because we need the final JSON
       // before we insert into the database. It should be fast since it's a short output.
-      const rawRes = await generate({
+      const { text: rawRes } = await runAI({
+        feature: "onboarding_dna",
         prompt: promptText,
         tier: profile.is_pro ? "pro" : "free",
         schema: CREATOR_DNA_ANALYSIS_SCHEMA,
+        userId: user.id,
+        refId: spendRef,
+        creditsCharged: cost,
+        signal: AbortSignal.timeout(45_000),
       });
 
       const parsed = parseJson<{ persona_summary: string; signature_formats: string[] }>(rawRes);

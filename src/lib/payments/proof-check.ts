@@ -1,6 +1,7 @@
 import "server-only";
 
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { getPaymentConfig } from "@/lib/config";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
@@ -156,10 +157,16 @@ export async function checkProof(opts: {
     }
 
     const bytes = Buffer.from(await blob.arrayBuffer());
-    const raw = await generate({
+    // `proof_check` declares a `vision` requirement, so the Brain cannot route a
+    // payment receipt onto a text-only model however cheap it is. A blind model
+    // would not fail here — it would confidently describe an image it never saw,
+    // which on a money screen is worse than no check at all.
+    const { text: raw } = await runAI({
+      feature: "proof_check",
       prompt: PROMPT,
       schema: SCHEMA as unknown as Record<string, unknown>,
       images: [{ mimeType: blob.type || "image/jpeg", data: bytes.toString("base64") }],
+      signal: AbortSignal.timeout(35_000),
     });
 
     const reading = parseJson<ProofReading>(raw);

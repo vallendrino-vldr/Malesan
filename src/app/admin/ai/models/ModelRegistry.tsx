@@ -2,7 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { saveModel, deleteModel } from "@/app/actions/ai-admin";
-import { CAPABILITIES, type Capability, type ModelRow, type ProviderView } from "@/lib/ai/types";
+import {
+  CAPABILITIES,
+  type Capability,
+  type ModelRow,
+  type PricingMode,
+  type ProviderView,
+} from "@/lib/ai/types";
+import { costIdr, isPriced, formatIdr } from "@/lib/ai/cost";
 
 /**
  * The model registry.
@@ -31,6 +38,10 @@ type Draft = {
   capabilities: Capability[];
   supportsStreaming: boolean;
   supportsSchema: boolean;
+  pricingMode: PricingMode;
+  packagePrice: string;
+  packageTokens: string;
+  packageExpires: string;
 };
 
 export function ModelRegistry({
@@ -75,6 +86,10 @@ export function ModelRegistry({
       capabilities: [...m.capabilities],
       supportsStreaming: m.supports_streaming,
       supportsSchema: m.supports_schema,
+      pricingMode: m.pricing_mode,
+      packagePrice: m.package_price_idr != null ? String(m.package_price_idr) : "",
+      packageTokens: m.package_tokens != null ? String(m.package_tokens) : "",
+      packageExpires: m.package_expires_at ?? "",
     });
   };
 
@@ -90,6 +105,10 @@ export function ModelRegistry({
           capabilities: draft.capabilities,
           supportsStreaming: draft.supportsStreaming,
           supportsSchema: draft.supportsSchema,
+          pricingMode: draft.pricingMode,
+          packagePriceIdr: draft.packagePrice ? Number(draft.packagePrice) : null,
+          packageTokens: draft.packageTokens ? Number(draft.packageTokens) : null,
+          packageExpiresAt: draft.packageExpires || null,
         });
         setEditing(null);
         setDraft(null);
@@ -176,8 +195,7 @@ export function ModelRegistry({
             {isOpen && (
               <div className="space-y-1.5 border-t border-hairline p-3">
                 {list.map((m) => {
-                  const unpriced =
-                    m.input_price_usd_per_mtok === 0 && m.output_price_usd_per_mtok === 0;
+                  const unpriced = !isPriced(m);
                   const used = usage[m.id] ?? 0;
                   const isEditing = editing === m.id;
 
@@ -238,6 +256,12 @@ export function ModelRegistry({
                               Isi manual
                             </button>
                           </>
+                        ) : m.pricing_mode === "prepaid_package" ? (
+                          <span className="text-muted">
+                            Paket {formatIdr(Number(m.package_price_idr ?? 0))} /{" "}
+                            {Number(m.package_tokens ?? 0).toLocaleString("id-ID")} token
+                            {m.package_expires_at && ` · sampai ${m.package_expires_at}`}
+                          </span>
                         ) : (
                           <span className="text-muted">
                             masuk ${m.input_price_usd_per_mtok}/1jt {rupiah(m.input_price_usd_per_mtok)}
@@ -270,38 +294,129 @@ export function ModelRegistry({
                             />
                           </label>
 
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <label className="block">
-                              <span className="text-micro text-muted">
-                                Harga masuk (USD / 1 juta token)
-                              </span>
-                              <input
-                                type="number"
-                                step="any"
-                                min="0"
-                                value={draft.inputPrice}
-                                onChange={(e) =>
-                                  setDraft({ ...draft, inputPrice: e.target.value })
-                                }
-                                className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
-                              />
-                            </label>
-                            <label className="block">
-                              <span className="text-micro text-muted">
-                                Harga keluar (USD / 1 juta token)
-                              </span>
-                              <input
-                                type="number"
-                                step="any"
-                                min="0"
-                                value={draft.outputPrice}
-                                onChange={(e) =>
-                                  setDraft({ ...draft, outputPrice: e.target.value })
-                                }
-                                className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
-                              />
-                            </label>
+                          {/* Two ways to know a price, because vendors sell two
+                              different things. A prepaid buyer should never have
+                              to convert their receipt into USD-per-Mtok. */}
+                          <div className="flex gap-1.5">
+                            {(
+                              [
+                                ["prepaid_package", "Beli paket token"],
+                                ["direct_usd", "Harga per token (USD)"],
+                              ] as [PricingMode, string][]
+                            ).map(([v, l]) => (
+                              <button
+                                key={v}
+                                type="button"
+                                onClick={() => setDraft({ ...draft, pricingMode: v })}
+                                className={`rounded-full px-3 py-1.5 text-micro ${
+                                  draft.pricingMode === v
+                                    ? "bg-ember font-bold text-obsidian"
+                                    : "border border-hairline text-muted"
+                                }`}
+                              >
+                                {l}
+                              </button>
+                            ))}
                           </div>
+
+                          {draft.pricingMode === "prepaid_package" ? (
+                            <>
+                              <div className="grid gap-3 sm:grid-cols-3">
+                                <label className="block">
+                                  <span className="text-micro text-muted">Harga beli (Rp)</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="2238"
+                                    value={draft.packagePrice}
+                                    onChange={(e) =>
+                                      setDraft({ ...draft, packagePrice: e.target.value })
+                                    }
+                                    className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
+                                  />
+                                </label>
+                                <label className="block">
+                                  <span className="text-micro text-muted">Dapat berapa token</span>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    placeholder="1000000"
+                                    value={draft.packageTokens}
+                                    onChange={(e) =>
+                                      setDraft({ ...draft, packageTokens: e.target.value })
+                                    }
+                                    className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
+                                  />
+                                </label>
+                                <label className="block">
+                                  <span className="text-micro text-muted">Berlaku sampai</span>
+                                  <input
+                                    type="date"
+                                    value={draft.packageExpires}
+                                    onChange={(e) =>
+                                      setDraft({ ...draft, packageExpires: e.target.value })
+                                    }
+                                    className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
+                                  />
+                                </label>
+                              </div>
+                              {Number(draft.packagePrice) > 0 &&
+                                Number(draft.packageTokens) > 0 && (
+                                  <p className="text-micro text-muted">
+                                    Sistem hitung sendiri:{" "}
+                                    <span className="text-ink">
+                                      {formatIdr(
+                                        costIdr(
+                                          {
+                                            input_price_usd_per_mtok: 0,
+                                            output_price_usd_per_mtok: 0,
+                                            pricing_mode: "prepaid_package",
+                                            package_price_idr: Number(draft.packagePrice),
+                                            package_tokens: Number(draft.packageTokens),
+                                          },
+                                          { input: 1000, output: 0 },
+                                          16500,
+                                        ),
+                                      )}
+                                    </span>{" "}
+                                    per 1.000 token.
+                                  </p>
+                                )}
+                            </>
+                          ) : (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <label className="block">
+                                <span className="text-micro text-muted">
+                                  Harga masuk (USD / 1 juta token)
+                                </span>
+                                <input
+                                  type="number"
+                                  step="any"
+                                  min="0"
+                                  value={draft.inputPrice}
+                                  onChange={(e) =>
+                                    setDraft({ ...draft, inputPrice: e.target.value })
+                                  }
+                                  className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
+                                />
+                              </label>
+                              <label className="block">
+                                <span className="text-micro text-muted">
+                                  Harga keluar (USD / 1 juta token)
+                                </span>
+                                <input
+                                  type="number"
+                                  step="any"
+                                  min="0"
+                                  value={draft.outputPrice}
+                                  onChange={(e) =>
+                                    setDraft({ ...draft, outputPrice: e.target.value })
+                                  }
+                                  className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-mini text-ink"
+                                />
+                              </label>
+                            </div>
+                          )}
 
                           <div>
                             <span className="text-micro text-muted">Kemampuan</span>

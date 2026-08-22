@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 
-export const runtime = "edge";
+/**
+ * nodejs, not edge.
+ *
+ * Routing through the AI engine means resolving a gateway key, and that is
+ * AES-256-GCM via `node:crypto` — not something to rely on in the edge runtime.
+ * Edge bought this route nothing anyway: it runs once a day on a timer with
+ * nobody waiting on the response.
+ */
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const TRENDS_SYSTEM_PROMPT = `Lo adalah asisten content creator Indonesia.
 Tugas lo: berikan 3-5 trend topik, format, atau angle yang lagi rame dibicarakan audiens Indonesia hari ini (TikTok, Twitter/X, Instagram, YouTube Shorts).
@@ -56,10 +66,15 @@ export async function GET(req: Request) {
     // cron only ever hit one key and its spend never showed up in the quota
     // guard. It also hardcoded a fallback model id — the exact class of bug that
     // once 404'd every generation in the product.
-    const raw = await generate({
+    const { text: raw } = await runAI({
+      feature: "trends_cron",
       prompt: `${TRENDS_SYSTEM_PROMPT}\n\nBerikan trend hari ini untuk kreator Indonesia.`,
       tier: "free",
       schema: TRENDS_SCHEMA as unknown as Record<string, unknown>,
+      // A system job: nobody's credits are involved, so there is no user to
+      // attribute the cost to — but the cost is still ours and still recorded.
+      userId: null,
+      signal: AbortSignal.timeout(40_000),
     });
 
     const parsed = parseJson<{ trends?: Trend[] }>(raw);

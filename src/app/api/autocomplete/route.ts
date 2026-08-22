@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { getModel, getShadowPrompt } from "@/lib/config";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import type { CreatorDna } from "@/lib/supabase/database.types";
 
@@ -187,15 +188,24 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      const raw = await generate({
+      const { text: raw } = await runAI({
+        feature: "autocomplete",
         prompt: buildPrompt(text, dnaRes.data, shadowPrompt),
         tier: profile.is_pro ? "pro" : "free",
         // The fast model for everyone, on purpose, and the one place in the
         // product where a pro user is not handed the bigger one: ghost text is
         // only useful while the thought is still forming. A cleverer sentence
-        // that lands two seconds late gets typed over.
-        model: await getModel("free"),
+        // that lands two seconds late gets typed over. `autocomplete` declares
+        // a `fast` capability requirement, so the Brain cannot route this onto a
+        // slow reasoning model even if that is what the rest of the app uses.
+        legacyModel: await getModel("free"),
         schema: CONTINUATION_SCHEMA,
+        userId: user.id,
+        refId: spendRef,
+        creditsCharged: cost,
+        // Ghost text nobody waits for. Bail early rather than holding the
+        // function open — the caller treats a miss as "no suggestion".
+        signal: AbortSignal.timeout(12_000),
       });
 
       const parsed = parseJson<{ lanjutan?: string }>(raw);

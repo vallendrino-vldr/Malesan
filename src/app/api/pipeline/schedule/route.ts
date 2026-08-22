@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { getModel } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
 
@@ -131,13 +132,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const raw = await generate({
+    const { text: raw } = await runAI({
+      feature: "schedule_tag",
       prompt: buildSchedulePrompt(card.title, card.content),
       // Always the cheap tier: this is two short strings, and spending pro quota
       // on a chip would starve the modules people actually pay for.
       tier: "free",
-      model: await getModel("free"),
+      legacyModel: await getModel("free"),
       schema: SCHEDULE_SCHEMA as unknown as Record<string, unknown>,
+      userId: user.id,
+      refId: spendRef,
+      creditsCharged: cost,
+      signal: AbortSignal.timeout(20_000),
     });
 
     const parsed = parseJson<{ schedule_label?: string; reason?: string }>(raw);

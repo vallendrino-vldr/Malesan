@@ -282,6 +282,26 @@ export async function getAiBrain(): Promise<BrainConfig> {
   };
 }
 
+export type AdminChargeMode = "free" | "simulate";
+
+/**
+ * What an admin's own test generations do to the numbers.
+ *
+ * `spend_credits` returns early for admins and writes no ledger row, so an owner
+ * testing their product never exercises the credit path — but the AI cost is
+ * real and gets recorded either way. That left the dashboard counting revenue
+ * that never happened.
+ *
+ * "free" (default) logs the credit as zero, which is the truth: nothing was
+ * charged. "simulate" logs what a paying user would have been charged, so the
+ * margin figures show the shape of a real request while testing. Neither mode
+ * touches the SQL functions.
+ */
+export async function getAdminChargeMode(): Promise<AdminChargeMode> {
+  const rows = await load();
+  return rows["ai_admin_charge"] === "simulate" ? "simulate" : "free";
+}
+
 export type AdminMode = "simple" | "advanced";
 
 /**

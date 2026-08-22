@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { getRecycleCost, getModel } from "@/lib/config";
-import { generate, parseJson, GeminiError } from "@/lib/gemini/client";
+import { parseJson, GeminiError } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 
 /**
  * Smart Content Recycle.
@@ -92,7 +93,16 @@ export async function POST(req: NextRequest) {
 
   try {
     const model = await getModel("pro");
-    const raw = await generate({ prompt, model, schema: ANGLES_SCHEMA as unknown as Record<string, unknown> });
+    const { text: raw } = await runAI({
+      feature: "recycle",
+      prompt,
+      legacyModel: model,
+      schema: ANGLES_SCHEMA as unknown as Record<string, unknown>,
+      userId: user.id,
+      refId: ref,
+      creditsCharged: cost,
+      signal: AbortSignal.timeout(45_000),
+    });
     const parsed = parseJson<{ angles?: Angle[] }>(raw);
     const angles = (parsed.angles ?? [])
       .filter((a) => a && a.angle && a.hook)

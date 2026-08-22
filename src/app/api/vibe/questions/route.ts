@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { getModel } from "@/lib/config";
 import {
   VIBE_QUESTIONS_SCHEMA,
@@ -54,13 +55,16 @@ export async function POST(request: NextRequest) {
     .single();
 
   try {
-    const raw = await generate({
+    const { text: raw } = await runAI({
+      feature: "vibe_questions",
       prompt: buildVibeQuestionsPrompt(idea, dna?.output_language || "id"),
       // Always the cheap tier. This is a short, structured call and does not
       // need the pro model — spending pro quota here would starve the kit.
       tier: "free",
-      model: await getModel("free"),
+      legacyModel: await getModel("free"),
       schema: VIBE_QUESTIONS_SCHEMA as unknown as Record<string, unknown>,
+      userId: user.id,
+      signal: AbortSignal.timeout(25_000),
     });
 
     const parsed = parseJson<{ questions: VibeQuestion[] }>(raw);

@@ -21,15 +21,51 @@ export type TokenSplit = { input: number; output: number };
  * or worse, so a cost built on a single total-token number is wrong by whatever
  * the mix happened to be.
  */
+/** Just enough of a model to price a call, in either pricing mode. */
+export type Priceable = Pick<
+  ModelRow,
+  "input_price_usd_per_mtok" | "output_price_usd_per_mtok"
+> &
+  Partial<Pick<ModelRow, "pricing_mode" | "package_price_idr" | "package_tokens">>;
+
+/**
+ * What one call actually cost us, in rupiah.
+ *
+ * Two pricing models, because vendors sell two different things:
+ *
+ *   direct_usd — input and output priced separately per million tokens. They are
+ *   priced separately by every vendor, often at a 4:1 ratio, so a cost built on
+ *   a single total-token number is wrong by whatever the mix happened to be.
+ *
+ *   prepaid_package — the owner bought N tokens for Rp X. Cost per token is
+ *   simply X/N and input and output are the same price, because the package does
+ *   not distinguish them. Already in rupiah, so no exchange rate is involved and
+ *   nothing drifts when the rate moves.
+ */
 export function costIdr(
-  model: Pick<ModelRow, "input_price_usd_per_mtok" | "output_price_usd_per_mtok">,
+  model: Priceable,
   tokens: TokenSplit,
   usdToIdr: number,
 ): number {
+  if (model.pricing_mode === "prepaid_package") {
+    const price = Number(model.package_price_idr ?? 0);
+    const bought = Number(model.package_tokens ?? 0);
+    if (!(price > 0) || !(bought > 0)) return 0;
+    return ((tokens.input + tokens.output) / bought) * price;
+  }
+
   const usd =
     (tokens.input / MTOK) * Number(model.input_price_usd_per_mtok ?? 0) +
     (tokens.output / MTOK) * Number(model.output_price_usd_per_mtok ?? 0);
   return usd * usdToIdr;
+}
+
+/** True when we genuinely know what this model costs. Zero is not free. */
+export function isPriced(model: Priceable): boolean {
+  return model.pricing_mode === "prepaid_package"
+    ? Number(model.package_price_idr ?? 0) > 0 && Number(model.package_tokens ?? 0) > 0
+    : Number(model.input_price_usd_per_mtok ?? 0) > 0 ||
+        Number(model.output_price_usd_per_mtok ?? 0) > 0;
 }
 
 /**
@@ -39,9 +75,15 @@ export function costIdr(
  * lands in this product — a prompt carrying Creator DNA and trends is long, but
  * a script is longer, and output tokens are the ones priced at a premium.
  */
-export function blendedUsdPerMtok(
-  model: Pick<ModelRow, "input_price_usd_per_mtok" | "output_price_usd_per_mtok">,
-): number {
+export function blendedUsdPerMtok(model: Priceable, usdToIdr = 16_500): number {
+  if (model.pricing_mode === "prepaid_package") {
+    const price = Number(model.package_price_idr ?? 0);
+    const bought = Number(model.package_tokens ?? 0);
+    if (!(price > 0) || !(bought > 0)) return 0;
+    // Back into the same unit the direct-priced models are ranked in, so the
+    // router can compare a prepaid package against a per-token rate at all.
+    return ((price / bought) * MTOK) / usdToIdr;
+  }
   return (
     (Number(model.input_price_usd_per_mtok ?? 0) +
       3 * Number(model.output_price_usd_per_mtok ?? 0)) /

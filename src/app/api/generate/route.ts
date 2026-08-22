@@ -81,7 +81,10 @@ export async function POST(request: NextRequest) {
     // 2. Load profile and reject if banned
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("is_banned, is_pro")
+      // `role` so the cost log can tell an owner's test from a paying request:
+      // spend_credits exempts admins, so recording the nominal credit would
+      // inflate the revenue on their own dashboard.
+      .select("is_banned, is_pro, role")
       .eq("id", user.id)
       .single();
 
@@ -324,6 +327,7 @@ export async function POST(request: NextRequest) {
               userId: user.id,
               refId: spendRef,
               creditsCharged: cost,
+              isAdmin: profile.role === "admin",
               byokKey,
               // Give up ~8s before the 60s hard timeout so the catch below runs and the
               // credit is refunded, rather than the function being killed mid-stream.

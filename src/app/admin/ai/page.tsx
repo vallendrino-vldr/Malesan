@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listProviders, listModels, brainStatus } from "@/app/actions/ai-admin";
-import { costSummary, savingsSuggestions } from "@/lib/ai/analytics";
+import { costSummary, savingsSuggestions, quotaFor } from "@/lib/ai/analytics";
 import { getAdminMode, getUsdToIdr } from "@/lib/config";
 import { verifyAdmin } from "@/lib/admin/guard";
 import { formatIdr } from "@/lib/ai/cost";
@@ -34,6 +34,15 @@ export default async function AdminAiPage() {
   const suggestions = await savingsSuggestions(summary.byFeature, models, usdToIdr);
   const providerName = (id: string) => providers.find((p) => p.id === id)?.label ?? "?";
 
+  // Prepaid package status for whatever the Brain is currently running on.
+  const primaryModel = brain.primary
+    ? models.find((m) => m.id === brain.primary!.modelId)
+    : undefined;
+  const quota =
+    primaryModel && primaryModel.pricing_mode === "prepaid_package"
+      ? await quotaFor(primaryModel)
+      : null;
+
   const margin =
     summary.today.revenueIdr > 0
       ? (summary.today.marginIdr / summary.today.revenueIdr) * 100
@@ -43,20 +52,40 @@ export default async function AdminAiPage() {
     <div className="space-y-6">
       <LiveRefresh tables={["ai_providers", "app_config"]} label="Setelan AI berubah" />
 
-      <BrainPanel brain={brain} models={models} providers={providers} mode={mode} />
+      <BrainPanel
+        brain={brain}
+        models={models}
+        providers={providers}
+        mode={mode}
+        quota={quota}
+      />
 
       {/* ---------- today, in money ---------- */}
       <section className="space-y-2">
         <p className="eyebrow text-ember-lo">Hari ini</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {[
-            { k: "Permintaan AI", v: String(summary.today.calls) },
-            { k: "Biaya AI", v: formatIdr(summary.today.costIdr) },
-            { k: "Pemasukan", v: formatIdr(summary.today.revenueIdr) },
+            { k: "Permintaan", v: String(summary.today.calls) },
+            { k: "Token", v: summary.today.tokens.toLocaleString("id-ID") },
+            {
+              k: "Modal AI",
+              // Rp0 next to real token usage reads as "free". Say the truth
+              // instead: we do not know, and here is why.
+              v:
+                summary.pricingUnconfigured && summary.today.tokens > 0
+                  ? "belum diset"
+                  : formatIdr(summary.today.costIdr),
+            },
+            { k: "Pendapatan", v: formatIdr(summary.today.revenueIdr) },
             {
               k: "Margin",
-              v: margin === null ? "—" : `${margin.toFixed(0)}%`,
-              bad: margin !== null && margin < 0,
+              v:
+                summary.pricingUnconfigured && summary.today.tokens > 0
+                  ? "—"
+                  : margin === null
+                    ? "—"
+                    : `${margin.toFixed(0)}%`,
+              bad: margin !== null && margin < 0 && !summary.pricingUnconfigured,
             },
           ].map((s) => (
             <div key={s.k} className="rounded-lg bg-surface px-3 py-2.5">
@@ -74,8 +103,9 @@ export default async function AdminAiPage() {
 
         {summary.pricingUnconfigured && (
           <p className="rounded-lg border border-ember/20 bg-ember/5 px-3 py-2 text-micro leading-relaxed text-ember-lo">
-            Biayanya kebaca Rp0 karena harga model belum diisi. Itu bukan berarti
-            gratis — isi harganya biar angka di halaman ini beneran.
+            <span className="font-bold">Harga belum dikonfigurasi.</span> Token
+            udah kecatat, tapi modalnya belum bisa dihitung. Buka Model, terus isi
+            paket token yang lo beli (contoh: Rp2.238 buat 1 juta token).
           </p>
         )}
       </section>

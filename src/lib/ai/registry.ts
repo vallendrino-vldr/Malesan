@@ -55,6 +55,20 @@ function asModel(r: Record<string, unknown>): ModelRow {
   return {
     ...(r as unknown as ModelRow),
     capabilities: ((r.capabilities as string[] | null) ?? []) as Capability[],
+    pricing_mode:
+      r.pricing_mode === "prepaid_package" ? "prepaid_package" : "direct_usd",
+    // Postgres numerics arrive as strings; left as-is they silently poison every
+    // arithmetic they touch (string + number is concatenation).
+    package_price_idr:
+      r.package_price_idr === null || r.package_price_idr === undefined
+        ? null
+        : Number(r.package_price_idr),
+    package_tokens:
+      r.package_tokens === null || r.package_tokens === undefined
+        ? null
+        : Number(r.package_tokens),
+    input_price_usd_per_mtok: Number(r.input_price_usd_per_mtok ?? 0),
+    output_price_usd_per_mtok: Number(r.output_price_usd_per_mtok ?? 0),
   };
 }
 

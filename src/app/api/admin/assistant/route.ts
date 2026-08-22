@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { generate, parseJson } from "@/lib/gemini/client";
+import { parseJson } from "@/lib/gemini/client";
+import { runAI } from "@/lib/ai/engine";
 import { buildSnapshot, type Snapshot } from "@/lib/admin/snapshot";
 
 /**
@@ -176,10 +177,13 @@ export async function POST(req: NextRequest) {
 
   try {
     const snap = await buildSnapshot();
-    const raw = await generate({
+    const { text: raw } = await runAI({
+      feature: "admin_assistant",
       prompt: buildPrompt(snap, question),
       schema: SCHEMA as unknown as Record<string, unknown>,
       tier: "pro",
+      userId: user.id,
+      signal: AbortSignal.timeout(45_000),
     });
     const parsed = parseJson<Answer>(raw);
 
