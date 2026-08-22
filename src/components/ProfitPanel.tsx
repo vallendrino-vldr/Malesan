@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { Pricing } from "@/lib/config";
 
 /**
  * Untung apa buntung — the money view of the admin stats page.
@@ -63,18 +62,16 @@ function dayLabel(day: string) {
 
 export function ProfitPanel({
   days,
-  pricing,
+  pricingKnown,
   error,
 }: {
   days: ProfitDay[];
-  pricing: Pricing;
+  /** False when at least one successful paid-provider call cannot be priced. */
+  pricingKnown: boolean;
   /** A failed query reads as Rp0 here, which looks like "no sales". Name it instead. */
   error?: string | null;
 }) {
-  // Both prices at zero means "never configured". One of them at zero still
-  // produces a number, just a low one — different problem, different warning.
-  const priced = pricing.inPerMTok > 0 || pricing.outPerMTok > 0;
-  const halfPriced = priced && (pricing.inPerMTok === 0 || pricing.outPerMTok === 0);
+  const priced = pricingKnown;
 
   const totalRevenue = days.reduce((a, d) => a + d.revenue, 0);
   const totalCost = priced ? days.reduce((a, d) => a + d.cost, 0) : 0;
@@ -111,23 +108,11 @@ export function ProfitPanel({
 
       {!priced && (
         <p className="mb-2 rounded-xl border border-ember/45 bg-surface px-3 py-2 text-mini leading-relaxed text-ink">
-          Harga token belum diisi, jadi biaya model{" "}
-          <span className="font-semibold">belum kehitung</span> — bukan berarti nol. Isi{" "}
-          <span className="font-mono text-micro text-ember">price_in_per_mtok</span> sama{" "}
-          <span className="font-mono text-micro text-ember">price_out_per_mtok</span> di{" "}
-          <Link href="/admin/config" className="font-semibold text-ember underline underline-offset-2">
-            Konfigurasi
-          </Link>
-          , baru angka untungnya bisa dipercaya.
-        </p>
-      )}
-
-      {halfPriced && (
-        <p className="mb-2 rounded-xl border border-ember/45 bg-surface px-3 py-2 text-mini leading-relaxed text-ink">
-          Baru satu sisi harga token yang keisi, jadi biayanya kecatat lebih murah dari aslinya.
-          Lengkapin dua-duanya di{" "}
-          <Link href="/admin/config" className="font-semibold text-ember underline underline-offset-2">
-            Konfigurasi
+          Ada pemakaian AI yang harganya belum lengkap, jadi modal dan margin{" "}
+          <span className="font-semibold">belum bisa dipercaya</span> — bukan berarti nol. Isi
+          harga paket prepaid atau tarif modelnya di{" "}
+          <Link href="/admin/ai/models" className="font-semibold text-ember underline underline-offset-2">
+            Model AI
           </Link>
           .
         </p>
@@ -223,7 +208,7 @@ export function ProfitPanel({
       </div>
 
       <p className="mt-1.5 text-micro leading-relaxed text-muted">
-        Biaya dihitung dari token yang kecatat di pemakaian Gemini, dikali harga di Konfigurasi.
+        Biaya dibaca dari log model yang benar-benar menjawab, termasuk fallback dan paket prepaid.
         {untrackedDays > 0 && (
           <>
             {" "}

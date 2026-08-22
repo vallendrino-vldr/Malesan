@@ -5,6 +5,7 @@ import { getRecycleCost } from "@/lib/config";
 import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
+import { aiRateLimit } from "@/lib/rate-limit";
 
 /**
  * Smart Content Recycle.
@@ -59,6 +60,9 @@ export async function POST(req: NextRequest) {
     .single();
   if (!profile) return json({ error: "Profil gak ketemu." }, 404);
   if (profile.is_banned) return json({ error: "Akun lo lagi dibekuin." }, 403);
+
+  const limited = await aiRateLimit(user.id, "recycle", 8);
+  if (limited) return limited;
 
   let body: { cardId?: string } | null;
   try {

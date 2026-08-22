@@ -71,6 +71,8 @@ export type RunArgs = {
    * is 14.9s. Set it a little under the route's own deadline.
    */
   budgetMs?: number;
+  /** False when the Gemini free pool is being reserved for paid users. */
+  allowSharedGemini?: boolean;
 };
 
 export type Usage = { input: number; output: number };
@@ -342,7 +344,15 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
     };
   }
 
-  const { candidates } = await resolveRoute(args.feature);
+  const route = await resolveRoute(args.feature);
+  const candidates =
+    args.allowSharedGemini === false
+      ? route.candidates.filter((c) => c.provider.key_source !== "env_gemini_pool")
+      : route.candidates;
+
+  if (route.candidates.length > 0 && candidates.length === 0) {
+    throw new Error("Gemini pool lagi disimpan untuk user berbayar.");
+  }
 
   // ── Nothing configured: the legacy path, byte for byte what the product does
   // today. This is the branch that makes deploying the layer a no-op. ──
@@ -662,7 +672,14 @@ export async function* runAIStream(
     return;
   }
 
-  const { candidates } = await resolveRoute(args.feature);
+  const route = await resolveRoute(args.feature);
+  const candidates =
+    args.allowSharedGemini === false
+      ? route.candidates.filter((c) => c.provider.key_source !== "env_gemini_pool")
+      : route.candidates;
+  if (route.candidates.length > 0 && candidates.length === 0) {
+    throw new Error("Gemini pool lagi disimpan untuk user berbayar.");
+  }
   if (candidates.length === 0) {
     yield* legacy();
     return;

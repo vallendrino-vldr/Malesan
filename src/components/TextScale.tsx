@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { TEXT_KEY as KEY } from "@/lib/boot-scripts";
 
 /**
@@ -27,16 +27,20 @@ const STEPS: { id: Scale; label: string; hint: string }[] = [
   { id: "xl", label: "Gede", hint: "Paling jelas" },
 ];
 
-export function TextScale() {
-  const [scale, setScale] = useState<Scale>("md");
+const TEXT_EVENT = "malesan:text-change";
+const subscribe = (notify: () => void) => {
+  window.addEventListener(TEXT_EVENT, notify);
+  return () => window.removeEventListener(TEXT_EVENT, notify);
+};
+const currentScale = (): Scale => {
+  const current = document.documentElement.getAttribute("data-text") as Scale | null;
+  return current && STEPS.some((step) => step.id === current) ? current : "md";
+};
 
-  useEffect(() => {
-    const current = document.documentElement.getAttribute("data-text") as Scale | null;
-    if (current && STEPS.some((s) => s.id === current)) setScale(current);
-  }, []);
+export function TextScale() {
+  const scale = useSyncExternalStore(subscribe, currentScale, () => "md");
 
   const pick = (next: Scale) => {
-    setScale(next);
     // "md" is the default, so it clears the attribute rather than writing one.
     // Keeps the DOM honest about what is actually overridden.
     if (next === "md") document.documentElement.removeAttribute("data-text");
@@ -46,6 +50,7 @@ export function TextScale() {
     } catch {
       // Private browsing refuses storage; the choice still applies this session.
     }
+    window.dispatchEvent(new Event(TEXT_EVENT));
   };
 
   return (
@@ -91,4 +96,3 @@ export function TextScale() {
     </div>
   );
 }
-

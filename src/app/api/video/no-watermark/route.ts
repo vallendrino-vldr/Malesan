@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { spendCredits } from "@/lib/credits";
 import { getVideoNoWatermarkCost } from "@/lib/config";
@@ -13,7 +12,7 @@ import { getVideoNoWatermarkCost } from "@/lib/config";
  */
 export const runtime = "nodejs";
 
-export async function POST(_req: NextRequest) {
+export async function POST() {
   const supabase = await createClient();
   const {
     data: { user },

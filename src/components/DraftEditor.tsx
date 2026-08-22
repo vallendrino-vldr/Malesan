@@ -146,7 +146,6 @@ export function DraftEditor({
       // is not tied to it.
       void saveRef.current();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const edit = (patch: Partial<{ title: string; content: string }>) => {

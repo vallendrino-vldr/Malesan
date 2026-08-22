@@ -8,12 +8,12 @@ import { PipelineBoard } from "@/components/PipelineBoard";
 import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCost } from "@/lib/config";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
-import { RefreshButton } from "@/components/RefreshButton";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
 import { StudioPanel, StudioTile, StudioTileBig } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
+import { jakartaDayKey } from "@/lib/time";
 
 export const metadata: Metadata = {
   title: "Malesan",
@@ -31,7 +31,9 @@ export default async function AppPage({
   const tab: TabKey = VALID_TABS.includes(params.tab as TabKey)
     ? (params.tab as TabKey)
     : "studio";
-  const MODS = ["ide", "idea", "hook", "script", "repurpose"] as const;
+  // Keep this in sync with StudioPanel.Mod. Missing the three newer modules
+  // made their URL update correctly, then reopen the Studio home after refresh.
+  const MODS = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video"] as const;
   const mod = MODS.includes(params.m as (typeof MODS)[number])
     ? (params.m as (typeof MODS)[number])
     : null;
@@ -92,7 +94,7 @@ export default async function AppPage({
 
   // The refill is a WRITE, and it was firing on every navigation. It can only
   // do anything once per WIB day, so skip it entirely when today's is claimed.
-  const todayWib = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  const todayWib = jakartaDayKey();
   const needsRefill = profile.last_refill_date !== todayWib;
 
   const isAdmin = profile.role === "admin";
@@ -462,39 +464,6 @@ export default async function AppPage({
     />
   );
 }
-
-/**
- * These read as three flat labels rather than three buttons — no affordance at
- * all. A chevron, a lifted surface and a pressed state make it obvious they are
- * tappable; `active:scale` gives the touch feedback that sells it on a phone,
- * where there is no hover to hint with.
- */
-
-/**
- * Back and refresh as a matched pair.
- *
- * Back was a bare text link with no visual weight and there was no refresh at
- * all — on an installed PWA there is no browser chrome, so a stale screen had
- * no way out but closing the app. Both are pill buttons now, same height, same
- * border, sitting on one row.
- */
-function ModuleBar() {
-  return (
-    <div className="flex items-center justify-between">
-      <Link
-        href="/app?tab=studio"
-        className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
-      >
-        <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
-          <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
-        </svg>
-        Balik
-      </Link>
-      <RefreshButton />
-    </div>
-  );
-}
-
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (

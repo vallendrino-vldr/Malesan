@@ -7,6 +7,7 @@ import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { getCost, isModuleEnabled, getShadowPrompt } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
+import { aiRateLimit } from "@/lib/rate-limit";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import {
   VIBE_DOC_SPECS,
@@ -63,6 +64,9 @@ export async function POST(request: NextRequest) {
   if (!profile) return new Response("Profile not found", { status: 404 });
   if (profile.is_banned) return new Response("Banned", { status: 403 });
 
+  const limited = await aiRateLimit(user.id, "vibe", 6);
+  if (limited) return limited;
+
   const serviceRole = createServiceRoleClient();
 
   // BYOK: decrypt the user's own key so it never touches the shared pool.
@@ -87,6 +91,7 @@ export async function POST(request: NextRequest) {
   const admission = await checkPoolAdmission({
     isPro: profile.is_pro,
     hasByok: Boolean(byokKey),
+    feature: "vibe",
   });
   if (!("allowed" in admission) || !admission.allowed) {
     return Response.json(
@@ -177,6 +182,7 @@ ${shadow}
           refId: spendRef,
           creditsCharged: cost,
           isAdmin: profile.role === "admin",
+          allowSharedGemini: admission.allowSharedGemini,
           signal: AbortSignal.timeout(24_000),
           budgetMs: 22_000,
         });
@@ -223,6 +229,7 @@ ${shadow}
               // credit figure; six more would sextuple the reported revenue for
               // a single charge and make every margin on the dashboard fiction.
               creditsCharged: 0,
+              allowSharedGemini: admission.allowSharedGemini,
               signal: AbortSignal.timeout(32_000),
               budgetMs: 30_000,
             });

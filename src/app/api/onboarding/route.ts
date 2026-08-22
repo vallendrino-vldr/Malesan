@@ -4,6 +4,7 @@ import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
+import { aiRateLimit } from "@/lib/rate-limit";
 import {
   buildCreatorDnaAnalysisPrompt,
   CREATOR_DNA_ANALYSIS_SCHEMA,
@@ -63,6 +64,9 @@ export async function POST(request: NextRequest) {
     if (profile.is_banned) {
       return NextResponse.json({ error: "Banned" }, { status: 403 });
     }
+
+    const limited = await aiRateLimit(user.id, "onboarding", 4);
+    if (limited) return limited;
 
     // Step 1: Deduct 2 credits via service role
     const serviceRole = createServiceRoleClient();

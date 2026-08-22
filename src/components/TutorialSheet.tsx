@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -167,8 +167,11 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(0);
   // A portal cannot render during SSR — there is no document to portal into.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // Escape closes it, and the page behind stops scrolling while it is open.
   // Without the lock, scrolling past the end of the sheet on a phone scrolls

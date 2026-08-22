@@ -69,6 +69,22 @@ export function drawCaption(
   const spokenCount = line.words.filter((w) => w.start <= t + 0.01).length;
   if (!spokenCount) return;
   const currentIdx = spokenCount - 1;
+  const activeWord = line.words[currentIdx];
+
+  ctx.save();
+  if (style.animation !== "none") {
+    const elapsed = Math.max(0, t - activeWord.start);
+    const enter = Math.min(1, elapsed / 0.14);
+    // Ease-out keeps the movement punchy without a distracting bounce.
+    const eased = 1 - Math.pow(1 - enter, 3);
+    if (style.animation === "fade") ctx.globalAlpha = eased;
+    if (style.animation === "pop") {
+      const scale = 0.82 + eased * 0.18;
+      ctx.translate(W / 2, H * style.position);
+      ctx.scale(scale, scale);
+      ctx.translate(-W / 2, -H * style.position);
+    }
+  }
 
   const render =
     style.mode === "word"
@@ -130,6 +146,7 @@ export function drawCaption(
       x += word.w + space;
     }
   });
+  ctx.restore();
 }
 
 /**

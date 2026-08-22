@@ -27,7 +27,7 @@ export async function saveToPipeline(
     .insert({
       user_id: user.id,
       title,
-      content: content as any,
+      content: content as Json,
       status,
       generation_id: generationId || null,
     })
@@ -64,7 +64,7 @@ export async function updateCardContentAndStatus(cardId: string, newContent: unk
 
   const { data, error } = await supabase
     .from("pipeline_cards")
-    .update({ content: newContent as any, status: newStatus })
+    .update({ content: newContent as Json, status: newStatus })
     .eq("id", cardId)
     .eq("user_id", user.id)
     .select()

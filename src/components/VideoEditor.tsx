@@ -27,11 +27,35 @@ import { ExportOverlay } from "./ExportOverlay";
 
 type Phase = "idle" | "extracting" | "transcribing" | "ready" | "exporting";
 
-const BITRATE_PRESETS = [
-  { label: "TikTok / Reels", mbps: 12, hint: "1080p tegas, tahan re-compress" },
-  { label: "YouTube Shorts", mbps: 16, hint: "paling tajam" },
-  { label: "Hemat data", mbps: 6, hint: "file kecil" },
-];
+const SOCIAL_PRESETS = [
+  {
+    id: "tiktok",
+    label: "TikTok",
+    hint: "Cepat, besar, aman dari tombol kanan",
+    mbps: 12,
+    maxWords: 3,
+    maxGap: 0.48,
+    style: { position: 0.58, fontScale: 1.08, mode: "word" as const },
+  },
+  {
+    id: "reels",
+    label: "Reels",
+    hint: "Kalimat pendek di area tengah-bawah",
+    mbps: 12,
+    maxWords: 4,
+    maxGap: 0.55,
+    style: { position: 0.65, fontScale: 0.95, mode: "line" as const },
+  },
+  {
+    id: "shorts",
+    label: "Shorts",
+    hint: "Lebih lega dan bitrate paling tajam",
+    mbps: 16,
+    maxWords: 5,
+    maxGap: 0.65,
+    style: { position: 0.66, fontScale: 1, mode: "line" as const },
+  },
+] as const;
 
 export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWatermarkCost: number }) {
   const router = useRouter();
@@ -42,9 +66,13 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
   const [status, setStatus] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [words, setWords] = useState<Word[]>([]);
-  const [style, setStyle] = useState<CaptionStyle>(DEFAULT_STYLE);
+  const [style, setStyle] = useState<CaptionStyle>(() => ({
+    ...DEFAULT_STYLE,
+    ...SOCIAL_PRESETS[0].style,
+  }));
   const [safeZones, setSafeZones] = useState(true);
   const [bitrate, setBitrate] = useState(12);
+  const [presetId, setPresetId] = useState<(typeof SOCIAL_PRESETS)[number]["id"]>("tiktok");
   const [noWatermark, setNoWatermark] = useState(false);
   const [doneMsg, setDoneMsg] = useState<string | null>(null);
   const [now, setNow] = useState(0);
@@ -57,7 +85,11 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  const lines = useMemo(() => groupLines(words), [words]);
+  const preset = SOCIAL_PRESETS.find((item) => item.id === presetId) ?? SOCIAL_PRESETS[0];
+  const lines = useMemo(
+    () => groupLines(words, preset.maxWords, preset.maxGap),
+    [words, preset.maxWords, preset.maxGap],
+  );
   const busy = phase === "extracting" || phase === "transcribing" || phase === "exporting";
 
   // Load the caption fonts once, so both the preview and the canvas export can
@@ -103,6 +135,14 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
     if (!file) return;
     const v = videoRef.current;
     const durationSec = v?.duration && isFinite(v.duration) ? v.duration : 0;
+    if (!durationSec) {
+      setError("Durasi videonya belum kebaca. Tunggu sebentar lalu coba lagi.");
+      return;
+    }
+    if (durationSec > 600) {
+      setError("Video maksimal 10 menit. Potong dulu, lalu upload ulang ya.");
+      return;
+    }
     setError(null);
     setProgress(0);
     try {
@@ -225,7 +265,6 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
           <div className="lg:flex-1">
             <div className="relative mx-auto aspect-[9/16] max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black">
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
                 ref={videoRef}
                 src={videoUrl}
@@ -267,7 +306,14 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
                   style={style}
                   onChange={setStyle}
                   bitrate={bitrate}
-                  onBitrate={setBitrate}
+                  presetId={presetId}
+                  onPreset={(id) => {
+                    const next = SOCIAL_PRESETS.find((item) => item.id === id);
+                    if (!next) return;
+                    setPresetId(id);
+                    setBitrate(next.mbps);
+                    setStyle((current) => ({ ...current, ...next.style }));
+                  }}
                 />
                 <label className="flex items-start gap-2 rounded-xl border border-hairline bg-surface px-3 py-2.5 text-mini text-ink">
                   <input
@@ -300,8 +346,11 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
             <button
               onClick={() => {
                 setFile(null);
+                setVideoUrl("");
                 setWords([]);
                 setPhase("idle");
+                setError(null);
+                setDoneMsg(null);
               }}
               className="w-full cursor-pointer rounded-xl border border-hairline bg-surface px-4 py-2.5 text-mini font-semibold text-muted transition-colors hover:border-ember/40 hover:text-ink"
             >
@@ -364,6 +413,8 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
   const spoken = line.words.filter((w) => w.start <= now + 0.01).length;
   if (!spoken) return null;
   const currentIdx = spoken - 1;
+  const enter = Math.min(1, Math.max(0, now - line.words[currentIdx].start) / 0.14);
+  const eased = 1 - Math.pow(1 - enter, 3);
   const shown =
     style.mode === "word"
       ? [{ text: line.words[currentIdx].word, active: true }]
@@ -389,6 +440,8 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
           background: style.style === "box" ? "rgba(0,0,0,0.55)" : "transparent",
           padding: style.style === "box" ? "0.15em 0.4em" : 0,
           borderRadius: style.style === "box" ? "0.3em" : 0,
+          opacity: style.animation === "fade" ? eased : 1,
+          transform: style.animation === "pop" ? `scale(${0.82 + eased * 0.18})` : undefined,
         }}
       >
         {shown.map((w, i) => (
@@ -431,12 +484,14 @@ function StylePanel({
   style,
   onChange,
   bitrate,
-  onBitrate,
+  presetId,
+  onPreset,
 }: {
   style: CaptionStyle;
   onChange: (s: CaptionStyle) => void;
   bitrate: number;
-  onBitrate: (n: number) => void;
+  presetId: (typeof SOCIAL_PRESETS)[number]["id"];
+  onPreset: (id: (typeof SOCIAL_PRESETS)[number]["id"]) => void;
 }) {
   const set = (p: Partial<CaptionStyle>) => onChange({ ...style, ...p });
   return (
@@ -453,13 +508,37 @@ function StylePanel({
       </div>
 
       <div>
+        <span className="text-micro text-muted">Platform</span>
+        <div className="mt-1 grid grid-cols-3 gap-1.5">
+          {SOCIAL_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => onPreset(preset.id)}
+              title={preset.hint}
+              className={`min-h-11 rounded-lg border px-2 py-2 text-micro font-semibold transition-colors ${
+                presetId === preset.id
+                  ? "border-ember bg-ember/15 text-ember"
+                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+              }`}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-[10px] leading-snug text-muted">
+          {SOCIAL_PRESETS.find((preset) => preset.id === presetId)?.hint}
+        </p>
+      </div>
+
+      <div>
         <span className="text-micro text-muted">Munculnya</span>
         <div className="mt-1 flex gap-1.5">
           {(["word", "line"] as const).map((m) => (
             <button
               key={m}
               onClick={() => set({ mode: m })}
-              className={`flex-1 rounded-lg border px-2 py-1.5 text-micro font-semibold transition-colors ${
+              className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold transition-colors ${
                 style.mode === m
                   ? "border-ember bg-ember/15 text-ember"
                   : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
@@ -491,7 +570,7 @@ function StylePanel({
           <button
             key={s}
             onClick={() => set({ style: s })}
-            className={`flex-1 rounded-lg border px-2 py-1.5 text-micro font-semibold capitalize transition-colors ${
+            className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
               style.style === s
                 ? "border-ember bg-ember/15 text-ember"
                 : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
@@ -500,6 +579,26 @@ function StylePanel({
             {s}
           </button>
         ))}
+      </div>
+
+      <div>
+        <span className="text-micro text-muted">Animasi masuk</span>
+        <div className="mt-1 grid grid-cols-3 gap-1.5">
+          {(["none", "pop", "fade"] as const).map((animation) => (
+            <button
+              key={animation}
+              type="button"
+              onClick={() => set({ animation })}
+              className={`min-h-11 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
+                style.animation === animation
+                  ? "border-ember bg-ember/15 text-ember"
+                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+              }`}
+            >
+              {animation === "none" ? "Tanpa" : animation}
+            </button>
+          ))}
+        </div>
       </div>
 
       <label className="flex items-center gap-2 text-mini text-ink">
@@ -538,29 +637,10 @@ function StylePanel({
         />
       </label>
 
-      <div>
-        <span className="text-micro text-muted">Bitrate / platform</span>
-        <div className="mt-1 grid grid-cols-3 gap-1.5">
-          {BITRATE_PRESETS.map((q) => (
-            <button
-              key={q.mbps}
-              onClick={() => onBitrate(q.mbps)}
-              title={q.hint}
-              className={`rounded-lg border px-1 py-1.5 text-micro font-semibold leading-tight transition-colors ${
-                bitrate === q.mbps
-                  ? "border-ember bg-ember/15 text-ember"
-                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-              }`}
-            >
-              {q.label}
-              <span className="mt-0.5 block font-mono text-[10px] opacity-70">{q.mbps} Mbps</span>
-            </button>
-          ))}
-        </div>
-        <p className="mt-1 text-[10px] leading-snug text-muted">
-          Sosmed nge-compress ulang, jadi kirim bitrate tinggi biar hasil akhirnya gak burik. TikTok/Reels aman di 12, paling tajam 16.
-        </p>
-      </div>
+      <p className="text-[10px] leading-snug text-muted">
+        Kualitas export otomatis {bitrate} Mbps sesuai platform. Sosmed bakal compress ulang,
+        jadi file sengaja dibuat cukup tajam sebelum diupload.
+      </p>
     </div>
   );
 }

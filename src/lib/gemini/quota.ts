@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getPool } from "./keys";
+import { resolveRoute } from "@/lib/ai/router";
 
 /**
  * The quota guard.
@@ -59,7 +60,7 @@ export async function getPoolStatus(): Promise<PoolStatus> {
   };
 }
 
-export type Caller = { isPro: boolean; hasByok: boolean };
+export type Caller = { isPro: boolean; hasByok: boolean; feature: string };
 
 /**
  * Whether this caller may use the shared pool right now.
@@ -68,15 +69,32 @@ export type Caller = { isPro: boolean; hasByok: boolean };
  */
 export async function checkPoolAdmission(
   caller: Caller,
-): Promise<{ allowed: true } | { allowed: false; message: string }> {
-  if (caller.hasByok) return { allowed: true };
+): Promise<
+  | { allowed: true; allowSharedGemini: boolean }
+  | { allowed: false; allowSharedGemini: false; message: string }
+> {
+  if (caller.hasByok) return { allowed: true, allowSharedGemini: true };
 
   const status = await getPoolStatus();
-  if (!status.guardEngaged || caller.isPro) return { allowed: true };
+  if (!status.guardEngaged || caller.isPro) {
+    return { allowed: true, allowSharedGemini: true };
+  }
+
+  // The old guard ran before the Brain and rejected free users whenever the
+  // Gemini pool was low — even when DeepSeek was the healthy primary. Keep the
+  // paid gateway available and remove only that protected fallback.
+  const route = await resolveRoute(caller.feature);
+  const hasNonPoolCandidate = route.candidates.some(
+    (candidate) => candidate.provider.key_source !== "env_gemini_pool",
+  );
+  if (hasNonPoolCandidate) {
+    return { allowed: true, allowSharedGemini: false };
+  }
 
   // Brand voice: say what broke and what to do. Never apologise. DESIGN.md §6.
   return {
     allowed: false,
+    allowSharedGemini: false,
     message:
       "Kuota harian lagi menipis, jadi sekarang giliran user berbayar dulu. Balik lagi abis jam 2 siang pas kuota reset, atau top up biar gak kena antrian.",
   };

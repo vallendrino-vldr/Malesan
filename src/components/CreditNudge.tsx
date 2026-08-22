@@ -59,15 +59,11 @@ function markShown() {
  * same standard the product holds its own AI output to.
  */
 export function OfferAfterWin({ credits }: { credits: number }) {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(() => credits <= 120 && !alreadyShown());
 
   useEffect(() => {
-    // Someone sitting on a big balance does not need to be sold to. Asking them
-    // anyway is how a product starts feeling like it wants something.
-    if (credits > 120 || alreadyShown()) return;
-    setShow(true);
-    markShown();
-  }, [credits]);
+    if (show) markShown();
+  }, [show]);
 
   if (!show) return null;
 

@@ -28,6 +28,8 @@ export type CaptionStyle = {
   mode: "word" | "line";
   /** Caption size multiplier (~0.7 small to ~1.6 huge). 1 = the tuned default. */
   fontScale: number;
+  /** Optional entrance motion, rendered into the final pixels too. */
+  animation: "none" | "pop" | "fade";
 };
 
 /**
@@ -73,6 +75,7 @@ export const DEFAULT_STYLE: CaptionStyle = {
   position: 0.72,
   mode: "word",
   fontScale: 1,
+  animation: "pop",
 };
 
 export type Line = { words: Word[]; start: number; end: number };
@@ -161,7 +164,7 @@ export function buildAss(
   width: number,
   height: number,
 ): string {
-  const fontSize = Math.round(height * 0.055);
+  const fontSize = Math.round(height * 0.055 * style.fontScale);
   const marginV = Math.round(height * (1 - style.position));
 
   const borderStyle = style.style === "box" ? 3 : 1;

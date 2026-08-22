@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   THEME_KEY as KEY,
   THEME_SEEN_KEY as SEEN_KEY,
@@ -31,6 +31,24 @@ import {
  */
 
 type Theme = "dark" | "soft";
+const THEME_EVENT = "malesan:theme-change";
+
+const subscribe = (notify: () => void) => {
+  window.addEventListener(THEME_EVENT, notify);
+  return () => window.removeEventListener(THEME_EVENT, notify);
+};
+
+const currentTheme = (): Theme =>
+  document.documentElement.getAttribute("data-theme") === "soft" ? "soft" : "dark";
+
+const shouldHint = () => {
+  if (document.documentElement.hasAttribute("data-theme-seen")) return false;
+  try {
+    return !localStorage.getItem(SEEN_KEY);
+  } catch {
+    return true;
+  }
+};
 
 /**
  * Repaints the iOS status bar and the Android address bar to match the theme.
@@ -63,33 +81,22 @@ function setChromeColor(next: Theme) {
 }
 
 export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip" } = {}) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [hint, setHint] = useState(false);
+  const theme = useSyncExternalStore<Theme>(subscribe, currentTheme, () => "dark");
+  const hint = useSyncExternalStore(subscribe, shouldHint, () => false);
 
   useEffect(() => {
-    // The inline script already applied the stored value; read it back so the
-    // button renders in the right state rather than assuming a default.
-    const current = document.documentElement.getAttribute("data-theme");
-    const active: Theme = current === "soft" ? "soft" : "dark";
-    setTheme(active);
     // Re-assert the chrome colour on mount, not only on click. A client-side
     // navigation re-renders the head from the new route's metadata, which drops
     // our override — so after moving between pages the status bar fell back to
     // the system preference while the page stayed on the chosen theme.
-    setChromeColor(active);
-    try {
-      setHint(!localStorage.getItem(SEEN_KEY));
-    } catch {
-      setHint(true);
-    }
-  }, []);
+    setChromeColor(theme);
+  }, [theme]);
 
   const flip = () => {
     const next: Theme = theme === "dark" ? "soft" : "dark";
-    setTheme(next);
-    setHint(false);
     if (next === "soft") document.documentElement.setAttribute("data-theme", "soft");
     else document.documentElement.removeAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme-seen", "");
 
     setChromeColor(next);
 
@@ -100,6 +107,7 @@ export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip
       // Private browsing can refuse storage. The theme still applies for this
       // session; it just will not be remembered, and the hint may return.
     }
+    window.dispatchEvent(new Event(THEME_EVENT));
   };
 
   const soft = theme === "soft";
@@ -199,4 +207,3 @@ export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip
     </button>
   );
 }
-

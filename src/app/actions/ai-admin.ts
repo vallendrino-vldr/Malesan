@@ -29,6 +29,7 @@ import type {
   RoutePrefer,
   RouteRow,
 } from "@/lib/ai/types";
+import { assertSafeOutboundUrl } from "@/lib/security/outbound-url";
 
 /**
  * Admin actions for the AI Provider Management Layer.
@@ -181,6 +182,13 @@ export async function saveProvider(input: ProviderInput): Promise<{ id: string }
   // a row that will fail on first use with a confusing error. Catch it here.
   if (input.protocol !== "gemini" && !input.baseUrl?.trim() && !input.apiKey?.trim() && !input.id) {
     throw new Error("Provider ini butuh Base URL dan API key.");
+  }
+
+  // Validate before encryption/write. This is not only form hygiene: the key is
+  // later sent to this host, so private and metadata addresses are forbidden.
+  if (input.baseUrl?.trim()) await assertSafeOutboundUrl(input.baseUrl.trim(), "Base URL");
+  if (input.balanceUrl?.trim()) {
+    await assertSafeOutboundUrl(input.balanceUrl.trim(), "Balance URL");
   }
 
   const db = createServiceRoleClient();

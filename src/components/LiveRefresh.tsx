@@ -29,6 +29,7 @@ export function LiveRefresh({
   label,
   onChange,
   silent,
+  pollMs,
 }: {
   tables: string[];
   /** Shown when something changed, so the update is not silent. */
@@ -42,6 +43,12 @@ export function LiveRefresh({
   onChange?: () => void;
   /** Suppress the toast when an ancestor is already announcing the same change. */
   silent?: boolean;
+  /**
+   * Optional fallback for high-write tables intentionally not published to
+   * Realtime. Polling runs only while the tab is visible and never shows a
+   * misleading "new data" toast.
+   */
+  pollMs?: number;
 }) {
   const router = useRouter();
   const [pulse, setPulse] = useState(false);
@@ -52,31 +59,53 @@ export function LiveRefresh({
   useEffect(() => {
     const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let pulseTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const refresh = (announce: boolean) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (announce) {
+          setPulse(true);
+          if (pulseTimer) clearTimeout(pulseTimer);
+          pulseTimer = setTimeout(() => setPulse(false), 1400);
+        }
+        if (onChange) onChange();
+        else router.refresh();
+      }, announce ? 400 : 0);
+    };
 
     const channel = supabase.channel(`live:${tables.join("-")}:${instance}`);
 
     for (const table of tables) {
       channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
         // Coalesce: one admin action often touches several tables at once.
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => {
-          setPulse(true);
-          if (onChange) onChange();
-          else router.refresh();
-          setTimeout(() => setPulse(false), 1400);
-        }, 400);
+        refresh(true);
       });
     }
 
     channel.subscribe();
 
+    const poll =
+      pollMs && pollMs >= 5_000
+        ? setInterval(() => {
+            if (document.visibilityState === "visible") refresh(false);
+          }, pollMs)
+        : undefined;
+    const onVisible = () => {
+      if (pollMs && document.visibilityState === "visible") refresh(false);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
       if (timer) clearTimeout(timer);
+      if (pulseTimer) clearTimeout(pulseTimer);
+      if (poll) clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisible);
       supabase.removeChannel(channel);
     };
     // `tables` is a literal array at every call site; joining it keeps the
     // dependency stable without asking callers to memoise.
-  }, [router, instance, onChange, tables.join("-")]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [router, instance, onChange, pollMs, tables.join("-")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!pulse || silent) return null;
 

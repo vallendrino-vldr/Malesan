@@ -3,6 +3,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { spendCredits, refundCredits } from "@/lib/credits";
+import { aiRateLimit } from "@/lib/rate-limit";
 
 /**
  * 60s, not 30. Measured latency on the configured gateway is 16-20s even for a
@@ -116,6 +117,9 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "Kartunya udah gak ada di pipeline lo." }, { status: 404 });
   }
   if (profileResult.data?.is_banned) return new Response("Banned", { status: 403 });
+
+  const limited = await aiRateLimit(user.id, "pipeline_schedule", 12);
+  if (limited) return limited;
 
   const card = cardResult.data;
 

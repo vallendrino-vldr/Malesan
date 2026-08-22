@@ -2,6 +2,7 @@ import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { costIdr, isPriced } from "./cost";
 import { FEATURE_MAP, type ModelRow } from "./types";
+import { startOfJakartaDay } from "@/lib/time";
 
 /**
  * Cost intelligence: what the AI actually costs, what it earns, and where the
@@ -161,7 +162,13 @@ export async function savingsSuggestions(
   models: ModelRow[],
   usdToIdr: number,
 ): Promise<Suggestion[]> {
-  const priced = models.filter((m) => m.is_active && isPriced(m));
+  // Free quota is a fallback capacity, not a scalable unit cost. Calling it
+  // "100% cheaper" encourages the owner to route production traffic onto a
+  // quota that can disappear without warning, so recommendations compare only
+  // models with a real paid price/package.
+  const priced = models.filter(
+    (m) => m.is_active && m.pricing_mode !== "free_quota" && isPriced(m),
+  );
   if (priced.length === 0) return [];
 
   const out: Suggestion[] = [];
@@ -199,7 +206,8 @@ export async function savingsSuggestions(
     out.push({
       feature: f.feature,
       featureLabel: spec?.label ?? f.feature,
-      currentModel: f.byModelId ?? "?",
+      currentModel:
+        models.find((model) => model.model_id === f.byModelId)?.label ?? f.byModelId ?? "?",
       suggestedModel: best.model.label ?? best.model.model_id,
       suggestedProvider: best.model.provider_id,
       suggestedModelRowId: best.model.id,
@@ -249,8 +257,7 @@ export async function costSummary(days = 7): Promise<CostSummary> {
   // question from the same rows.
   const monthAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
   const windowStart = Date.now() - days * 86_400_000;
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const startOfToday = startOfJakartaDay();
 
   const db = createServiceRoleClient();
 

@@ -6,6 +6,7 @@ import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
+import { aiRateLimit } from "@/lib/rate-limit";
 import type { CreatorDna } from "@/lib/supabase/database.types";
 
 /**
@@ -167,11 +168,18 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Akun lo lagi dikunci." }, { status: 403 });
     }
 
+    const limited = await aiRateLimit(user.id, "autocomplete", 30);
+    if (limited) return limited;
+
     // BYOK is not decrypted anywhere yet (see the note in /api/generate), so
     // every call here spends the shared pool and every call is subject to the
     // guard. Autocomplete is the highest-frequency thing in the product; it
     // must not be the thing that drains the pool before prime time.
-    const admission = await checkPoolAdmission({ isPro: profile.is_pro, hasByok: false });
+    const admission = await checkPoolAdmission({
+      isPro: profile.is_pro,
+      hasByok: false,
+      feature: "autocomplete",
+    });
     if (!admission.allowed) {
       return Response.json({ error: admission.message }, { status: 429 });
     }
@@ -193,6 +201,7 @@ export async function POST(request: NextRequest) {
         feature: "autocomplete",
         prompt: buildPrompt(text, dnaRes.data, shadowPrompt),
         tier: profile.is_pro ? "pro" : "free",
+        allowSharedGemini: admission.allowSharedGemini,
         schema: CONTINUATION_SCHEMA,
         userId: user.id,
         refId: spendRef,

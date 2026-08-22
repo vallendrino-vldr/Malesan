@@ -1,7 +1,9 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { getPricing } from "@/lib/config";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { ProfitPanel, type ProfitDay } from "@/components/ProfitPanel";
+import { isPriced } from "@/lib/ai/cost";
+import type { ModelRow } from "@/lib/ai/types";
+import { jakartaDayKey, lastJakartaDays, startOfJakartaDay } from "@/lib/time";
 
 /**
  * Analytics.
@@ -35,36 +37,25 @@ type UserActivity = {
   joined: string;
 };
 
-function lastNDays(n: number): string[] {
-  const out: string[] = [];
-  const now = new Date();
-  for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(now.getDate() - i);
-    out.push(d.toISOString().slice(0, 10));
-  }
-  return out;
-}
-
 export default async function AdminStatsPage() {
   const supabase = createServiceRoleClient();
-  const since = new Date();
-  since.setDate(since.getDate() - DAYS);
+  const since = new Date(startOfJakartaDay().getTime() - (DAYS - 1) * 86_400_000);
   const sinceIso = since.toISOString();
 
-  const [gensRes, usageRes, ledgerRes, activityRes, topupRes, pricing] = await Promise.all([
+  const [gensRes, usageRes, ledgerRes, activityRes, topupRes, modelsRes] = await Promise.all([
     supabase
       .from("generations")
       .select("created_at, module, credits_spent")
       .gte("created_at", sinceIso)
       .limit(5000),
-    // Column names verified against information_schema before writing this —
-    // they are `request_count`/`error_count`/`usage_date`, not the plurals you
-    // would guess, and the ledger column is `delta`, not `amount`.
     supabase
-      .from("gemini_usage")
-      .select("key_index, request_count, error_count, usage_date, input_tokens, output_tokens")
-      .gte("usage_date", sinceIso.slice(0, 10)),
+      .from("ai_usage_log")
+      .select(
+        "provider_id, provider_slug, model_id, ref_id, status, created_at, input_tokens, output_tokens, cost_idr",
+      )
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: false })
+      .limit(5000),
     supabase.from("credit_ledger").select("delta, created_at").gte("created_at", sinceIso).limit(5000),
     supabase.rpc("admin_user_activity", { p_days: DAYS }),
     // Revenue is dated by review, not by submission: a top-up only becomes money
@@ -75,29 +66,36 @@ export default async function AdminStatsPage() {
       .eq("status", "approved")
       .gte("reviewed_at", sinceIso)
       .limit(5000),
-    getPricing(),
+    supabase
+      .from("ai_models")
+      .select(
+        "provider_id, model_id, pricing_mode, input_price_usd_per_mtok, output_price_usd_per_mtok, package_price_idr, package_tokens",
+      ),
   ]);
 
   const gens = (gensRes.data ?? []) as { created_at: string; module: string; credits_spent: number }[];
   const usage = (usageRes.data ?? []) as {
-    key_index: number;
-    request_count: number;
-    error_count: number;
-    usage_date: string;
+    provider_id: string | null;
+    provider_slug: string | null;
+    model_id: string | null;
+    ref_id: string | null;
+    status: string;
+    created_at: string;
     input_tokens: number;
     output_tokens: number;
+    cost_idr: number;
   }[];
   const ledger = (ledgerRes.data ?? []) as { delta: number; created_at: string }[];
   const activity = (activityRes.data ?? []) as UserActivity[];
   const topups = (topupRes.data ?? []) as { amount_idr: number; reviewed_at: string | null }[];
 
-  const days = lastNDays(DAYS);
+  const days = lastJakartaDays(DAYS);
   const buckets: Record<string, DayBucket> = Object.fromEntries(
     days.map((d) => [d, { day: d, gens: 0, credits: 0 }]),
   );
 
   for (const g of gens) {
-    const k = g.created_at.slice(0, 10);
+    const k = jakartaDayKey(g.created_at);
     if (buckets[k]) {
       buckets[k].gens += 1;
       buckets[k].credits += g.credits_spent ?? 0;
@@ -115,8 +113,18 @@ export default async function AdminStatsPage() {
   const moduleRows = Object.entries(byModule).sort((a, b) => b[1] - a[1]);
   const maxModule = Math.max(1, ...moduleRows.map(([, n]) => n));
 
-  const totalReq = usage.reduce((a, u) => a + (u.request_count ?? 0), 0);
-  const totalErr = usage.reduce((a, u) => a + (u.error_count ?? 0), 0);
+  // Attempt rows share one ref across fallback. Count the customer's request,
+  // not every provider tried, and only call it failed when none answered.
+  const requests = new Map<string, { ok: boolean; failed: boolean }>();
+  usage.forEach((row, index) => {
+    const key = row.ref_id ?? `legacy:${row.created_at}:${index}`;
+    const current = requests.get(key) ?? { ok: false, failed: false };
+    if (row.status === "ok") current.ok = true;
+    if (row.status === "error" || row.status === "fallback") current.failed = true;
+    requests.set(key, current);
+  });
+  const totalReq = requests.size;
+  const totalErr = [...requests.values()].filter((request) => !request.ok && request.failed).length;
   const errRate = totalReq ? ((totalErr / totalReq) * 100).toFixed(1) : "0.0";
 
   const spent = ledger.filter((l) => l.delta < 0).reduce((a, l) => a + Math.abs(l.delta), 0);
@@ -128,34 +136,47 @@ export default async function AdminStatsPage() {
     days.map((d) => [d, { day: d, revenue: 0, cost: 0, credits: 0, untracked: false }]),
   );
 
-  // A key row that served requests but recorded no tokens predates token
-  // tracking. Its cost is unknown, and pretending it is zero is the exact lie
-  // this panel exists to avoid — so the day is flagged and skipped instead.
-  const tokenless: Record<string, { req: number; tok: number }> = {};
+  const models = (modelsRes.data ?? []) as Pick<
+    ModelRow,
+    | "provider_id"
+    | "model_id"
+    | "pricing_mode"
+    | "input_price_usd_per_mtok"
+    | "output_price_usd_per_mtok"
+    | "package_price_idr"
+    | "package_tokens"
+  >[];
+  const byExactModel = new Map(models.map((model) => [`${model.provider_id}:${model.model_id}`, model]));
+  const modelCounts = new Map<string, number>();
+  models.forEach((model) => modelCounts.set(model.model_id, (modelCounts.get(model.model_id) ?? 0) + 1));
+  const byUniqueModel = new Map(
+    models.filter((model) => modelCounts.get(model.model_id) === 1).map((model) => [model.model_id, model]),
+  );
+
   for (const u of usage) {
-    const k = u.usage_date;
+    const k = jakartaDayKey(u.created_at);
     const row = profit[k];
     if (!row) continue;
     const tin = u.input_tokens ?? 0;
     const tout = u.output_tokens ?? 0;
-    row.cost += (tin / 1e6) * pricing.inPerMTok + (tout / 1e6) * pricing.outPerMTok;
-    const t = (tokenless[k] ??= { req: 0, tok: 0 });
-    t.req += u.request_count ?? 0;
-    t.tok += tin + tout;
-  }
-  for (const [k, t] of Object.entries(tokenless)) {
-    if (t.req > 0 && t.tok === 0) profit[k].untracked = true;
+    row.cost += Number(u.cost_idr ?? 0);
+    if (u.status !== "ok" || u.provider_slug === "byok") continue;
+    const model = u.model_id
+      ? (u.provider_id ? byExactModel.get(`${u.provider_id}:${u.model_id}`) : undefined) ??
+        byUniqueModel.get(u.model_id)
+      : undefined;
+    if (tin + tout === 0 || !model || !isPriced(model)) row.untracked = true;
   }
 
   for (const l of ledger) {
     if (l.delta >= 0) continue;
-    const row = profit[l.created_at.slice(0, 10)];
+    const row = profit[jakartaDayKey(l.created_at)];
     if (row) row.credits += Math.abs(l.delta);
   }
 
   for (const t of topups) {
     if (!t.reviewed_at) continue;
-    const row = profit[t.reviewed_at.slice(0, 10)];
+    const row = profit[jakartaDayKey(t.reviewed_at)];
     if (row) row.revenue += t.amount_idr ?? 0;
   }
 
@@ -164,11 +185,20 @@ export default async function AdminStatsPage() {
   // A dropped error here would render as Rp0 across the board, which on a profit
   // panel reads as "no sales" instead of "the query broke". Say which.
   const profitError =
-    topupRes.error?.message ?? usageRes.error?.message ?? ledgerRes.error?.message ?? null;
+    topupRes.error?.message ??
+    usageRes.error?.message ??
+    ledgerRes.error?.message ??
+    modelsRes.error?.message ??
+    null;
+  const pricingKnown = !profitDays.some((day) => day.untracked);
 
   return (
     <div className="space-y-6">
-      <LiveRefresh tables={["generations", "profiles", "topups"]} label="Data baru masuk" />
+      <LiveRefresh
+        tables={["generations", "profiles", "topups"]}
+        label="Data baru masuk"
+        pollMs={30_000}
+      />
 
       <header>
         <h1 className="font-display text-xl font-bold text-ink">Grafik</h1>
@@ -187,7 +217,7 @@ export default async function AdminStatsPage() {
         />
       </div>
 
-      <ProfitPanel days={profitDays} pricing={pricing} error={profitError} />
+      <ProfitPanel days={profitDays} pricingKnown={pricingKnown} error={profitError} />
 
       <section>
         <h2 className="eyebrow mb-2 text-muted">Generasi per hari</h2>

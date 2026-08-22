@@ -50,7 +50,11 @@ export default async function AdminAiPage() {
 
   return (
     <div className="space-y-6">
-      <LiveRefresh tables={["ai_providers", "app_config"]} label="Setelan AI berubah" />
+      <LiveRefresh
+        tables={["ai_providers", "ai_models", "app_config", "ai_provider_balance"]}
+        label="Setelan AI berubah"
+        pollMs={15_000}
+      />
 
       <BrainPanel
         brain={brain}
@@ -106,6 +110,12 @@ export default async function AdminAiPage() {
             <span className="font-bold">Harga belum dikonfigurasi.</span> Token
             udah kecatat, tapi modalnya belum bisa dihitung. Buka Model, terus isi
             paket token yang lo beli (contoh: Rp2.238 buat 1 juta token).
+          </p>
+        )}
+        {summary.truncated && (
+          <p className="rounded-lg border border-ember/20 bg-ember/5 px-3 py-2 text-micro leading-relaxed text-ember-lo">
+            Trafik 30 hari melewati batas tampilan. Angka di sini adalah batas bawah; buka
+            Biaya lengkap buat lihat peringatannya.
           </p>
         )}
       </section>

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { spendCredits } from "@/lib/credits";
 import { getVideoCostPerMin, isVideoEnabled } from "@/lib/config";
 import { transcribeAudio, TranscribeError } from "@/lib/transcribe";
+import { aiRateLimit } from "@/lib/rate-limit";
 
 /**
  * Word-level transcription for the video Auto-CC editor.
@@ -48,6 +49,9 @@ export async function POST(request: NextRequest) {
   if (!profile) return json({ error: "Profil gak ketemu." }, 404);
   if (profile.is_banned) return json({ error: "Akun lo lagi dibekuin." }, 403);
 
+  const limited = await aiRateLimit(user.id, "video_transcribe", 4);
+  if (limited) return limited;
+
   if (!(await isVideoEnabled())) {
     return json({ error: "Fitur video lagi dimatiin sementara. Coba lagi nanti ya." }, 503);
   }
@@ -60,7 +64,7 @@ export async function POST(request: NextRequest) {
   }
 
   const audio = form.get("audio");
-  const language = (form.get("language") as string) || "id";
+  const language = String(form.get("language") || "id").trim().toLowerCase();
   const clientDuration = Number(form.get("durationSec") ?? 0);
 
   if (!(audio instanceof Blob) || audio.size === 0) {
@@ -71,6 +75,12 @@ export async function POST(request: NextRequest) {
       { error: "Videonya kepanjangan buat sekali proses. Potong dulu di bawah ~10 menit ya." },
       413,
     );
+  }
+  if (!/^[a-z]{2}$/.test(language)) {
+    return json({ error: "Bahasa videonya gak dikenali." }, 400);
+  }
+  if (!Number.isFinite(clientDuration) || clientDuration <= 0) {
+    return json({ error: "Durasi videonya gak kebaca. Pilih videonya lagi ya." }, 400);
   }
   if (clientDuration > MAX_DURATION_SEC) {
     return json({ error: "Maksimal 10 menit per video buat sekarang." }, 413);
@@ -95,10 +105,27 @@ export async function POST(request: NextRequest) {
 
   let transcript;
   try {
-    transcript = await transcribeAudio(audio, "audio.m4a", { language });
+    // Leave enough time for a clean response before Vercel's 60-second hard
+    // ceiling. Credits are charged only after this returns successfully.
+    transcript = await transcribeAudio(audio, "audio.m4a", {
+      language,
+      signal: AbortSignal.timeout(48_000),
+    });
   } catch (err) {
     if (err instanceof TranscribeError) {
-      return json({ error: err.message }, err.status === 503 ? 503 : 502);
+      console.error("transcribe provider failed", {
+        status: err.status,
+        retryable: err.retryable,
+        message: err.message,
+      });
+      return json(
+        {
+          error: err.retryable
+            ? "Layanan subtitle lagi padat. Kredit lo belum dipotong — coba lagi sebentar."
+            : "Audio ini belum bisa diproses. Coba video lain atau cek lagi format suaranya.",
+        },
+        err.status === 429 ? 429 : err.status === 503 ? 503 : 502,
+      );
     }
     console.error("transcribe failed", err);
     return json({ error: "Transkripsi gagal. Coba lagi bentar lagi." }, 502);

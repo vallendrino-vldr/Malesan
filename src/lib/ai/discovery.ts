@@ -1,6 +1,7 @@
 import "server-only";
 import type { Capability, ProviderRow, Protocol } from "./types";
 import { resolveProviderKey } from "./registry";
+import { assertSafeOutboundUrl } from "@/lib/security/outbound-url";
 
 /**
  * Model discovery — the SCAN MODELS button.
@@ -91,7 +92,13 @@ function guessCapabilities(id: string, contextLength: number | null): Capability
 }
 
 async function fetchJson(url: string, headers: Record<string, string>): Promise<unknown> {
-  const res = await fetch(url, { headers, method: "GET" });
+  await assertSafeOutboundUrl(url, "Base URL");
+  const res = await fetch(url, {
+    headers,
+    method: "GET",
+    redirect: "error",
+    signal: AbortSignal.timeout(12_000),
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`${res.status} ${body.slice(0, 200)}`);

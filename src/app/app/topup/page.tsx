@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { submitTopup, redeemVoucher, paymentSettings } from "@/app/actions/payments";
 import type { PaymentConfig } from "@/lib/config";
@@ -40,7 +40,7 @@ export default function TopupPage() {
   const [pay, setPay] = useState<PaymentConfig | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
+  const preview = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -107,14 +107,10 @@ export default function TopupPage() {
   }, []);
 
   useEffect(() => {
-    if (!file) {
-      setPreview("");
-      return;
-    }
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const pickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];

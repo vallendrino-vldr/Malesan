@@ -7,6 +7,7 @@ import { userFacingError } from "@/lib/ai/errors";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
+import { aiRateLimit } from "@/lib/rate-limit";
 import {
   type LearnedNote,
   buildIdeHariIniPrompt,
@@ -97,6 +98,9 @@ export async function POST(request: NextRequest) {
       return new Response("Banned", { status: 403 });
     }
 
+    const limited = await aiRateLimit(user.id, "generate", 12);
+    if (limited) return limited;
+
     /**
      * BYOK, decrypted.
      *
@@ -132,7 +136,11 @@ export async function POST(request: NextRequest) {
     const hasByok = Boolean(byokKey);
 
     // 3. checkPoolAdmission from quota module
-    const admission = await checkPoolAdmission({ isPro: profile.is_pro, hasByok });
+    const admission = await checkPoolAdmission({
+      isPro: profile.is_pro,
+      hasByok,
+      feature: module,
+    });
     if (!admission.allowed) {
       return new Response(JSON.stringify({ error: admission.message }), {
         status: 429,
@@ -330,6 +338,7 @@ export async function POST(request: NextRequest) {
               creditsCharged: cost,
               isAdmin: profile.role === "admin",
               byokKey,
+              allowSharedGemini: admission.allowSharedGemini,
               // Give up ~8s before the 60s hard timeout so the catch below runs and the
               // credit is refunded, rather than the function being killed mid-stream.
               signal: AbortSignal.timeout(52_000),
@@ -406,6 +415,7 @@ export async function POST(request: NextRequest) {
               creditsCharged: 0,
               isAdmin: profile.role === "admin",
               byokKey,
+              allowSharedGemini: admission.allowSharedGemini,
               signal: AbortSignal.timeout(retryBudgetMs + 1_000),
               budgetMs: retryBudgetMs,
             });

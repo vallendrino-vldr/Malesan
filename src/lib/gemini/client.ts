@@ -8,6 +8,7 @@ import {
   type ProviderName,
 } from "./providers";
 import { getProviderConfig } from "@/lib/config";
+import { assertSafeOutboundUrl } from "@/lib/security/outbound-url";
 
 /**
  * The only place in the codebase that talks to Gemini.
@@ -107,10 +108,15 @@ async function callOnce(
     stream: stream && supportsStreaming(provider),
     images: args.images,
   });
+  // A gateway URL is admin-controlled. Re-check immediately before sending the
+  // secret, including DNS resolution, so an internal/metadata target never
+  // receives a provider key even if configuration was tampered with directly.
+  if (args.baseUrl) await assertSafeOutboundUrl(req.url, "Base URL");
   return fetch(req.url, {
     method: "POST",
     headers: req.headers,
     body: req.body,
+    redirect: "error",
     signal: args.signal,
   });
 }

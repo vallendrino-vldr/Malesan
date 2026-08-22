@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { buildSnapshot, type Snapshot } from "@/lib/admin/snapshot";
+import { aiRateLimit } from "@/lib/rate-limit";
 
 /**
  * The admin assistant.
@@ -165,6 +166,9 @@ export async function POST(req: NextRequest) {
   if (profile?.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const limited = await aiRateLimit(user.id, "admin_assistant", 20);
+  if (limited) return limited;
 
   let question = "";
   try {

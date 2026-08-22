@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
+import { aiRateLimit } from "@/lib/rate-limit";
 import {
   VIBE_QUESTIONS_SCHEMA,
   buildVibeQuestionsPrompt,
@@ -45,6 +46,9 @@ export async function POST(request: NextRequest) {
     .single();
   if (!profile) return new Response("Profile not found", { status: 404 });
   if (profile.is_banned) return new Response("Banned", { status: 403 });
+
+  const limited = await aiRateLimit(user.id, "vibe_questions", 10);
+  if (limited) return limited;
 
   const serviceRole = createServiceRoleClient();
   const { data: dna } = await serviceRole

@@ -112,7 +112,10 @@ export default function AdminTopupsPage() {
   }, []);
 
   useEffect(() => {
-    fetchTopups();
+    // Keep the fetch outside the effect's synchronous phase. Initial loading
+    // state is already true, so this does not add a visible delay.
+    const timer = setTimeout(() => void fetchTopups(), 0);
+    return () => clearTimeout(timer);
   }, [fetchTopups]);
 
   const showProof = async (t: Topup) => {

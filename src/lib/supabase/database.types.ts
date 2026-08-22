@@ -981,16 +981,19 @@ export type Database = {
       rate_limits: {
         Row: {
           user_id: string;
+          scope: string;
           window_start: string;
           request_count: number;
         };
         Insert: {
           user_id: string;
+          scope?: string;
           window_start: string;
           request_count?: number;
         };
         Update: {
           user_id?: string;
+          scope?: string;
           window_start?: string;
           request_count?: number;
         };
@@ -1195,6 +1198,20 @@ export type Database = {
       };
       gen_referral_code: { Args: never; Returns: string };
       is_admin: { Args: never; Returns: boolean };
+      /** service_role only. Atomic cross-instance AI request throttle. */
+      consume_rate_limit: {
+        Args: {
+          p_user: string;
+          p_scope: string;
+          p_limit: number;
+          p_window_seconds?: number;
+        };
+        Returns: {
+          allowed: boolean;
+          retry_after_seconds: number;
+          request_count: number;
+        }[];
+      };
       /** service_role only. Throws INSUFFICIENT_CREDITS. Returns the new total balance. */
       spend_credits: {
         Args: {

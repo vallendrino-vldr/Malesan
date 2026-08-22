@@ -38,12 +38,20 @@ export async function getFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> 
   loadPromise = (async () => {
     const inst = new FFmpeg();
     if (onLog) inst.on("log", ({ message }) => onLog(message));
-    await inst.load({
-      coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
-    });
-    ffmpeg = inst;
-    return inst;
+    try {
+      await inst.load({
+        coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
+        wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
+      });
+      ffmpeg = inst;
+      return inst;
+    } catch (error) {
+      // A rejected cached promise made the Retry button retry the same failure
+      // forever. Clear it so a recovered connection can load a fresh instance.
+      loadPromise = null;
+      ffmpeg = null;
+      throw error;
+    }
   })();
 
   return loadPromise;
@@ -79,11 +87,11 @@ export async function extractAudio(
       outName,
     ]);
     const data = await ff.readFile(outName);
-    await safeDelete(ff, inName);
-    await safeDelete(ff, outName);
     return new Blob([new Uint8Array(data as Uint8Array)], { type: "audio/mp4" });
   } finally {
     if (handler) ff.off("progress", handler);
+    await safeDelete(ff, inName);
+    await safeDelete(ff, outName);
   }
 }
 
@@ -120,12 +128,12 @@ export async function burnInSubtitles(
       outName,
     ]);
     const data = await ff.readFile(outName);
-    await safeDelete(ff, inName);
-    await safeDelete(ff, subName);
-    await safeDelete(ff, outName);
     return new Blob([new Uint8Array(data as Uint8Array)], { type: "video/mp4" });
   } finally {
     if (handler) ff.off("progress", handler);
+    await safeDelete(ff, inName);
+    await safeDelete(ff, subName);
+    await safeDelete(ff, outName);
   }
 }
 

@@ -4,6 +4,7 @@ import { authHeaders } from "./discovery";
 import { resolveProviderKey } from "./registry";
 import { daysRemaining } from "./cost";
 import type { ProviderRow } from "./types";
+import { assertSafeOutboundUrl } from "@/lib/security/outbound-url";
 
 /**
  * Prepaid balance monitoring.
@@ -86,9 +87,12 @@ export async function checkBalance(provider: ProviderRow): Promise<BalanceReadin
     // anyway, since the free tier has no prepaid balance to read.
     if (!key) return null;
 
-    const res = await fetch(provider.balance_url.trim(), {
+    const balanceUrl = await assertSafeOutboundUrl(provider.balance_url.trim(), "Balance URL");
+    const res = await fetch(balanceUrl, {
       method: "GET",
       headers: authHeaders(provider.protocol, key),
+      redirect: "error",
+      signal: AbortSignal.timeout(12_000),
     });
 
     if (!res.ok) {
