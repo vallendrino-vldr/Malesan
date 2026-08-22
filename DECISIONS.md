@@ -615,3 +615,28 @@ each other. Only the UI layer was fanned out, with each agent owning files no ot
 could touch.
 
 Recorded because the rule is a good one and the exception should not become the habit.
+
+## 2026-08-22 — Only hard protocol capabilities may filter the Global Brain
+
+`vision` can be a hard requirement because a text-only model cannot inspect a
+payment receipt. Labels such as `reasoning`, `quality`, `cheap`, and `fast` are
+routing preferences, not proof that another text model cannot do the work.
+Treating `reasoning` as mandatory made Vibe and the admin assistant silently
+leave the configured Brain when scanned metadata was incomplete. Those features
+now require text and retain quality as their preference. Autocomplete keeps its
+hard fast requirement because its 11-second UX budget is itself the contract.
+
+## 2026-08-22 — Provider health is a temporary ordering signal
+
+Three consecutive runtime failures move a provider behind healthy backups for
+five minutes. Traffic probes it again after that; one success clears the counter.
+One random timeout never changes order, and a sick provider is not permanently
+disabled because that would require owner intervention to recover.
+
+## 2026-08-22 — Gemini 3.5 is the verified emergency fallback
+
+Gemini 3.7 repeatedly returned live quota/429 failures while Gemini 3.5 answered
+successfully from the same key pool. DeepSeek V4 Flash remains the Global Brain
+primary; Gemini 3.5 is the Brain backup and hidden legacy emergency model, while
+3.7 stays inactive until a live probe proves recovery. Reliability evidence won
+over keeping the originally requested model name.

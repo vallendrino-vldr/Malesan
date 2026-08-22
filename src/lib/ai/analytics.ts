@@ -103,6 +103,7 @@ export async function quotaFor(model: ModelRow): Promise<Quota> {
   const { data } = await createServiceRoleClient()
     .from("ai_usage_log")
     .select("input_tokens, output_tokens")
+    .eq("provider_id", model.provider_id)
     .eq("model_id", model.model_id)
     .eq("status", "ok");
 
@@ -226,6 +227,7 @@ async function rupiahPerCredit(): Promise<number> {
 
 type Row = {
   feature: string;
+  provider_id: string | null;
   provider_slug: string | null;
   model_id: string | null;
   input_tokens: number;
@@ -252,11 +254,12 @@ export async function costSummary(days = 7): Promise<CostSummary> {
 
   const db = createServiceRoleClient();
 
-  const [{ data }, perCredit, { data: refundRows }] = await Promise.all([
+  const [{ data }, perCredit, { data: refundRows }, { data: pricingRows }] =
+    await Promise.all([
     db
       .from("ai_usage_log")
       .select(
-        "feature, provider_slug, model_id, input_tokens, output_tokens, cost_idr, credits_charged, latency_ms, status, created_at, ref_id",
+        "feature, provider_id, provider_slug, model_id, input_tokens, output_tokens, cost_idr, credits_charged, latency_ms, status, created_at, ref_id",
       )
       .gte("created_at", monthAgo)
       // A hard ceiling so one busy month cannot pull an unbounded result set
@@ -282,9 +285,44 @@ export async function costSummary(days = 7): Promise<CostSummary> {
       .not("ref_id", "is", null)
       .gte("created_at", monthAgo)
       .limit(ROW_CAP),
+    // Pricing is configuration, not an inference from a zero cost row. A free
+    // quota and an unknown price both produce Rp0 and mean opposite things.
+    db
+      .from("ai_models")
+      .select(
+        "provider_id, model_id, pricing_mode, input_price_usd_per_mtok, output_price_usd_per_mtok, package_price_idr, package_tokens",
+      ),
   ]);
 
   const rows = (data ?? []) as Row[];
+  const pricing = (pricingRows ?? []).map((row) => ({
+    providerId: row.provider_id,
+    modelId: row.model_id,
+    price: {
+        pricing_mode: row.pricing_mode as ModelRow["pricing_mode"],
+        input_price_usd_per_mtok: Number(row.input_price_usd_per_mtok ?? 0),
+        output_price_usd_per_mtok: Number(row.output_price_usd_per_mtok ?? 0),
+        package_price_idr:
+          row.package_price_idr == null ? null : Number(row.package_price_idr),
+        package_tokens: row.package_tokens == null ? null : Number(row.package_tokens),
+      },
+  }));
+  const priceByProviderModel = new Map(
+    pricing.map((row) => [`${row.providerId}:${row.modelId}`, row.price]),
+  );
+  const modelIdCounts = new Map<string, number>();
+  for (const row of pricing) {
+    modelIdCounts.set(row.modelId, (modelIdCounts.get(row.modelId) ?? 0) + 1);
+  }
+  // Historical legacy rows did not carry provider_id. They can still be
+  // matched safely when only one gateway has that model id; an ambiguous id is
+  // deliberately treated as unknown rather than borrowing another gateway's
+  // price.
+  const uniquePriceByModel = new Map(
+    pricing
+      .filter((row) => modelIdCounts.get(row.modelId) === 1)
+      .map((row) => [row.modelId, row.price]),
+  );
   const refunded = new Set(
     (refundRows ?? []).map((r) => (r as { ref_id: string | null }).ref_id).filter(Boolean) as string[],
   );
@@ -304,12 +342,26 @@ export async function costSummary(days = 7): Promise<CostSummary> {
   const month = { ...zero(), calls: 0 };
   const features = new Map<
     string,
-    FeatureCost & { latencySum: number; latencyCount: number; modelTally: Map<string, number> }
+    FeatureCost & {
+      latencySum: number;
+      latencyCount: number;
+      modelTally: Map<string, number>;
+      requestKeys: Set<string>;
+    }
   >();
   const modelsMap = new Map<string, ModelCost>();
   const troubled = new Map<string, { failures: number; lastError: string | null }>();
+  const todayRequests = new Set<string>();
+  const windowRequests = new Set<string>();
+  const monthRequests = new Set<string>();
+  let legacyRow = 0;
 
   for (const r of rows) {
+    // Fallback attempts, JSON repair calls, and Vibe's parallel document calls
+    // share one ref. The business dashboard counts the customer's request once;
+    // provider/model breakdowns below still count every paid attempt.
+    const requestKey = r.ref_id ?? "legacy:" + r.created_at + ":" + legacyRow++;
+    monthRequests.add(requestKey);
     const cost = Number(r.cost_idr ?? 0);
     // A refunded request cost us the tokens but earned nothing. The cost stays,
     // the revenue does not — that asymmetry is the whole point of tracking it.
@@ -322,19 +374,18 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     const fellBack = r.status === "fallback";
 
     add(month, cost, credits);
-    month.calls++;
 
     const inWindow = at >= windowStart;
     if (inWindow) {
+      windowRequests.add(requestKey);
       add(window, cost, credits);
-      window.calls++;
       if (failed) window.failures++;
       if (fellBack) window.fallbacks++;
     }
 
     if (at >= startOfToday.getTime()) {
+      todayRequests.add(requestKey);
       add(today, cost, credits);
-      today.calls++;
       today.tokens += Number(r.input_tokens ?? 0) + Number(r.output_tokens ?? 0);
     }
 
@@ -357,14 +408,15 @@ export async function costSummary(days = 7): Promise<CostSummary> {
         latencySum: 0,
         latencyCount: 0,
         modelTally: new Map(),
+        requestKeys: new Set(),
       });
     }
     const f = features.get(fKey)!;
+    f.requestKeys.add(requestKey);
     if (r.model_id && r.status === "ok") {
       f.modelTally.set(r.model_id, (f.modelTally.get(r.model_id) ?? 0) + 1);
     }
     add(f, cost, credits);
-    f.calls++;
     if (failed) f.failures++;
     f.inputTokens += Number(r.input_tokens ?? 0);
     f.outputTokens += Number(r.output_tokens ?? 0);
@@ -395,12 +447,16 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     }
   }
 
+  today.calls = todayRequests.size;
+  window.calls = windowRequests.size;
+  month.calls = monthRequests.size;
+
   const byFeature = [...features.values()]
-    .map((f) => ({
+    .map(({ latencySum, latencyCount, modelTally, requestKeys, ...f }) => ({
       ...f,
-      avgLatencyMs: f.latencyCount > 0 ? Math.round(f.latencySum / f.latencyCount) : 0,
-      byModelId:
-        [...f.modelTally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
+      calls: requestKeys.size,
+      avgLatencyMs: latencyCount > 0 ? Math.round(latencySum / latencyCount) : 0,
+      byModelId: [...modelTally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
     }))
     .sort((a, b) => b.costIdr - a.costIdr);
 
@@ -417,9 +473,23 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     troubled: [...troubled.entries()]
       .map(([providerSlug, t]) => ({ providerSlug, ...t }))
       .sort((a, b) => b.failures - a.failures),
-    // Every row costing exactly zero means no model has a price set, not that
-    // the AI is free. Saying "Rp0 spent" in that state is the single most
-    // misleading thing this dashboard could do.
-    pricingUnconfigured: rows.length > 0 && rows.every((r) => Number(r.cost_idr ?? 0) === 0),
+    // One unknown-cost success is enough to make the total a partial truth.
+    // Deliberately exclude BYOK: that quota belongs to the user, so Rp0 is the
+    // owner's real cost even when we do not know what the user pays.
+    pricingUnconfigured: rows.some((r) => {
+      if (
+        r.status !== "ok" ||
+        r.provider_slug === "byok" ||
+        Number(r.input_tokens ?? 0) + Number(r.output_tokens ?? 0) === 0
+      ) {
+        return false;
+      }
+      const price = r.model_id
+        ? (r.provider_id
+            ? priceByProviderModel.get(`${r.provider_id}:${r.model_id}`)
+            : undefined) ?? uniquePriceByModel.get(r.model_id)
+        : undefined;
+      return !price || !isPriced(price);
+    }),
   };
 }

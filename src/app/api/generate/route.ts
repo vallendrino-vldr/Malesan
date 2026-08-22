@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
-import { getCost, isModuleEnabled, getModel, getShadowPrompt } from "@/lib/config";
+import { getCost, isModuleEnabled, getShadowPrompt } from "@/lib/config";
 import { runAI, runAIStream, type StreamMeta } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { decryptSecret } from "@/lib/gemini/crypto";
@@ -304,6 +304,7 @@ export async function POST(request: NextRequest) {
     // Set up SSE stream
     const stream = new ReadableStream({
       async start(controller) {
+        const aiStartedAt = Date.now();
         let fullResponse = "";
         let parsed = null;
         let isError = false;
@@ -324,7 +325,6 @@ export async function POST(request: NextRequest) {
               prompt: promptText,
               schema: schema,
               tier: profile.is_pro ? "pro" : "free",
-              legacyModel: await getModel(profile.is_pro ? "pro" : "free"),
               userId: user.id,
               refId: spendRef,
               creditsCharged: cost,
@@ -386,18 +386,28 @@ export async function POST(request: NextRequest) {
               ),
             );
 
+            // Never let a repair pass turn a recoverable parse problem into a
+            // platform timeout. It shares the route's original wall clock and
+            // is skipped when there is no longer enough room for a real model
+            // attempt plus the refund/persist work below.
+            const retryBudgetMs = Math.min(26_000, 54_000 - (Date.now() - aiStartedAt));
+            if (retryBudgetMs < 18_000) throw parseErr;
+
             const retry = await runAI({
               feature: module,
               prompt: promptText,
               schema,
               tier: profile.is_pro ? "pro" : "free",
-              legacyModel: await getModel(profile.is_pro ? "pro" : "free"),
               userId: user.id,
               refId: spendRef,
-              creditsCharged: cost,
+              // The first provider response already carries the request's one
+              // revenue entry. A repair is extra provider cost, never a second
+              // user purchase.
+              creditsCharged: 0,
               isAdmin: profile.role === "admin",
               byokKey,
-              signal: AbortSignal.timeout(30_000),
+              signal: AbortSignal.timeout(retryBudgetMs + 1_000),
+              budgetMs: retryBudgetMs,
             });
             parsed = JSON.parse(clean(retry.text));
             meta = {
@@ -455,9 +465,7 @@ export async function POST(request: NextRequest) {
                 platform: platform || null,
                 input: input || null,
                 output: parsed,
-                model_used:
-                  (meta as StreamMeta | null)?.modelId ??
-                  (await getModel(profile.is_pro ? "pro" : "free")),
+                model_used: (meta as StreamMeta | null)?.modelId ?? null,
                 credits_spent: cost,
               })
               .select()

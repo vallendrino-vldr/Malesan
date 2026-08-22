@@ -44,15 +44,32 @@ export function PwaProvider() {
       })
       .then((r) => {
         reg = r;
+        const watch = (sw: ServiceWorker | null) => {
+          if (!sw) return;
+          const announceWhenInstalled = () => {
+            sw?.addEventListener("statechange", () => {
+              // controller present means this is an update, not a first install.
+              if (sw.state === "installed" && navigator.serviceWorker.controller) {
+                setUpdateReady(true);
+              }
+            });
+          };
+
+          // register() can resolve after updatefound already fired. In that
+          // race `r.installing` exists but the old listener never saw the event,
+          // leaving a real waiting worker with no banner. Inspect the current
+          // state first, then subscribe for what comes next.
+          if (sw.state === "installed" && navigator.serviceWorker.controller) {
+            setUpdateReady(true);
+          } else {
+            announceWhenInstalled();
+          }
+        };
+
         if (r.waiting) setUpdateReady(true);
+        watch(r.installing);
         r.addEventListener("updatefound", () => {
-          const sw = r.installing;
-          sw?.addEventListener("statechange", () => {
-            // controller present means this is an update, not a first install.
-            if (sw.state === "installed" && navigator.serviceWorker.controller) {
-              setUpdateReady(true);
-            }
-          });
+          watch(r.installing);
         });
       })
       .catch(() => {
@@ -94,7 +111,30 @@ export function PwaProvider() {
 
   async function applyUpdate() {
     const reg = await navigator.serviceWorker.getRegistration();
-    reg?.waiting?.postMessage({ type: "SKIP_WAITING" });
+    const waiting = reg?.waiting;
+    if (!waiting) {
+      window.location.reload();
+      return;
+    }
+
+    // Reload only after the new worker owns this page. Reloading immediately
+    // after postMessage races skipWaiting(): on slower phones the old worker can
+    // still serve that reload, so the user taps "Muat ulang" and sees the same
+    // bundle again. Keep a short escape hatch for browsers that fail to emit the
+    // event; a stuck banner is worse than one extra network-first reload.
+    await new Promise<void>((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        navigator.serviceWorker.removeEventListener("controllerchange", finish);
+        resolve();
+      };
+      const timer = window.setTimeout(finish, 5_000);
+      navigator.serviceWorker.addEventListener("controllerchange", finish);
+      waiting.postMessage({ type: "SKIP_WAITING" });
+    });
     window.location.reload();
   }
 

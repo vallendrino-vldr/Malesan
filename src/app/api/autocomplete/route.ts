@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
-import { getModel, getShadowPrompt } from "@/lib/config";
-import { parseJson } from "@/lib/gemini/client";
+import { getShadowPrompt } from "@/lib/config";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
@@ -193,13 +193,6 @@ export async function POST(request: NextRequest) {
         feature: "autocomplete",
         prompt: buildPrompt(text, dnaRes.data, shadowPrompt),
         tier: profile.is_pro ? "pro" : "free",
-        // The fast model for everyone, on purpose, and the one place in the
-        // product where a pro user is not handed the bigger one: ghost text is
-        // only useful while the thought is still forming. A cleverer sentence
-        // that lands two seconds late gets typed over. `autocomplete` declares
-        // a `fast` capability requirement, so the Brain cannot route this onto a
-        // slow reasoning model even if that is what the rest of the app uses.
-        legacyModel: await getModel("free"),
         schema: CONTINUATION_SCHEMA,
         userId: user.id,
         refId: spendRef,
@@ -210,7 +203,7 @@ export async function POST(request: NextRequest) {
         budgetMs: 11_000,
       });
 
-      const parsed = parseJson<{ lanjutan?: string }>(raw);
+      const parsed = parseAIJson<{ lanjutan?: string }>(raw);
       const completion = capToOneSentence(
         typeof parsed.lanjutan === "string" ? parsed.lanjutan : "",
         /\s$/.test(text),

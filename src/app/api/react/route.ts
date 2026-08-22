@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { getReactionCost } from "@/lib/config";
-import { parseGroqJson } from "@/lib/groq/llm";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
         signal: AbortSignal.timeout(45_000),
         budgetMs: 43_000,
       });
-      const parsed = parseGroqJson<{ comments?: NetizenComment[] }>(raw);
+      const parsed = parseAIJson<{ comments?: NetizenComment[] }>(raw);
       const comments = (parsed.comments ?? [])
         .filter((c) => c && typeof c.comment === "string" && c.comment.trim())
         .slice(0, 5);

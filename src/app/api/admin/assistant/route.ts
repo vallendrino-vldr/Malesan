@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { parseJson } from "@/lib/gemini/client";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { buildSnapshot, type Snapshot } from "@/lib/admin/snapshot";
 
@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
       signal: AbortSignal.timeout(50_000),
       budgetMs: 48_000,
     });
-    const parsed = parseJson<Answer>(raw);
+    const parsed = parseAIJson<Answer>(raw);
 
     // Drop any destination the model invented. It is reading text that users
     // can influence — a proof reading, an error string, an email address — so

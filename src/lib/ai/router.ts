@@ -1,7 +1,7 @@
 import "server-only";
 import { getRouterFlags } from "@/lib/config";
 import { getFleet, getRoute } from "./registry";
-import { resolveBrain } from "./brain";
+import { providerIsCoolingDown, resolveBrain } from "./brain";
 import { blendedUsdPerMtok } from "./cost";
 import { FEATURE_MAP, type Candidate, type Capability, type ModelRow, type ProviderRow, type RoutePrefer } from "./types";
 
@@ -25,8 +25,6 @@ import { FEATURE_MAP, type Candidate, type Capability, type ModelRow, type Provi
  * an attempt, because "everything looks broken" is usually one bad metric, and a
  * user waiting on a generation would rather we tried.
  */
-const UNHEALTHY_AFTER = 3;
-
 function isUsable(model: ModelRow, provider: ProviderRow | undefined): provider is ProviderRow {
   return Boolean(provider?.is_active && model.is_active);
 }
@@ -151,7 +149,7 @@ export async function resolveRoute(feature: string): Promise<RouteDecision> {
   const sick: ModelRow[] = [];
   for (const m of ordered) {
     const p = providerOf(m);
-    ((p?.consecutive_failures ?? 0) >= UNHEALTHY_AFTER ? sick : healthy).push(m);
+    (p && providerIsCoolingDown(p) ? sick : healthy).push(m);
   }
 
   let finalModels = [...healthy, ...sick];

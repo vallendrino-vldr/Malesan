@@ -38,14 +38,7 @@ const COST_ORDER = [
   "video",
 ];
 
-export function ConfigEditor({
-  rows,
-  geminiModels = [],
-}: {
-  rows: ConfigRow[];
-  /** Registered Gemini model ids, so the fallback tier is picked, never typed. */
-  geminiModels?: string[];
-}) {
+export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -97,18 +90,10 @@ export function ConfigEditor({
         </section>
       )}
 
-      {/* ---- models: the legacy fallback, demoted and made un-typeable ----
-
-          This used to be the front door — two text boxes labelled "Model per
-          tier" where the owner typed a model id by hand. It competed with the
-          Brain for the same job and lost in the worst way: the Brain decided
-          what actually ran, while this screen still showed Gemini, which is
-          exactly the "udah ganti tapi masih Gemini" confusion.
-
-          It is now what it truly is: the emergency floor used only when no Brain
-          and no override apply. Free text is gone — a typo here returned 404 on
-          every generation, and there is no reason to allow one when the set of
-          valid answers is known. */}
+      {/* The old model_free/model_pro controls are deliberately not rendered.
+          They are compatibility values for the emergency legacy path, not a
+          second AI selector. Exposing them made this page say Gemini while the
+          Brain was running DeepSeek. */}
       <section className="rounded-xl border border-hairline px-4 py-3">
         <h2 className="eyebrow mb-2 text-muted">Model per tier</h2>
         <div className="space-y-1.5">
@@ -130,46 +115,6 @@ export function ConfigEditor({
           .
         </p>
       </section>
-
-      <details className="rounded-xl border border-hairline px-4 py-3">
-        <summary className="cursor-pointer text-mini font-semibold text-ink">
-          Override per tier (jarang dipakai)
-        </summary>
-        <p className="mt-2 text-micro leading-relaxed text-muted">
-          Cuma kepakai kalau Otak AI belum diatur atau modelnya lagi mati —
-          jaring pengaman, bukan setelan utama. Kalau lo gak yakin, biarin aja.
-        </p>
-        <div className="mt-3 space-y-2">
-          {(["model_free", "model_pro"] as const).map((k) => (
-            <label key={k} className="block">
-              <span className="text-micro text-muted">
-                {k === "model_free" ? "Free" : "Pro"}
-              </span>
-              <select
-                defaultValue={String(byKey[k]?.value ?? "")}
-                disabled={busy === k}
-                onChange={(e) => save(k, e.target.value)}
-                className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-mini text-ink"
-              >
-                {/* Whatever is stored stays selectable even if it is no longer
-                    in the registry, so opening this panel cannot silently
-                    rewrite a working configuration. */}
-                {!geminiModels.some((m) => m === String(byKey[k]?.value ?? "")) && (
-                  <option value={String(byKey[k]?.value ?? "")}>
-                    {String(byKey[k]?.value ?? "(kosong)")} — sekarang
-                  </option>
-                )}
-                {geminiModels.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-              {ok === k && <span className="text-micro text-ember-lo">Kesimpen.</span>}
-            </label>
-          ))}
-        </div>
-      </details>
 
       {/* ---- shadow prompt ---- */}
       {byKey["shadow_prompt"] && (
@@ -204,38 +149,6 @@ export function ConfigEditor({
             Makin panjang makin mahal — teksnya ikut kehitung token di tiap
             generate. Beberapa baris udah cukup.
           </p>
-        </section>
-      )}
-
-      {/* ---- token cost ---- */}
-      {byKey["price_in_per_mtok"] && (
-        <section>
-          <h2 className="eyebrow mb-2 text-muted">Modal token</h2>
-          <p className="mb-2 text-micro leading-relaxed text-muted">
-            Berapa rupiah yang <em className="not-italic text-ink">lo</em> bayar
-            ke vendor AI per 1 juta token. Angkanya ada di halaman harga vendor
-            — kurs-in dulu ke rupiah. Selama masih 0, dashboard untung cuma bisa
-            nunjukin pemasukan, modalnya gak bisa dihitung.
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {(
-              [
-                ["price_in_per_mtok", "Token masuk (Rp/1 jt)"],
-                ["price_out_per_mtok", "Token keluar (Rp/1 jt)"],
-              ] as const
-            ).map(([k, label]) => (
-              <NumberRow
-                key={k}
-                label={label}
-                ariaLabel={label}
-                min={0}
-                initial={Number(byKey[k]?.value ?? 0)}
-                busy={busy === k}
-                saved={ok === k}
-                onSave={(v) => save(k, v)}
-              />
-            ))}
-          </div>
         </section>
       )}
 
@@ -278,57 +191,6 @@ export function ConfigEditor({
             saved={ok === "cost_no_watermark"}
             onSave={(v) => save("cost_no_watermark", v)}
             min={0}
-          />
-        </div>
-      </section>
-
-      {/* ---- provider ---- */}
-      <section>
-        <h2 className="eyebrow mb-2 text-muted">Provider AI</h2>
-        <p className="mb-2 text-micro leading-relaxed text-muted">
-          Mau ganti otaknya ke vendor lain? Ganti di sini. Kalau API key
-          dikosongin, sistem balik pakai rotasi key Gemini dari env — jadi form
-          setengah jadi gak bikin generate mati.
-        </p>
-        <div className="space-y-2">
-          <div className="rounded-xl border border-hairline bg-surface p-3">
-            <label className="text-sm font-semibold text-ink">Vendor</label>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {(["gemini", "openai", "anthropic", "custom"] as const).map((p) => {
-                const on = String(byKey["ai_provider"]?.value ?? "gemini") === p;
-                return (
-                  <button
-                    key={p}
-                    onClick={() => save("ai_provider", p)}
-                    disabled={busy === "ai_provider"}
-                    className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-semibold capitalize transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-50 ${
-                      on
-                        ? "border-ember/45 bg-ember/10 text-ember"
-                        : "border-hairline text-muted hover:text-ink"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <TextRow
-            label="Base URL"
-            hint="Kosongin kalau pakai endpoint default vendornya."
-            initial={String(byKey["ai_base_url"]?.value ?? "")}
-            busy={busy === "ai_base_url"}
-            saved={ok === "ai_base_url"}
-            onSave={(v) => save("ai_base_url", v)}
-          />
-
-          <SecretRow
-            label="API key"
-            hasValue={!!String(byKey["ai_api_key"]?.value ?? "")}
-            busy={busy === "ai_api_key"}
-            saved={ok === "ai_api_key"}
-            onSave={(v) => save("ai_api_key", v)}
           />
         </div>
       </section>
@@ -500,71 +362,6 @@ function TextRow({
           {busy ? "..." : "Simpan"}
         </button>
       </div>
-    </div>
-  );
-}
-
-/**
- * Write-only field for secrets. The stored value is never rendered — the row
- * only reports whether one exists. A key that can be read back out of the DOM
- * is a key that leaks through a screenshot or a shared screen.
- */
-function SecretRow({
-  label,
-  hasValue,
-  onSave,
-  busy,
-  saved,
-}: {
-  label: string;
-  hasValue: boolean;
-  onSave: (v: string) => void;
-  busy: boolean;
-  saved: boolean;
-}) {
-  const [v, setV] = useState("");
-
-  return (
-    <div className="rounded-xl border border-hairline bg-surface p-3">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-semibold text-ink">{label}</label>
-        {saved ? (
-          <span className="text-micro text-success">Tersimpan</span>
-        ) : (
-          <span className="text-micro text-muted">
-            {hasValue ? "Udah keisi · ●●●●●●" : "Belum diisi"}
-          </span>
-        )}
-      </div>
-      <div className="mt-2 flex gap-2">
-        <input
-          type="password"
-          value={v}
-          onChange={(e) => setV(e.target.value)}
-          placeholder={hasValue ? "Ketik key baru buat ganti" : "Tempel API key"}
-          autoComplete="off"
-          className="min-w-0 flex-1 rounded-lg border border-hairline bg-obsidian px-3 py-2 font-mono text-xs text-ink placeholder:text-muted focus:border-ember focus:outline-none"
-        />
-        <button
-          onClick={() => {
-            onSave(v.trim());
-            setV("");
-          }}
-          disabled={busy || !v.trim()}
-          className="shrink-0 cursor-pointer rounded-lg bg-ember px-3 py-2 text-xs font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {busy ? "..." : "Simpan"}
-        </button>
-      </div>
-      {hasValue && (
-        <button
-          onClick={() => onSave("")}
-          disabled={busy}
-          className="mt-2 cursor-pointer text-micro text-muted underline-offset-2 hover:text-danger hover:underline"
-        >
-          Hapus key (balik ke rotasi Gemini dari env)
-        </button>
-      )}
     </div>
   );
 }

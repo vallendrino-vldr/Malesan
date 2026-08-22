@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { parseJson } from "@/lib/gemini/client";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
         budgetMs: 48_000,
       });
 
-      const parsed = parseJson<{ persona_summary: string; signature_formats: string[] }>(rawRes);
+      const parsed = parseAIJson<{ persona_summary: string; signature_formats: string[] }>(rawRes);
       aiPersonaSummary = parsed.persona_summary;
       
     } catch {

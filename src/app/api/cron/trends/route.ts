@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/server";
-import { parseJson } from "@/lib/gemini/client";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 
 /**
@@ -78,7 +78,7 @@ export async function GET(req: Request) {
       budgetMs: 38_000,
     });
 
-    const parsed = parseJson<{ trends?: Trend[] }>(raw);
+    const parsed = parseAIJson<{ trends?: Trend[] }>(raw);
     const trends = (parsed.trends ?? []).filter((t) => t?.title && t?.summary);
 
     if (trends.length === 0) {

@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import { parseJson } from "@/lib/gemini/client";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
-import { getModel } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
 
 /**
@@ -143,7 +142,6 @@ export async function POST(request: NextRequest) {
       // Always the cheap tier: this is two short strings, and spending pro quota
       // on a chip would starve the modules people actually pay for.
       tier: "free",
-      legacyModel: await getModel("free"),
       schema: SCHEDULE_SCHEMA as unknown as Record<string, unknown>,
       userId: user.id,
       refId: spendRef,
@@ -156,7 +154,7 @@ export async function POST(request: NextRequest) {
       budgetMs: 48_000,
     });
 
-    const parsed = parseJson<{ schedule_label?: string; reason?: string }>(raw);
+    const parsed = parseAIJson<{ schedule_label?: string; reason?: string }>(raw);
     const label = (parsed?.schedule_label ?? "").trim().slice(0, 40);
     const reason = (parsed?.reason ?? "").trim().slice(0, 240);
     if (!label) throw new Error("model returned an empty schedule_label");

@@ -71,6 +71,13 @@ function timeAgo(iso: string | null): string {
   return `${Math.floor(h / 24)} hari lalu`;
 }
 
+function seconds(ms: number | null): string {
+  if (ms === null) return "—";
+  return (
+    (ms / 1000).toLocaleString("id-ID", { maximumFractionDigits: 1 }) + " dtk"
+  );
+}
+
 export function ProviderManager({ providers }: { providers: ProviderView[] }) {
   const [form, setForm] = useState<ProviderInput | null>(null);
   const [busy, startTransition] = useTransition();
@@ -301,6 +308,26 @@ export function ProviderManager({ providers }: { providers: ProviderView[] }) {
                     {p.active_model_count}/{p.model_count} model aktif
                   </span>
                   <span>dicek {timeAgo(p.last_checked_at)}</span>
+                </p>
+                <p className="mt-1 text-micro text-muted">
+                  {p.health_24h.attempts > 0 ? (
+                    <>
+                      24 jam:{" "}
+                      <span
+                        className={
+                          (p.health_24h.success_rate ?? 100) < 80
+                            ? "text-danger"
+                            : "text-ember-lo"
+                        }
+                      >
+                        {(p.health_24h.success_rate ?? 0).toFixed(0)}% berhasil
+                      </span>{" "}
+                      · {seconds(p.health_24h.avg_latency_ms)} rata-rata ·{" "}
+                      {p.health_24h.attempts} percobaan
+                    </>
+                  ) : (
+                    <>Belum ada pemakaian dalam 24 jam</>
+                  )}
                 </p>
               </div>
               <span

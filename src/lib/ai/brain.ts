@@ -33,6 +33,28 @@ function pairFor(
 }
 
 /**
+ * A provider that failed repeatedly is temporarily moved behind a healthy one.
+ *
+ * Temporary matters: dropping it forever would require the owner to notice and
+ * press "Tes koneksi" before it could ever recover. After five minutes traffic
+ * probes the configured primary again; one success clears the counter, while a
+ * new failure starts another cooldown. One random timeout never changes order —
+ * the circuit only opens after three consecutive failures.
+ */
+const PROVIDER_COOLDOWN_MS = 5 * 60_000;
+
+export function providerIsCoolingDown(p: {
+  consecutive_failures: number;
+  last_checked_at: string | null;
+}): boolean {
+  if (p.consecutive_failures < 3) return false;
+  const last = p.last_checked_at ? new Date(p.last_checked_at).getTime() : NaN;
+  // A migrated/manual row can have a counter but no timestamp. Probe it now;
+  // without a clock there is no defensible reason to keep it behind forever.
+  return Number.isFinite(last) && Date.now() - last < PROVIDER_COOLDOWN_MS;
+}
+
+/**
  * The Brain's candidate chain for one feature.
  *
  * Capability requirements still apply. A feature that needs vision cannot run on
@@ -56,10 +78,19 @@ export async function resolveBrain(feature: string): Promise<BrainResolution> {
   const required: Capability[] = FEATURE_MAP[feature]?.requires ?? [];
   const capable = (c: Candidate) => required.every((r) => c.model.capabilities.includes(r));
 
-  const chain = [brain.primary, ...brain.fallbacks]
+  const configuredChain = [brain.primary, ...brain.fallbacks]
     .map((id) => pairFor(byId(id), providers))
     .filter((c): c is Candidate => c !== null)
     .filter(capable);
+
+  // Brain routes used to skip the circuit breaker that feature overrides use.
+  // Three failures could therefore leave a dead primary at the front forever,
+  // even with a healthy backup. Keep the owner's order within each group, but
+  // let a healthy backup lead while the primary cools down.
+  const chain = [
+    ...configuredChain.filter((c) => !providerIsCoolingDown(c.provider)),
+    ...configuredChain.filter((c) => providerIsCoolingDown(c.provider)),
+  ];
 
   if (chain.length === 0) {
     return {
@@ -88,6 +119,7 @@ export function healthOf(p: {
   is_active: boolean;
   consecutive_failures: number;
   last_error: string | null;
+  last_latency_ms?: number | null;
 }): Health {
   if (!p.is_active) return "error";
   if (p.consecutive_failures >= 3) return "error";
@@ -99,6 +131,7 @@ export function healthOf(p: {
       ? "limit"
       : "warning";
   }
+  if ((p.last_latency_ms ?? 0) > 30_000) return "warning";
   return "healthy";
 }
 
@@ -165,7 +198,7 @@ export async function brainOverview(overriddenFeatures: string[]): Promise<Brain
   const overriddenCount = AI_FEATURES.filter((f) => overridden.has(f.key)).length;
   const followingCount = AI_FEATURES.length - overriddenCount;
 
-  const healthy = Boolean(primary?.active);
+  const healthy = Boolean(primary?.active && primary.health !== "error");
   const liveFallbacks = fallbacks.filter((f) => f.active).length;
 
   // "No backup" and "a backup that is switched off" look identical on a
@@ -174,7 +207,17 @@ export async function brainOverview(overriddenFeatures: string[]): Promise<Brain
   const status = !primary
     ? "Belum diatur — semua fitur masih pakai Gemini bawaan."
     : !primary.active
-      ? "AI utamanya lagi mati. Fitur otomatis balik ke Gemini bawaan."
+      ? liveFallbacks > 0
+        ? "AI utama lagi mati. Cadangan dipakai otomatis sementara."
+        : "AI utama lagi mati dan belum ada cadangan yang siap."
+      : primary.health === "error"
+        ? liveFallbacks > 0
+          ? "AI utama lagi bermasalah. Cadangan dipakai otomatis sementara."
+          : "AI utama lagi bermasalah dan belum ada cadangan yang siap."
+        : primary.health === "limit"
+          ? liveFallbacks > 0
+            ? "AI utama lagi kena limit. Cadangan dipakai otomatis sementara."
+            : "AI utama lagi kena limit dan belum ada cadangan yang siap."
       : liveFallbacks > 0
         ? `Aktif, dengan ${liveFallbacks} cadangan siap.`
         : fallbacks.length > 0

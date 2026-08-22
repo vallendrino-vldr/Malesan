@@ -13,20 +13,24 @@ import { ConfigEditor, type ConfigRow } from "./ConfigEditor";
  */
 export default async function AdminConfigPage() {
   const db = createServiceRoleClient();
-  const [{ data }, { data: models }] = await Promise.all([
-    db.from("app_config").select("key, value, description, updated_at").order("key"),
-    // Only the Gemini pool's ids: this section configures the legacy fallback,
-    // which is a Gemini-only path. Offering a DeepSeek id here would be a
-    // choice that cannot work.
-    db
-      .from("ai_models")
-      .select("model_id, ai_providers!inner(protocol)")
-      .eq("ai_providers.protocol", "gemini"),
-  ]);
+  const { data } = await db
+    .from("app_config")
+    .select("key, value, description, updated_at")
+    .order("key");
 
-  const geminiModels = [
-    ...new Set(((models ?? []) as { model_id: string }[]).map((m) => m.model_id)),
-  ].sort();
+  // Compatibility-only AI fields remain in app_config for emergency fallback,
+  // but are no longer a second control panel and never need to reach the
+  // browser. The Brain, gateway registry, and model pricing are managed from
+  // /admin/ai.
+  const hiddenLegacyAiKeys = new Set([
+    "ai_provider",
+    "ai_base_url",
+    "ai_api_key",
+    "model_free",
+    "model_pro",
+    "price_in_per_mtok",
+    "price_out_per_mtok",
+  ]);
 
   return (
     <div className="space-y-5">
@@ -42,17 +46,8 @@ export default async function AdminConfigPage() {
         </p>
       </header>
 
-      {/* The key never reaches the browser. The editor only needs to know
-          whether one is set, so send a boolean-ish placeholder instead of the
-          secret — a value rendered into the page is a value that leaks through
-          a screenshot or a shared screen. */}
       <ConfigEditor
-        rows={((data as ConfigRow[]) ?? []).map((r) =>
-          r.key === "ai_api_key"
-            ? { ...r, value: String(r.value ?? "").length > 0 ? "set" : "" }
-            : r,
-        )}
-        geminiModels={geminiModels}
+        rows={((data as ConfigRow[]) ?? []).filter((r) => !hiddenLegacyAiKeys.has(r.key))}
       />
     </div>
   );

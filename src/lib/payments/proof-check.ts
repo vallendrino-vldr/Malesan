@@ -1,6 +1,6 @@
 import "server-only";
 
-import { parseJson } from "@/lib/gemini/client";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { getPaymentConfig } from "@/lib/config";
 import { createServiceRoleClient } from "@/lib/supabase/server";
@@ -170,7 +170,7 @@ export async function checkProof(opts: {
       budgetMs: 48_000,
     });
 
-    const reading = parseJson<ProofReading>(raw);
+    const reading = parseAIJson<ProofReading>(raw);
     const pay = await getPaymentConfig();
 
     // ---- rules ----

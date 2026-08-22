@@ -56,7 +56,11 @@ function asModel(r: Record<string, unknown>): ModelRow {
     ...(r as unknown as ModelRow),
     capabilities: ((r.capabilities as string[] | null) ?? []) as Capability[],
     pricing_mode:
-      r.pricing_mode === "prepaid_package" ? "prepaid_package" : "direct_usd",
+      r.pricing_mode === "prepaid_package"
+        ? "prepaid_package"
+        : r.pricing_mode === "free_quota"
+          ? "free_quota"
+          : "direct_usd",
     // Postgres numerics arrive as strings; left as-is they silently poison every
     // arithmetic they touch (string + number is concatenation).
     package_price_idr:

@@ -56,11 +56,9 @@ export function ModelRegistry({
   usage: Record<string, number>;
   usdToIdr: number;
 }) {
-  const [open, setOpen] = useState<string | null>(
-    // Open the gateway that has active models, so the screen lands on something
-    // useful rather than a wall of closed rows.
-    providers.find((p) => p.active_model_count > 0)?.id ?? providers[0]?.id ?? null,
-  );
+  // A scan can add dozens of rows. Start fully collapsed so the owner sees one
+  // line per gateway and opens only the provider they came to manage.
+  const [open, setOpen] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, startTransition] = useTransition();

@@ -4,7 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { verifyAdmin, audit } from "@/lib/admin/guard";
 import { encryptSecret, maskKey, decryptSecret } from "@/lib/gemini/crypto";
-import { invalidateAiCache, getFleet, resolveProviderKey } from "@/lib/ai/registry";
+import {
+  invalidateAiCache,
+  getFleet,
+  markProviderResult,
+  resolveProviderKey,
+} from "@/lib/ai/registry";
 import { scanModels, testProvider } from "@/lib/ai/discovery";
 import { checkBalance, balanceTrend } from "@/lib/ai/balance";
 import { runOnModel } from "@/lib/ai/engine";
@@ -54,7 +59,11 @@ const REVALIDATE = [
 const revalidateAll = () => REVALIDATE.forEach((p) => revalidatePath(p));
 
 /** Rows -> the browser-safe view. The one place the key is stripped. */
-function toView(p: ProviderRow, models: ModelRow[]): ProviderView {
+function toView(
+  p: ProviderRow,
+  models: ModelRow[],
+  health: ProviderView["health_24h"],
+): ProviderView {
   const mine = models.filter((m) => m.provider_id === p.id);
   let mask: string | null = null;
   if (p.api_key_encrypted) {
@@ -90,6 +99,7 @@ function toView(p: ProviderRow, models: ModelRow[]): ProviderView {
     key_mask: mask,
     model_count: mine.length,
     active_model_count: mine.filter((m) => m.is_active).length,
+    health_24h: health,
   };
 }
 
@@ -100,7 +110,46 @@ function toView(p: ProviderRow, models: ModelRow[]): ProviderView {
 export async function listProviders(): Promise<ProviderView[]> {
   await verifyAdmin();
   const { providers, models } = await getFleet();
-  return providers.map((p) => toView(p, models));
+  const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+  const { data: rows, error } = await createServiceRoleClient()
+    .from("ai_usage_log")
+    .select("provider_slug, status, latency_ms")
+    .gte("created_at", since)
+    .limit(5_000);
+
+  if (error) console.error("provider health summary failed", error);
+
+  const bySlug = new Map<
+    string,
+    { attempts: number; successes: number; latencyTotal: number; latencyCount: number }
+  >();
+  for (const row of rows ?? []) {
+    const slug = row.provider_slug;
+    if (!slug) continue;
+    const h = bySlug.get(slug) ?? {
+      attempts: 0,
+      successes: 0,
+      latencyTotal: 0,
+      latencyCount: 0,
+    };
+    h.attempts++;
+    if (row.status === "ok") h.successes++;
+    if (row.latency_ms != null) {
+      h.latencyTotal += Number(row.latency_ms);
+      h.latencyCount++;
+    }
+    bySlug.set(slug, h);
+  }
+
+  return providers.map((p) => {
+    const h = bySlug.get(p.slug);
+    return toView(p, models, {
+      attempts: h?.attempts ?? 0,
+      successes: h?.successes ?? 0,
+      success_rate: h?.attempts ? (h.successes / h.attempts) * 100 : null,
+      avg_latency_ms: h?.latencyCount ? Math.round(h.latencyTotal / h.latencyCount) : null,
+    });
+  });
 }
 
 export type ProviderInput = {
@@ -304,30 +353,15 @@ export async function testProviderConnection(
   if (!provider) throw new Error("Providernya gak ketemu.");
 
   const result = await testProvider(provider);
-  const now = new Date().toISOString();
-  const db = createServiceRoleClient();
-
-  if (result.ok) {
-    await db
-      .from("ai_providers")
-      .update({
-        last_checked_at: now,
-        last_ok_at: now,
-        last_error: null,
-        last_latency_ms: result.latencyMs,
-        consecutive_failures: 0,
-        updated_at: now,
-      })
-      .eq("id", id);
-  } else {
-    await db
-      .from("ai_providers")
-      .update({ last_checked_at: now, last_error: result.error.slice(0, 500), updated_at: now })
-      .eq("id", id);
-  }
+  await markProviderResult(
+    id,
+    result.ok,
+    result.ok
+      ? { latencyMs: result.latencyMs }
+      : { error: result.error },
+  );
 
   await audit(adminId, "ai.provider.test", id, "ai_provider", { ok: result.ok });
-  invalidateAiCache();
   revalidateAll();
 
   return result.ok
@@ -435,7 +469,7 @@ export type ModelPatch = {
   isActive?: boolean;
   supportsStreaming?: boolean;
   supportsSchema?: boolean;
-  /** "prepaid_package" = bought N tokens for Rp X. "direct_usd" = per-Mtok rates. */
+  /** Prepaid rupiah package, direct USD rate, or a known-free provider quota. */
   pricingMode?: PricingMode;
   packagePriceIdr?: number | null;
   packageTokens?: number | null;

@@ -73,6 +73,13 @@ export type ProviderView = Omit<ProviderRow, "api_key_encrypted"> & {
   key_mask: string | null;
   model_count: number;
   active_model_count: number;
+  /** Rolling runtime evidence, not the result of one manual connection test. */
+  health_24h: {
+    attempts: number;
+    successes: number;
+    success_rate: number | null;
+    avg_latency_ms: number | null;
+  };
 };
 
 /**
@@ -153,7 +160,7 @@ export type AttemptOutcome = {
 export type FeatureSpec = {
   key: string;
   label: string;
-  /** Capabilities a model must have to serve this feature at all. */
+  /** Hard interoperability requirements, not quality preferences. */
   requires: Capability[];
   /** What matters most for this job when several models qualify. */
   suggested: RoutePrefer;
@@ -213,9 +220,9 @@ export const AI_FEATURES: FeatureSpec[] = [
   {
     key: "vibe",
     label: "Vibe Coding Kit",
-    requires: ["text", "reasoning"],
+    requires: ["text"],
     suggested: "quality",
-    note: "Enam dokumen sekaligus. Paling mahal di produk — butuh model yang bisa nalar panjang.",
+    note: "Enam dokumen sekaligus. Paling mahal di produk — kualitas tetap diprioritaskan tanpa melewati Otak AI hanya karena label model belum lengkap.",
   },
   {
     key: "vibe_questions",
@@ -283,9 +290,9 @@ export const AI_FEATURES: FeatureSpec[] = [
   {
     key: "admin_assistant",
     label: "Asisten admin",
-    requires: ["text", "reasoning"],
+    requires: ["text"],
     suggested: "quality",
-    note: "Baca kondisi platform dan kasih saran. Cuma dipakai owner.",
+    note: "Baca kondisi platform dan kasih saran. Cuma dipakai owner; reasoning adalah preferensi kualitas, bukan syarat yang boleh membypass Otak AI.",
   },
 ];
 

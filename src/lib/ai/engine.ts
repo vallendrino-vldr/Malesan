@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { generateDetailed, generateStream, type Tier } from "@/lib/gemini/client";
 import type { InlineImage } from "@/lib/gemini/providers";
@@ -117,7 +118,7 @@ const DEFAULT_BUDGET_MS = 45_000;
  * Roughly one full generation on a healthy gateway, so failing over is still
  * worth doing rather than guaranteeing the backup runs out of road too.
  */
-const RESERVE_FOR_NEXT_MS = 18_000;
+const RESERVE_FOR_NEXT_MS = 22_000;
 
 /**
  * Never cut a candidate off sooner than this, however tight the budget.
@@ -180,10 +181,19 @@ function budgetFor(
   startedAt: number,
   budgetMs: number,
 ) {
-  if (isLast) return { maxRounds: undefined, signal: parent };
+  const remaining = Math.max(1, budgetMs - (Date.now() - startedAt));
 
-  const remaining = budgetMs - (Date.now() - startedAt);
-  const ceiling = Math.max(MIN_ATTEMPT_MS, remaining - RESERVE_FOR_NEXT_MS);
+  // The final candidate used to receive the caller signal unchanged. When the
+  // caller had no signal (cron and a few free helpers), `budgetMs` therefore
+  // stopped being a budget at all and the provider could run until Vercel killed
+  // the function. Keep the full retry ladder, but keep it inside the same wall
+  // clock as every other candidate so the route still has time to refund.
+  if (isLast) {
+    return { maxRounds: undefined, signal: attemptSignal(parent, remaining) };
+  }
+
+  const preferred = Math.max(MIN_ATTEMPT_MS, remaining - RESERVE_FOR_NEXT_MS);
+  const ceiling = Math.min(remaining, preferred);
   return { maxRounds: 0, signal: attemptSignal(parent, ceiling) };
 }
 
@@ -281,6 +291,11 @@ function callArgsFor(
  * Throws only when every candidate has failed. The caller refunds on that throw.
  */
 export async function runAI(args: RunArgs): Promise<RunResult> {
+  // Paid calls already carry the immutable credit spend ref. Free/admin/cron
+  // calls did not, which made their attempts impossible to correlate as one
+  // request in the usage log. Reuse the spend ref when present; otherwise mint
+  // a server-side id. This does not touch the credit ledger.
+  const requestRef = args.refId ?? randomUUID();
   const usdToIdr = await getUsdToIdr();
   const tier = args.tier ?? "free";
 
@@ -311,7 +326,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
       latencyMs,
       status: "ok",
       attempt: 1,
-      refId: args.refId,
+      refId: requestRef,
     });
 
     return {
@@ -359,7 +374,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
         latencyMs,
         status: "ok",
         attempt: 1,
-        refId: args.refId,
+        refId: requestRef,
       });
 
       return {
@@ -386,7 +401,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
         status: "error",
         attempt: 1,
         errorMessage: errText(e),
-        refId: args.refId,
+        refId: requestRef,
       });
       throw e;
     }
@@ -429,7 +444,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
           latencyMs,
           status: "ok",
           attempt: i + 1,
-          refId: args.refId,
+          refId: requestRef,
         }),
         markProviderResult(c.provider.id, true, { latencyMs }),
       ]);
@@ -466,7 +481,7 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
           status: isLast ? "error" : "fallback",
           attempt: i + 1,
           errorMessage: errText(e),
-          refId: args.refId,
+          refId: requestRef,
         }),
         markProviderResult(c.provider.id, false, { latencyMs, error: errText(e) }),
       ]);
@@ -491,6 +506,7 @@ export async function runOnModel(
   candidate: Candidate,
   args: RunArgs,
 ): Promise<RunResult> {
+  const requestRef = args.refId ?? randomUUID();
   const usdToIdr = await getUsdToIdr();
   const started = Date.now();
 
@@ -512,7 +528,7 @@ export async function runOnModel(
       latencyMs,
       status: "ok",
       attempt: 1,
-      refId: args.refId,
+      refId: requestRef,
     });
 
     return {
@@ -540,7 +556,7 @@ export async function runOnModel(
       status: "error",
       attempt: 1,
       errorMessage: errText(e),
-      refId: args.refId,
+      refId: requestRef,
     });
     throw e;
   }
@@ -566,6 +582,7 @@ export async function* runAIStream(
   args: RunArgs,
   onMeta?: (meta: StreamMeta) => void,
 ): AsyncGenerator<string, void, unknown> {
+  const requestRef = args.refId ?? randomUUID();
   const usdToIdr = await getUsdToIdr();
   const tier = args.tier ?? "free";
 
@@ -623,7 +640,7 @@ export async function* runAIStream(
           : failure
             ? errText(failure)
             : "stream ended before completion (client disconnected or aborted)",
-        refId: args.refId,
+        refId: requestRef,
       });
 
       onMeta?.({
@@ -694,6 +711,7 @@ export async function* runAIStream(
       first = await iterator.next();
     } catch (e) {
       lastError = e;
+      const latencyMs = Date.now() - started;
       await Promise.all([
         logAttempt({
           feature: args.feature,
@@ -704,13 +722,13 @@ export async function* runAIStream(
           usage: NO_USAGE,
           costIdr: 0,
           creditsCharged: 0,
-          latencyMs: Date.now() - started,
+          latencyMs,
           status: isLast ? "error" : "fallback",
           attempt: i + 1,
           errorMessage: errText(e),
-          refId: args.refId,
+          refId: requestRef,
         }),
-        markProviderResult(c.provider.id, false, { error: errText(e) }),
+        markProviderResult(c.provider.id, false, { latencyMs, error: errText(e) }),
       ]);
       continue;
     }
@@ -745,7 +763,7 @@ export async function* runAIStream(
         status: failed ? "error" : "ok",
         attempt: i + 1,
         errorMessage: failed ? errText(failed) : undefined,
-        refId: args.refId,
+        refId: requestRef,
       }),
       markProviderResult(c.provider.id, !failed, {
         latencyMs,

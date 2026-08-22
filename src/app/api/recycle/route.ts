@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { spendCredits, refundCredits } from "@/lib/credits";
-import { getRecycleCost, getModel } from "@/lib/config";
-import { parseJson, GeminiError } from "@/lib/gemini/client";
+import { getRecycleCost } from "@/lib/config";
+import { parseAIJson } from "@/lib/ai/json";
 import { runAI } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 
@@ -93,11 +93,10 @@ export async function POST(req: NextRequest) {
   const prompt = buildPrompt(card.title ?? "", oldContent.slice(0, 4000));
 
   try {
-    const model = await getModel("pro");
     const { text: raw } = await runAI({
       feature: "recycle",
       prompt,
-      legacyModel: model,
+      tier: "pro",
       schema: ANGLES_SCHEMA as unknown as Record<string, unknown>,
       userId: user.id,
       refId: ref,
@@ -105,11 +104,11 @@ export async function POST(req: NextRequest) {
       signal: AbortSignal.timeout(50_000),
       budgetMs: 48_000,
     });
-    const parsed = parseJson<{ angles?: Angle[] }>(raw);
+    const parsed = parseAIJson<{ angles?: Angle[] }>(raw);
     const angles = (parsed.angles ?? [])
       .filter((a) => a && a.angle && a.hook)
       .slice(0, 3);
-    if (!angles.length) throw new GeminiError("Gak ada angle kebentuk.", 502, false);
+    if (!angles.length) throw new Error("AI returned empty angles");
     return json({ angles, creditsSpent: cost }, 200);
   } catch (e) {
     if (ref) await refundCredits(user.id, ref, "content_recycle_failed");
