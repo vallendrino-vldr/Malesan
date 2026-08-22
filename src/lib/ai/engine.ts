@@ -61,6 +61,15 @@ export type RunArgs = {
    * every time the owner tests their own product.
    */
   isAdmin?: boolean;
+  /**
+   * Total wall-clock the whole chain may use, shared across candidates.
+   *
+   * The per-candidate ceiling is derived from what is LEFT of this, not from a
+   * fixed number — a flat ceiling cannot know how long the real work takes, and
+   * the one that was here killed a healthy primary at 15s when its normal run
+   * is 14.9s. Set it a little under the route's own deadline.
+   */
+  budgetMs?: number;
 };
 
 export type Usage = { input: number; output: number };
@@ -95,20 +104,39 @@ async function billableCredits(args: RunArgs): Promise<number> {
 }
 
 /**
- * How long a non-final candidate gets before we give up on it and try the next
- * gateway.
+ * The default total time a routed call may take, when the caller does not say.
  *
- * The whole point of a fallback chain is that a sick gateway costs you seconds,
- * not the request. Without a per-attempt ceiling a gateway that accepts the
- * connection and then hangs holds the entire 52s budget on its own, and the
- * backup that would have answered is never called — the chain exists on paper
- * and does nothing in the incident it was built for.
- *
- * Fifteen seconds is comfortably above a healthy first-token time (measured
- * under a second on the free tier) and well under the function budget, so two
- * failed gateways still leave room for a third to answer.
+ * Slightly under the 52s the streaming routes allow, so the engine gives up
+ * before the route's own deadline rather than racing it.
  */
-const FAILOVER_TIMEOUT_MS = 15_000;
+const DEFAULT_BUDGET_MS = 45_000;
+
+/**
+ * Time held back for the next candidate when the current one is cut short.
+ *
+ * Roughly one full generation on a healthy gateway, so failing over is still
+ * worth doing rather than guaranteeing the backup runs out of road too.
+ */
+const RESERVE_FOR_NEXT_MS = 18_000;
+
+/**
+ * Never cut a candidate off sooner than this, however tight the budget.
+ *
+ * THIS CONSTANT EXISTS BECAUSE OF A REAL BUG. The first version used a flat 15s
+ * ceiling for every non-final candidate. A healthy DeepSeek generation on this
+ * product measures ~14.9s — so the primary was being killed a fraction of a
+ * second before it would have succeeded, the request fell through to a slower
+ * backup, and the whole call then blew the outer deadline. Observed in the
+ * usage log as `#1 deepseek [fallback] 15006ms` immediately after a successful
+ * `#1 deepseek [ok] 14861ms`.
+ *
+ * A fixed ceiling cannot know how long this product's real work takes. The
+ * budget below is proportional instead: the primary keeps everything except a
+ * reserve, which is the right shape — the first candidate is the one we expect
+ * to succeed, and cutting it short to protect a fallback we hope not to need is
+ * backwards.
+ */
+const MIN_ATTEMPT_MS = 25_000;
 
 /**
  * A signal that fires when either the caller gives up or this attempt overruns.
@@ -134,17 +162,29 @@ function attemptSignal(
  * The retry budget for one candidate in a chain.
  *
  * Every candidate except the last gets a single pass over its keys with no
- * backoff sleeps and a hard time ceiling, so failing over is fast. The last
- * candidate gets the full ladder, because at that point there is nowhere else
- * to go and patience is the only remaining strategy.
+ * backoff sleeps, so a gateway that is plainly broken (401, 429, connection
+ * refused) is abandoned in well under a second. The last candidate gets the full
+ * ladder, because at that point there is nowhere else to go and patience is the
+ * only remaining strategy.
  *
- * A chain of exactly one candidate is therefore identical to the old behaviour,
- * which is what keeps this from being a silent change to every routed feature.
+ * The time ceiling on a non-final candidate is what remains of the budget minus
+ * a reserve for the next one, floored at MIN_ATTEMPT_MS — never a flat number.
+ * See MIN_ATTEMPT_MS for the bug that taught this.
+ *
+ * A chain of exactly one candidate is identical to the pre-existing behaviour,
+ * which is what keeps this from silently changing every routed feature.
  */
-function budgetFor(isLast: boolean, parent: AbortSignal | undefined) {
-  return isLast
-    ? { maxRounds: undefined, signal: parent }
-    : { maxRounds: 0, signal: attemptSignal(parent, FAILOVER_TIMEOUT_MS) };
+function budgetFor(
+  isLast: boolean,
+  parent: AbortSignal | undefined,
+  startedAt: number,
+  budgetMs: number,
+) {
+  if (isLast) return { maxRounds: undefined, signal: parent };
+
+  const remaining = budgetMs - (Date.now() - startedAt);
+  const ceiling = Math.max(MIN_ATTEMPT_MS, remaining - RESERVE_FOR_NEXT_MS);
+  return { maxRounds: 0, signal: attemptSignal(parent, ceiling) };
 }
 
 /**
@@ -354,6 +394,9 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
 
   // ── The fleet ──
   let lastError: unknown = new Error("Gak ada provider yang bisa dipakai.");
+  // When the chain began, so each candidate's ceiling is what is LEFT of the
+  // shared budget rather than a constant that ignores the clock.
+  const chainStarted = Date.now();
 
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
@@ -362,7 +405,12 @@ export async function runAI(args: RunArgs): Promise<RunResult> {
 
     try {
       const res = await generateDetailed(
-        callArgsFor(c, args, undefined, budgetFor(isLast, args.signal)),
+        callArgsFor(
+          c,
+          args,
+          undefined,
+          budgetFor(isLast, args.signal, chainStarted, args.budgetMs ?? DEFAULT_BUDGET_MS),
+        ),
       );
       const latencyMs = Date.now() - started;
       const usage = { input: res.inputTokens, output: res.outputTokens };
@@ -604,6 +652,8 @@ export async function* runAIStream(
   }
 
   let lastError: unknown = new Error("Gak ada provider yang bisa dipakai.");
+  // Shared clock for the whole chain — see budgetFor.
+  const chainStarted = Date.now();
 
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
@@ -625,7 +675,12 @@ export async function* runAIStream(
       // decrypted. Constructed outside, that throw escapes the loop and one
       // misconfigured gateway takes down the whole chain — the opposite of what
       // a fallback list is for. A broken gateway must be skipped, not fatal.
-      const budget = budgetFor(isLast, args.signal);
+        const budget = budgetFor(
+        isLast,
+        args.signal,
+        chainStarted,
+        args.budgetMs ?? DEFAULT_BUDGET_MS,
+      );
       iterator = c.model.supports_streaming
         ? generateStream(callArgsFor(c, args, capture, budget))[Symbol.asyncIterator]()
         : (async function* () {

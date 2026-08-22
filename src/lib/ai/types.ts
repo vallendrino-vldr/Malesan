@@ -232,6 +232,20 @@ export const AI_FEATURES: FeatureSpec[] = [
     note: "Ghost text pas ngetik. Kalau telat dua detik, udah keburu diketik sendiri — kecepatan mutlak.",
   },
   {
+    key: "react_netizen",
+    label: "Simulasi komentar netizen",
+    requires: ["text", "fast"],
+    suggested: "fast",
+    note: "Lima komentar pendek. Dipakai sambil nulis, jadi harus balik cepet.",
+  },
+  {
+    key: "react_roast",
+    label: "Roast draft",
+    requires: ["text", "fast"],
+    suggested: "fast",
+    note: "Kritik tajam ~180 kata. Pendek, tapi butuh model yang bisa nilai tulisan.",
+  },
+  {
     key: "recycle",
     label: "Smart Recycle",
     requires: ["text"],

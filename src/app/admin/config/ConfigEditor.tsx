@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { setConfig, uploadQrisImage } from "@/app/actions/admin";
 
@@ -37,7 +38,14 @@ const COST_ORDER = [
   "video",
 ];
 
-export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
+export function ConfigEditor({
+  rows,
+  geminiModels = [],
+}: {
+  rows: ConfigRow[];
+  /** Registered Gemini model ids, so the fallback tier is picked, never typed. */
+  geminiModels?: string[];
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -89,27 +97,61 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
         </section>
       )}
 
-      {/* ---- models ---- */}
-      <section>
-        <h2 className="eyebrow mb-2 text-muted">Model per tier</h2>
-        <div className="space-y-2">
+      {/* ---- models: the legacy fallback, demoted and made un-typeable ----
+
+          This used to be the front door — two text boxes labelled "Model per
+          tier" where the owner typed a model id by hand. It competed with the
+          Brain for the same job and lost in the worst way: the Brain decided
+          what actually ran, while this screen still showed Gemini, which is
+          exactly the "udah ganti tapi masih Gemini" confusion.
+
+          It is now what it truly is: the emergency floor used only when no Brain
+          and no override apply. Free text is gone — a typo here returned 404 on
+          every generation, and there is no reason to allow one when the set of
+          valid answers is known. */}
+      <details className="rounded-xl border border-hairline px-4 py-3">
+        <summary className="cursor-pointer text-mini font-semibold text-ink">
+          Model cadangan terakhir (jarang dipakai)
+        </summary>
+        <p className="mt-2 text-micro leading-relaxed text-muted">
+          Yang nentuin AI mana yang jalan adalah{" "}
+          <Link href="/admin/ai" className="text-ember-lo underline-offset-2 hover:underline">
+            Otak AI
+          </Link>
+          . Setelan di bawah cuma kepakai kalau Otak AI belum diatur atau
+          modelnya lagi mati — anggap aja jaring pengaman.
+        </p>
+        <div className="mt-3 space-y-2">
           {(["model_free", "model_pro"] as const).map((k) => (
-            <TextRow
-              key={k}
-              label={k === "model_free" ? "Free" : "Pro"}
-              hint={byKey[k]?.description ?? undefined}
-              initial={String(byKey[k]?.value ?? "")}
-              busy={busy === k}
-              saved={ok === k}
-              onSave={(v) => save(k, v)}
-            />
+            <label key={k} className="block">
+              <span className="text-micro text-muted">
+                {k === "model_free" ? "Free" : "Pro"}
+              </span>
+              <select
+                defaultValue={String(byKey[k]?.value ?? "")}
+                disabled={busy === k}
+                onChange={(e) => save(k, e.target.value)}
+                className="mt-1 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-mini text-ink"
+              >
+                {/* Whatever is stored stays selectable even if it is no longer
+                    in the registry, so opening this panel cannot silently
+                    rewrite a working configuration. */}
+                {!geminiModels.some((m) => m === String(byKey[k]?.value ?? "")) && (
+                  <option value={String(byKey[k]?.value ?? "")}>
+                    {String(byKey[k]?.value ?? "(kosong)")} — sekarang
+                  </option>
+                )}
+                {geminiModels.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              {ok === k && <span className="text-micro text-ember-lo">Kesimpen.</span>}
+            </label>
           ))}
         </div>
-        <p className="mt-2 text-micro leading-relaxed text-muted">
-          Salah nulis id model bikin Gemini balikin 404 dan semua generate gagal.
-          Cek dulu id-nya bener sebelum simpan.
-        </p>
-      </section>
+      </details>
 
       {/* ---- shadow prompt ---- */}
       {byKey["shadow_prompt"] && (

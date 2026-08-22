@@ -1,5 +1,7 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { brainOverview } from "@/lib/ai/brain";
+import { getFleet } from "@/lib/ai/registry";
 
 /**
  * One read of everything an operator would otherwise open seven tabs to see.
@@ -94,6 +96,16 @@ export async function buildSnapshot(): Promise<Snapshot> {
     .map(([message, count]) => ({ message, count }));
 
   const conf = Object.fromEntries((cfg.data ?? []).map((r) => [r.key, r.value]));
+
+  // What the product is ACTUALLY running on right now. Uses the lib directly
+  // rather than the server action — this is called from a route that has
+  // already verified the admin, and a lib should not depend on an endpoint.
+  const { routes } = await getFleet();
+  const brain = await brainOverview(
+    routes.filter((r) => r.is_active).map((r) => r.feature),
+  );
+  const brainModel = brain.primary?.active ? brain.primary.label : null;
+  const brainProvider = brain.primary?.active ? brain.primary.provider : null;
   const vouchersAll = vouchers.data ?? [];
 
   return {
@@ -136,8 +148,13 @@ export async function buildSnapshot(): Promise<Snapshot> {
       newestCapturedAt: trends.data?.[0]?.captured_at ?? null,
     },
     config: {
-      model: typeof conf.model_pro === "string" ? conf.model_pro : null,
-      provider: typeof conf.ai_provider === "string" ? conf.ai_provider : null,
+      // The Brain, not model_pro. Reporting the legacy tier setting meant the
+      // assistant told the owner they were running Gemini while the Brain had
+      // the product on DeepSeek — advice built on a stale fact is worse than no
+      // advice. Falls back to the tier value only when no Brain is configured,
+      // which is exactly when the tier value is the truth.
+      model: brainModel ?? (typeof conf.model_pro === "string" ? conf.model_pro : null),
+      provider: brainProvider ?? (typeof conf.ai_provider === "string" ? conf.ai_provider : null),
       bankConfigured: Boolean(conf.bank_account_number),
     },
   };

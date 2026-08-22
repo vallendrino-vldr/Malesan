@@ -2,7 +2,9 @@ import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { getReactionCost } from "@/lib/config";
-import { groqChat, parseGroqJson, GroqError } from "@/lib/groq/llm";
+import { parseGroqJson } from "@/lib/groq/llm";
+import { runAI } from "@/lib/ai/engine";
+import { userFacingError } from "@/lib/ai/errors";
 
 /**
  * Instant reactions to a draft, powered by Groq (Llama) so they come back in
@@ -68,37 +70,41 @@ export async function POST(req: NextRequest) {
 
   try {
     if (kind === "netizen") {
-      const raw = await groqChat({
-        json: true,
-        temperature: 1,
-        messages: [
-          { role: "system", content: NETIZEN_SYSTEM },
-          { role: "user", content: `Draft konten:\n\n"""${draft}"""\n\nBalas dengan JSON persis format yang diminta.` },
-        ],
+      // Through the engine like every other AI call, so this obeys the Brain,
+      // falls back, and records its cost. It used to talk to Groq directly,
+      // which meant switching the product's AI left these two features behind —
+      // the same class of bug as the nine routes fixed before it.
+      const { text: raw } = await runAI({
+        feature: "react_netizen",
+        prompt: `${NETIZEN_SYSTEM}\n\nDraft konten:\n\n"""${draft}"""\n\nBalas dengan JSON persis format yang diminta.`,
+        userId: user.id,
+        refId: ref,
+        creditsCharged: cost,
+        signal: AbortSignal.timeout(25_000),
       });
       const parsed = parseGroqJson<{ comments?: NetizenComment[] }>(raw);
       const comments = (parsed.comments ?? [])
         .filter((c) => c && typeof c.comment === "string" && c.comment.trim())
         .slice(0, 5);
-      if (!comments.length) throw new GroqError("Gak ada komentar kebentuk. Coba lagi.", 502, false);
+      if (!comments.length) throw new Error("Gak ada komentar kebentuk.");
       return json({ kind, comments, creditsSpent: cost }, 200);
     }
 
-    const roast = await groqChat({
-      temperature: 0.9,
-      maxTokens: 700,
-      messages: [
-        { role: "system", content: ROAST_SYSTEM },
-        { role: "user", content: `Draft yang mau di-roast:\n\n"""${draft}"""` },
-      ],
+    const { text: roast } = await runAI({
+      feature: "react_roast",
+      prompt: `${ROAST_SYSTEM}\n\nDraft yang mau di-roast:\n\n"""${draft}"""`,
+      userId: user.id,
+      refId: ref,
+      creditsCharged: cost,
+      signal: AbortSignal.timeout(25_000),
     });
     return json({ kind, roast: roast.trim(), creditsSpent: cost }, 200);
   } catch (e) {
     // The AI failed after we charged — hand the credit back.
     if (ref) await refundCredits(user.id, ref, `react_${kind}_failed`);
-    const status = e instanceof GroqError ? (e.status === 503 ? 503 : 502) : 502;
-    const message = e instanceof GroqError ? e.message : "Gagal manggil AI. Coba lagi bentar.";
-    return json({ error: message }, status);
+    console.error(`react:${kind} failed`, e);
+    const friendly = userFacingError(e);
+    return json({ error: friendly.message }, friendly.retryable ? 503 : 502);
   }
 }
 

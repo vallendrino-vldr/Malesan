@@ -35,7 +35,13 @@ export function PwaProvider() {
       // for up to 24 hours, so the *old worker keeps running* and never even
       // learns a new build exists — the visibility check below was calling
       // update() against a cached copy and always concluding nothing changed.
-      .register("/sw.js", { updateViaCache: "none" })
+      // The build stamp is what makes a deploy detectable at all: the browser
+      // decides a worker is new by comparing the script, and a static sw.js is
+      // byte-identical every time. A changing URL is the standard way to say
+      // "this is a different worker". See next.config.ts.
+      .register(`/sw.js?v=${process.env.NEXT_PUBLIC_BUILD_ID ?? "dev"}`, {
+        updateViaCache: "none",
+      })
       .then((r) => {
         reg = r;
         if (r.waiting) setUpdateReady(true);

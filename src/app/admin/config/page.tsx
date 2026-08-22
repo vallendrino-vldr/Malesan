@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { ConfigEditor, type ConfigRow } from "./ConfigEditor";
 
@@ -11,18 +12,33 @@ import { ConfigEditor, type ConfigRow } from "./ConfigEditor";
  * hardcoded values as fallbacks if the table is unreachable.
  */
 export default async function AdminConfigPage() {
-  const { data } = await createServiceRoleClient()
-    .from("app_config")
-    .select("key, value, description, updated_at")
-    .order("key");
+  const db = createServiceRoleClient();
+  const [{ data }, { data: models }] = await Promise.all([
+    db.from("app_config").select("key, value, description, updated_at").order("key"),
+    // Only the Gemini pool's ids: this section configures the legacy fallback,
+    // which is a Gemini-only path. Offering a DeepSeek id here would be a
+    // choice that cannot work.
+    db
+      .from("ai_models")
+      .select("model_id, ai_providers!inner(protocol)")
+      .eq("ai_providers.protocol", "gemini"),
+  ]);
+
+  const geminiModels = [
+    ...new Set(((models ?? []) as { model_id: string }[]).map((m) => m.model_id)),
+  ].sort();
 
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-display text-xl font-bold text-ink">Otak AI</h1>
+        <h1 className="font-display text-xl font-bold text-ink">Setelan lanjutan</h1>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Model, perintah bayangan, harga kredit, dan saklar tiap modul. Berubah
-          langsung — gak perlu deploy ulang.
+          Perintah bayangan, harga kredit, saklar modul dan pembayaran. Buat
+          milih AI-nya, buka{" "}
+          <Link href="/admin/ai" className="text-ember-lo underline-offset-2 hover:underline">
+            Otak AI
+          </Link>
+          .
         </p>
       </header>
 
@@ -36,6 +52,7 @@ export default async function AdminConfigPage() {
             ? { ...r, value: String(r.value ?? "").length > 0 ? "set" : "" }
             : r,
         )}
+        geminiModels={geminiModels}
       />
     </div>
   );

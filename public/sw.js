@@ -22,7 +22,25 @@
  * is exactly what the offline fallback would serve. Renaming the cache is what
  * makes the switch a clean one.
  */
-const CACHE = "malesan-v2";
+/**
+ * The cache is named after the build that registered this worker.
+ *
+ * PwaProvider registers `/sw.js?v=<build id>`, so the stamp arrives on this
+ * script's own URL. Two things follow from that, and both were broken before:
+ *
+ *  1. A new deployment changes the worker's URL, which is what makes the browser
+ *     treat it as a NEW worker. Previously sw.js was byte-identical after every
+ *     deploy, so no update was ever detected and the update banner could not
+ *     fire — an installed app only got new code when a navigation happened to
+ *     fetch fresh HTML.
+ *  2. `activate` deletes every cache that is not this build's, so the hashed
+ *     assets of old builds are purged instead of accumulating forever.
+ *
+ * Falls back to a fixed name when there is no stamp, so a direct hit on /sw.js
+ * still works.
+ */
+const BUILD = new URL(self.location.href).searchParams.get("v") || "v2";
+const CACHE = `malesan-${BUILD}`;
 const OFFLINE_URL = "/";
 
 /**

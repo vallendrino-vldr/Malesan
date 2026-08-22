@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { getCost, isModuleEnabled, getModel, getShadowPrompt } from "@/lib/config";
-import { runAIStream, type StreamMeta } from "@/lib/ai/engine";
+import { runAI, runAIStream, type StreamMeta } from "@/lib/ai/engine";
+import { userFacingError } from "@/lib/ai/errors";
 import { decryptSecret } from "@/lib/gemini/crypto";
 import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
@@ -332,6 +333,10 @@ export async function POST(request: NextRequest) {
               // Give up ~8s before the 60s hard timeout so the catch below runs and the
               // credit is refunded, rather than the function being killed mid-stream.
               signal: AbortSignal.timeout(52_000),
+              // The engine splits this across candidates: the primary keeps
+              // everything except a reserve for one fallback. Slightly under the
+              // signal above so the engine gives up first and the refund runs.
+              budgetMs: 50_000,
             },
             (m) => {
               meta = m;
@@ -346,23 +351,79 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          // Parse strict JSON with repair retry omitted here as we're relying on responseSchema.
-          // If parse fails, we'll catch and refund.
-          let cleanedResponse = fullResponse.trim();
-          if (cleanedResponse.startsWith("```json")) {
-            cleanedResponse = cleanedResponse.replace(/^```json\n?/, "").replace(/\n?```$/, "");
-          } else if (cleanedResponse.startsWith("```")) {
-            cleanedResponse = cleanedResponse.replace(/^```\n?/, "").replace(/\n?```$/, "");
-          }
-          parsed = JSON.parse(cleanedResponse);
+          // Parse strict JSON. responseSchema makes this nearly always succeed.
+          const clean = (s: string) => {
+            let t = s.trim();
+            if (t.startsWith("```json")) t = t.replace(/^```json\n?/, "").replace(/\n?```$/, "");
+            else if (t.startsWith("```")) t = t.replace(/^```\n?/, "").replace(/\n?```$/, "");
+            return t;
+          };
 
+          try {
+            parsed = JSON.parse(clean(fullResponse));
+          } catch (parseErr) {
+            /**
+             * ONE non-streaming retry when the model truncates.
+             *
+             * Observed three times: the stream ends mid-string and JSON.parse
+             * throws, most recently after the model stopped at 249 output
+             * tokens. Streaming cannot be re-routed once bytes have reached the
+             * browser — but those bytes are only progressive decoration here,
+             * because the client renders the parsed object from the `done`
+             * frame. So a clean second attempt is safe, and it turns a
+             * charge-then-refund-then-nothing into a working generation.
+             *
+             * Deliberately once, and only for a parse failure. Anything else has
+             * already been retried across the whole gateway chain by the engine,
+             * and a second full pass would just spend money to fail again.
+             *
+             * The same spendRef is reused, so this cannot become a second charge.
+             */
+            console.error(`generate:${module} truncated, retrying once`, parseErr);
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ status: "Jawabannya kepotong, gue ulang bentar..." })}\n\n`,
+              ),
+            );
+
+            const retry = await runAI({
+              feature: module,
+              prompt: promptText,
+              schema,
+              tier: profile.is_pro ? "pro" : "free",
+              legacyModel: await getModel(profile.is_pro ? "pro" : "free"),
+              userId: user.id,
+              refId: spendRef,
+              creditsCharged: cost,
+              isAdmin: profile.role === "admin",
+              byokKey,
+              signal: AbortSignal.timeout(30_000),
+            });
+            parsed = JSON.parse(clean(retry.text));
+            meta = {
+              providerSlug: retry.providerSlug,
+              modelId: retry.modelId,
+              inputTokens: retry.inputTokens,
+              outputTokens: retry.outputTokens,
+              costIdr: retry.costIdr,
+              latencyMs: retry.latencyMs,
+              attempts: retry.attempts,
+              usedFallback: retry.usedFallback,
+            };
+          }
         } catch (err: unknown) {
           isError = true;
-          const message = err instanceof Error ? err.message : "Generation failed";
+          // The raw text is already in ai_usage_log and error_log for an
+          // operator. What reaches the browser is written for the creator who
+          // pressed the button: no vendor names, no status codes, and no
+          // fragments of an API key — upstream 401s embed one.
+          const friendly = userFacingError(err);
+          console.error(`generate:${module} failed`, err);
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({
-                error: message,
+                error: friendly.message,
+                retryable: friendly.retryable,
               })}\n\n`
             )
           );
