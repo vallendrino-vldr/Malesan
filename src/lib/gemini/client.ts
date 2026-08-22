@@ -55,6 +55,16 @@ export type GenerateArgs = {
    * accounting must apply to a vision call exactly as they do to a text one.
    */
   images?: InlineImage[];
+  /**
+   * Reports token usage once the stream has finished.
+   *
+   * A generator cannot return a value the consumer can reach with `for await`,
+   * so the counts a stream accumulates would otherwise be visible only to
+   * recordUsage() and lost to the caller — which is exactly what the cost layer
+   * needs. Optional, and invoked in a `finally`, so a failed stream still
+   * reports whatever it managed to consume.
+   */
+  onUsage?: (usage: { input: number; output: number; total: number }) => void;
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -197,8 +207,29 @@ async function withRotation(
   throw last ?? new GeminiError("Gemini exhausted every key and retry", 503, true);
 }
 
-/** One-shot generation. Returns the raw model text. */
-export async function generate(args: GenerateArgs): Promise<string> {
+/**
+ * What a call actually consumed.
+ *
+ * Zeros mean the provider returned no usage block — "unknown", never "free".
+ * The cost layer treats it that way too.
+ */
+export type GenerateResult = {
+  text: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+};
+
+/**
+ * One-shot generation, returning the token counts alongside the text.
+ *
+ * These numbers were previously recorded into gemini_usage and then discarded,
+ * which was fine when there was one vendor on a free tier and nothing priced
+ * per token. With a provider fleet the caller has to be able to price the call
+ * it just made, and a cost dashboard fed by zeros is worse than no dashboard —
+ * it reads as pure profit.
+ */
+export async function generateDetailed(args: GenerateArgs): Promise<GenerateResult> {
   // `args.model` lets app_config drive the choice at runtime; without it we
   // fall back to modelFor(), which reads env. Kept as an override rather than
   // a replacement so this module stays usable with no database.
@@ -210,10 +241,11 @@ export async function generate(args: GenerateArgs): Promise<string> {
   const adapter = adapterFor(a.provider ?? "gemini");
   const text = adapter.extractText(json);
   const split = adapter.extractTokenSplit(json);
+  const total = adapter.extractTokens(json);
   await recordUsage({
     keyIndex: key.index,
     model,
-    tokens: adapter.extractTokens(json),
+    tokens: total,
     inputTokens: split.input,
     outputTokens: split.output,
   });
@@ -229,7 +261,12 @@ export async function generate(args: GenerateArgs): Promise<string> {
       false,
     );
   }
-  return text;
+  return { text, inputTokens: split.input, outputTokens: split.output, totalTokens: total };
+}
+
+/** One-shot generation. Returns the raw model text. */
+export async function generate(args: GenerateArgs): Promise<string> {
+  return (await generateDetailed(args)).text;
 }
 
 /**
@@ -257,6 +294,11 @@ export async function* generateStream(
 
   const model = a.model ?? modelFor(a.tier ?? "free");
   const { res, key } = await withRotation(model, a, true);
+
+  // The adapter owns the frame envelope; everything below owns the plumbing.
+  // Without this the loop decoded Gemini's shape unconditionally, so an
+  // OpenAI-compatible provider streamed perfectly and yielded nothing.
+  const adapter = adapterFor(a.provider ?? "gemini");
 
   const reader = res.body?.getReader();
   if (!reader) throw new GeminiError("Gemini returned no stream body", 502, false);
@@ -293,12 +335,14 @@ export async function* generateStream(
         if (!payload || payload === "[DONE]") continue;
         try {
           const json = JSON.parse(payload);
-          tokens = json?.usageMetadata?.totalTokenCount ?? tokens;
-          inTokens = json?.usageMetadata?.promptTokenCount ?? inTokens;
-          outTokens = json?.usageMetadata?.candidatesTokenCount ?? outTokens;
-          const text: string | undefined =
-            json?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) yield text;
+          const delta = adapter.parseStreamFrame?.(json);
+          if (!delta) continue;
+          // Assigned, not accumulated: both vendors report running or final
+          // totals rather than per-frame increments.
+          tokens = delta.totalTokens ?? tokens;
+          inTokens = delta.inputTokens ?? inTokens;
+          outTokens = delta.outputTokens ?? outTokens;
+          if (delta.text) yield delta.text;
         } catch {
           // A truncated frame mid-stream is normal; skip rather than abort.
         }
@@ -323,6 +367,7 @@ export async function* generateStream(
       inputTokens: inTokens,
       outputTokens: outTokens,
     });
+    a.onUsage?.({ input: inTokens, output: outTokens, total: tokens });
   }
 }
 

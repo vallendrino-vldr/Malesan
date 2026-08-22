@@ -29,8 +29,24 @@ export type ProviderRequest = {
  */
 export type InlineImage = { mimeType: string; data: string };
 
+/**
+ * One decoded SSE frame from a streaming response.
+ *
+ * Every vendor wraps its deltas differently, and the token counts arrive on
+ * different frames again. Normalising to this shape is what lets the streaming
+ * loop in client.ts stay provider-agnostic instead of growing a branch per
+ * vendor — the adapter owns the envelope, the caller owns the plumbing.
+ *
+ * All fields optional: a keep-alive frame carries neither text nor usage.
+ */
+export type StreamDelta = {
+  text?: string;
+  totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+};
+
 export type Adapter = {
-  /** OpenAI-compatible providers can stream, but we only use non-stream here. */
   buildRequest(opts: {
     apiKey: string;
     model: string;
@@ -52,6 +68,11 @@ export type Adapter = {
    * block, which the caller treats as "unknown", not "free".
    */
   extractTokenSplit(json: unknown): { input: number; output: number };
+  /**
+   * Decode one streaming frame. Absent on adapters that do not stream — see
+   * `supportsStreaming`, which is the flag the caller actually checks.
+   */
+  parseStreamFrame?(json: unknown): StreamDelta;
 };
 
 const GEMINI_ROOT = "https://generativelanguage.googleapis.com/v1beta/models";
@@ -107,11 +128,29 @@ const gemini: Adapter = {
     })?.usageMetadata;
     return { input: u?.promptTokenCount ?? 0, output: u?.candidatesTokenCount ?? 0 };
   },
+  // Gemini repeats usageMetadata on later frames carrying running totals, so the
+  // caller assigns rather than accumulates these.
+  parseStreamFrame: (j) => {
+    const json = j as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      usageMetadata?: {
+        totalTokenCount?: number;
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+      };
+    };
+    return {
+      text: json?.candidates?.[0]?.content?.parts?.[0]?.text,
+      totalTokens: json?.usageMetadata?.totalTokenCount,
+      inputTokens: json?.usageMetadata?.promptTokenCount,
+      outputTokens: json?.usageMetadata?.candidatesTokenCount,
+    };
+  },
 };
 
 /** OpenAI chat-completions. Also covers most "custom" OpenAI-compatible hosts. */
 const openai: Adapter = {
-  buildRequest({ apiKey, model, prompt, schema, baseUrl, images }) {
+  buildRequest({ apiKey, model, prompt, schema, baseUrl, stream, images }) {
     const root = baseUrl?.trim() || "https://api.openai.com/v1";
     // A plain string is the documented shape for text-only; the array form is
     // only needed once an image is attached, and some OpenAI-compatible hosts
@@ -142,6 +181,12 @@ const openai: Adapter = {
               json_schema: { name: "output", strict: false, schema: toJsonSchema(schema) },
             }
           : undefined,
+        stream: stream || undefined,
+        // Without this the final frame carries no usage block and the request
+        // costs an unknown amount, which is useless to the cost dashboard. A
+        // strict gateway may reject the field; that surfaces as a clear 400 in
+        // error_log, and the fix is to clear `supports_streaming` on that model.
+        stream_options: stream ? { include_usage: true } : undefined,
       }),
     };
   },
@@ -152,6 +197,24 @@ const openai: Adapter = {
   extractTokenSplit: (j) => {
     const u = (j as { usage?: { prompt_tokens?: number; completion_tokens?: number } })?.usage;
     return { input: u?.prompt_tokens ?? 0, output: u?.completion_tokens ?? 0 };
+  },
+  // Deltas arrive on `choices[0].delta.content`; usage arrives once, on a final
+  // frame whose `choices` array is empty. Both are handled by the same decode.
+  parseStreamFrame: (j) => {
+    const json = j as {
+      choices?: { delta?: { content?: string } }[];
+      usage?: {
+        total_tokens?: number;
+        prompt_tokens?: number;
+        completion_tokens?: number;
+      };
+    };
+    return {
+      text: json?.choices?.[0]?.delta?.content,
+      totalTokens: json?.usage?.total_tokens,
+      inputTokens: json?.usage?.prompt_tokens,
+      outputTokens: json?.usage?.completion_tokens,
+    };
   },
 };
 
@@ -216,7 +279,19 @@ export function adapterFor(provider: ProviderName): Adapter {
   return ADAPTERS[provider] ?? gemini;
 }
 
-/** Only Gemini streams today; anything else must fall back to a single call. */
+/**
+ * Which protocols stream.
+ *
+ * Gemini and the OpenAI chat-completions shape both do, and the second one is
+ * what SumoPod, OpenRouter, Groq, Together and most self-hosted gateways speak —
+ * so a provider added from the dashboard streams like the built-in one rather
+ * than arriving as a wall of text after ten seconds.
+ *
+ * Anthropic is deliberately excluded. Its stream is a different event protocol
+ * (`content_block_delta` with named event types), and a half-parsed stream is
+ * worse than one call that returns the whole answer, so it degrades to
+ * non-streaming instead.
+ */
 export function supportsStreaming(provider: ProviderName): boolean {
-  return provider === "gemini";
+  return provider === "gemini" || provider === "openai" || provider === "custom";
 }

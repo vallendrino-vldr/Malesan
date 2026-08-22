@@ -239,3 +239,45 @@ export async function getProviderConfig(): Promise<ProviderConfig> {
     apiKey: typeof rows["ai_api_key"] === "string" ? (rows["ai_api_key"] as string) : "",
   };
 }
+
+/**
+ * USD → IDR, for turning a vendor's published per-token price into money the
+ * owner recognises.
+ *
+ * Applied once, at the moment a request is logged, and the resulting rupiah
+ * figure is frozen onto that row. A rate change must not silently rewrite what
+ * last month cost — that is the difference between a cost record and a guess.
+ *
+ * Falls back to 16500 rather than 0: a zero rate would report every AI call as
+ * free, which is a worse lie than a slightly stale rate.
+ */
+export async function getUsdToIdr(): Promise<number> {
+  const rows = await load();
+  const v = rows["usd_to_idr"];
+  return typeof v === "number" && v > 0 ? v : 16_500;
+}
+
+export type RouterFlags = {
+  /** Master switch. Off = every feature uses the legacy env Gemini path. */
+  routerEnabled: boolean;
+  /** Off = try the primary model only, never a backup. */
+  fallbackEnabled: boolean;
+};
+
+/**
+ * The two emergency switches for the provider layer.
+ *
+ * Both default to ON when unreadable, because both describe the intended
+ * behaviour of the system. The point of `routerEnabled` is that an owner who
+ * has just misconfigured a provider at 2am can put the product back on the
+ * known-good path from one toggle, without a deploy and without understanding
+ * routing.
+ */
+export async function getRouterFlags(): Promise<RouterFlags> {
+  const rows = await load();
+  const bool = (k: string) => (typeof rows[k] === "boolean" ? (rows[k] as boolean) : true);
+  return {
+    routerEnabled: bool("ai_router_enabled"),
+    fallbackEnabled: bool("ai_fallback_enabled"),
+  };
+}
