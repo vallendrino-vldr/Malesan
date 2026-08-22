@@ -37,11 +37,59 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-09**, after the export-engine rewrite (§9j).
-**Newest work is §9j — the video export is now deterministic frame-by-frame
-(WebCodecs + mp4-muxer), NOT MediaRecorder. Read §9j before touching video.**
-§9i before it: 3 Auto-CC bugs + netizen/roast + smart recycle.
+Last updated: **2026-08-22**, after the AI Provider Management Layer (§9k).
+**Newest work is §9k — providers, models, routing, cost tracking are now database
+rows managed at `/admin/ai`. Read §9k before touching anything AI-related.**
+§9j before it: deterministic frame-by-frame video export (WebCodecs + mp4-muxer,
+NOT MediaRecorder). §9i: 3 Auto-CC bugs + netizen/roast + smart recycle.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
+
+---
+
+## §9k — AI Provider Management Layer (2026-08-22)
+
+**What it is.** Malesan is no longer locked to one vendor. Providers, models,
+per-feature routing and per-request cost live in five new tables and are managed
+from `/admin/ai`. Adding SumoPod, OpenRouter, Groq or any OpenAI-compatible host
+is now data entry, not a deploy.
+
+**THE ONE THING TO KNOW:** a feature with **no row in `ai_routes` uses the exact
+legacy env-Gemini path**. Zero routes are seeded, so nothing about user-facing
+behaviour changed when this landed. Routing is opted in per feature and reverts
+with one click ("Balikin ke default"). If AI behaves oddly, check
+`app_config.ai_router_enabled` — setting it false forces every feature back to
+the old path with no deploy.
+
+**Credits were not touched.** No new credit code exists. Routes still spend once
+*before* the engine and refund by `ref` only if the engine exhausts every
+candidate, so fallback across providers bills exactly one credit. Do not add a
+spend inside the engine — that is the whole design.
+
+**New code:** `src/lib/ai/{types,registry,router,engine,cost,discovery,balance,analytics}.ts`,
+`src/app/actions/ai-admin.ts`, `src/lib/admin/guard.ts`, `src/app/admin/ai/**`.
+**Touched:** `gemini/providers.ts` + `gemini/client.ts` (OpenAI streaming,
+`generateDetailed` now returns token counts, `onUsage` for streams),
+`config.ts`, `api/generate/route.ts`, `database.types.ts`, `admin/layout.tsx`.
+
+**Verified by execution:** end-to-end `POST /api/generate` returned 16 SSE frames
+of real content; `ai_usage_log` recorded `ok, 3158 in / 402 out, credits_charged=1`;
+a failed run recorded `credits_charged=0`. All 5 admin pages render 200. Build,
+typecheck and lint (on touched files) clean.
+
+**Traps added to §4's spirit:**
+- `cost_idr` is 0 until model prices are entered at `/admin/ai/models`. The UI
+  says so; do not read the margin numbers before filling them in.
+- Admin pages **cannot be click-tested** when the Browser pane is not
+  compositing — hydration stalls and handlers never attach. Reproduced on
+  `/admin/errors` (untouched code). Verify admin work via SSR + direct action
+  calls, not clicks. This will waste an hour if you assume the page is broken.
+- `gemini-3.7-flash` was returning **118 upstream 503s** ("high demand"). It is
+  transient but real, and during a spike the retry budget (3 keys × 4 rounds)
+  exceeds the 52s abort, so the user waits the full time for nothing. This is
+  now fixable without code: give the heavy features a fallback provider.
+- `supabase/migrations` on disk still does not equal the applied history — the
+  new one (`00021` / `ai_provider_layer`) is in both, but three older tables have
+  no CREATE on disk. Never `db reset` from disk.
 
 ---
 
