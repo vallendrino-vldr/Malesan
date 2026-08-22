@@ -9,14 +9,10 @@ rediscovering the repo produces nothing.
 **What this is.** Production Next.js 16 + Supabase + Gemini app for Indonesian
 creators. Live on Vercel, auto-deploys from `main`, takes real money.
 
-**Is it healthy right now?** Yes. `next build` passes, `tsc --noEmit` passes,
-and the current production build emits 43 app pages/routes. `npm run lint`
-reports **14 problems (9 errors, 5 warnings)**.
-The old "11" note was stale: measured pristine on `git stash`, HEAD before §9i was
-already **15** (9 errors, 6 warnings) — the react-hooks rules in Next 16.2.12 got
-stricter (`Date.now()`-during-render and setState-in-effect are now flagged). §9i
-landed at 14 (one fewer warning — a real missing-dep fix), so **14 is the current
-floor, not 11**. If you see 14, nothing is broken. More than 14, you added it.
+**Is it healthy right now?** Yes. `next build`, `tsc --noEmit`, `npm run lint`,
+`npm test`, and `npm audit` all pass; lint is now **0** and the production build
+emits 43 app pages/routes. Authenticated Chromium + WebKit QA passed 13 routes
+at 360/768/1366/1920px, including a real Auto-CC transcription. See §9m.
 
 **Do NOT re-audit for "damage from the antigravity gemini session".** It was
 checked on 2026-08-06 against `git reflog`: that agent never touched this repo.
@@ -38,13 +34,80 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-22**, after final AI hardening (§9l).
-**Newest work is §9l — the Global Brain is now the verified path for all
-text/vision AI, with real primary/fallback/refund/cost/PWA/production evidence.**
-Read §9l before touching AI; §9k is the provider-layer foundation beneath it.
+Last updated: **2026-08-23**, after Final Excellence hardening (§9m).
+**Newest work is §9m — cross-instance AI throttling, gateway SSRF protection,
+Brain-aware Gemini quota admission, accurate owner analytics, Auto-CC recovery,
+zero lint/audit findings, and authenticated Chromium/WebKit QA.** Read §9m,
+then §9l before touching AI; §9k is the provider-layer foundation beneath it.
 §9j before it: deterministic frame-by-frame video export (WebCodecs + mp4-muxer,
 NOT MediaRecorder). §9i: 3 Auto-CC bugs + netizen/roast + smart recycle.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
+
+---
+
+## §9m — Final Excellence hardening (2026-08-23)
+
+**Code checkpoint:** `f9cb660` on `main`. The additive live migration is
+`20260822175407_final_excellence_hardening.sql`; it was applied without a reset
+and that one version is now marked applied in remote migration history. The
+older disk↔live history mismatch remains and must not be "fixed" by reset.
+
+### Runtime/security
+
+- Every authenticated AI HTTP surface has an atomic, scoped, database-backed
+  per-user limiter (`consume_rate_limit`). It fails closed if the counter cannot
+  be checked, preventing a DB incident from becoming an unlimited provider bill.
+- Gateway Base URL and balance URL are HTTPS-only, DNS-checked against private,
+  loopback, link-local, metadata, multicast and IPv4-mapped addresses. Redirects
+  are rejected before an encrypted provider key is attached to any request.
+- The old Gemini quota guard no longer blocks a healthy DeepSeek Brain. It
+  resolves the feature first: during low shared quota, paid/OpenAI-compatible
+  candidates remain available and only the env Gemini pool is removed.
+- `topup_proofs` is forced private; the old public-read policy is removed.
+  Nineteen RLS policies now evaluate `auth.uid()` once per statement. Supabase
+  performance advisories fell from 25 to 6 (the remainder are overlapping admin
+  policies, not row-scan init-plan warnings).
+
+### Product correctness
+
+- `/admin/stats` now reads `ai_usage_log`, not legacy `gemini_usage`, uses WIB day
+  boundaries, reports pricing completeness, and refreshes every 30s. `/admin/ai`
+  refreshes the Brain, balance and cost state every 15s while visible.
+- Free-quota Gemini is excluded from savings recommendations; capacity that can
+  disappear is no longer advertised as a scalable "100% cheaper" replacement.
+- Auto-CC has a 48s provider abort, friendly errors, retryable ffmpeg loading,
+  `finally` cleanup, real TikTok/Reels/Shorts pacing/safe-zone presets, working
+  font scaling and pop/fade caption animation. Invalid language/duration and
+  >10-minute uploads are rejected before provider work.
+- Deep links for Clip, Thread and Video now survive refresh. Dead Groq text code
+  was removed; Groq Whisper remains the intentional audio-only provider path.
+- Next/ESLint moved to 16.3.2 and the transitive `nanoid`, `brace-expansion`, and
+  `js-yaml` advisories are resolved. React effect/render lint debt was fixed,
+  not suppressed.
+
+### Evidence
+
+- Real disposable ordinary user → `/api/generate` → DeepSeek V4 Flash, 3,568
+  tokens, non-zero prepaid rupiah cost, generation persisted, exactly one
+  credit ledger charge; all test data removed and orphan count verified zero.
+- Real Auto-CC browser path: ffmpeg extraction + Groq transcription + style UI.
+- Browser: 13 authenticated routes × 4 viewports passed in Chromium and WebKit;
+  no horizontal overflow, unnamed buttons, missing image alt, legacy stats copy,
+  or PWA registration failure. Physical phone install remains a human gate.
+- `npm run typecheck`, `npm run lint` (0), `npm test`, `npm audit` (0 known
+  vulnerabilities), `npm run build` (43 routes) all pass.
+
+### Remaining real risks
+
+- No durable background queue: Vibe/long generation remains bounded synchronous
+  serverless work. It now fails/refunds cleanly, but cannot resume after a hard
+  platform kill.
+- Historical migration names remain unreconciled. Only the new migration's
+  history entry was repaired because its live application was proven.
+- Supabase leaked-password protection is still an external dashboard setting;
+  six multiple-permissive-policy performance notices remain.
+- Physical Android/iPhone install/update and a real-money top-up approval were
+  not performed by automation.
 
 ---
 
@@ -1371,12 +1434,8 @@ redeploy (fresh config cache) clears it.
 
 ## 11. Known technical debt
 
-- `src/app/actions/pipeline.ts` still has 2 `content: content as any` (~lines 17
-  and 54) failing lint. Pre-existing, not a regression.
-- `react-hooks/set-state-in-effect` in `ThemeToggle`, `TextScale`,
-  `admin/topups/page.tsx`. Does not block the build.
-- `react-hooks/purity` at `app/page.tsx:94` (`Date.now()` during render), used to
-  compute the WIB date. Safe in a server component, but noted.
+- The former pipeline `as any`, set-state-in-effect and render-time `Date.now()`
+  lint debt was resolved in §9m. The lint baseline is now zero.
 - Admin bottom nav is now 5 + "Lainnya". New tabs go into the overflow.
 - `credit_packs` exists and the top-up page reads it, but the admin panel has no
   UI to change prices.

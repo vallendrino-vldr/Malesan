@@ -640,3 +640,48 @@ successfully from the same key pool. DeepSeek V4 Flash remains the Global Brain
 primary; Gemini 3.5 is the Brain backup and hidden legacy emergency model, while
 3.7 stays inactive until a live probe proves recovery. Reliability evidence won
 over keeping the originally requested model name.
+
+## 2026-08-23 — AI abuse limits belong in Postgres, before credit spend
+
+Vercel instances do not share memory, so an in-process counter is not a real
+limit. Every authenticated AI route now calls one scoped atomic
+`consume_rate_limit` RPC before spending credits or contacting a provider. The
+counter fails closed: if capacity cannot be verified, the route returns a short
+503 instead of turning a database incident into an unlimited AI bill.
+
+The credit functions were deliberately not changed. Rate limiting is a gate in
+front of the existing spend-once → engine-fallback → ref-refund flow.
+
+## 2026-08-23 — Gemini quota reservation filters the route, not the user
+
+The old admission check rejected a Free user before asking the Brain which
+provider would answer. That made a low Gemini pool take DeepSeek offline. The
+guard now resolves the feature route: Pro/BYOK are unchanged; a Free request with
+a non-pool candidate continues, while only `env_gemini_pool` candidates are
+removed. It rejects only when shared Gemini is genuinely the last available
+path.
+
+## 2026-08-23 — Admin-configured gateways are public HTTPS with no redirects
+
+A provider API key must never be sent to an arbitrary internal host just because
+an admin form accepted its URL. Model scan, connection test, runtime custom
+generation and balance sync validate DNS/address class before fetch and reject
+redirects. This keeps the universal OpenAI-compatible adapter data-driven
+without making it an SSRF or key-forwarding primitive.
+
+## 2026-08-23 — Business analytics come from attempts, in WIB
+
+`ai_usage_log` is the source for provider/model/tokens/cost/revenue/margin.
+`gemini_usage` remains only low-level key-pool telemetry. Owner-facing daily
+boundaries use Asia/Jakarta, and unknown pricing is distinct from intentional
+free quota. Free emergency capacity is excluded from cost-saving suggestions
+because it is not a scalable paid alternative.
+
+## 2026-08-23 — Auto-CC stays client-rendered and bounded
+
+Video frames still never leave the browser; only extracted audio reaches Groq
+Whisper. Rather than introduce a queue or server renderer during hardening, the
+provider call now aborts with time left before Vercel's ceiling, ffmpeg can retry
+after a failed load, scratch files always clean up, and presets/animation affect
+the actual preview/export pixels. A durable queue remains a separate future
+architecture decision for workloads that must resume after a serverless kill.
