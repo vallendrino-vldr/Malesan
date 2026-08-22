@@ -47,7 +47,12 @@ Canonical rules live in `AGENTS.md`. This file is state, history and traps.
 
 ## §9m — Final Excellence hardening (2026-08-23)
 
-**Code checkpoint:** `f9cb660` on `main`. The additive live migration is
+**Code checkpoint:** `f9cb660`; decision/handoff checkpoint `fdc4d9a`, both
+pushed to `main`. GitHub's Vercel status for `fdc4d9a` is successful. The custom
+domain serves HTTP 200 and its production bundle contains the commit marker;
+manifest + service worker are HTTP 200, worker cache headers are `no-store,
+must-revalidate, no-cache`, `/dev-masuk` is 404, and anonymous generate/video
+requests are 401. The additive live migration is
 `20260822175407_final_excellence_hardening.sql`; it was applied without a reset
 and that one version is now marked applied in remote migration history. The
 older disk↔live history mismatch remains and must not be "fixed" by reset.
