@@ -10,7 +10,7 @@ import { checkBalance, balanceTrend } from "@/lib/ai/balance";
 import { runOnModel } from "@/lib/ai/engine";
 import { resolveRoute } from "@/lib/ai/router";
 import { costIdr } from "@/lib/ai/cost";
-import { getUsdToIdr, invalidateConfigCache, type AdminMode } from "@/lib/config";
+import { getUsdToIdr, getAiBrain, invalidateConfigCache, type AdminMode } from "@/lib/config";
 import { brainOverview, modelUsageCounts, type BrainView } from "@/lib/ai/brain";
 import type { Database } from "@/lib/supabase/database.types";
 import type {
@@ -196,15 +196,65 @@ export async function saveProvider(input: ProviderInput): Promise<{ id: string }
   return { id };
 }
 
-export async function setProviderActive(id: string, isActive: boolean): Promise<void> {
+/**
+ * Turn a gateway on or off.
+ *
+ * Deactivating is guarded, because it silently breaks things that are not on
+ * screen. A gateway holds models, and those models may be the Brain's primary or
+ * its only live backup — switching the gateway off removes them from the routing
+ * chain without touching the Brain, so the Brain still *says* it has a backup
+ * while the product no longer has one.
+ *
+ * This is not hypothetical: the audit log shows the Gemini pool being switched
+ * off three separate times, and each time the Brain quietly lost its fallback.
+ * The first anyone noticed was a generation failing with nowhere to go.
+ *
+ * So the action refuses and explains, and the caller can repeat with `force`
+ * once the consequence has been stated. Nothing is blocked permanently — the
+ * owner is simply told what they are about to break.
+ */
+export async function setProviderActive(
+  id: string,
+  isActive: boolean,
+  force = false,
+): Promise<void> {
   const adminId = await verifyAdmin();
+
+  if (!isActive && !force) {
+    const { models } = await getFleet();
+    const brain = await getAiBrain();
+    const owned = new Set(models.filter((m) => m.provider_id === id).map((m) => m.id));
+
+    if (brain.primary && owned.has(brain.primary)) {
+      throw new Error(
+        "Gateway ini lagi jadi AI utama. Ganti Otak AI dulu ke yang lain, baru matiin ini.",
+      );
+    }
+
+    const liveFallbacks = brain.fallbacks.filter((fid) => {
+      const m = models.find((x) => x.id === fid);
+      return m?.is_active;
+    });
+    if (liveFallbacks.length > 0 && liveFallbacks.every((fid) => owned.has(fid))) {
+      throw new Error(
+        "Ini satu-satunya cadangan Otak AI. Kalau dimatiin, generate bakal langsung gagal pas AI utama ngambek. Pilih cadangan lain dulu, atau tekan sekali lagi kalau emang sengaja.",
+      );
+    }
+  }
+
   const { error } = await createServiceRoleClient()
     .from("ai_providers")
     .update({ is_active: isActive, updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw new Error(error.message);
 
-  await audit(adminId, isActive ? "ai.provider.activate" : "ai.provider.deactivate", id, "ai_provider");
+  await audit(
+    adminId,
+    isActive ? "ai.provider.activate" : "ai.provider.deactivate",
+    id,
+    "ai_provider",
+    { forced: !isActive && force },
+  );
   invalidateAiCache();
   revalidateAll();
 }

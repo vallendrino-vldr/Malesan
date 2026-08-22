@@ -9,7 +9,7 @@ import {
   type VibeQuestion,
 } from "@/lib/prompts/vibe";
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 /**
  * Five clarifying questions, generated from the idea.
@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
       legacyModel: await getModel("free"),
       schema: VIBE_QUESTIONS_SCHEMA as unknown as Record<string, unknown>,
       userId: user.id,
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(45_000),
+      budgetMs: 43_000,
     });
 
     const parsed = parseJson<{ questions: VibeQuestion[] }>(raw);

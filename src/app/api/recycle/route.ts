@@ -4,6 +4,7 @@ import { spendCredits, refundCredits } from "@/lib/credits";
 import { getRecycleCost, getModel } from "@/lib/config";
 import { parseJson, GeminiError } from "@/lib/gemini/client";
 import { runAI } from "@/lib/ai/engine";
+import { userFacingError } from "@/lib/ai/errors";
 
 /**
  * Smart Content Recycle.
@@ -101,7 +102,8 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       refId: ref,
       creditsCharged: cost,
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(50_000),
+      budgetMs: 48_000,
     });
     const parsed = parseJson<{ angles?: Angle[] }>(raw);
     const angles = (parsed.angles ?? [])
@@ -111,10 +113,9 @@ export async function POST(req: NextRequest) {
     return json({ angles, creditsSpent: cost }, 200);
   } catch (e) {
     if (ref) await refundCredits(user.id, ref, "content_recycle_failed");
-    const status = e instanceof GeminiError ? e.status : 502;
-    const message =
-      e instanceof GeminiError ? "AI-nya lagi mentok. Coba lagi bentar." : "Gagal daur ulang. Coba lagi.";
-    return json({ error: message }, status >= 400 && status < 600 ? status : 502);
+    console.error("recycle failed", e);
+    const friendly = userFacingError(e);
+    return json({ error: friendly.message }, friendly.retryable ? 503 : 502);
   }
 }
 

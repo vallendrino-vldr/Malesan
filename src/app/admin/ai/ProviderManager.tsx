@@ -370,15 +370,32 @@ export function ProviderManager({ providers }: { providers: ProviderView[] }) {
                   Cek saldo
                 </button>
               )}
+              {/* Deactivating can silently remove the Brain's only backup, so the
+                  action refuses once and explains. A second press confirms — the
+                  owner has now been told what breaks. */}
               <button
                 onClick={() =>
                   startTransition(async () => {
-                    await setProviderActive(p.id, !p.is_active);
+                    const confirmed = note?.id === p.id && !note.ok;
+                    try {
+                      await setProviderActive(p.id, !p.is_active, confirmed);
+                      setNote(null);
+                    } catch (e) {
+                      setNote({
+                        id: p.id,
+                        text: e instanceof Error ? e.message : "Gagal ngubah status.",
+                        ok: false,
+                      });
+                    }
                   })
                 }
                 className="rounded-full border border-hairline px-3 py-1.5 text-micro text-ink hover:bg-surface"
               >
-                {p.is_active ? "Matiin" : "Aktifin"}
+                {p.is_active
+                  ? note?.id === p.id && !note.ok
+                    ? "Matiin beneran"
+                    : "Matiin"
+                  : "Aktifin"}
               </button>
               <button
                 onClick={() =>

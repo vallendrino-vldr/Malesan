@@ -166,7 +166,8 @@ export async function checkProof(opts: {
       prompt: PROMPT,
       schema: SCHEMA as unknown as Record<string, unknown>,
       images: [{ mimeType: blob.type || "image/jpeg", data: bytes.toString("base64") }],
-      signal: AbortSignal.timeout(35_000),
+      signal: AbortSignal.timeout(50_000),
+      budgetMs: 48_000,
     });
 
     const reading = parseJson<ProofReading>(raw);

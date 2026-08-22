@@ -1,7 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
-import { GeminiPoolPanel } from "@/components/GeminiPoolPanel";
-import { getPoolReport } from "@/lib/gemini/pool-report";
+import { AiHealthCard } from "@/components/AiHealthCard";
 
 /**
  * Admin overview.
@@ -50,16 +49,11 @@ function timeAgo(iso: string) {
 export default async function AdminDashboardPage() {
   const supabase = createServiceRoleClient();
 
-  const [users, pendingTopups, generations, trends, poolReport, auditRes] = await Promise.all([
+  const [users, pendingTopups, generations, trends, auditRes] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase.from("topups").select("*", { count: "exact", head: true }).eq("status", "pending"),
     supabase.from("generations").select("*", { count: "exact", head: true }),
     supabase.from("trends").select("*", { count: "exact", head: true }).eq("is_active", true),
-    // Roster comes from the environment, usage is joined onto it — so a key
-    // that has never been called still gets a row. The old panel rendered
-    // straight from the usage table and a configured-but-dead key was simply
-    // absent, which is the one thing an operator needs to be able to see.
-    getPoolReport(),
     supabase
       .from("audit_log")
       .select("id, action, target_id, metadata, created_at")
@@ -92,7 +86,15 @@ export default async function AdminDashboardPage() {
         />
       </div>
 
-      <GeminiPoolPanel report={poolReport} />
+      {/* The AI, in the terms an owner cares about.
+
+          This used to be GeminiPoolPanel — a per-key table reading "Key 1: 40
+          requests, 2 errors". That is a developer's view of one vendor's
+          internals, on a page whose only reader owns the business: it says
+          nothing about whether the product is working, and it is wrong the
+          moment the Brain routes somewhere other than Gemini. The key-level
+          detail still exists, behind /admin/ai in advanced mode. */}
+      <AiHealthCard />
 
       <section>
         <h2 className="eyebrow mb-2 text-muted">Aktivitas admin</h2>

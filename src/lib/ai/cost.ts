@@ -47,6 +47,10 @@ export function costIdr(
   tokens: TokenSplit,
   usdToIdr: number,
 ): number {
+  // Free tier. Genuinely zero, and `isPriced` says so — which is what separates
+  // it from an unpriced model that also computes to zero but means "unknown".
+  if (model.pricing_mode === "free_quota") return 0;
+
   if (model.pricing_mode === "prepaid_package") {
     const price = Number(model.package_price_idr ?? 0);
     const bought = Number(model.package_tokens ?? 0);
@@ -60,12 +64,25 @@ export function costIdr(
   return usd * usdToIdr;
 }
 
-/** True when we genuinely know what this model costs. Zero is not free. */
+/**
+ * True when we genuinely KNOW what this model costs — including when the answer
+ * is "nothing".
+ *
+ * "Free" and "unpriced" both compute to zero rupiah and mean opposite things:
+ * one is a fact, the other is a gap the owner should go and fill. Collapsing
+ * them is what made the dashboard nag about a Gemini price that does not exist.
+ */
 export function isPriced(model: Priceable): boolean {
+  if (model.pricing_mode === "free_quota") return true;
   return model.pricing_mode === "prepaid_package"
     ? Number(model.package_price_idr ?? 0) > 0 && Number(model.package_tokens ?? 0) > 0
     : Number(model.input_price_usd_per_mtok ?? 0) > 0 ||
         Number(model.output_price_usd_per_mtok ?? 0) > 0;
+}
+
+/** Free at the point of use, as a deliberate statement rather than a missing value. */
+export function isFreeQuota(model: Priceable): boolean {
+  return model.pricing_mode === "free_quota";
 }
 
 /**
@@ -76,6 +93,9 @@ export function isPriced(model: Priceable): boolean {
  * a script is longer, and output tokens are the ones priced at a premium.
  */
 export function blendedUsdPerMtok(model: Priceable, usdToIdr = 16_500): number {
+  // Free ranks cheapest, which is correct — but only for models that really are
+  // free, not for ones whose price nobody has entered yet.
+  if (model.pricing_mode === "free_quota") return 0;
   if (model.pricing_mode === "prepaid_package") {
     const price = Number(model.package_price_idr ?? 0);
     const bought = Number(model.package_tokens ?? 0);

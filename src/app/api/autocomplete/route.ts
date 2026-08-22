@@ -4,6 +4,7 @@ import { checkPoolAdmission } from "@/lib/gemini/quota";
 import { getModel, getShadowPrompt } from "@/lib/config";
 import { parseJson } from "@/lib/gemini/client";
 import { runAI } from "@/lib/ai/engine";
+import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import type { CreatorDna } from "@/lib/supabase/database.types";
 
@@ -206,6 +207,7 @@ export async function POST(request: NextRequest) {
         // Ghost text nobody waits for. Bail early rather than holding the
         // function open — the caller treats a miss as "no suggestion".
         signal: AbortSignal.timeout(12_000),
+        budgetMs: 11_000,
       });
 
       const parsed = parseJson<{ lanjutan?: string }>(raw);
@@ -225,9 +227,8 @@ export async function POST(request: NextRequest) {
       if (spendRef) {
         await refundCredits(user.id, spendRef, "refund_autocomplete_failed");
       }
-      const message =
-        err instanceof Error ? err.message : "Gagal nyambungin kalimat. Coba lagi.";
-      return Response.json({ error: message }, { status: 502 });
+      console.error("autocomplete failed", err);
+      return Response.json({ error: userFacingError(err).message }, { status: 502 });
     }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Internal Server Error";

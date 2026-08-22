@@ -183,7 +183,8 @@ export async function POST(req: NextRequest) {
       schema: SCHEMA as unknown as Record<string, unknown>,
       tier: "pro",
       userId: user.id,
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(50_000),
+      budgetMs: 48_000,
     });
     const parsed = parseJson<Answer>(raw);
 

@@ -75,6 +75,7 @@ export async function GET(req: Request) {
       // attribute the cost to — but the cost is still ours and still recorded.
       userId: null,
       signal: AbortSignal.timeout(40_000),
+      budgetMs: 38_000,
     });
 
     const parsed = parseJson<{ trends?: Trend[] }>(raw);

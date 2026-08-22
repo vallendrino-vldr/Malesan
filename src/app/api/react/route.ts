@@ -18,7 +18,12 @@ import { userFacingError } from "@/lib/ai/errors";
  */
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+/**
+ * 60s: these route through the Brain now, and the configured gateway measures
+ * 16-20s per call. A 30s ceiling would abort the primary before a fallback could
+ * be tried — the failure mode that took down the schedule endpoint.
+ */
+export const maxDuration = 60;
 
 const MAX_CHARS = 6000;
 
@@ -80,7 +85,8 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         refId: ref,
         creditsCharged: cost,
-        signal: AbortSignal.timeout(25_000),
+        signal: AbortSignal.timeout(45_000),
+        budgetMs: 43_000,
       });
       const parsed = parseGroqJson<{ comments?: NetizenComment[] }>(raw);
       const comments = (parsed.comments ?? [])
@@ -96,7 +102,8 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       refId: ref,
       creditsCharged: cost,
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(45_000),
+      budgetMs: 43_000,
     });
     return json({ kind, roast: roast.trim(), creditsSpent: cost }, 200);
   } catch (e) {

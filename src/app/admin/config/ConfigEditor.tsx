@@ -109,17 +109,35 @@ export function ConfigEditor({
           and no override apply. Free text is gone — a typo here returned 404 on
           every generation, and there is no reason to allow one when the set of
           valid answers is known. */}
-      <details className="rounded-xl border border-hairline px-4 py-3">
-        <summary className="cursor-pointer text-mini font-semibold text-ink">
-          Model cadangan terakhir (jarang dipakai)
-        </summary>
+      <section className="rounded-xl border border-hairline px-4 py-3">
+        <h2 className="eyebrow mb-2 text-muted">Model per tier</h2>
+        <div className="space-y-1.5">
+          {(["Free", "Pro"] as const).map((tier) => (
+            <div
+              key={tier}
+              className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2"
+            >
+              <span className="text-mini text-ink">{tier}</span>
+              <span className="text-micro text-ember-lo">🧠 Mengikuti Otak AI</span>
+            </div>
+          ))}
+        </div>
         <p className="mt-2 text-micro leading-relaxed text-muted">
-          Yang nentuin AI mana yang jalan adalah{" "}
+          Semua tier pakai AI yang sama, yaitu yang dipilih di{" "}
           <Link href="/admin/ai" className="text-ember-lo underline-offset-2 hover:underline">
             Otak AI
           </Link>
-          . Setelan di bawah cuma kepakai kalau Otak AI belum diatur atau
-          modelnya lagi mati — anggap aja jaring pengaman.
+          .
+        </p>
+      </section>
+
+      <details className="rounded-xl border border-hairline px-4 py-3">
+        <summary className="cursor-pointer text-mini font-semibold text-ink">
+          Override per tier (jarang dipakai)
+        </summary>
+        <p className="mt-2 text-micro leading-relaxed text-muted">
+          Cuma kepakai kalau Otak AI belum diatur atau modelnya lagi mati —
+          jaring pengaman, bukan setelan utama. Kalau lo gak yakin, biarin aja.
         </p>
         <div className="mt-3 space-y-2">
           {(["model_free", "model_pro"] as const).map((k) => (

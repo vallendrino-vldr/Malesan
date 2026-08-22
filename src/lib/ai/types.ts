@@ -84,7 +84,7 @@ export type ProviderView = Omit<ProviderRow, "api_key_encrypted"> & {
  * that into USD-per-Mtok by hand is why every cost figure read Rp0 — nobody was
  * ever going to do that arithmetic.
  */
-export type PricingMode = "direct_usd" | "prepaid_package";
+export type PricingMode = "direct_usd" | "prepaid_package" | "free_quota";
 
 export type ModelRow = {
   id: string;
@@ -234,16 +234,16 @@ export const AI_FEATURES: FeatureSpec[] = [
   {
     key: "react_netizen",
     label: "Simulasi komentar netizen",
-    requires: ["text", "fast"],
+    requires: ["text"],
     suggested: "fast",
-    note: "Lima komentar pendek. Dipakai sambil nulis, jadi harus balik cepet.",
+    note: "Lima komentar pendek. Enaknya cepet, tapi masih guna walau agak lama — jadi gak dikunci ke model cepat.",
   },
   {
     key: "react_roast",
     label: "Roast draft",
-    requires: ["text", "fast"],
+    requires: ["text"],
     suggested: "fast",
-    note: "Kritik tajam ~180 kata. Pendek, tapi butuh model yang bisa nilai tulisan.",
+    note: "Kritik tajam ~180 kata. Butuh model yang bisa nilai tulisan, kecepatan nomor dua.",
   },
   {
     key: "recycle",

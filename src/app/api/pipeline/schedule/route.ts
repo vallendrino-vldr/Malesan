@@ -5,7 +5,12 @@ import { runAI } from "@/lib/ai/engine";
 import { getModel } from "@/lib/config";
 import { spendCredits, refundCredits } from "@/lib/credits";
 
-export const maxDuration = 30;
+/**
+ * 60s, not 30. Measured latency on the configured gateway is 16-20s even for a
+ * two-string prompt, so a 30s ceiling left no room for the primary to answer AND
+ * a fallback to try — the request aborted at 19.9s and returned 502.
+ */
+export const maxDuration = 60;
 
 /**
  * "Kapan ini enaknya tayang?"
@@ -143,7 +148,12 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       refId: spendRef,
       creditsCharged: cost,
-      signal: AbortSignal.timeout(20_000),
+      // budgetMs must match the signal. The engine splits the budget across
+      // candidates, so a route that allows 20s while the engine assumes its 45s
+      // default hands the primary more time than exists and the fallback never
+      // gets a turn — which is exactly how this endpoint 502'd.
+      signal: AbortSignal.timeout(50_000),
+      budgetMs: 48_000,
     });
 
     const parsed = parseJson<{ schedule_label?: string; reason?: string }>(raw);

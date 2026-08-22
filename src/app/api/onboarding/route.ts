@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { parseJson } from "@/lib/gemini/client";
 import { runAI } from "@/lib/ai/engine";
+import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import {
   buildCreatorDnaAnalysisPrompt,
@@ -122,7 +123,8 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         refId: spendRef,
         creditsCharged: cost,
-        signal: AbortSignal.timeout(45_000),
+        signal: AbortSignal.timeout(50_000),
+        budgetMs: 48_000,
       });
 
       const parsed = parseJson<{ persona_summary: string; signature_formats: string[] }>(rawRes);
@@ -172,7 +174,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, ai_persona_summary: aiPersonaSummary });
 
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Never the raw text: it names the vendor and, on an auth failure, embeds
+    // part of an API key.
+    console.error("onboarding failed", error);
+    return NextResponse.json({ error: userFacingError(error).message }, { status: 500 });
   }
 }

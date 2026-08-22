@@ -256,6 +256,8 @@ export function ModelRegistry({
                               Isi manual
                             </button>
                           </>
+                        ) : m.pricing_mode === "free_quota" ? (
+                          <span className="text-ember-lo">Gratis (kuota provider)</span>
                         ) : m.pricing_mode === "prepaid_package" ? (
                           <span className="text-muted">
                             Paket {formatIdr(Number(m.package_price_idr ?? 0))} /{" "}
@@ -297,10 +299,11 @@ export function ModelRegistry({
                           {/* Two ways to know a price, because vendors sell two
                               different things. A prepaid buyer should never have
                               to convert their receipt into USD-per-Mtok. */}
-                          <div className="flex gap-1.5">
+                          <div className="flex flex-wrap gap-1.5">
                             {(
                               [
                                 ["prepaid_package", "Beli paket token"],
+                                ["free_quota", "Gratis (kuota provider)"],
                                 ["direct_usd", "Harga per token (USD)"],
                               ] as [PricingMode, string][]
                             ).map(([v, l]) => (
@@ -319,7 +322,13 @@ export function ModelRegistry({
                             ))}
                           </div>
 
-                          {draft.pricingMode === "prepaid_package" ? (
+                          {draft.pricingMode === "free_quota" ? (
+                            <p className="rounded-lg border border-ember/20 bg-ember/5 px-3 py-2 text-micro leading-relaxed text-ember-lo">
+                              Model ini gratis dari providernya, jadi biayanya
+                              dihitung nol — bukan &quot;belum diisi&quot;. Yang
+                              membatasi cuma kuota harian provider, bukan uang.
+                            </p>
+                          ) : draft.pricingMode === "prepaid_package" ? (
                             <>
                               <div className="grid gap-3 sm:grid-cols-3">
                                 <label className="block">
