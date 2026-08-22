@@ -25,6 +25,282 @@ export type Database = {
   };
   public: {
     Tables: {
+      ai_providers: {
+        Row: {
+          api_key_encrypted: string | null;
+          balance_currency: string;
+          balance_path: string | null;
+          balance_url: string | null;
+          base_url: string | null;
+          consecutive_failures: number;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          key_source: string;
+          label: string;
+          last_checked_at: string | null;
+          last_error: string | null;
+          last_latency_ms: number | null;
+          last_ok_at: string | null;
+          low_balance_threshold: number | null;
+          notes: string | null;
+          priority: number;
+          protocol: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          api_key_encrypted?: string | null;
+          balance_currency?: string;
+          balance_path?: string | null;
+          balance_url?: string | null;
+          base_url?: string | null;
+          consecutive_failures?: number;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          key_source?: string;
+          label: string;
+          last_checked_at?: string | null;
+          last_error?: string | null;
+          last_latency_ms?: number | null;
+          last_ok_at?: string | null;
+          low_balance_threshold?: number | null;
+          notes?: string | null;
+          priority?: number;
+          protocol?: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          api_key_encrypted?: string | null;
+          balance_currency?: string;
+          balance_path?: string | null;
+          balance_url?: string | null;
+          base_url?: string | null;
+          consecutive_failures?: number;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          key_source?: string;
+          label?: string;
+          last_checked_at?: string | null;
+          last_error?: string | null;
+          last_latency_ms?: number | null;
+          last_ok_at?: string | null;
+          low_balance_threshold?: number | null;
+          notes?: string | null;
+          priority?: number;
+          protocol?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      ai_models: {
+        Row: {
+          capabilities: string[];
+          context_length: number | null;
+          created_at: string;
+          discovered_at: string | null;
+          id: string;
+          input_price_usd_per_mtok: number;
+          is_active: boolean;
+          label: string | null;
+          model_id: string;
+          output_price_usd_per_mtok: number;
+          provider_id: string;
+          source: string;
+          supports_schema: boolean;
+          supports_streaming: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          capabilities?: string[];
+          context_length?: number | null;
+          created_at?: string;
+          discovered_at?: string | null;
+          id?: string;
+          input_price_usd_per_mtok?: number;
+          is_active?: boolean;
+          label?: string | null;
+          model_id: string;
+          output_price_usd_per_mtok?: number;
+          provider_id: string;
+          source?: string;
+          supports_schema?: boolean;
+          supports_streaming?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          capabilities?: string[];
+          context_length?: number | null;
+          created_at?: string;
+          discovered_at?: string | null;
+          id?: string;
+          input_price_usd_per_mtok?: number;
+          is_active?: boolean;
+          label?: string | null;
+          model_id?: string;
+          output_price_usd_per_mtok?: number;
+          provider_id?: string;
+          source?: string;
+          supports_schema?: boolean;
+          supports_streaming?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_models_provider_id_fkey";
+            columns: ["provider_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_providers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ai_routes: {
+        Row: {
+          fallback_model_ids: string[];
+          feature: string;
+          is_active: boolean;
+          label: string | null;
+          mode: string;
+          notes: string | null;
+          prefer: string;
+          primary_model_id: string | null;
+          required_capabilities: string[];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          fallback_model_ids?: string[];
+          feature: string;
+          is_active?: boolean;
+          label?: string | null;
+          mode?: string;
+          notes?: string | null;
+          prefer?: string;
+          primary_model_id?: string | null;
+          required_capabilities?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          fallback_model_ids?: string[];
+          feature?: string;
+          is_active?: boolean;
+          label?: string | null;
+          mode?: string;
+          notes?: string | null;
+          prefer?: string;
+          primary_model_id?: string | null;
+          required_capabilities?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_routes_primary_model_id_fkey";
+            columns: ["primary_model_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_models";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      ai_usage_log: {
+        Row: {
+          attempt: number;
+          cost_idr: number;
+          created_at: string;
+          credits_charged: number;
+          error_message: string | null;
+          feature: string;
+          id: number;
+          input_tokens: number;
+          latency_ms: number | null;
+          model_id: string | null;
+          output_tokens: number;
+          provider_id: string | null;
+          provider_slug: string | null;
+          ref_id: string | null;
+          status: string;
+          user_id: string | null;
+        };
+        Insert: {
+          attempt?: number;
+          cost_idr?: number;
+          created_at?: string;
+          credits_charged?: number;
+          error_message?: string | null;
+          feature: string;
+          id?: number;
+          input_tokens?: number;
+          latency_ms?: number | null;
+          model_id?: string | null;
+          output_tokens?: number;
+          provider_id?: string | null;
+          provider_slug?: string | null;
+          ref_id?: string | null;
+          status?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          attempt?: number;
+          cost_idr?: number;
+          created_at?: string;
+          credits_charged?: number;
+          error_message?: string | null;
+          feature?: string;
+          id?: number;
+          input_tokens?: number;
+          latency_ms?: number | null;
+          model_id?: string | null;
+          output_tokens?: number;
+          provider_id?: string | null;
+          provider_slug?: string | null;
+          ref_id?: string | null;
+          status?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      ai_provider_balance: {
+        Row: {
+          amount: number | null;
+          checked_at: string;
+          currency: string | null;
+          id: number;
+          provider_id: string;
+          raw: Json | null;
+        };
+        Insert: {
+          amount?: number | null;
+          checked_at?: string;
+          currency?: string | null;
+          id?: number;
+          provider_id: string;
+          raw?: Json | null;
+        };
+        Update: {
+          amount?: number | null;
+          checked_at?: string;
+          currency?: string | null;
+          id?: number;
+          provider_id?: string;
+          raw?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_provider_balance_provider_id_fkey";
+            columns: ["provider_id"];
+            isOneToOne: false;
+            referencedRelation: "ai_providers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -955,3 +1231,11 @@ export type Trend = Database["public"]["Tables"]["trends"]["Row"];
 export type AuditLog = Database["public"]["Tables"]["audit_log"]["Row"];
 export type Persona = Database["public"]["Tables"]["personas"]["Row"];
 export type Draft = Database["public"]["Tables"]["drafts"]["Row"];
+
+/** AI Provider Management Layer. Narrowed shapes live in src/lib/ai/types.ts. */
+export type AiProvider = Database["public"]["Tables"]["ai_providers"]["Row"];
+export type AiModel = Database["public"]["Tables"]["ai_models"]["Row"];
+export type AiRoute = Database["public"]["Tables"]["ai_routes"]["Row"];
+export type AiUsageLog = Database["public"]["Tables"]["ai_usage_log"]["Row"];
+export type AiProviderBalance =
+  Database["public"]["Tables"]["ai_provider_balance"]["Row"];
