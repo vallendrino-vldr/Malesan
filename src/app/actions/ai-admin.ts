@@ -10,7 +10,8 @@ import { checkBalance, balanceTrend } from "@/lib/ai/balance";
 import { runOnModel } from "@/lib/ai/engine";
 import { resolveRoute } from "@/lib/ai/router";
 import { costIdr } from "@/lib/ai/cost";
-import { getUsdToIdr } from "@/lib/config";
+import { getUsdToIdr, invalidateConfigCache, type AdminMode } from "@/lib/config";
+import { brainOverview, modelUsageCounts, type BrainView } from "@/lib/ai/brain";
 import type { Database } from "@/lib/supabase/database.types";
 import type {
   Capability,
@@ -423,6 +424,103 @@ export async function deleteModel(id: string): Promise<void> {
   if (error) throw new Error(error.message);
   await audit(adminId, "ai.model.delete", id, "ai_model");
   invalidateAiCache();
+  revalidateAll();
+}
+
+// ============================================================
+// GLOBAL AI BRAIN
+// ============================================================
+
+/**
+ * Set the model the whole product runs on.
+ *
+ * The single highest-leverage write in the admin panel: every feature without an
+ * explicit override follows this, so switching vendors is one save rather than
+ * fifteen edits.
+ *
+ * Validated hard, because the failure is silent. A Brain pointing at an inactive
+ * model does not break the product — routing quietly drops to the legacy Gemini
+ * path — so the owner would believe they had switched to DeepSeek while still
+ * paying Google. Refusing the save is the only way they find out.
+ */
+export async function saveBrain(
+  primaryModelId: string | null,
+  fallbackModelIds: string[],
+): Promise<void> {
+  const adminId = await verifyAdmin();
+  const { models, providers } = await getFleet();
+
+  const usable = (id: string) => {
+    const m = models.find((x) => x.id === id);
+    if (!m) return `Model gak ketemu.`;
+    if (!m.is_active) return `"${m.label ?? m.model_id}" lagi dimatiin. Aktifin dulu di menu Model.`;
+    const p = providers.find((x) => x.id === m.provider_id);
+    if (!p?.is_active) return `Gateway buat "${m.label ?? m.model_id}" lagi mati.`;
+    return null;
+  };
+
+  if (primaryModelId) {
+    const problem = usable(primaryModelId);
+    if (problem) throw new Error(problem);
+  }
+
+  // Deduped and stripped of the primary: a chain that retries the model that
+  // just failed is not a fallback, it is the same call twice.
+  const clean = [...new Set(fallbackModelIds)].filter((id) => id && id !== primaryModelId);
+  for (const id of clean) {
+    const problem = usable(id);
+    if (problem) throw new Error(problem);
+  }
+
+  const { error } = await createServiceRoleClient()
+    .from("app_config")
+    .update({
+      value: { primary: primaryModelId, fallbacks: clean } as never,
+      updated_at: new Date().toISOString(),
+      updated_by: adminId,
+    })
+    .eq("key", "ai_brain");
+
+  if (error) throw new Error(error.message);
+
+  await audit(adminId, "ai.brain.set", primaryModelId ?? "none", "ai_brain", {
+    fallbacks: clean.length,
+  });
+  invalidateConfigCache();
+  invalidateAiCache();
+  revalidateAll();
+}
+
+/** Everything the Simple-Mode home screen shows, in one round trip. */
+export async function brainStatus(): Promise<BrainView> {
+  await verifyAdmin();
+  const { routes } = await getFleet();
+  return brainOverview(routes.filter((r) => r.is_active).map((r) => r.feature));
+}
+
+/** How many features each model actually serves first. Drives the model toggles. */
+export async function modelUsage(): Promise<Record<string, number>> {
+  await verifyAdmin();
+  const { routes } = await getFleet();
+  return modelUsageCounts(
+    routes
+      .filter((r) => r.is_active)
+      .map((r) => ({ feature: r.feature, primaryModelId: r.primary_model_id })),
+  );
+}
+
+export async function setAdminMode(mode: AdminMode): Promise<void> {
+  const adminId = await verifyAdmin();
+  const { error } = await createServiceRoleClient()
+    .from("app_config")
+    .update({
+      value: mode as never,
+      updated_at: new Date().toISOString(),
+      updated_by: adminId,
+    })
+    .eq("key", "ai_admin_mode");
+  if (error) throw new Error(error.message);
+  invalidateConfigCache();
   revalidateAll();
 }
 

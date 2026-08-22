@@ -1,5 +1,7 @@
 import "server-only";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { costIdr } from "./cost";
+import { FEATURE_MAP, type ModelRow } from "./types";
 
 /**
  * Cost intelligence: what the AI actually costs, what it earns, and where the
@@ -25,6 +27,10 @@ export type FeatureCost = Money & {
   inputTokens: number;
   outputTokens: number;
   avgLatencyMs: number;
+  /** The model that served this feature most often — what a suggestion replaces. */
+  byModelId: string | null;
+  /** Length of the observed window, so a saving can be scaled to a month. */
+  windowDays: number;
 };
 
 export type ModelCost = Money & {
@@ -61,6 +67,96 @@ export type CostSummary = {
  * averaging the rates rather than the money would overweight the small pack
  * nobody buys. Falls back to 150 (the 100/Rp15.000 pack) when nothing is active.
  */
+export type Suggestion = {
+  feature: string;
+  featureLabel: string;
+  currentModel: string;
+  suggestedModel: string;
+  suggestedProvider: string;
+  suggestedModelRowId: string;
+  savingsPercent: number;
+  monthlySavingIdr: number;
+};
+
+/**
+ * "DeepSeek would save 60% on Script" — computed, not guessed.
+ *
+ * Uses this product's OWN measured token shape per feature, because the ratio is
+ * what decides the answer: Script is output-heavy and output is where the price
+ * premium lives, so a model that looks cheap on input can still lose. A
+ * recommendation built on list prices alone would be wrong for exactly the
+ * features that cost the most.
+ *
+ * Only suggests models that (a) are active, (b) have a price set — an unpriced
+ * model looks free and would win every comparison dishonestly — and (c) carry
+ * every capability the feature requires.
+ *
+ * The 20% floor exists so the screen stays quiet. A dashboard that always has a
+ * suggestion is a dashboard nobody reads.
+ */
+const MIN_SAVING_PERCENT = 20;
+
+export async function savingsSuggestions(
+  byFeature: FeatureCost[],
+  models: ModelRow[],
+  usdToIdr: number,
+): Promise<Suggestion[]> {
+  const priced = models.filter(
+    (m) =>
+      m.is_active &&
+      (m.input_price_usd_per_mtok > 0 || m.output_price_usd_per_mtok > 0),
+  );
+  if (priced.length === 0) return [];
+
+  const out: Suggestion[] = [];
+
+  for (const f of byFeature) {
+    if (f.calls === 0 || f.costIdr <= 0) continue;
+    const spec = FEATURE_MAP[f.feature];
+    const required = spec?.requires ?? [];
+
+    // The real average shape of this feature's traffic.
+    const avgIn = f.inputTokens / f.calls;
+    const avgOut = f.outputTokens / f.calls;
+    if (avgIn + avgOut === 0) continue;
+
+    const currentPerCall = f.costIdr / f.calls;
+
+    const eligible = priced.filter((m) =>
+      required.every((r) => m.capabilities.includes(r)),
+    );
+    if (eligible.length === 0) continue;
+
+    let best: { model: ModelRow; perCall: number } | null = null;
+    for (const m of eligible) {
+      const perCall = costIdr(m, { input: avgIn, output: avgOut }, usdToIdr);
+      if (!best || perCall < best.perCall) best = { model: m, perCall };
+    }
+    if (!best || best.perCall >= currentPerCall) continue;
+
+    const savingsPercent = ((currentPerCall - best.perCall) / currentPerCall) * 100;
+    if (savingsPercent < MIN_SAVING_PERCENT) continue;
+
+    // Do not suggest what is already running.
+    if (best.model.model_id === f.byModelId) continue;
+
+    out.push({
+      feature: f.feature,
+      featureLabel: spec?.label ?? f.feature,
+      currentModel: f.byModelId ?? "?",
+      suggestedModel: best.model.label ?? best.model.model_id,
+      suggestedProvider: best.model.provider_id,
+      suggestedModelRowId: best.model.id,
+      savingsPercent,
+      // Extrapolated from the observed window to 30 days.
+      monthlySavingIdr:
+        (currentPerCall - best.perCall) * f.calls * (30 / Math.max(1, f.windowDays)),
+    });
+  }
+
+  return out.sort((a, b) => b.monthlySavingIdr - a.monthlySavingIdr).slice(0, 3);
+}
+
 async function rupiahPerCredit(): Promise<number> {
   const { data } = await createServiceRoleClient()
     .from("credit_packs")
@@ -151,7 +247,10 @@ export async function costSummary(days = 7): Promise<CostSummary> {
   const today = { ...zero(), calls: 0 };
   const window = { ...zero(), calls: 0, failures: 0, fallbacks: 0 };
   const month = { ...zero(), calls: 0 };
-  const features = new Map<string, FeatureCost & { latencySum: number; latencyCount: number }>();
+  const features = new Map<
+    string,
+    FeatureCost & { latencySum: number; latencyCount: number; modelTally: Map<string, number> }
+  >();
   const modelsMap = new Map<string, ModelCost>();
   const troubled = new Map<string, { failures: number; lastError: string | null }>();
 
@@ -197,11 +296,17 @@ export async function costSummary(days = 7): Promise<CostSummary> {
         inputTokens: 0,
         outputTokens: 0,
         avgLatencyMs: 0,
+        byModelId: null,
+        windowDays: days,
         latencySum: 0,
         latencyCount: 0,
+        modelTally: new Map(),
       });
     }
     const f = features.get(fKey)!;
+    if (r.model_id && r.status === "ok") {
+      f.modelTally.set(r.model_id, (f.modelTally.get(r.model_id) ?? 0) + 1);
+    }
     add(f, cost, credits);
     f.calls++;
     if (failed) f.failures++;
@@ -238,6 +343,8 @@ export async function costSummary(days = 7): Promise<CostSummary> {
     .map((f) => ({
       ...f,
       avgLatencyMs: f.latencyCount > 0 ? Math.round(f.latencySum / f.latencyCount) : 0,
+      byModelId:
+        [...f.modelTally.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null,
     }))
     .sort((a, b) => b.costIdr - a.costIdr);
 

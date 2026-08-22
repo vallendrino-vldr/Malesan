@@ -257,6 +257,45 @@ export async function getUsdToIdr(): Promise<number> {
   return typeof v === "number" && v > 0 ? v : 16_500;
 }
 
+/**
+ * The Global AI Brain: the model the whole product runs on.
+ *
+ * Ids point at `ai_models.id`. Null primary means "not configured", which the
+ * router reads as the legacy Gemini path — so an owner who never opens this
+ * screen keeps exactly the behaviour they have today.
+ */
+export type BrainConfig = {
+  primary: string | null;
+  fallbacks: string[];
+};
+
+export async function getAiBrain(): Promise<BrainConfig> {
+  const rows = await load();
+  const v = rows["ai_brain"];
+  if (!v || typeof v !== "object") return { primary: null, fallbacks: [] };
+  const o = v as { primary?: unknown; fallbacks?: unknown };
+  return {
+    primary: typeof o.primary === "string" && o.primary ? o.primary : null,
+    fallbacks: Array.isArray(o.fallbacks)
+      ? o.fallbacks.filter((x): x is string => typeof x === "string" && Boolean(x))
+      : [],
+  };
+}
+
+export type AdminMode = "simple" | "advanced";
+
+/**
+ * Which face the AI panel shows. Simple is the default because the person using
+ * it owns a business rather than a codebase: the questions that matter are what
+ * the AI is, what it costs, and whether it is making money. Gateways, model
+ * registries and routing tables are the answer to a different question, and
+ * putting them first is what made the old panel unusable to its only user.
+ */
+export async function getAdminMode(): Promise<AdminMode> {
+  const rows = await load();
+  return rows["ai_admin_mode"] === "advanced" ? "advanced" : "simple";
+}
+
 export type RouterFlags = {
   /** Master switch. Off = every feature uses the legacy env Gemini path. */
   routerEnabled: boolean;

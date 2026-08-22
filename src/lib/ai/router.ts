@@ -1,6 +1,7 @@
 import "server-only";
 import { getRouterFlags } from "@/lib/config";
 import { getFleet, getRoute } from "./registry";
+import { resolveBrain } from "./brain";
 import { blendedUsdPerMtok } from "./cost";
 import { FEATURE_MAP, type Candidate, type Capability, type ModelRow, type ProviderRow, type RoutePrefer } from "./types";
 
@@ -70,7 +71,8 @@ export type RouteDecision = {
   candidates: Candidate[];
   /** Why this list — surfaced in the playground and in the usage log. */
   reason: string;
-  mode: "manual" | "smart" | "legacy";
+  /** `brain` = inheriting the global default; manual/smart = an override. */
+  mode: "manual" | "smart" | "legacy" | "brain";
 };
 
 /**
@@ -86,13 +88,16 @@ export async function resolveRoute(feature: string): Promise<RouteDecision> {
     return { candidates: [], reason: "Router dimatiin — pakai jalur Gemini lama.", mode: "legacy" };
   }
 
+  // No override row means this feature follows the Global AI Brain. Absence is
+  // the inheritance mechanism: an ai_routes row exists precisely to say "this
+  // one is DIFFERENT", so the routing screen lists exceptions rather than
+  // settings, and deleting a row is how a feature rejoins the default.
   const route = await getRoute(feature);
   if (!route) {
-    return {
-      candidates: [],
-      reason: "Fitur ini belum diatur routing-nya — pakai jalur Gemini lama.",
-      mode: "legacy",
-    };
+    const brain = await resolveBrain(feature);
+    return brain.candidates.length > 0
+      ? { candidates: brain.candidates, reason: brain.reason, mode: "brain" }
+      : { candidates: [], reason: brain.reason, mode: "legacy" };
   }
 
   const { providers, models } = await getFleet();

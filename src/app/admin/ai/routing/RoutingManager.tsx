@@ -52,10 +52,13 @@ export function RoutingManager({
   routes,
   models,
   providers,
+  brainLabel,
 }: {
   routes: RouteRow[];
   models: ModelRow[];
   providers: ProviderView[];
+  /** What the Global AI Brain currently is, so "ikut default" names something. */
+  brainLabel: string;
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -122,10 +125,11 @@ export function RoutingManager({
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="font-display text-xl font-bold text-ink">Routing</h1>
+        <h1 className="font-display text-xl font-bold text-ink">Routing per fitur</h1>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Nentuin fitur mana pakai model mana. Yang belum diatur otomatis pakai
-          jalur Gemini lama — aman, dan itu tombol balik kalau ada yang aneh.
+          Semua fitur ikut Otak AI ({brainLabel}) kecuali diatur sendiri di sini.
+          Halaman ini isinya cuma pengecualian — kalau semua ikut default, ya
+          emang harusnya kosong.
         </p>
       </header>
 
@@ -151,14 +155,17 @@ export function RoutingManager({
                   <p className="mt-1.5 text-micro">
                     {r && r.is_active ? (
                       <span className="text-ember-lo">
+                        Diatur sendiri —{" "}
                         {r.mode === "manual"
-                          ? `Manual: ${primary ? modelLabel(primary) : "model utamanya udah gak aktif"}`
-                          : `Smart (${PREFERS.find((p) => p.value === r.prefer)?.label})`}
+                          ? primary
+                            ? modelLabel(primary)
+                            : "model utamanya udah gak aktif"
+                          : `otomatis (${PREFERS.find((p) => p.value === r.prefer)?.label})`}
                         {r.fallback_model_ids.length > 0 &&
                           ` + ${r.fallback_model_ids.length} cadangan`}
                       </span>
                     ) : (
-                      <span className="text-muted">Default (Gemini lama)</span>
+                      <span className="text-muted">Ikut Otak AI ({brainLabel})</span>
                     )}
                   </p>
                 </div>
@@ -166,7 +173,7 @@ export function RoutingManager({
                   onClick={() => (isOpen ? setOpen(null) : startEdit(f.key))}
                   className="shrink-0 rounded-full border border-hairline px-3 py-1.5 text-micro text-ink hover:bg-surface"
                 >
-                  {isOpen ? "Tutup" : "Atur"}
+                  {isOpen ? "Tutup" : r ? "Ubah" : "Atur sendiri"}
                 </button>
               </div>
 
@@ -334,16 +341,16 @@ export function RoutingManager({
                     {r && (
                       <button
                         onClick={() => {
-                          if (!confirm(`Balikin "${f.label}" ke Gemini lama?`)) return;
+                          if (!confirm(`Balikin "${f.label}" biar ikut Otak AI lagi?`)) return;
                           startTransition(async () => {
                             await clearRoute(f.key);
                             setOpen(null);
-                            setNote({ key: f.key, text: "Balik ke default.", ok: true });
+                            setNote({ key: f.key, text: "Balik ikut Otak AI.", ok: true });
                           });
                         }}
                         className="ml-auto rounded-full border border-hairline px-4 py-1.5 text-micro text-muted"
                       >
-                        Balikin ke default
+                        Balikin ke Otak AI
                       </button>
                     )}
                   </div>
