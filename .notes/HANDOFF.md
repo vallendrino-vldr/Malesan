@@ -35,8 +35,39 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Living AI Companion World Experience Final Direction pass (§9z.8).
-**Newest work is §9z.8 — Living AI Companion World (Final Direction): Built timed 5-phase sequential 3D Living Studio Workspace (LivingStudioCanvas.tsx: Standby -> Visor Scan -> Hologram Nyala -> 3 Angle Ditemukan -> Naskah & Subtitle Siap); Updated Hero copy to exact brand tone ("Lo tinggal kasih ide. Malesan bantu matengin sampai siap tayang"); Built 3-Chapter Journey (ProductStory.tsx: Layar kosong lagi? -> Malesan lagi cari angle... -> Udah. Tinggal rekam); Replaced static cards with Living Creator Activity Ticker (CreatorActivityTicker.tsx); Updated Final CTA with mascot reaction ("Udah punya ide tapi masih bengong? Mulai aja dulu. Sisanya biar Malesan"); Tested across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.8, then §9z.7.
+Last updated: **2026-08-24**, after the Master Prompt Immersive AI Companion Landing Rebuild (§9z.9).
+**Newest work is §9z.9 — Master Prompt Immersive AI Companion Landing Rebuild: Rebuilt the entire landing experience with 4 focused, high-emotion sections (max 1.5-2 viewports on desktop, 2-3 swipes on mobile); 18-second 5-state Living Studio Workspace (LivingStudioCanvas.tsx: 01 Standby -> 02 Thinking -> 03 Ideas Found -> 04 Script Ready -> 05 Ready); Interactive Creator Journey (CreatorJourney.tsx: 0% Layar Kosong -> 33% AI Thinking -> 66% Idea Generated -> 100% Content Ready); Live Creator Activity Ticker with simulated creator stream and authentic creator notes; Exact brand copywriting (gue, lo, ga, ribet, bengong, mulai aja dulu); Tested across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.9, then §9z.8.
+
+---
+
+## §9z.9 — Master Prompt Immersive AI Companion Landing Rebuild (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Section 1: Living AI Studio Hero (`LivingStudioCanvas.tsx` & `CompanionHero.tsx`)**:
+   - 18-second 5-phase timed state sequence:
+     - `01 / STANDBY (0-3s)`: "Layar kosong lagi?" (Nunggu ide pertama lo).
+     - `02 / THINKING (3-7s)`: "Lagi cari arah..." (Nyaring tren yang cocok buat lo).
+     - `03 / IDEAS (7-11s)`: "3 Angle Konten Muncul" (Kesalahan creator pemula, Tren lokal, Storytelling niche).
+     - `04 / SCRIPT (11-15s)`: "Script 45s Siap Syuting" (Hook, problem, solution with timestamps).
+     - `05 / READY (15-18s)`: "Video & Subtitle Siap!" (TikTok & Reels 9:16 Auto-CC, Threads/X).
+   - Desktop subtle 3D mouse parallax tracking (`rotateX`, `rotateY`, `translateZ`).
+   - Mobile first-viewport composition: Logo $\rightarrow$ Living AI Scene $\rightarrow$ Headline $\rightarrow$ Subtitle $\rightarrow$ CTA $\rightarrow$ 3 Compact Badges.
+
+2. **Section 2: Interactive Creator Journey (`CreatorJourney.tsx`)**:
+   - Title: *"Dari layar kosong, jadi konten siap tayang."*
+   - Continuous progression: `0% Layar Kosong` $\rightarrow$ `33% AI Thinking` $\rightarrow$ `66% Idea Generated` $\rightarrow$ `100% Content Ready`.
+
+3. **Section 3: Live Creator Activity Stream (`CreatorActivityTicker.tsx`)**:
+   - Simulated infinite marquee stream: `@dimasdaily`, `@ayufashion`, `@rakabikin`, `@kopisenja`, `@riancreative`, `@dindastyle`.
+
+4. **Section 4: Final Conversion CTA (`CompactCTA.tsx`)**:
+   - Mascot dialogue: *"Udah punya ide tapi masih bengong? Mulai aja dulu. Sisanya biar Malesan."*
+   - Headline: *"Siap bikin konten pertama lo?"*
+   - Subtext: *"Ga perlu prompt ribet. 10 kredit langsung masuk tiap hari."*
+   - Button: *"Mulai gratis"*.
 
 ---
 

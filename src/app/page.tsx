@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompanionHero } from "@/components/landing/CompanionHero";
-import { ProductStory } from "@/components/landing/ProductStory";
+import { CreatorJourney } from "@/components/landing/CreatorJourney";
 import { CreatorActivityTicker } from "@/components/landing/CreatorActivityTicker";
 import { CompactCTA } from "@/components/landing/CompactCTA";
 
@@ -27,7 +27,7 @@ export default function Home() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 font-display text-xs font-semibold text-muted">
-            <a href="#perjalanan" className="transition-colors hover:text-ink">
+            <a href="#journey" className="transition-colors hover:text-ink">
               Cara Kerja
             </a>
             <Link href="/masuk" className="transition-colors hover:text-ink">
@@ -52,20 +52,20 @@ export default function Home() {
         {/* Section 1: Hero Experience (Living AI Studio Workspace + Headline + CTA) */}
         <CompanionHero />
 
-        {/* Section 2: 3-Chapter Creator Journey */}
-        <ProductStory />
+        {/* Section 2: Interactive Creator Journey (0% -> 33% -> 66% -> 100%) */}
+        <CreatorJourney />
 
-        {/* Section 3: Living Creator Activity Stream */}
+        {/* Section 3: Live Creator Activity Stream */}
         <CreatorActivityTicker />
 
-        {/* Section 4: Final Closing CTA with Mascot Reaction */}
+        {/* Section 4: Final Conversion CTA with Mascot Reaction */}
         <CompactCTA />
       </main>
 
-      {/* Compact Public Footer */}
-      <footer className="relative z-10 border-t border-hairline/70 bg-obsidian py-8">
+      {/* Spacious Minimal Footer */}
+      <footer className="relative z-10 border-t border-hairline/70 bg-obsidian py-8 sm:py-10">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-5 sm:flex-row sm:px-8">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
             <Logo markClass="h-7" />
             <span className="text-hairline hidden sm:inline">|</span>
             <p className="text-micro text-muted">

@@ -1,48 +1,44 @@
 "use client";
 
-type ActivityItem = {
+type StreamItem = {
   handle: string;
-  action: string;
+  activity: string;
   tag: string;
-  accent: string;
+  isQuote?: boolean;
 };
 
-const ACTIVITIES: ActivityItem[] = [
+const STREAM_ITEMS: StreamItem[] = [
   {
     handle: "@dimasdaily",
-    action: "baru selesai bikin script 45 detik",
+    activity: "baru selesai bikin script 45 detik",
     tag: "Script Studio",
-    accent: "bg-ember/15 text-ember border-ember/30",
   },
   {
     handle: "@ayufashion",
-    action: "menemukan 3 angle konten baru",
-    tag: "Ide Harian",
-    accent: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    activity: "nemu 3 angle konten baru",
+    tag: "Idea Lab",
+  },
+  {
+    handle: "@rakabikin",
+    activity: "“Gue biasanya habis 2 jam cuma mikirin ide. Sekarang tinggal pilih angle.”",
+    tag: "Creator Note",
+    isQuote: true,
   },
   {
     handle: "@kopisenja",
-    action: "mulai konten pertama hari ini",
+    activity: "mulai konten pertama hari ini",
     tag: "Creator DNA",
-    accent: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   },
   {
     handle: "@riancreative",
-    action: "bakar subtitle auto-cc TikTok",
-    tag: "Auto-CC",
-    accent: "bg-ember/15 text-ember border-ember/30",
+    activity: "auto-CC selesai sinkron kata",
+    tag: "Auto CC",
   },
   {
-    handle: "@bintang.tech",
-    action: "dapet hook skor 9.4/10",
-    tag: "Hook Lab",
-    accent: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  },
-  {
-    handle: "@claracooks",
-    action: "naskah reels 30s siap syuting",
-    tag: "Script Studio",
-    accent: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    handle: "@dindastyle",
+    activity: "“Opening 3 detik kelar tanpa overthinking.”",
+    tag: "Creator Note",
+    isQuote: true,
   },
 ];
 
@@ -53,30 +49,33 @@ export function CreatorActivityTicker() {
         <div className="flex items-center gap-2">
           <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="font-mono text-micro font-bold tracking-wider text-muted uppercase">
-            Creator yang lagi ditemenin Malesan
+            CREATOR YANG LAGI DITEMENIN MALESAN
           </span>
         </div>
         <span className="hidden sm:inline font-mono text-[10px] text-muted/60">
-          Live Creator Activity
+          Live Activity Stream
         </span>
       </div>
 
-      {/* Infinite Horizontal Marquee Ticker */}
+      {/* Infinite Horizontal Marquee Stream */}
       <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-        <div className="flex w-max gap-3.5 animate-[marquee_30s_linear_infinite] hover:[animation-play-state:paused]">
-          {/* Double items array for seamless infinite loop */}
-          {[...ACTIVITIES, ...ACTIVITIES].map((item, idx) => (
+        <div className="flex w-max gap-3.5 animate-[marquee_32s_linear_infinite] hover:[animation-play-state:paused]">
+          {[...STREAM_ITEMS, ...STREAM_ITEMS].map((item, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2.5 rounded-full border border-hairline/70 bg-surface/60 px-4 py-2 shadow-xs backdrop-blur-md shrink-0"
+              className={`flex items-center gap-2.5 rounded-full border px-4 py-2 shadow-xs backdrop-blur-md shrink-0 ${
+                item.isQuote
+                  ? "border-ember/30 bg-ember/10"
+                  : "border-hairline/70 bg-surface/60"
+              }`}
             >
               <span className="font-display text-xs font-bold text-ink">
                 {item.handle}
               </span>
-              <span className="text-xs text-muted">
-                {item.action}
+              <span className={`text-xs ${item.isQuote ? "text-ink/90 font-medium" : "text-muted"}`}>
+                {item.activity}
               </span>
-              <span className={`rounded-full border px-2 py-0.5 font-mono text-[9px] font-semibold ${item.accent}`}>
+              <span className="rounded-full border border-hairline/80 bg-surface-raised px-2 py-0.5 font-mono text-[9px] text-muted font-semibold">
                 {item.tag}
               </span>
             </div>

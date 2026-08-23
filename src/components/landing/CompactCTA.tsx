@@ -8,7 +8,7 @@ export function CompactCTA() {
     <section className="relative border-t border-hairline/60 bg-obsidian py-12 sm:py-16">
       <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 text-center flex flex-col items-center">
         
-        {/* Companion Mini Avatar & Dialogue Bubble */}
+        {/* Companion Mascot Speech Bubble with Reaction */}
         <div className="inline-flex items-center gap-3 rounded-full border border-hairline/80 bg-surface/60 px-4 py-2 shadow-xs backdrop-blur-md">
           <div className="size-8 shrink-0">
             <Mascot working={false} className="size-full" />
@@ -24,7 +24,7 @@ export function CompactCTA() {
         </h2>
         
         <p className="mt-2 text-xs sm:text-base text-muted max-w-md">
-          Ga perlu prompt ribet. 10 kredit gratis langsung aktif di akun lo tiap hari.
+          Ga perlu prompt ribet. 10 kredit langsung masuk tiap hari.
         </p>
 
         {/* Clean Solid CTA Button */}
