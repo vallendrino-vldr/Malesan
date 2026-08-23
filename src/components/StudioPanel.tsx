@@ -94,46 +94,43 @@ export function StudioPanel({
 }
 
 /**
- * 1. COMPACT HERO ACTION: 1-Click Creative Magic
+ * 1. HERO SPOTLIGHT CARD: 1-Click Creative Magic
  */
-export function StudioHero({
-  mod = "ide",
+export function StudioHeroCard({
   cost,
+  mod = "ide",
 }: {
-  mod?: Mod;
   cost: number;
+  mod?: Mod;
 }) {
   return (
-    <div className="surface-card relative overflow-hidden rounded-2xl border border-ember/40 bg-gradient-to-r from-surface via-surface to-ember/10 p-4 sm:p-4.5 text-left shadow-xs transition-all duration-[var(--duration-standard)] ease-heat">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-[10px] font-bold text-ember border border-ember/30">
-              <span className="size-1.5 rounded-full bg-ember animate-pulse" />
-              1-Click Instan
-            </span>
-            <span className="font-mono text-[10px] font-bold text-muted">
-              {cost} kredit
-            </span>
-          </div>
-          <h2 className="mt-1 font-display text-base sm:text-lg font-bold tracking-display-sm text-ink truncate">
-            Cari 3 Ide Konten Hari Ini
-          </h2>
-          <p className="mt-0.5 text-micro sm:text-xs text-muted leading-tight">
-            Langsung dapet 3 ide segar siap posting + hook &amp; naskah video.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
-          }
-          className="btn-ember shrink-0 inline-flex min-h-10 sm:min-h-11 items-center justify-center rounded-xl px-4 sm:px-5 font-display text-xs sm:text-sm font-bold text-obsidian shadow-sm transition-transform active:scale-[0.99] hover:brightness-105"
-        >
-          Kasih 3 Ide Sekarang →
-        </button>
+    <div className="mt-4 sm:mt-5 w-full rounded-2xl border border-ember/40 bg-surface/90 p-4 sm:p-5 text-left shadow-sm transition-all hover:border-ember/60">
+      <div className="flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold text-ember border border-ember/30">
+          <span className="size-1.5 rounded-full bg-ember animate-pulse" />
+          ⚡ 1-Click Instan
+        </span>
+        <span className="rounded-md bg-surface-raised px-2 py-0.5 font-mono text-micro font-bold text-ember border border-hairline">
+          {cost} kredit
+        </span>
       </div>
+
+      <h2 className="mt-2 font-display text-base sm:text-lg font-bold text-ink">
+        Cari 3 Ide Konten Hari Ini
+      </h2>
+      <p className="mt-0.5 text-micro sm:text-xs text-muted leading-relaxed">
+        Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook &amp; naskah video.
+      </p>
+
+      <button
+        type="button"
+        onClick={() =>
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
+        }
+        className="btn-ember mt-3 inline-flex min-h-11 sm:min-h-12 w-full items-center justify-center rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] hover:brightness-105"
+      >
+        Kasih 3 Ide Sekarang →
+      </button>
     </div>
   );
 }

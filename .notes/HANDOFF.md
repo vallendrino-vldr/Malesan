@@ -35,8 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the AI Creative Companion & Mascot Spotlight pass (§9t).
-**Newest work is §9t — Studio AI Creative Companion (Level 1: Large charismatic Mascot Stage + Sapaan + Primary CTA Card spotlight; Level 2: 8 Compact Command Tiles in 4x2 desktop / 2x4 mobile grid; Level 3: Value Strip).** Read §9t, then §9s.
+Last updated: **2026-08-23**, after the RSC Client Component Event Handler serialization fix (§9u).
+**Newest work is §9u — Fix: Encapsulate StudioHeroCard inside Client Component boundary to eliminate Next.js RSC `Event handlers cannot be passed to Client Component props` error on /app route.** Read §9u, then §9t.
+
+---
+
+## §9u — Runtime Bugfix: RSC Client Component Event Handler Boundary (`/app` crash fix) (2026-08-23)
+
+**Root cause analysis:**
+- `/app` was throwing `Error: Event handlers cannot be passed to Client Component props` inside `src/app/app/page.tsx`.
+- Because `src/app/app/page.tsx` is a React Server Component (RSC), passing a raw `<button onClick={...}>` inside the `home` JSX prop into `<StudioPanel>` (a `"use client"` Client Component) violated Next.js / React Server serialization rules.
+- React cannot serialize function references across the Server Component -> Client Component prop boundary during SSR, triggering the error boundary (`"Waduh! Halaman ini lagi bermasalah"`).
+
+**Fix applied:**
+- Encapsulated the hero card into `StudioHeroCard` inside `src/components/StudioPanel.tsx` (`"use client"`).
+- `src/app/app/page.tsx` now passes only the serializable `cost` prop: `<StudioHeroCard cost={costIde} />`.
+- All event handlers remain strictly within the Client Component boundary.
 
 ---
 

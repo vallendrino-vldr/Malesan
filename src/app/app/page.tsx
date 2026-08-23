@@ -10,7 +10,7 @@ import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCos
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
-import { StudioPanel, StudioTile } from "@/components/StudioPanel";
+import { StudioPanel, StudioHeroCard, StudioTile } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
@@ -301,34 +301,7 @@ export default async function AppPage({
               </div>
 
               {/* PRIMARY CTA CARD — The #1 Obvious Action on Screen */}
-              <div className="mt-4 sm:mt-5 w-full rounded-2xl border border-ember/40 bg-surface/90 p-4 sm:p-5 text-left shadow-sm transition-all hover:border-ember/60">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold text-ember border border-ember/30">
-                    <span className="size-1.5 rounded-full bg-ember animate-pulse" />
-                    ⚡ 1-Click Instan
-                  </span>
-                  <span className="rounded-md bg-surface-raised px-2 py-0.5 font-mono text-micro font-bold text-ember border border-hairline">
-                    {costIde} kredit
-                  </span>
-                </div>
-
-                <h2 className="mt-2 font-display text-base sm:text-lg font-bold text-ink">
-                  Cari 3 Ide Konten Hari Ini
-                </h2>
-                <p className="mt-0.5 text-micro sm:text-xs text-muted leading-relaxed">
-                  Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook &amp; naskah video.
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "ide" }))
-                  }
-                  className="btn-ember mt-3 inline-flex min-h-11 sm:min-h-12 w-full items-center justify-center rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] hover:brightness-105"
-                >
-                  Kasih 3 Ide Sekarang →
-                </button>
-              </div>
+              <StudioHeroCard cost={costIde} />
             </div>
           </section>
 
