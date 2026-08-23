@@ -14,7 +14,7 @@ export function CompactCTA() {
             <Mascot working={false} className="size-full" />
           </div>
           <span className="text-xs sm:text-sm font-medium text-ink">
-            &ldquo;Lo mulai aja dulu. Sisanya biar Malesan.&rdquo;
+            &ldquo;Udah punya ide tapi masih bengong? Mulai aja dulu. Sisanya biar Malesan.&rdquo;
           </span>
         </div>
 

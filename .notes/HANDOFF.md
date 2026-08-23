@@ -35,8 +35,39 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Living AI Companion World Experience pass (§9z.7).
-**Newest work is §9z.7 — Living AI Companion World Experience: Built interactive 3D Living Studio Workspace (LivingStudioCanvas.tsx) with volumetric ember pedestal, concentric orbit rings, cursor-tracking parallax, and live holographic thought projections; Updated copywriting to casual creator Indonesian tone ("Lo mulai aja dulu. Sisanya biar Malesan"); Integrated compact Creator Micro-Testimonials (CreatorTestimonials.tsx: Raka, Dinda, Kevin); Refined mobile layout with 3 compact cards (10 Kredit, Google OAuth, 30 Detik); Tested across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.7, then §9z.6.
+Last updated: **2026-08-24**, after the Living AI Companion World Experience Final Direction pass (§9z.8).
+**Newest work is §9z.8 — Living AI Companion World (Final Direction): Built timed 5-phase sequential 3D Living Studio Workspace (LivingStudioCanvas.tsx: Standby -> Visor Scan -> Hologram Nyala -> 3 Angle Ditemukan -> Naskah & Subtitle Siap); Updated Hero copy to exact brand tone ("Lo tinggal kasih ide. Malesan bantu matengin sampai siap tayang"); Built 3-Chapter Journey (ProductStory.tsx: Layar kosong lagi? -> Malesan lagi cari angle... -> Udah. Tinggal rekam); Replaced static cards with Living Creator Activity Ticker (CreatorActivityTicker.tsx); Updated Final CTA with mascot reaction ("Udah punya ide tapi masih bengong? Mulai aja dulu. Sisanya biar Malesan"); Tested across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.8, then §9z.7.
+
+---
+
+## §9z.8 — Living AI Companion World (Final Direction) (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Timed 5-Phase Living AI Studio Workspace (`LivingStudioCanvas.tsx`)**:
+   - `01 / STANDBY (0-2.5s)`: Robot idle looking at empty screen with gentle breathing.
+   - `02 / LAGI MIKIR (2.5-5.5s)`: Cyan/amber visor scanning pulse ("Menyaring 100+ tren viral...").
+   - `03 / HOLOGRAM NYALA (5.5-8.5s)`: Volumetric light beam projects holographic creative workspace.
+   - `04 / IDE DITEMUKAN (8.5-12.5s)`: 3 floating angle cards materialize with real structured snippets.
+   - `05 / SIAP TAYANG (12.5-16.5s)`: Complete 45s script + Auto-CC burnt-in subtitle preview.
+   - Interactive 3D mouse parallax tilt on both mascot and floating hologram.
+
+2. **3-Chapter Creator Journey (`ProductStory.tsx`)**:
+   - `BAB 01`: *"Layar kosong lagi?"* (Punya niat bikin konten tapi buntu)
+   - `BAB 02`: *"Malesan lagi cari angle..."* (Menyaring 100+ tren jadi 3 angle matang)
+   - `BAB 03`: *"Udah. Tinggal rekam."* (Naskah 45 detik + subtitle siap upload)
+
+3. **Living Creator Activity Ticker (`CreatorActivityTicker.tsx`)**:
+   - Replaced static testimonial cards with an infinite smooth marquee of real creator activity (*@dimasdaily*, *@ayufashion*, *@kopisenja*, *@riancreative*, *@bintang.tech*, *@claracooks*).
+
+4. **Brand Tone Polish & Mascot Closing Invitation (`CompactCTA.tsx`)**:
+   - Mascot dialogue: *"Udah punya ide tapi masih bengong? Mulai aja dulu. Sisanya biar Malesan."*
+   - CTA: *"Mulai gratis"* + Subtext *"Ga perlu prompt ribet · 10 kredit gratis langsung aktif tiap hari"*.
+
+5. **Mobile First-Viewport Experience (3 Compact Cards)**:
+   - Logo $\rightarrow$ Living AI Scene $\rightarrow$ Headline $\rightarrow$ Subtitle $\rightarrow$ CTA $\rightarrow$ 3 Compact Cards (`10 Kredit Gratis`, `Google OAuth`, `30 Detik Siap`).
 
 ---
 

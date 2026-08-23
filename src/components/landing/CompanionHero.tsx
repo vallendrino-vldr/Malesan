@@ -1,88 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Mascot } from "@/components/Mascot";
 import { ThreeCanvas } from "./ThreeCanvas";
-import { LivingStudioCanvas, STUDIO_STATES } from "./LivingStudioCanvas";
+import { LivingStudioCanvas } from "./LivingStudioCanvas";
 
 export function CompanionHero() {
-  const [activeIdx, setActiveIdx] = useState(2); // Start at "Ide Ditemukan"
-  const [isPaused, setIsPaused] = useState(false);
-
-  // Auto-advance companion states smoothly
-  useEffect(() => {
-    if (isPaused) return;
-    const interval = setInterval(() => {
-      setActiveIdx((prev) => (prev + 1) % STUDIO_STATES.length);
-    }, 3800);
-    return () => clearInterval(interval);
-  }, [isPaused]);
-
-  const current = STUDIO_STATES[activeIdx];
-
   return (
     <section className="relative overflow-hidden pt-4 pb-12 sm:pt-10 sm:pb-18 lg:pt-12 lg:pb-20">
-      {/* Purposeful Ambient Backdrop */}
+      {/* Ambient Depth Backdrop */}
       <ThreeCanvas />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-5 sm:px-8">
         <div className="flex flex-col lg:grid lg:grid-cols-12 lg:items-center lg:gap-12">
           
           {/* =========================================================================
-              MOBILE ONLY: Living Mascot Workspace on Top (Instant 2-Second Brand Hook)
+              MOBILE ONLY: Living AI Studio on Top (Instant 2-Second Brand Hook)
              ========================================================================= */}
           <div className="flex justify-center mb-6 lg:hidden">
-            <div
-              className="relative flex w-full max-w-[340px] flex-col rounded-2xl border border-hairline/80 bg-surface/50 p-4 shadow-sm backdrop-blur-md"
-              onMouseEnter={() => setIsPaused(true)}
-              onMouseLeave={() => setIsPaused(false)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="relative size-14 shrink-0 grid place-items-center">
-                  <Mascot working={current.isWorking} className="size-full filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="size-1.5 rounded-full bg-ember animate-pulse" />
-                    <span className="font-mono text-[9px] font-bold text-ember uppercase tracking-wider">
-                      {current.badge}
-                    </span>
-                  </div>
-                  <p className="font-display text-xs font-bold text-ink truncate mt-0.5">
-                    {current.title}
-                  </p>
-                  <p className="font-mono text-[10px] text-muted truncate mt-0.5">
-                    {current.previewSnippet}
-                  </p>
-                </div>
-              </div>
-
-              {/* Mobile State Progress Indicators */}
-              <div className="mt-3 flex items-center justify-between border-t border-hairline/60 pt-2">
-                <span className="font-mono text-[9px] text-muted">Tahap {current.stepNum} dari 05</span>
-                <div className="flex items-center gap-1">
-                  {STUDIO_STATES.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveIdx(idx)}
-                      aria-label={`Tahap ${idx + 1}`}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        activeIdx === idx ? "w-4 bg-ember shadow-[0_0_6px_rgba(255,138,61,0.6)]" : "w-1.5 bg-muted/30"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
+            <LivingStudioCanvas />
           </div>
 
           {/* =========================================================================
-              LEFT COLUMN: Product Headline, Short Value Subtitle, and Clean CTAs (7 Cols)
+              LEFT COLUMN: Product Headline, Casual Subtitle, and Clean CTAs (7 Cols)
              ========================================================================= */}
           <div className="flex flex-col items-start lg:col-span-7">
             {/* Status Pill */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-3 py-1 shadow-xs backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-3.5 py-1 shadow-xs backdrop-blur-md">
               <span className="size-1.5 rounded-full bg-ember animate-pulse" />
               <span className="font-mono text-micro font-bold tracking-wider text-ember uppercase">
                 AI Creative Companion
@@ -96,9 +39,9 @@ export function CompanionHero() {
               <span className="text-gradient-ember">Bukan bikinnya.</span>
             </h1>
 
-            {/* Short Supporting Subtitle (Brand Tone) */}
+            {/* Casual Brand Subtitle */}
             <p className="mt-4 max-w-lg text-sm sm:text-base lg:text-lg leading-relaxed text-muted">
-              AI Creative Companion yang bantu lo cari ide, buat hook, tulis script, sampai siap tayang.
+              Lo tinggal kasih ide. Malesan bantu matengin sampai siap tayang.
             </p>
 
             {/* Clean Solid CTA Buttons */}
@@ -115,7 +58,7 @@ export function CompanionHero() {
               </Link>
 
               <a
-                href="#magic"
+                href="#perjalanan"
                 className="inline-flex items-center justify-center rounded-xl border border-hairline/80 bg-surface/60 px-6 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember-lo active:scale-[0.99]"
               >
                 Lihat cara kerja
@@ -165,17 +108,10 @@ export function CompanionHero() {
           </div>
 
           {/* =========================================================================
-              DESKTOP ONLY: Living AI Studio (3D Holographic Workspace) (5 Cols)
+              DESKTOP ONLY: Living AI Studio Canvas (5 Cols)
              ========================================================================= */}
-          <div
-            className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
-          >
-            <LivingStudioCanvas
-              activeIdx={activeIdx}
-              onSelectState={(idx) => setActiveIdx(idx)}
-            />
+          <div className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center">
+            <LivingStudioCanvas />
           </div>
 
         </div>

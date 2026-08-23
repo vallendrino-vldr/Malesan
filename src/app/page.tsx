@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompanionHero } from "@/components/landing/CompanionHero";
-import { ProductMagic } from "@/components/landing/ProductMagic";
-import { CreatorTestimonials } from "@/components/landing/CreatorTestimonials";
+import { ProductStory } from "@/components/landing/ProductStory";
+import { CreatorActivityTicker } from "@/components/landing/CreatorActivityTicker";
 import { CompactCTA } from "@/components/landing/CompactCTA";
 
 export default function Home() {
@@ -12,10 +12,10 @@ export default function Home() {
       {/* Ambient warm lighting bloom behind header */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-[500px] bg-[radial-gradient(60%_100%_at_50%_0%,var(--ambient-glow-strong),transparent_70%)]"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(60%_100%_at_50%_0%,var(--ambient-glow-strong),transparent_70%)]"
       />
 
-      {/* Clean Global Header */}
+      {/* Clean Global Header with Breathing Room */}
       <header className="relative z-20 border-b border-hairline/60 bg-obsidian/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 lg:h-[72px] w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
           <Link
@@ -27,7 +27,7 @@ export default function Home() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 font-display text-xs font-semibold text-muted">
-            <a href="#magic" className="transition-colors hover:text-ink">
+            <a href="#perjalanan" className="transition-colors hover:text-ink">
               Cara Kerja
             </a>
             <Link href="/masuk" className="transition-colors hover:text-ink">
@@ -47,16 +47,16 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Experience (Compact 1.5–2 Viewports Total) */}
+      {/* Main Living Companion Experience (Compact 1.5–2 Viewports Total) */}
       <main className="relative z-10 flex-1">
         {/* Section 1: Hero Experience (Living AI Studio Workspace + Headline + CTA) */}
         <CompanionHero />
 
-        {/* Section 2: AI Transformation Timeline */}
-        <ProductMagic />
+        {/* Section 2: 3-Chapter Creator Journey */}
+        <ProductStory />
 
-        {/* Section 3: Creator Micro-Testimonials */}
-        <CreatorTestimonials />
+        {/* Section 3: Living Creator Activity Stream */}
+        <CreatorActivityTicker />
 
         {/* Section 4: Final Closing CTA with Mascot Reaction */}
         <CompactCTA />
