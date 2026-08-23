@@ -35,8 +35,25 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the Progressive Disclosure SaaS Studio pass (§9r).
-**Newest work is §9r — Studio Progressive Disclosure (1 Hero CTA, 3 Spacious Quick Actions, 1 Expandable More Tools drawer), zero-scroll mobile 375px experience, and anti-choice-paralysis architecture.** Read §9r, then §9q.
+Last updated: **2026-08-23**, after the Compact 8-Tool Command Center pass (§9s).
+**Newest work is §9s — Studio Compact Command Center (all 8 tools visible without drawer, punchy 1-line subtitles, compact horizontal hero, 2x4 mobile & 4x2 desktop grid with zero text truncation).** Read §9s, then §9r.
+
+---
+
+## §9s — Studio Compact Command Center: 8 Visible Tools & Zero Confusion (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Compact 8-Tool Command Center (`src/components/StudioPanel.tsx`, `src/app/app/page.tsx`)**
+   - **All 8 tools visible without drawers**: No hidden features, no progressive disclosure friction for frequent users.
+   - **Eliminated card text bloat**: Replaced long paragraphs with punchy 1-line subtitles (`Script per-scene`, `Auto caption video`, `10 kalimat pembuka`, `Cari part seru`, `TikTok, IG, X, LinkedIn`, `Konsep dari ide kasar`, `Thread di X & Threads`, `Nulis & AI Tab`).
+   - **Subtle small price tags**: Subtle monospace pills (`1 kredit`, `2/mnt`, `Gratis`) rather than bulky badges.
+   - **Compact Hero Card**: High-contrast horizontal card with 1-click CTA button (*"Kasih 3 Ide Sekarang →"*).
+   - **Layout Grid**:
+     - Desktop: 4 columns × 2 rows (Takes only ~200px vertical space).
+     - Mobile (375px): 2 columns × 4 rows with uniform `h-[86px]`, fitting the entire studio within ~1 screen viewport without text truncation.
 
 ---
 

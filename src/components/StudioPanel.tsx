@@ -94,7 +94,7 @@ export function StudioPanel({
 }
 
 /**
- * 1. HERO ACTION: The Single Most Obvious 1-Click Creative Task
+ * 1. COMPACT HERO ACTION: 1-Click Creative Magic
  */
 export function StudioHero({
   mod = "ide",
@@ -104,227 +104,89 @@ export function StudioHero({
   cost: number;
 }) {
   return (
-    <div className="surface-card relative overflow-hidden rounded-2xl border border-ember/45 bg-gradient-to-br from-surface via-surface to-ember/10 p-5 sm:p-6 text-left shadow-sm transition-all duration-[var(--duration-standard)] ease-heat">
-      <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-3 py-1 text-micro font-bold text-ember border border-ember/30">
-          <span className="size-2 rounded-full bg-ember animate-pulse" />
-          ⚡ 1-Click Instan
-        </span>
-        <span className="rounded-full bg-surface-raised px-3 py-1 font-mono text-xs font-bold text-ember border border-hairline">
-          {cost} kredit
-        </span>
-      </div>
-
-      <div className="mt-3">
-        <h2 className="font-display text-xl font-bold tracking-display-sm text-ink sm:text-2xl">
-          Kasih 3 Ide Konten Hari Ini
-        </h2>
-        <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted">
-          Gak perlu mikir prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook &amp; naskah video.
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={() =>
-          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
-        }
-        className="btn-ember mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-sm transition-transform active:scale-[0.99] hover:brightness-105"
-      >
-        Bikin 3 Ide Sekarang →
-      </button>
-    </div>
-  );
-}
-
-/**
- * 2. QUICK ACTION CARD: Top 3 Creator Essentials with Generous Breathing Room
- */
-export function StudioQuickCard({
-  mod,
-  href,
-  title,
-  body,
-  cost,
-  icon,
-  badge,
-}: {
-  mod?: Mod;
-  href?: string;
-  title: string;
-  body: string;
-  cost: number | string;
-  icon: ReactNode;
-  badge?: string;
-}) {
-  const content = (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-        <span className="grid size-11 sm:size-12 shrink-0 place-items-center rounded-xl bg-surface-raised border border-hairline text-ember shadow-xs group-hover:bg-ember/15 group-hover:border-ember/40 transition-colors">
-          {icon}
-        </span>
+    <div className="surface-card relative overflow-hidden rounded-2xl border border-ember/40 bg-gradient-to-r from-surface via-surface to-ember/10 p-4 sm:p-4.5 text-left shadow-xs transition-all duration-[var(--duration-standard)] ease-heat">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-display text-sm sm:text-base font-bold text-ink group-hover:text-ember transition-colors truncate">
-              {title}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-[10px] font-bold text-ember border border-ember/30">
+              <span className="size-1.5 rounded-full bg-ember animate-pulse" />
+              1-Click Instan
             </span>
-            {badge && (
-              <span className="rounded px-1.5 py-0.2 text-[10px] font-semibold bg-ember/15 text-ember border border-ember/20">
-                {badge}
-              </span>
-            )}
+            <span className="font-mono text-[10px] font-bold text-muted">
+              {cost} kredit
+            </span>
           </div>
-          <p className="mt-0.5 text-xs text-muted leading-relaxed line-clamp-1 sm:line-clamp-2">
-            {body}
+          <h2 className="mt-1 font-display text-base sm:text-lg font-bold tracking-display-sm text-ink truncate">
+            Cari 3 Ide Konten Hari Ini
+          </h2>
+          <p className="mt-0.5 text-micro sm:text-xs text-muted leading-tight">
+            Langsung dapet 3 ide segar siap posting + hook &amp; naskah video.
           </p>
         </div>
-      </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        <span className="rounded-lg bg-surface-raised px-2.5 py-1 font-mono text-micro font-bold text-ember border border-hairline whitespace-nowrap">
-          {typeof cost === "number" ? `${cost} kredit` : cost}
-        </span>
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="size-4 shrink-0 fill-muted transition-colors group-hover:fill-ember hidden sm:block"
+        <button
+          type="button"
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
+          }
+          className="btn-ember shrink-0 inline-flex min-h-10 sm:min-h-11 items-center justify-center rounded-xl px-4 sm:px-5 font-display text-xs sm:text-sm font-bold text-obsidian shadow-sm transition-transform active:scale-[0.99] hover:brightness-105"
         >
-          <path d="M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6-1.4-1.4Z" />
-        </svg>
+          Kasih 3 Ide Sekarang →
+        </button>
       </div>
     </div>
   );
-
-  const cardClass =
-    "surface-card surface-card-interactive group w-full rounded-2xl border border-hairline p-4 sm:p-5 text-left transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:shadow-sm";
-
-  if (href) {
-    return (
-      <Link href={href} className={cardClass}>
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (mod) {
-          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }));
-        }
-      }}
-      className={cardClass}
-    >
-      {content}
-    </button>
-  );
 }
 
 /**
- * 3. PROGRESSIVE DISCLOSURE: Expandable Specialized Creative Tools
- */
-export function StudioMoreTools({
-  children,
-  count = 5,
-}: {
-  children: ReactNode;
-  count?: number;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="space-y-3 pt-1">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full min-h-12 items-center justify-between rounded-2xl border border-dashed border-hairline bg-surface/60 px-4 sm:px-5 py-3 text-xs font-semibold text-muted transition-all hover:border-ember/40 hover:bg-surface hover:text-ink shadow-xs"
-      >
-        <span className="flex items-center gap-2">
-          <span>🛠️</span>
-          <span>{open ? "Sembunyikan alat lainnya" : `Lihat ${count} alat kreatif lainnya`}</span>
-        </span>
-        <span className="font-mono text-micro text-ember font-bold">
-          {open ? "Tutup ▴" : "Buka ▾"}
-        </span>
-      </button>
-
-      {open && (
-        <div className="reveal grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Tile helper for the secondary expanded drawer
+ * 2. COMPACT TOOL TILE: Ultra Clean, Uniform 8-Tool Grid Card
  */
 export function StudioTile({
   mod,
   href,
   title,
-  body,
+  subtitle,
   cost,
   icon,
-  badge,
 }: {
   mod?: Mod;
   href?: string;
   title: string;
-  body?: string;
+  subtitle?: string;
   cost: number | string;
-  icon?: ReactNode;
-  badge?: string;
+  icon: ReactNode;
 }) {
-  const inner = (
+  const content = (
     <div className="flex h-full flex-col justify-between">
-      <div>
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            {icon && (
-              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-raised border border-hairline text-ember shadow-xs transition-colors group-hover:border-ember/40 group-hover:bg-ember/10">
-                {icon}
-              </span>
-            )}
-            <div className="min-w-0">
-              <span className="block font-display text-sm font-bold leading-tight text-ink group-hover:text-ember truncate">
-                {title}
-              </span>
-              {badge && (
-                <span className="inline-block mt-0.5 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-ember/15 text-ember">
-                  {badge}
-                </span>
-              )}
-            </div>
-          </div>
-          <span className="shrink-0 rounded-md bg-surface-raised/80 px-2 py-0.5 font-mono text-[11px] font-medium text-ember border border-hairline whitespace-nowrap">
-            {typeof cost === "number" ? `${cost} kredit` : cost}
-          </span>
-        </div>
-        {body && (
-          <p className="mt-2 text-micro leading-relaxed text-muted line-clamp-2">
-            {body}
-          </p>
-        )}
+      <div className="flex items-center justify-between gap-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-raised border border-hairline text-ember shadow-xs transition-colors group-hover:bg-ember/15 group-hover:border-ember/40">
+          {icon}
+        </span>
+        <span className="shrink-0 font-mono text-[10px] font-semibold text-muted bg-surface-raised/90 px-2 py-0.5 rounded-md border border-hairline/80">
+          {typeof cost === "number" ? `${cost} kredit` : cost}
+        </span>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-end">
-        <span className="text-[11px] font-semibold text-muted/80 group-hover:text-ember flex items-center gap-1 transition-colors">
-          Buka <span>→</span>
+      <div className="mt-2 min-w-0">
+        <span className="block font-display text-xs sm:text-sm font-bold leading-tight text-ink group-hover:text-ember truncate">
+          {title}
         </span>
+        {subtitle && (
+          <span className="block mt-0.5 text-[11px] text-muted truncate">
+            {subtitle}
+          </span>
+        )}
       </div>
     </div>
   );
 
   const cardClasses =
-    "surface-card surface-card-interactive group relative flex w-full flex-col justify-between rounded-2xl border border-hairline p-3.5 text-left transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:shadow-xs min-h-[110px]";
+    "surface-card surface-card-interactive group relative flex w-full flex-col justify-between rounded-xl sm:rounded-2xl border border-hairline p-3 sm:p-3.5 text-left transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:shadow-xs min-h-[86px] sm:min-h-[92px]";
 
   if (href) {
     return (
       <Link href={href} className={cardClasses}>
-        {inner}
+        {content}
       </Link>
     );
   }
@@ -339,7 +201,7 @@ export function StudioTile({
       }}
       className={cardClasses}
     >
-      {inner}
+      {content}
     </button>
   );
 }
