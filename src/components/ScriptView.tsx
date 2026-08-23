@@ -34,36 +34,46 @@ export type ScriptOutput = {
   hashtags?: string[];
 };
 
-function buildReadThrough(s: ScriptOutput, title: string) {
+function isTextPlatform(platform?: string) {
+  return ["x", "threads", "facebook", "linkedin"].includes((platform ?? "").toLowerCase());
+}
+
+function buildReadThrough(s: ScriptOutput, textMode: boolean) {
   const scenes = s.script ?? [];
   const hook = scenes[0];
   const body = scenes.slice(1);
 
   const lines: string[] = [];
-  if (hook?.spoken) lines.push(`HOOK\n${hook.spoken}`);
+  if (hook?.spoken) lines.push(`${textMode ? "PEMBUKA" : "HOOK"}\n${hook.spoken}`);
   if (body.length) {
     lines.push(
-      `BODY\n${body
+      `${textMode ? "LANJUTAN" : "BODY"}\n${body
         .map((sc) => sc.spoken)
         .filter(Boolean)
         .join("\n\n")}`,
     );
   }
   if (s.cta?.text) lines.push(`CTA\n${s.cta.text}`);
-  lines.push(`CLOSING\nMakasih udah nonton sampai habis. ${title}`);
   return lines.join("\n\n");
 }
 
-function buildMarkdown(s: ScriptOutput, title: string) {
-  const out: string[] = [`# ${title}`, "", "## Voice over", "", buildReadThrough(s, title), ""];
+function buildMarkdown(s: ScriptOutput, title: string, textMode: boolean) {
+  const out: string[] = [
+    `# ${title}`,
+    "",
+    textMode ? "## Tulisan siap posting" : "## Voice over",
+    "",
+    buildReadThrough(s, textMode),
+    "",
+  ];
 
   if (s.script?.length) {
-    out.push("## Scene", "");
+    out.push(textMode ? "## Bagian" : "## Scene", "");
     s.script.forEach((sc, i) => {
       out.push(`### ${i + 1}. ${sc.timestamp ?? ""}`.trim());
-      if (sc.spoken) out.push(`**Diucapkan:** ${sc.spoken}`);
-      if (sc.on_screen_text) out.push(`**Teks di layar:** ${sc.on_screen_text}`);
-      if (sc.visual) out.push(`**Footage:** ${sc.visual}`);
+      if (sc.spoken) out.push(`**${textMode ? "Teks" : "Diucapkan"}:** ${sc.spoken}`);
+      if (sc.on_screen_text) out.push(`**${textMode ? "Fungsi" : "Teks di layar"}:** ${sc.on_screen_text}`);
+      if (sc.visual && !textMode) out.push(`**Footage:** ${sc.visual}`);
       out.push("");
     });
   }
@@ -79,12 +89,21 @@ function buildMarkdown(s: ScriptOutput, title: string) {
   return out.join("\n");
 }
 
-export function ScriptView({ script, title }: { script: ScriptOutput; title: string }) {
+export function ScriptView({
+  script,
+  title,
+  platform,
+}: {
+  script: ScriptOutput;
+  title: string;
+  platform?: string;
+}) {
   const [tab, setTab] = useState<"baca" | "scene">("baca");
   const [copied, setCopied] = useState("");
+  const textMode = isTextPlatform(platform);
 
-  const readThrough = useMemo(() => buildReadThrough(script, title), [script, title]);
-  const markdown = useMemo(() => buildMarkdown(script, title), [script, title]);
+  const readThrough = useMemo(() => buildReadThrough(script, textMode), [script, textMode]);
+  const markdown = useMemo(() => buildMarkdown(script, title, textMode), [script, title, textMode]);
 
   const copy = async (key: string, text: string) => {
     try {
@@ -121,7 +140,7 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
               tab === t ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
             }`}
           >
-            {t === "baca" ? "Baca" : `Scene · ${scenes.length}`}
+            {t === "baca" ? (textMode ? "Tulisan" : "Baca") : `${textMode ? "Bagian" : "Scene"} · ${scenes.length}`}
           </button>
         ))}
       </div>
@@ -143,10 +162,10 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
                 )}
                 {sc.on_screen_text && (
                   <p className="mt-2 rounded bg-obsidian px-2 py-1 text-micro text-ink/70">
-                    Teks layar: {sc.on_screen_text}
+                    {textMode ? "Fungsi" : "Teks layar"}: {sc.on_screen_text}
                   </p>
                 )}
-                {sc.visual && (
+                {sc.visual && !textMode && (
                   <p className="mt-1.5 text-micro leading-relaxed text-muted">
                     Footage: {sc.visual}
                   </p>
@@ -158,7 +177,7 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
 
         {script.caption && (
           <div className="mt-3 border-t border-hairline pt-3">
-            <p className="eyebrow text-muted">Caption</p>
+            <p className="eyebrow text-muted">{textMode ? "Penutup" : "Caption"}</p>
             <p className="mt-1 text-xs leading-relaxed text-ink/80">{script.caption}</p>
           </div>
         )}
@@ -172,7 +191,7 @@ export function ScriptView({ script, title }: { script: ScriptOutput; title: str
 
       <div className="flex gap-1.5 border-t border-hairline p-1.5">
         <Btn
-          label={copied === "vo" ? "Kesalin!" : "Salin voice over"}
+          label={copied === "vo" ? "Kesalin!" : textMode ? "Salin tulisan" : "Salin voice over"}
           onClick={() => copy("vo", readThrough)}
         />
         <Btn

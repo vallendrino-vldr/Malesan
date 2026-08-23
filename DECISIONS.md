@@ -693,3 +693,44 @@ Vercel returns a permanent 308 from `https://malesan.my.id` to
 instead of adding a redirect hop. Browser auth already derives its callback from
 `window.location.origin`; Supabase/Google OAuth allow-lists must therefore
 include the `www` callback (and may retain the apex callback as a safety alias).
+
+## 2026-08-23 — Content profiles reuse personas; Creator DNA stays the base
+
+The existing `creator_dna` row remains the creator's main profile. Multiple
+account identities reuse the already-RLS-scoped `personas` table as optional
+"profil konten" overrides instead of adding a second overlapping profile
+schema. A creator can describe niche, audience, goal, main platform and voice in
+one natural paragraph; the selected profile still wins only for that generation.
+
+This preserves every existing prompt and row, keeps the one-default constraint,
+and gives a non-technical user one understandable choice rather than two profile
+systems to maintain. Internal table/field names remain unchanged for backward
+compatibility; only the product language changes.
+
+## 2026-08-23 — Rich platform intent lives with the generation payload
+
+Ide Hari Ini now has one shared platform/goal catalogue used by the form and the
+server prompt. TikTok/Reels, YouTube Shorts, X, Threads, Facebook and LinkedIn
+produce different output contracts, and the chosen values travel into the
+Pipeline so later Hook/Script work cannot silently revert to TikTok.
+
+The legacy `generations.platform` CHECK only accepts TikTok, Instagram, YouTube,
+X and Threads. TikTok/Reels and Shorts are mapped to their truthful legacy
+shorthand; Facebook/LinkedIn write null there and remain losslessly stored in
+`generations.input`, `generations.output` and `pipeline_cards.content`. Null is
+preferred to lying that a LinkedIn post is X. No migration was needed and old
+readers remain compatible.
+
+## 2026-08-23 — Progress labels describe observed work, never elapsed-time fiction
+
+Generation UIs may show a server-emitted phase, received character count and
+elapsed wait. They must not turn a timer into named stages or a percentage: the
+client cannot know whether the provider is researching, writing or stuck. The
+bar is indeterminate until the server sends `done`; a long-wait message is the
+only inference allowed.
+
+For `/api/generate`, measured Ipeenk/Gemini runs set the routed wall clock to
+54 seconds: the primary can use 30 seconds and one backup keeps 24 seconds. A
+56-second abort leaves the 60-second Vercel function time to persist or refund.
+The credit contract is unchanged: one spend above the engine, fallback below
+it, and exact ref-based refund if every candidate fails.

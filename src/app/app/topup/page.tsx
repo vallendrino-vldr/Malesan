@@ -4,7 +4,13 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LiveRefresh } from "@/components/LiveRefresh";
-import { submitTopup, redeemVoucher, paymentSettings } from "@/app/actions/payments";
+import {
+  activeCreditPacks,
+  submitTopup,
+  redeemVoucher,
+  paymentSettings,
+  type CreditPackOption,
+} from "@/app/actions/payments";
 import type { PaymentConfig } from "@/lib/config";
 import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/utils/image";
@@ -31,12 +37,12 @@ import { motion } from "framer-motion";
  * confirmation of something that had not happened yet.
  */
 
-type Pack = { id: string; credits: number; price_idr: number };
-
 export default function TopupPage() {
   const [activeTab, setActiveTab] = useState<"topup" | "voucher">("topup");
-  const [packs, setPacks] = useState<Pack[]>([]);
-  const [selected, setSelected] = useState<Pack | null>(null);
+  const [packs, setPacks] = useState<CreditPackOption[]>([]);
+  const [selected, setSelected] = useState<CreditPackOption | null>(null);
+  const [packsLoading, setPacksLoading] = useState(true);
+  const [packsError, setPacksError] = useState("");
   const [pay, setPay] = useState<PaymentConfig | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -53,21 +59,49 @@ export default function TopupPage() {
     paymentSettings().then(setPay).catch(() => setPay(null));
   }, []);
 
-  // Packs come from the database, not a constant in this file. Prices used to
-  // live in a local array while the server had its own table — two sources for
-  // one number is how a price change ships half-applied.
-  useEffect(() => {
-    createClient()
-      .from("credit_packs")
-      .select("id, credits, price_idr")
-      .eq("is_active", true)
-      .order("sort_order")
-      .then(({ data }) => {
-        const rows = (data as Pack[]) ?? [];
-        setPacks(rows);
-        setSelected((s) => s ?? rows[0] ?? null);
-      });
+  // Prices stay database-driven, but the read crosses the server boundary and
+  // reports failure explicitly. The old browser query ignored `{ error }`, so
+  // any failed request left skeletons and a Rp0 transfer instruction forever.
+  const receivePacks = useCallback((rows: CreditPackOption[]) => {
+    setPacks(rows);
+    setSelected((current) => rows.find((row) => row.id === current?.id) ?? rows[0] ?? null);
+    setPacksError("");
   }, []);
+
+  const rejectPacks = useCallback((err: unknown) => {
+    setPacks([]);
+    setSelected(null);
+    setPacksError(err instanceof Error ? err.message : "Daftar paketnya belum kebaca.");
+  }, []);
+
+  const loadPacks = useCallback(async () => {
+    setPacksLoading(true);
+    setPacksError("");
+    try {
+      receivePacks(await activeCreditPacks());
+    } catch (err: unknown) {
+      rejectPacks(err);
+    } finally {
+      setPacksLoading(false);
+    }
+  }, [receivePacks, rejectPacks]);
+
+  useEffect(() => {
+    let alive = true;
+    activeCreditPacks()
+      .then((rows) => {
+        if (alive) receivePacks(rows);
+      })
+      .catch((err: unknown) => {
+        if (alive) rejectPacks(err);
+      })
+      .finally(() => {
+        if (alive) setPacksLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [receivePacks, rejectPacks]);
 
   /**
    * Watches the top-up the user just submitted until an admin rules on it.
@@ -276,7 +310,7 @@ export default function TopupPage() {
             <section>
               <h2 className="eyebrow mb-2.5 text-muted">1 · Pilih paket</h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {packs.length === 0
+                {packsLoading
                   ? [0, 1, 2].map((i) => (
                       <div
                         key={i}
@@ -311,21 +345,44 @@ export default function TopupPage() {
                       );
                     })}
               </div>
+              {!packsLoading && packsError && (
+                <div className="mt-3 rounded-xl border border-danger/25 bg-danger/10 px-4 py-3">
+                  <p className="text-mini leading-relaxed text-danger">{packsError}</p>
+                  <button
+                    type="button"
+                    onClick={() => void loadPacks()}
+                    className="mt-2 min-h-11 rounded-lg border border-danger/35 px-3 text-mini font-semibold text-danger transition-colors hover:bg-danger/10"
+                  >
+                    Coba lagi
+                  </button>
+                </div>
+              )}
+              {!packsLoading && !packsError && packs.length === 0 && (
+                <p className="rounded-xl border border-hairline bg-surface/50 px-4 py-4 text-mini leading-relaxed text-muted">
+                  Belum ada paket yang dijual. Coba lagi nanti ya.
+                </p>
+              )}
             </section>
 
             {/* Bank details, the QRIS image and which methods are offered all
                 come from app_config, so the owner can change a destination
                 account from the panel without a deploy. */}
-            <section className="rounded-2xl border border-hairline bg-surface/50 p-5">
+            <section
+              className={`rounded-2xl border border-hairline bg-surface/50 p-5 ${
+                selected ? "" : "opacity-55"
+              }`}
+            >
               <h2 className="eyebrow mb-2.5 text-muted">2 · Transfer</h2>
               <p className="text-sm leading-relaxed text-muted">
-                Kirim{" "}
+                {selected ? "Kirim" : "Pilih paket dulu sebelum transfer"}{" "}
                 <strong className="tabular font-semibold text-ink">
-                  Rp {(selected?.price_idr ?? 0).toLocaleString("id-ID")}
+                  {selected ? `Rp ${selected.price_idr.toLocaleString("id-ID")}` : ""}
                 </strong>{" "}
-                {pay?.methods.qris && !pay?.methods.bank
+                {selected && pay?.methods.qris && !pay?.methods.bank
                   ? "lewat QRIS di bawah."
-                  : `ke ${pay?.bankName || "rekening"} di bawah.`}
+                  : selected
+                    ? `ke ${pay?.bankName || "rekening"} di bawah.`
+                    : ""}
               </p>
 
               {pay?.methods.bank !== false && (

@@ -39,7 +39,7 @@ const MODULES = [
 const DIFFERENTIATORS = [
   {
     title: "Kenal gaya lo",
-    body: "Creator DNA nyimpen niche, audience, tone, sama kata yang lo pantang pakai. Tiap output lewat filter itu dulu.",
+    body: "Profil konten nyimpen niche, target orang, gaya ngomong, sama kata yang lo pantang pakai. Tiap hasil lewat patokan itu dulu.",
   },
   {
     title: "Tau hari ini",

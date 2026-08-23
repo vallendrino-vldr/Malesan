@@ -4,6 +4,11 @@ import { useState } from "react";
 import { StreamingText } from "./StreamingText";
 import { saveToPipeline } from "@/app/actions/pipeline";
 import { RateResult } from "./RateResult";
+import {
+  normalizeTodayPlatform,
+  todayPlatformLabel,
+  type TodayPlatform,
+} from "@/lib/content-options";
 
 export type IdeaData = {
   title: string;
@@ -13,20 +18,39 @@ export type IdeaData = {
   est_duration: string;
   difficulty: string;
   hook_seed?: string;
+  platform?: TodayPlatform;
+  goal?: string;
+  opening?: string;
+  beats?: string[];
+  ready_copy?: string;
+  caption?: string;
+  hashtags?: string[];
 };
 
 export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<IdeaData>; isStreaming?: boolean; generationId?: string }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const normalizedPlatform = idea.platform ? normalizeTodayPlatform(idea.platform) : null;
+  const isVideo = normalizedPlatform === "tiktok_reels" || normalizedPlatform === "youtube_shorts";
+  const beatLabel =
+    normalizedPlatform === "x" || normalizedPlatform === "threads"
+      ? "Alur thread"
+      : normalizedPlatform === "facebook"
+        ? "Alur cerita"
+        : normalizedPlatform === "linkedin"
+          ? "Kerangka insight"
+          : "Alur video";
 
   const handleSave = async () => {
     if (!idea.title) return;
     setIsSaving(true);
+    setSaveError("");
     try {
       await saveToPipeline(idea.title, idea, generationId);
       setSaved(true);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      setSaveError("Belum berhasil masuk Pipeline. Coba tap sekali lagi.");
     }
     setIsSaving(false);
   };
@@ -43,7 +67,10 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
   }
 
   return (
-    <div className={`rounded-2xl border border-hairline bg-surface p-6 transition-all duration-[var(--duration-bloom)] ${isStreaming ? 'glow-ember' : ''}`}>
+    <div className={`rounded-2xl border border-hairline bg-surface p-5 transition-all duration-[var(--duration-bloom)] sm:p-6 ${isStreaming ? 'glow-ember' : ''}`}>
+      {normalizedPlatform && (
+        <p className="eyebrow mb-2 text-ember">{todayPlatformLabel(normalizedPlatform)}</p>
+      )}
       <h3 className="font-display text-xl font-bold text-ink">
         {idea.title}
       </h3>
@@ -51,7 +78,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       <div className="mt-4 space-y-3">
         {idea.angle && (
           <div>
-            <span className="font-mono text-micro uppercase tracking-[0.14em] text-ember">Angle</span>
+            <span className="eyebrow text-ember">Sudutnya</span>
             <p className="mt-1 text-sm leading-relaxed text-ink/90">
               {isStreaming ? <StreamingText text={idea.angle} /> : idea.angle}
             </p>
@@ -60,7 +87,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
         
         {idea.why_now && (
           <div>
-            <span className="font-mono text-micro uppercase tracking-[0.14em] text-ember">Why Now</span>
+            <span className="eyebrow text-ember">Kenapa sekarang</span>
             <p className="mt-1 text-sm leading-relaxed text-ink/90">
               {isStreaming ? <StreamingText text={idea.why_now} /> : idea.why_now}
             </p>
@@ -69,7 +96,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
 
         {idea.hook_seed && (
           <div className="rounded-lg bg-obsidian p-3 border border-hairline">
-            <span className="font-mono text-micro uppercase tracking-[0.14em] text-ember">Hook Seed</span>
+            <span className="eyebrow text-ember">Calon hook</span>
             <p className="mt-1 text-sm font-semibold text-ink">
               {isStreaming ? <StreamingText text={idea.hook_seed} /> : idea.hook_seed}
             </p>
@@ -77,20 +104,71 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
         )}
       </div>
 
+      {(idea.opening || idea.ready_copy || idea.beats?.length || idea.caption || idea.hashtags?.length) && (
+        <details className="mt-5 overflow-hidden rounded-xl border border-hairline bg-obsidian/45">
+          <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-mini font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
+            <span>Versi siap dipakai</span>
+            <span className="text-micro font-normal text-muted">Buka</span>
+          </summary>
+          <div className="space-y-4 border-t border-hairline px-4 py-4">
+            {idea.opening && (
+              <div>
+                <p className="eyebrow text-ember">{isVideo ? "Hook" : "Pembuka"}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm font-semibold leading-relaxed text-ink">
+                  {idea.opening}
+                </p>
+              </div>
+            )}
+            {idea.beats && idea.beats.length > 0 && (
+              <div>
+                <p className="eyebrow text-ember">{beatLabel}</p>
+                <ol className="mt-1.5 space-y-1.5 text-sm leading-relaxed text-ink/90">
+                  {idea.beats.map((beat, index) => (
+                    <li key={`${index}-${beat.slice(0, 24)}`} className="flex gap-2">
+                      <span className="tabular shrink-0 font-mono text-micro text-muted">{index + 1}.</span>
+                      <span>{beat}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {idea.ready_copy && (
+              <div>
+                <p className="eyebrow text-ember">{isVideo ? "Voice-over" : "Draft siap posting"}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/90">
+                  {idea.ready_copy}
+                </p>
+              </div>
+            )}
+            {idea.caption && (
+              <div>
+                <p className="eyebrow text-ember">{isVideo ? "Caption" : "Penutup"}</p>
+                <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/90">
+                  {idea.caption}
+                </p>
+              </div>
+            )}
+            {idea.hashtags && idea.hashtags.length > 0 && (
+              <p className="text-mini leading-relaxed text-muted">{idea.hashtags.join(" ")}</p>
+            )}
+          </div>
+        </details>
+      )}
+
       <div className="mt-6 flex flex-wrap gap-2">
         {idea.format && (
           <span className="rounded bg-surface-raised px-2 py-1 font-mono text-micro uppercase tracking-wider text-muted">
-            Format: {idea.format}
+            {idea.format}
           </span>
         )}
         {idea.est_duration && (
           <span className="rounded bg-surface-raised px-2 py-1 font-mono text-micro uppercase tracking-wider text-muted">
-            Durasi: {idea.est_duration}
+            {idea.est_duration}
           </span>
         )}
         {idea.difficulty && (
           <span className="rounded bg-surface-raised px-2 py-1 font-mono text-micro uppercase tracking-wider text-muted">
-            Effort: {idea.difficulty}
+            {idea.difficulty}
           </span>
         )}
       </div>
@@ -105,9 +183,14 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
                 saved ? "cursor-default text-success" : "text-ember hover:text-ember-lo"
               }`}
             >
-              {saved ? "✓ Tersimpan di Pipeline" : isSaving ? "Menyimpan..." : "+ Simpan ke Pipeline"}
+              {saved ? "Udah masuk Pipeline" : isSaving ? "Lagi nyimpen..." : "Simpan ke Pipeline"}
             </button>
           </div>
+          {saveError && (
+            <p role="alert" className="text-right text-micro leading-relaxed text-danger">
+              {saveError}
+            </p>
+          )}
           {/* Rating lives here, next to the result, rather than only on a
               pipeline card that has already been marked Posted. Asking someone
               to come back later and grade their own homework is why only five

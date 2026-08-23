@@ -42,6 +42,7 @@ export function ThreadEngine({ cost }: { cost: number }) {
   const [out, setOut] = useState<ThreadOutput | null>(null);
   const [genId, setGenId] = useState<string | null>(null);
   const [chars, setChars] = useState(0);
+  const [status, setStatus] = useState("");
   // -1 is the model's own hook; 0..n index into alt_hooks. Reset on every run so
   // a swap chosen for the last thread does not silently apply to the next one.
   const [altHook, setAltHook] = useState(-1);
@@ -56,6 +57,7 @@ export function ThreadEngine({ cost }: { cost: number }) {
     setOut(null);
     setGenId(null);
     setChars(0);
+    setStatus("Lagi siapin bahan lo...");
     setAltHook(-1);
 
     try {
@@ -79,6 +81,7 @@ export function ThreadEngine({ cost }: { cost: number }) {
           streamError = msg.error;
           return true;
         }
+        if (typeof msg.status === "string") setStatus(msg.status);
         if (msg.done) {
           const g = msg.generation as { id?: string; output?: ThreadOutput } | undefined;
           setOut(g?.output ?? null);
@@ -180,7 +183,7 @@ export function ThreadEngine({ cost }: { cost: number }) {
       </section>
 
       {busy && (
-        <GenerationProgress moduleKey="thread" chars={chars} label="Lagi nyusun threadnya" />
+        <GenerationProgress moduleKey="thread" chars={chars} label="Lagi nyusun threadnya" status={status} />
       )}
 
       {out && (

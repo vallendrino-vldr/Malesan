@@ -268,7 +268,7 @@ export const AI_FEATURES: FeatureSpec[] = [
   },
   {
     key: "onboarding_dna",
-    label: "Analisa Creator DNA",
+    label: "Bentuk profil konten utama",
     requires: ["text"],
     suggested: "quality",
     note: "Sekali seumur akun, dan hasilnya dipakai di semua generate setelahnya.",

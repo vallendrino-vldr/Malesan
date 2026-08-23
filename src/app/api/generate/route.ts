@@ -9,6 +9,10 @@ import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { aiRateLimit } from "@/lib/rate-limit";
 import {
+  normalizeTodayGoal,
+  normalizeTodayPlatform,
+} from "@/lib/content-options";
+import {
   type LearnedNote,
   buildIdeHariIniPrompt,
   buildIdeaEnginePrompt,
@@ -31,14 +35,35 @@ import {
 
 export const maxDuration = 60; // Vercel Hobby max. Script gen + key backoff passed 30s and hard-timed-out (which also skips the refund below), so raised to the real cap.
 
+type StoredPlatform = "tiktok" | "instagram" | "youtube" | "x" | "threads";
+
+/**
+ * The live generations table predates Facebook/LinkedIn and constrains this
+ * column to five legacy values. Keep the richer selection in `input` and the
+ * generated idea/pipeline content; only write a truthful compatible shorthand
+ * here. Null is more honest than calling a LinkedIn post "x".
+ */
+function storedPlatform(value: unknown): StoredPlatform | null {
+  if (value === "tiktok_reels") return "tiktok";
+  if (value === "youtube_shorts") return "youtube";
+  return ["tiktok", "instagram", "youtube", "x", "threads"].includes(String(value))
+    ? (value as StoredPlatform)
+    : null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { module, input, platform } = body as {
       module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread";
       input?: Record<string, string>;
-      platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads";
+      platform?: string;
     };
+
+    // Ide Hari Ini accepts the wider owner-facing platform list. Missing and
+    // legacy values stay backwards compatible with the old TikTok default.
+    const idePlatform = normalizeTodayPlatform(platform);
+    const ideGoal = normalizeTodayGoal(input?.goal);
 
     const MODULES = ["ide_hari_ini", "idea", "hook", "script", "repurpose", "clip", "thread"];
     if (!module || !MODULES.includes(module)) {
@@ -270,7 +295,14 @@ export async function POST(request: NextRequest) {
     let schema = {};
 
     if (module === "ide_hari_ini") {
-      promptText = buildIdeHariIniPrompt(dna, trends || [], learned, extras);
+      promptText = buildIdeHariIniPrompt(
+        dna,
+        trends || [],
+        learned,
+        extras,
+        idePlatform,
+        ideGoal,
+      );
       schema = IDE_HARI_INI_SCHEMA;
     } else if (module === "idea") {
       promptText = buildIdeaEnginePrompt(input!.text, dna, trends || [], learned, extras);
@@ -322,6 +354,15 @@ export async function POST(request: NextRequest) {
         let meta: StreamMeta | null = null;
 
         try {
+          // This event is emitted exactly where the provider work begins. The
+          // client used to invent "nyusun angle / ngerapiin" stages from a
+          // timer; those labels looked precise but described no observed event.
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ status: "Bahannya siap. Lagi nyari jawaban terbaik..." })}\n\n`,
+            ),
+          );
+
           // 6. Route through the provider layer -> SSE stream.
           //
           // With no route configured for this module the engine uses the exact
@@ -339,13 +380,15 @@ export async function POST(request: NextRequest) {
               isAdmin: profile.role === "admin",
               byokKey,
               allowSharedGemini: admission.allowSharedGemini,
-              // Give up ~8s before the 60s hard timeout so the catch below runs and the
+              // Give up ~4s before the 60s hard timeout so the catch below runs and the
               // credit is refunded, rather than the function being killed mid-stream.
-              signal: AbortSignal.timeout(52_000),
+              signal: AbortSignal.timeout(56_000),
               // The engine splits this across candidates: the primary keeps
-              // everything except a reserve for one fallback. Slightly under the
-              // signal above so the engine gives up first and the refund runs.
-              budgetMs: 50_000,
+              // 30s and one fallback keeps 24s. Both values come from observed
+              // Ipeenk/Gemini runs; the old 28s/22s split cut off healthy calls
+              // by a few hundred milliseconds. Slightly under the signal above
+              // so the engine gives up first and the refund still runs.
+              budgetMs: 54_000,
             },
             (m) => {
               meta = m;
@@ -431,6 +474,23 @@ export async function POST(request: NextRequest) {
               usedFallback: retry.usedFallback,
             };
           }
+
+          if (module === "ide_hari_ini" && parsed && typeof parsed === "object") {
+            const result = parsed as { ideas?: unknown[] };
+            parsed = {
+              ...result,
+              ideas: Array.isArray(result.ideas)
+                ? result.ideas.map((idea) => ({
+                    ...(idea && typeof idea === "object" ? idea : {}),
+                    // The selected values come from validated app controls, not
+                    // from model prose. Persisting them makes downstream
+                    // Pipeline work use the same platform the creator chose.
+                    platform: idePlatform,
+                    goal: ideGoal,
+                  }))
+                : [],
+            };
+          }
         } catch (err: unknown) {
           isError = true;
           // The raw text is already in ai_usage_log and error_log for an
@@ -465,6 +525,11 @@ export async function POST(request: NextRequest) {
         }
 
         if (!isError && parsed) {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({ status: "Hasilnya udah jadi. Lagi gue simpen..." })}\n\n`,
+            ),
+          );
           // 7. On success: persist to generations
           try {
             const { data: genRow, error: genError } = await serviceRole
@@ -472,7 +537,7 @@ export async function POST(request: NextRequest) {
               .insert({
                 user_id: user.id,
                 module: module,
-                platform: platform || null,
+                platform: storedPlatform(module === "ide_hari_ini" ? idePlatform : platform),
                 input: input || null,
                 output: parsed,
                 model_used: (meta as StreamMeta | null)?.modelId ?? null,

@@ -83,6 +83,7 @@ export function ClipEngine({ cost }: { cost: number }) {
   const [out, setOut] = useState<ClipOutput | null>(null);
   const [genId, setGenId] = useState<string | null>(null);
   const [chars, setChars] = useState(0);
+  const [status, setStatus] = useState("");
 
   const run = async () => {
     if (!moment.trim()) {
@@ -94,6 +95,7 @@ export function ClipEngine({ cost }: { cost: number }) {
     setOut(null);
     setGenId(null);
     setChars(0);
+    setStatus("Lagi siapin bahan lo...");
 
     try {
       const res = await fetch("/api/generate", {
@@ -116,6 +118,7 @@ export function ClipEngine({ cost }: { cost: number }) {
           streamError = msg.error;
           return true;
         }
+        if (typeof msg.status === "string") setStatus(msg.status);
         if (msg.done) {
           const g = msg.generation as { id?: string; output?: ClipOutput } | undefined;
           setOut(g?.output ?? null);
@@ -215,7 +218,7 @@ export function ClipEngine({ cost }: { cost: number }) {
       </section>
 
       {busy && (
-        <GenerationProgress moduleKey="clip" chars={chars} label="Lagi motong klipnya" />
+        <GenerationProgress moduleKey="clip" chars={chars} label="Lagi motong klipnya" status={status} />
       )}
 
       {out && (

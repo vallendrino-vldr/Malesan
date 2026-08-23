@@ -6,8 +6,14 @@ import { GenerationProgress } from "./GenerationProgress";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 import { GenerationExtras, useGenerationExtras } from "./ModuleRunner";
+import {
+  TODAY_GOALS,
+  TODAY_PLATFORMS,
+  type TodayGoal,
+  type TodayPlatform,
+} from "@/lib/content-options";
 
-export function IdeHariIni() {
+export function IdeHariIni({ cost = 1 }: { cost?: number }) {
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   // Shared with every other module — same pasted material, same picked voice,
   // so switching from here to Hook Lab does not throw the context away.
@@ -17,12 +23,16 @@ export function IdeHariIni() {
   // Real characters received, so the progress figure moves because the
   // model is producing text — not because a timer is running.
   const [chars, setChars] = useState(0);
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [platform, setPlatform] = useState<TodayPlatform>("tiktok_reels");
+  const [goal, setGoal] = useState<TodayGoal>("views");
   const router = useRouter();
 
   async function generate() {
     setIsGenerating(true);
     setChars(0);
+    setStatus("Lagi siapin profil dan pilihan lo...");
     setError("");
     setIdeas([]);
     setGenerationId(undefined);
@@ -31,12 +41,10 @@ export function IdeHariIni() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // No `input` key at all when both extras are empty: the route stores
-        // whatever it is given on the generation row, and an empty object there
-        // is noise where a null used to say "this module takes no input".
         body: JSON.stringify({
           module: "ide_hari_ini",
-          ...(extras.extraInput ? { input: extras.extraInput } : {}),
+          platform,
+          input: { platform, goal, ...(extras.extraInput ?? {}) },
         }),
       });
 
@@ -53,6 +61,9 @@ export function IdeHariIni() {
         if (typeof msg.error === "string") {
           streamError = msg.error;
           return true;
+        }
+        if (typeof msg.status === "string") {
+          setStatus(msg.status);
         }
         if (msg.done) {
           const gen = msg.generation as
@@ -77,7 +88,7 @@ export function IdeHariIni() {
 
       if (streamError) throw new Error(streamError);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An error occurred";
+      const message = err instanceof Error ? err.message : "Idenya belum berhasil dibikin. Coba lagi ya.";
       setError(message);
     } finally {
       setIsGenerating(false);
@@ -86,15 +97,69 @@ export function IdeHariIni() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-hairline bg-surface p-6 sm:p-8">
+      <div className="rounded-2xl border border-hairline bg-surface p-5 sm:p-8">
         <h2 className="font-display text-2xl font-bold tracking-display-md text-ink">
           Ide Hari Ini
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Gak tau mau bikin apa? Klik aja. Malesan bakal ngasih ide yang pas buat hari ini.
+          Pilih mau posting di mana dan lagi ngejar apa. Gak perlu nulis ide —
+          bagian mikirnya biar Malesan yang pegang.
         </p>
 
-        <div className="mt-5">
+        <fieldset className="mt-6">
+          <legend className="text-sm font-semibold text-ink">Mau posting di mana?</legend>
+          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {TODAY_PLATFORMS.map((option) => {
+              const active = platform === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={isGenerating}
+                  onClick={() => setPlatform(option.id)}
+                  className={`min-h-14 rounded-xl border px-3 py-2.5 text-left transition-colors disabled:opacity-50 ${
+                    active
+                      ? "border-ember/60 bg-ember/10"
+                      : "border-hairline bg-obsidian/45 hover:border-ember/30"
+                  }`}
+                >
+                  <span className={`block text-mini font-bold ${active ? "text-ember" : "text-ink"}`}>
+                    {option.label}
+                  </span>
+                  <span className="mt-0.5 block text-micro text-muted">{option.hint}</span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset className="mt-5">
+          <legend className="text-sm font-semibold text-ink">Lagi ngejar apa?</legend>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {TODAY_GOALS.map((option) => {
+              const active = goal === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  disabled={isGenerating}
+                  onClick={() => setGoal(option.id)}
+                  className={`min-h-11 rounded-full border px-3.5 text-mini font-semibold transition-colors disabled:opacity-50 ${
+                    active
+                      ? "border-ember/55 bg-ember/10 text-ember"
+                      : "border-hairline text-muted hover:border-ember/30 hover:text-ink"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <div className="mt-5 border-t border-hairline pt-5">
           <GenerationExtras extras={extras} disabled={isGenerating} />
         </div>
 
@@ -111,7 +176,7 @@ export function IdeHariIni() {
             isGenerating ? "glow-ember" : ""
           }`}
         >
-          {isGenerating ? "Lagi mikirin buat lo..." : "Males mikir. Kasih ide."}
+          {isGenerating ? "Lagi mikirin buat lo..." : `Kasih 3 ide · ${cost} kredit`}
         </button>
       </div>
 
@@ -120,13 +185,14 @@ export function IdeHariIni() {
           moduleKey="ide_hari_ini"
           chars={chars}
           label="Lagi mikirin buat lo"
+          status={status}
         />
       )}
 
       {(ideas.length > 0 || isGenerating) && (
         <div className="space-y-4">
           <h3 className="font-mono text-micro uppercase tracking-[0.14em] text-muted ml-1">
-            Hasil
+            3 ide buat {TODAY_PLATFORMS.find((option) => option.id === platform)?.label}
           </h3>
           <div className="grid gap-4">
             {ideas.length > 0

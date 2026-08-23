@@ -130,7 +130,7 @@ export function StudioPanel({
       </button>
 
       {mod === "ide" ? (
-        <IdeHariIni />
+        <IdeHariIni cost={costs.ide} />
       ) : mod === "idea" ? (
         <IdeaEngine />
       ) : mod === "clip" ? (
@@ -172,12 +172,12 @@ export function StudioTile({
       onClick={() =>
         window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
       }
-      className={`skeu skeu-press group flex min-h-[68px] w-full cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-3 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45 ${
+      className={`skeu skeu-press group flex min-h-[72px] w-full cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-2.5 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45 ${
         full ? "border-ember/30" : ""
       }`}
     >
       <span className="flex items-center justify-center gap-1">
-        <span className="truncate text-mini font-bold text-ink group-hover:text-ember-lo">
+        <span className="text-mini font-bold leading-tight text-ink group-hover:text-ember-lo">
           {title}
         </span>
         <svg

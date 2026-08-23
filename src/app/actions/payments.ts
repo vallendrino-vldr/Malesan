@@ -1,6 +1,16 @@
 "use server";
 
 import { getPaymentConfig, type PaymentConfig } from "@/lib/config";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import type { Json } from "@/lib/supabase/database.types";
+import { checkProof } from "@/lib/payments/proof-check";
+import { revalidatePath } from "next/cache";
+
+export type CreditPackOption = {
+  id: string;
+  credits: number;
+  price_idr: number;
+};
 
 /**
  * Payment details for the top-up page.
@@ -13,10 +23,35 @@ export async function paymentSettings(): Promise<PaymentConfig> {
   return getPaymentConfig();
 }
 
-import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
-import type { Json } from "@/lib/supabase/database.types";
-import { checkProof } from "@/lib/payments/proof-check";
-import { revalidatePath } from "next/cache";
+/**
+ * Active packs for the signed-in top-up screen.
+ *
+ * The old client query discarded its `{ error }`, so a permission or network
+ * failure looked exactly like loading and left three skeleton cards forever.
+ * Keep the price source in the database, but make the read explicit after a
+ * server-side auth check. The service role never reaches the browser; only the
+ * three public fields below do.
+ */
+export async function activeCreditPacks(): Promise<CreditPackOption[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Sesi lo abis. Masuk lagi ya.");
+
+  const { data, error } = await createServiceRoleClient()
+    .from("credit_packs")
+    .select("id, credits, price_idr")
+    .eq("is_active", true)
+    .order("sort_order");
+
+  if (error) {
+    console.error("active credit packs read failed", error.message);
+    throw new Error("Daftar paketnya belum kebaca. Coba muat ulang.");
+  }
+
+  return (data ?? []) as CreditPackOption[];
+}
 
 /**
  * Submit a bank-transfer top-up for review.

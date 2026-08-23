@@ -48,7 +48,7 @@ export type ModuleSpec = {
 export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
   hook: {
     key: "hook",
-    title: "Hook Lab",
+    title: "Bikin Hook",
     blurb: "Tiga detik pertama yang nentuin orang lanjut nonton atau scroll. Kasih idenya, balik 10 hook.",
     cost: 2,
     cta: "Bikin hook",
@@ -66,7 +66,7 @@ export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
   },
   script: {
     key: "script",
-    title: "Script Builder",
+    title: "Bikin Script",
     blurb: "Dari hook jadi script lengkap: per scene, ada teks layar dan footage yang perlu diambil.",
     cost: 4,
     cta: "Bikin script",
@@ -92,8 +92,8 @@ export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
   },
   repurpose: {
     key: "repurpose",
-    title: "Repurpose",
-    blurb: "Satu konten, lima platform. Tiap platform beda gaya, bukan copy-paste.",
+    title: "Ubah Format",
+    blurb: "Satu konten jadi lima versi. Tiap platform beda gaya, bukan copy-paste.",
     cost: 1,
     cta: "Ubah jadi 5 versi",
     busy: "Lagi nyesuaiin tiap platform...",
@@ -113,7 +113,7 @@ export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
 const PLATFORMS = ["tiktok", "instagram", "youtube", "x", "threads"] as const;
 
 /* ------------------------------------------------------------------------- *
- * Otak Kedua + the persona picker
+ * Optional source material + the content-profile picker
  *
  * Two inputs that belong to every module rather than to any one of them, so
  * they live here once and the other module screens (IdeaEngine, IdeHariIni)
@@ -219,7 +219,7 @@ export function useGenerationExtras(): GenerationExtrasState {
       if (!alive || error || !data?.length) return;
       setPersonas(data);
 
-      // An explicit "" is a real choice (ikut profil aja), which is why this
+      // An explicit "" is a real choice (use the main profile), which is why this
       // reads storage rather than the snapshot: only a missing key or a persona
       // that has since been deleted falls back to the default row.
       const saved = sessionStorage.getItem(PERSONA_KEY);
@@ -280,7 +280,7 @@ export function GenerationExtras({
       {extras.personas.length > 0 && (
         <div>
           <label htmlFor={selectId} className="block text-sm font-semibold text-ink">
-            Pakai suara siapa?
+            Profil konten
           </label>
           <select
             id={selectId}
@@ -289,7 +289,7 @@ export function GenerationExtras({
             disabled={disabled}
             className="mt-2 min-h-11 w-full cursor-pointer rounded-xl border border-hairline bg-obsidian px-3.5 text-sm text-ink focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
           >
-            <option value="">Ikut profil aja</option>
+            <option value="">Profil utama</option>
             {extras.personas.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -305,7 +305,7 @@ export function GenerationExtras({
         className="rounded-xl border border-hairline bg-obsidian/40"
       >
         <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
-          <span>Otak Kedua</span>
+          <span>Pakai bahan sendiri</span>
           <span className={`tabular text-micro font-normal ${hasRef ? "text-ember" : "text-muted"}`}>
             {hasRef ? `${used.toLocaleString("id-ID")} karakter nempel` : "Opsional"}
           </span>
@@ -313,8 +313,8 @@ export function GenerationExtras({
 
         <div className="border-t border-hairline px-3.5 pb-3.5 pt-3">
           <p className="text-micro leading-relaxed text-muted">
-            Tempel bahan mentahnya di sini: artikel, angka hari ini, catatan lo
-            sendiri. Hasilnya bakal ngikutin fakta yang lo tempel, bukan ngarang.
+            Punya artikel, data, atau catatan yang harus dipakai? Tempel di sini.
+            Kalau gak ada, lewatin aja — Malesan tetap mikir dari profil lo.
           </p>
           <textarea
             rows={6}
@@ -375,6 +375,7 @@ export function ModuleRunner({
   // Characters actually received. Drives GenerationProgress — a bar fed by a
   // timer keeps filling after a dead request, which is worse than none.
   const [chars, setChars] = useState(0);
+  const [status, setStatus] = useState("");
   // The offer only appears after someone says the output was useful — that is
   // the one moment the value is not hypothetical.
   const [rated, setRated] = useState<null | "good" | "bad">(null);
@@ -394,6 +395,7 @@ export function ModuleRunner({
     setOut(null);
     setGenId(null);
     setChars(0);
+    setStatus("Lagi siapin bahan lo...");
     setRated(null);
 
     try {
@@ -417,6 +419,7 @@ export function ModuleRunner({
           streamError = msg.error;
           return true;
         }
+        if (typeof msg.status === "string") setStatus(msg.status);
         if (msg.done) {
           const g = msg.generation as { id?: string; output?: unknown } | undefined;
           setOut(g?.output ?? null);
@@ -542,15 +545,21 @@ export function ModuleRunner({
       </section>
 
       {busy && (
-        <GenerationProgress moduleKey={spec.key} chars={chars} label={spec.busy} />
+        <GenerationProgress moduleKey={spec.key} chars={chars} label={spec.busy} status={status} />
       )}
 
       {out !== null && (
         <>
-          <ModuleOutput moduleKey={spec.key} out={out} busy={busy} />
+          <ModuleOutput moduleKey={spec.key} out={out} busy={busy} platform={platform} />
           {!busy && (
             <>
-              <SaveToPipeline moduleKey={spec.key} out={out} genId={genId} values={values} />
+              <SaveToPipeline
+                moduleKey={spec.key}
+                out={out}
+                genId={genId}
+                values={values}
+                platform={platform}
+              />
               <div className="surface-card rounded-xl p-4">
                 <RateResult generationId={genId} onRated={setRated} />
               </div>
@@ -567,13 +576,15 @@ function ModuleOutput({
   moduleKey,
   out,
   busy,
+  platform,
 }: {
   moduleKey: ModuleSpec["key"];
   out: unknown;
   busy: boolean;
+  platform: string;
 }) {
   if (moduleKey === "script") {
-    return <ScriptView script={out as ScriptOutput} title="Script" />;
+    return <ScriptView script={out as ScriptOutput} title="Script" platform={platform} />;
   }
 
   if (moduleKey === "hook") {
@@ -671,11 +682,13 @@ function SaveToPipeline({
   out,
   genId,
   values,
+  platform,
 }: {
   moduleKey: ModuleSpec["key"];
   out: unknown;
   genId: string | null;
   values: Record<string, string>;
+  platform: string;
 }) {
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState("");
@@ -686,7 +699,7 @@ function SaveToPipeline({
   const idea = (values.idea || values.topic || values.content || "").trim();
   const title =
     idea.split(/\r?\n/)[0].slice(0, 90) ||
-    ({ hook: "Hook tanpa judul", script: "Script tanpa judul", repurpose: "Repurpose tanpa judul" } as const)[
+    ({ hook: "Hook tanpa judul", script: "Script tanpa judul", repurpose: "Konten tanpa judul" } as const)[
       moduleKey
     ];
 
@@ -698,10 +711,10 @@ function SaveToPipeline({
       // stage with the right next action rather than as an inert blob.
       const content =
         moduleKey === "hook"
-          ? { angle: idea, generated_hook: out, chosen_hook: 0 }
+          ? { angle: idea, generated_hook: out, chosen_hook: 0, platform }
           : moduleKey === "script"
-            ? { angle: idea, generated_script: out, hook_seed: values.hook ?? "" }
-            : { angle: idea, repurposed: out };
+            ? { angle: idea, generated_script: out, hook_seed: values.hook ?? "", platform }
+            : { angle: idea, repurposed: out, platform };
       const status = moduleKey === "hook" ? "draft" : moduleKey === "script" ? "siap" : "ide";
 
       await saveToPipeline(title, content, genId ?? undefined, status);

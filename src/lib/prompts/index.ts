@@ -1,5 +1,11 @@
 import "server-only";
 import { type CreatorDna } from "../supabase/database.types";
+import {
+  todayGoalLabel,
+  todayPlatformLabel,
+  type TodayGoal,
+  type TodayPlatform,
+} from "../content-options";
 
 export type TrendCard = {
   title: string;
@@ -13,17 +19,45 @@ export const IDE_HARI_INI_SCHEMA = {
   properties: {
     ideas: {
       type: "array",
+      minItems: 3,
+      maxItems: 3,
       items: {
         type: "object",
         properties: {
-          title: { type: "string" },
-          angle: { type: "string" },
-          why_now: { type: "string" },
-          format: { type: "string" },
-          est_duration: { type: "string" },
-          difficulty: { type: "string" },
+          title: { type: "string", maxLength: 80 },
+          angle: { type: "string", maxLength: 220 },
+          why_now: { type: "string", maxLength: 220 },
+          format: { type: "string", maxLength: 60 },
+          est_duration: { type: "string", maxLength: 40 },
+          difficulty: { type: "string", maxLength: 20 },
+          opening: { type: "string", maxLength: 180 },
+          beats: {
+            type: "array",
+            minItems: 3,
+            maxItems: 3,
+            items: { type: "string", maxLength: 220 },
+          },
+          ready_copy: { type: "string", maxLength: 900 },
+          caption: { type: "string", maxLength: 300 },
+          hashtags: {
+            type: "array",
+            maxItems: 5,
+            items: { type: "string", maxLength: 40 },
+          },
         },
-        required: ["title", "angle", "why_now", "format", "est_duration", "difficulty"],
+        required: [
+          "title",
+          "angle",
+          "why_now",
+          "format",
+          "est_duration",
+          "difficulty",
+          "opening",
+          "beats",
+          "ready_copy",
+          "caption",
+          "hashtags",
+        ],
       },
     },
   },
@@ -510,7 +544,14 @@ pakai hal konkret yang gak butuh angka (nama part, tahun keluaran, merek).
 Statistik palsu itu cara tercepat kehilangan kepercayaan penonton.
 `;
 
-export function buildIdeHariIniPrompt(dna: CreatorDna | null, trends: TrendCard[], learned?: LearnedNote[], extras?: PromptExtras): string {
+export function buildIdeHariIniPrompt(
+  dna: CreatorDna | null,
+  trends: TrendCard[],
+  learned?: LearnedNote[],
+  extras?: PromptExtras,
+  platform: TodayPlatform = "tiktok_reels",
+  goal: TodayGoal = "views",
+): string {
   const today = new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     year: "numeric",
@@ -519,9 +560,33 @@ export function buildIdeHariIniPrompt(dna: CreatorDna | null, trends: TrendCard[
   }).format(new Date());
 
   const shared = buildSharedContext(dna, trends, learned, extras);
+  const platformName = todayPlatformLabel(platform);
+  const goalName = todayGoalLabel(goal);
+  const platformBrief: Record<TodayPlatform, string> = {
+    tiktok_reels: `Tiap ide berupa video pendek. "opening" adalah kalimat 1-2 detik pertama,
+"beats" berisi urutan scene yang bisa direkam pakai HP, "ready_copy" adalah voice-over
+siap dibaca, lalu kasih caption dan tagar yang relevan.`,
+    youtube_shorts: `Tiap ide berupa Shorts yang menjawab satu rasa penasaran dengan cepat.
+"opening" harus langsung menyebut masalah/janji, "beats" berisi urutan shot,
+"ready_copy" adalah voice-over siap dibaca, lalu kasih caption pencarian dan tagar.`,
+    x: `Tiap ide harus siap jadi post atau thread X. "opening" adalah post pertama,
+"beats" berisi urutan post, dan "ready_copy" adalah tulisan lengkap siap ditempel.
+Jangan menulis arahan kamera atau voice-over. Caption boleh diisi penutup/CTA singkat.`,
+    threads: `Tiap ide harus terasa seperti obrolan Threads, bukan artikel formal.
+"opening" adalah kalimat pembuka, "beats" berisi alur post berseri, dan "ready_copy"
+adalah tulisan lengkap siap ditempel. Jangan menulis arahan kamera atau voice-over.`,
+    facebook: `Tiap ide berupa storytelling post Facebook. "opening" harus bikin orang
+berhenti, "beats" berisi alur cerita, dan "ready_copy" adalah post lengkap siap ditempel.
+Utamakan cerita dan percakapan; tagar sedikit saja.`,
+    linkedin: `Tiap ide berupa insight profesional yang tetap manusiawi. "opening" adalah
+pengamatan kuat, "beats" berisi masalah-bukti-pelajaran, dan "ready_copy" adalah post
+LinkedIn lengkap siap ditempel. Jangan pakai jargon corporate kosong atau cerita palsu.`,
+  };
 
   return `${shared}
 Kreator ini buka aplikasi dan gak tau mau bikin apa hari ini. Tanggal: ${today}.
+Dia sudah memilih platform ${platformName} dan tujuan ${goalName}. Jangan ganti
+platform atau tujuannya diam-diam.
 
 Kasih 3 ide konten yang paling masuk akal buat dia HARI INI, berdasarkan profil
 dan tren di atas. Tiap ide harus terasa personal — bukan ide generik yang bisa
@@ -537,6 +602,18 @@ masing-masing:
 Formatnya juga jangan sama semua. Kalau dua ide udah "talking head", yang ketiga
 cari yang lain.
 
+ATURAN HASIL UNTUK ${platformName.toUpperCase()}:
+${platformBrief[platform]}
+
+Tujuan ${goalName} harus memengaruhi angle dan CTA, bukan cuma disebut ulang.
+Jangan mengarang pengalaman pribadi, angka, klien, atau hasil bisnis yang tidak
+ada di profil/bahan. Kalau butuh detail yang belum ada, pakai placeholder [isi].
+
+Batas keras supaya hasilnya padat dan cepat dipakai: opening maksimal 18 kata,
+beats tepat 3 poin dan masing-masing 1 kalimat, ready_copy maksimal 120 kata,
+caption/penutup maksimal 30 kata, dan maksimal 5 tagar. Jangan mengulang angle
+atau opening di ready_copy cuma buat menambah panjang.
+
 JSON:
 {
   "ideas": [
@@ -544,9 +621,14 @@ JSON:
       "title": "judul singkat, maksimal 8 kata",
       "angle": "sudut pandang uniknya, 1 kalimat",
       "why_now": "kenapa ide ini pas banget dibikin hari ini",
-      "format": "talking head | b-roll | skit | tutorial | reaction | storytime",
-      "est_duration": "contoh: 30-45 detik",
-      "difficulty": "gampang | sedang | effort"
+      "format": "format yang cocok buat platform ini, 1-3 kata",
+      "est_duration": "durasi video, jumlah post, atau estimasi baca",
+      "difficulty": "gampang | sedang | effort",
+      "opening": "kalimat pembuka siap pakai",
+      "beats": ["langkah/scene/post 1", "langkah/scene/post 2"],
+      "ready_copy": "draft lengkap sesuai platform, siap dipakai",
+      "caption": "caption atau penutup siap pakai",
+      "hashtags": ["maksimal 5 dan relevan"]
     }
   ]
 }`;
@@ -632,21 +714,22 @@ export function buildHookLabPrompt(
   extras?: PromptExtras,
 ): string {
   const shared = buildSharedContext(dna, trends, learned, extras);
+  const textPlatform = ["x", "threads", "facebook", "linkedin"].includes(platform.toLowerCase());
+  const hookRules = textPlatform
+    ? `Hook adalah baris/post pertama, bukan ucapan 3 detik. Maksimal 18 kata.
+- Langsung bawa isi; jangan mulai dengan sapaan atau "sebuah thread".
+- Bikin orang merasa perlu membuka lanjutan, tanpa clickbait bohong.
+- Harus enak dibaca sebagai tulisan dan sesuai budaya platform ${platform}.`
+    : `Hook itu 3 detik pertama. Kalau gak nahan orang di situ, sisa videonya gak ada
+artinya. Maksimal 15 kata dan harus enak DIUCAPKAN depan kamera.
+- Buka dengan informasi, bukan sapaan. Haram: "Halo guys" atau "Kalian tau gak".
+- Ada yang dipertaruhkan: waktu, uang, salah pilih, atau rasa penasaran.
+- Jangan janjiin hal yang gak ada di kontennya.`;
   return `${shared}
 Bikin 10 hook buat konten ini: ${ideaOrTopic}
 Platform: ${platform || "General"}
 
-Hook itu 3 detik pertama. Kalau gak nahan orang di situ, sisa videonya gak ada
-artinya. Jadi tiap hook harus lolos empat tes ini:
-
-- DIUCAPKAN, BUKAN DITULIS. Baca keras-keras dalam kepala lo. Kalau kesandung,
-  buang. Maksimal 15 kata, dan lebih pendek biasanya lebih kuat.
-- BUKA DENGAN INFORMASI, BUKAN SAPAAN. Haram: "Halo guys", "Kalian tau gak
-  sih", "Jadi gini". Kata pertama harus udah bawa isi.
-- ADA YANG DIPERTARUHKAN. Penonton harus ngerasa rugi kalau nge-skip: kehilangan
-  uang, kena tipu, salah beli, ketinggalan.
-- JANGAN JANJIIN YANG GAK ADA DI KONTENNYA. Hook bohong bikin orang nonton 2
-  detik terus kabur, dan itu lebih ngerusak daripada hook yang biasa aja.
+${hookRules}
 
 Sepuluh-duanya wajib beda pola: curiosity gap, contrarian, POV, angka, kesalahan
 umum, before-after, pertanyaan langsung, pengakuan, peringatan, cerita.
@@ -658,7 +741,7 @@ JSON:
 {
   "hooks": [
     {
-      "text": "hook-nya, maksimal 15 kata, siap diucapkan",
+      "text": "hook-nya, maksimal 18 kata, siap dipakai",
       "pattern": "nama polanya",
       "score": 1-10,
       "why": "kenapa dikasih skor segitu, 1 kalimat jujur"
@@ -678,6 +761,22 @@ export function buildScriptBuilderPrompt(
   extras?: PromptExtras,
 ): string {
   const shared = buildSharedContext(dna, trends, learned, extras);
+  const textPlatform = ["x", "threads", "facebook", "linkedin"].includes(platform.toLowerCase());
+  const deliveryRules = textPlatform
+    ? `INI KONTEN TEKS, BUKAN VIDEO.
+- Pakai array \`script\` sebagai urutan bagian/post.
+- \`timestamp\` diisi "Post 1", "Post 2", atau "Bagian 1".
+- \`spoken\` berisi tulisan siap ditempel, bukan arahan atau naskah lisan.
+- \`visual\` dikosongkan. \`on_screen_text\` boleh menjelaskan fungsi bagian
+  (pembuka, bukti, pelajaran, penutup).
+- X/Threads: pecah jadi post yang berdiri sendiri tapi tetap nyambung.
+- Facebook: utamakan alur cerita. LinkedIn: pengamatan, bukti, lalu pelajaran.
+- Jangan mengarang pengalaman, klien, angka, atau hasil bisnis.`
+    : `INI KONTEN VIDEO.
+- \`spoken\` harus siap DIBACA DEPAN KAMERA, lengkap dengan jeda dan penekanan.
+- \`visual\` harus bisa direkam satu orang pakai HP.
+- \`on_screen_text\` bukan salinan ucapan; pakai hanya buat angka, nama, atau penekanan.
+- Tiap scene harus mindahin cerita dan sekitar sepertiga jalan harus ada belokan.`;
   return `${shared}
 Bikin naskah lengkap. Ide: ${idea}. Hook: ${hook}. Platform: ${platform || "General"}.
 Durasi target: ${duration || "pendek"}.
@@ -687,20 +786,12 @@ Panjang dan ritme HARUS nyesuain platform:
 - YouTube long: boleh napas, ada intro-body-outro
 - X / Threads: teks, bukan naskah lisan
 
-YANG BIKIN NASKAH INI KEPAKAI ATAU ENGGAK:
+YANG BIKIN HASIL INI KEPAKAI ATAU ENGGAK:
 
-- \`spoken\` itu buat DIBACA DEPAN KAMERA. Tulis persis kayak orang ngomong,
-  lengkap sama jeda dan penekanannya. Bukan kalimat artikel yang dibacain.
-- JANGAN ADA SCENE KOSONG. Tiap potongan harus mindahin cerita. Kalau satu scene
-  dihapus dan videonya gak berubah, berarti scene itu emang gak perlu ada.
-- \`visual\` harus bisa disyuting sama satu orang pakai HP. "Footage sinematik
-  drone" itu bukan arahan, itu mimpi. Sebut objek dan angle konkret.
-- TAHAN ORANGNYA DI TENGAH. Sekitar sepertiga jalan, orang mulai mau pergi.
-  Taruh sesuatu di situ: bantahan, angka yang bikin kaget, atau pertanyaan baru.
-- \`on_screen_text\` bukan salinan \`spoken\`. Isinya angka, nama, atau satu kata
-  penekanan. Kalau cuma ngulang omongan, kosongin aja.
-- CTA-nya nyambung sama isinya. "Follow buat konten menarik lainnya" itu tempelan
-  yang bisa ditaruh di video apa aja — berarti gak ada gunanya di video ini.
+${deliveryRules}
+
+- CTA harus nyambung sama isi. "Follow buat konten menarik lainnya" itu tempelan
+  yang bisa ditaruh di mana aja — berarti gak berguna.
 
 JSON:
 {

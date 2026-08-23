@@ -134,10 +134,10 @@ export default async function ProfilePage() {
                 href="/app/onboarding"
                 className="inline-block cursor-pointer rounded-lg border border-hairline bg-surface-raised px-4 py-2.5 text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
               >
-                Edit Creator DNA
+                Atur profil utama
               </a>
               <p className="mt-2 text-micro leading-relaxed text-muted">
-                Makin lengkap DNA lo, makin nyambung hasil generate-nya.
+                Ini patokan dasar Malesan waktu belum ada profil tambahan yang dipilih.
               </p>
             </div>
           </div>

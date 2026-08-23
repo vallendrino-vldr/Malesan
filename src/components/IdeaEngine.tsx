@@ -18,6 +18,7 @@ export function IdeaEngine() {
   // Real characters received, so the progress figure moves because the
   // model is producing text — not because a timer is running.
   const [chars, setChars] = useState(0);
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -27,6 +28,7 @@ export function IdeaEngine() {
 
     setIsGenerating(true);
     setChars(0);
+    setStatus("Lagi siapin bahan lo...");
     setError("");
     setIdeas([]);
     setGenerationId(undefined);
@@ -56,6 +58,7 @@ export function IdeaEngine() {
           streamError = msg.error;
           return true;
         }
+        if (typeof msg.status === "string") setStatus(msg.status);
         if (msg.done) {
           const gen = msg.generation as
             | { id?: string; output?: { ideas?: IdeaData[] } }
@@ -79,7 +82,7 @@ export function IdeaEngine() {
 
       if (streamError) throw new Error(streamError);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An error occurred";
+      const message = err instanceof Error ? err.message : "Idenya belum berhasil dikembangin. Coba lagi ya.";
       setError(message);
     } finally {
       setIsGenerating(false);
@@ -90,7 +93,7 @@ export function IdeaEngine() {
     <div className="space-y-6">
       <form onSubmit={generate} className="rounded-2xl border border-hairline bg-surface p-6 sm:p-8">
         <h2 className="font-display text-2xl font-bold tracking-display-md text-ink">
-          Idea Engine
+          Matengin Ide
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           Punya ide kasar tapi bingung ngembanginnya? Tulis di sini, gue kembangin jadi 5 ide mateng.
@@ -132,7 +135,7 @@ export function IdeaEngine() {
 
       {isGenerating && (
 
-        <GenerationProgress moduleKey="idea" chars={chars} label="Lagi ngembangin idenya" />
+        <GenerationProgress moduleKey="idea" chars={chars} label="Lagi ngembangin idenya" status={status} />
 
       )}
 

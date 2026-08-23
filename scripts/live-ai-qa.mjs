@@ -175,9 +175,9 @@ try {
       Cookie: cookieHeader,
     },
     body: JSON.stringify({
-      module: "idea",
-      platform: "tiktok",
-      input: { text: "Tiga ide konten singkat soal disiplin kreator pemula." },
+      module: "ide_hari_ini",
+      platform: "linkedin",
+      input: { platform: "linkedin", goal: "branding" },
     }),
     signal: AbortSignal.timeout(58_000),
   });
@@ -187,6 +187,20 @@ try {
   const streamError = events.find((event) => typeof event.error === "string");
   invariant(!streamError, `Generate QA gagal: ${streamError?.error ?? "error stream"}`);
   invariant(events.some((event) => event.done === true), "Stream selesai tanpa event done.");
+  invariant(events.some((event) => typeof event.status === "string"), "Stream tidak mengirim status kerja nyata.");
+  const terminal = events.find((event) => event.done === true);
+  const ideas = terminal?.generation?.output?.ideas;
+  invariant(Array.isArray(ideas) && ideas.length === 3, "Ide Hari Ini tidak mengembalikan 3 ide.");
+  invariant(
+    ideas.every(
+      (idea) =>
+        idea.platform === "linkedin" &&
+        typeof idea.opening === "string" &&
+        Array.isArray(idea.beats) &&
+        typeof idea.ready_copy === "string",
+    ),
+    "Hasil Ide Hari Ini belum membawa format LinkedIn siap pakai.",
+  );
 
   const after = await service
     .from("profiles")
@@ -211,20 +225,43 @@ try {
   const usage = await service
     .from("ai_usage_log")
     .select(
-      "status, model_id, provider_slug, input_tokens, output_tokens, cost_idr, credits_charged, ref_id",
+      "status, model_id, provider_id, provider_slug, input_tokens, output_tokens, cost_idr, credits_charged, ref_id",
     )
     .eq("user_id", userId)
     .eq("ref_id", requestRef)
     .order("attempt", { ascending: true });
   if (usage.error) throw usage.error;
+  const firstAttempt = usage.data[0];
   const success = usage.data.find((row) => row.status === "ok");
   invariant(success, "Tidak ada usage log sukses.");
-  invariant(/deepseek/i.test(success.model_id ?? ""), "Brain primary bukan DeepSeek.");
+  invariant(/deepseek/i.test(firstAttempt?.model_id ?? ""), "Brain tidak mencoba DeepSeek sebagai primary.");
   invariant(
     Number(success.input_tokens) + Number(success.output_tokens) > 0,
     "Token usage tidak tercatat.",
   );
-  invariant(Number(success.cost_idr) > 0, "Biaya AI masih nol.");
+  const pricedModel = await service
+    .from("ai_models")
+    .select(
+      "pricing_mode, package_price_idr, package_tokens, input_price_usd_per_mtok, output_price_usd_per_mtok",
+    )
+    .eq("provider_id", success.provider_id)
+    .eq("model_id", success.model_id)
+    .single();
+  if (pricedModel.error) throw pricedModel.error;
+  const price = pricedModel.data;
+  const knownFree = price.pricing_mode === "free_quota";
+  const hasPaidPrice =
+    (price.pricing_mode === "prepaid_package" &&
+      Number(price.package_price_idr) > 0 &&
+      Number(price.package_tokens) > 0) ||
+    (price.pricing_mode === "direct_usd" &&
+      (Number(price.input_price_usd_per_mtok) > 0 ||
+        Number(price.output_price_usd_per_mtok) > 0));
+  invariant(knownFree || hasPaidPrice, "Model sukses belum punya konfigurasi harga yang jelas.");
+  invariant(
+    knownFree ? Number(success.cost_idr) === 0 : Number(success.cost_idr) > 0,
+    "Biaya AI tidak cocok dengan mode harga model yang berhasil.",
+  );
   invariant(
     usage.data.reduce((sum, row) => sum + Number(row.credits_charged), 0) === charge,
     "Revenue usage log tidak sama dengan satu credit charge.",
@@ -232,24 +269,31 @@ try {
 
   const generation = await service
     .from("generations")
-    .select("model_used, credits_spent")
+    .select("model_used, credits_spent, input, output")
     .eq("user_id", userId)
     .single();
   if (generation.error) throw generation.error;
-  invariant(/deepseek/i.test(generation.data.model_used ?? ""), "Generation menyimpan model yang salah.");
+  invariant(
+    generation.data.model_used === success.model_id,
+    "Generation tidak menyimpan model yang benar-benar berhasil.",
+  );
   invariant(Number(generation.data.credits_spent) === charge, "Generation menyimpan biaya kredit yang salah.");
+  invariant(generation.data.input?.platform === "linkedin", "Pilihan platform tidak tersimpan.");
 
   console.log(
     JSON.stringify({
       verdict: "PASS",
       route: "/api/generate",
       userRole: "ordinary",
-      primaryModel: success.model_id,
+      primaryAttempt: firstAttempt.model_id,
+      successModel: success.model_id,
+      usedFallback: firstAttempt.model_id !== success.model_id,
       attempts: usage.data.length,
       creditCharges: ledger.data.length,
       creditsCharged: charge,
       tokensRecorded: Number(success.input_tokens) + Number(success.output_tokens),
-      costRecorded: Number(success.cost_idr) > 0,
+      costMode: price.pricing_mode,
+      costConsistent: true,
       generationPersisted: true,
     }),
   );

@@ -15,6 +15,8 @@ import { IdeaData } from "./IdeaCard";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE } from "@/lib/sse";
 import { ScriptView, type ScriptOutput } from "./ScriptView";
+import { GenerationProgress } from "./GenerationProgress";
+import { normalizeTodayPlatform, todayPlatformLabel } from "@/lib/content-options";
 
 /**
  * Pipeline.
@@ -624,6 +626,9 @@ function PipelineCardItem({
   const [isSubmittingRating, setIsSubmittingRating] = useState(false);
   const [rated, setRated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationModule, setGenerationModule] = useState<"hook" | "script">("hook");
+  const [generationChars, setGenerationChars] = useState(0);
+  const [generationStatus, setGenerationStatus] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
   const dragControls = useDragControls();
@@ -658,6 +663,9 @@ function PipelineCardItem({
     }
 
     setIsGenerating(true);
+    setGenerationModule(module);
+    setGenerationChars(0);
+    setGenerationStatus("Lagi siapin kartu ini...");
     setError("");
 
     try {
@@ -670,7 +678,9 @@ function PipelineCardItem({
             idea,
             ...(module === "script" ? { hook, duration } : {}),
           },
-          platform: "tiktok",
+          // Ide Hari Ini now stores the creator's actual destination. Falling
+          // back to TikTok preserves old cards that predate that field.
+          platform: content.platform || "tiktok",
         }),
       });
 
@@ -683,6 +693,11 @@ function PipelineCardItem({
         if (typeof msg.error === "string") {
           streamError = msg.error;
           return true;
+        }
+        if (typeof msg.status === "string") setGenerationStatus(msg.status);
+        if (typeof msg.chunk === "string") {
+          const chunk = msg.chunk;
+          setGenerationChars((count) => count + chunk.length);
         }
         if (msg.done) {
           finalResult = (msg.generation as { output?: unknown } | undefined)?.output ?? null;
@@ -780,6 +795,11 @@ function PipelineCardItem({
             {content.format}
           </span>
         )}
+        {content?.platform && (
+          <span className="eyebrow inline-block rounded bg-obsidian px-2 py-1 text-muted">
+            {todayPlatformLabel(normalizeTodayPlatform(content.platform))}
+          </span>
+        )}
         {/* The posting slot the model picked. Neutral on purpose — ember is for
             action and heat, and this is information. */}
         {card.schedule_label && (
@@ -811,6 +831,18 @@ function PipelineCardItem({
         <p className="mt-2 rounded-lg border border-danger/20 bg-danger/10 px-3 py-2 text-micro leading-relaxed text-danger">
           {error}
         </p>
+      )}
+
+      {isGenerating && (
+        <div className="mt-3">
+          <GenerationProgress
+            compact
+            moduleKey={generationModule}
+            chars={generationChars}
+            label={generationModule === "hook" ? "Lagi bikin hook..." : "Lagi nulis hasilnya..."}
+            status={generationStatus}
+          />
+        </div>
       )}
 
       {(status === "ide" || (status === "draft" && !hasHook)) && (
@@ -878,7 +910,7 @@ function PipelineCardItem({
 
       {/* The script existed in the row the whole time and was never shown. */}
       {(status === "siap" || status === "posted") && content.generated_script && (
-        <ScriptView script={content.generated_script} title={card.title} />
+        <ScriptView script={content.generated_script} title={card.title} platform={content.platform} />
       )}
 
       {status === "siap" && (

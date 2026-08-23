@@ -127,7 +127,7 @@ const SECTIONS: Section[] = [
     a: (
       <>
         Karena profil lo belum lengkap. Isi{" "}
-        <span className="text-ember">Creator DNA</span> di tab Profil — niche,
+        <span className="text-ember">Profil konten utama</span> di tab Profil — niche,
         gaya bahasa, target audiens, dan yang paling ngaruh:{" "}
         <span className="text-ink">kontennya buat siapa</span> (diri sendiri,
         klien, atau brand tempat lo kerja).

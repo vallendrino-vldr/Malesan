@@ -316,7 +316,7 @@ export default async function AppPage({
             />
             <StudioTileBig
               mod="idea"
-              title="Idea Engine"
+              title="Matengin Ide"
               body="Punya ide mentah? Lempar, balik jadi 5 yang udah mateng."
               cost={costIdea}
             />
@@ -326,9 +326,9 @@ export default async function AppPage({
               the start with no way in. Compact row so the dashboard still fits
               one screen — the two primaries stay the headline. */}
           <div className="grid grid-cols-3 gap-2">
-            <StudioTile mod="hook" title="Hook Lab" cost={costHook} />
-            <StudioTile mod="script" title="Script" cost={costScript} />
-            <StudioTile mod="repurpose" title="Repurpose" cost={costRepurpose} />
+            <StudioTile mod="hook" title="Bikin Hook" cost={costHook} />
+            <StudioTile mod="script" title="Bikin Script" cost={costScript} />
+            <StudioTile mod="repurpose" title="Ubah Format" cost={costRepurpose} />
           </div>
 
           {/* The only door to /app/draft. The editor and its route shipped with

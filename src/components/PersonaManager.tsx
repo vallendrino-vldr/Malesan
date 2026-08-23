@@ -48,10 +48,10 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
 
   return (
     <div className="surface-card rounded-2xl p-5">
-      <h2 className="font-display text-lg font-bold text-ink">Suara simpanan</h2>
+      <h2 className="font-display text-lg font-bold text-ink">Profil konten</h2>
       <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        Suara itu gaya nulis yang lo simpen sekali terus tinggal dipilih pas generate — misal satu
-        buat akun pribadi, satu buat klien. Yang ditandain default kepilih otomatis tiap kali.
+        Punya akun pribadi, toko, affiliate, atau klien? Simpan cara ngomongnya di
+        sini, lalu tinggal pilih waktu bikin konten. Profil default kepilih otomatis.
       </p>
 
       {error && (
@@ -62,7 +62,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
 
       {personas.length === 0 && editing !== "new" && (
         <p className="mt-4 rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-mini leading-relaxed text-muted">
-          Belum ada suara kesimpen. Ya udah, bikin yang pertama.
+          Belum ada profil tambahan. Profil utama lo tetap bisa dipakai.
         </p>
       )}
 
@@ -88,7 +88,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                     <span className="text-sm font-semibold text-ink">{p.name}</span>
                     {p.is_default && (
                       <span className="rounded-full border border-ember/50 px-2 py-0.5 text-micro font-semibold text-ember">
-                        Default
+                        Utama
                       </span>
                     )}
                   </div>
@@ -129,7 +129,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                           onClick={() => run(() => setDefaultPersona(p.id))}
                           className={btnCls}
                         >
-                          Jadiin default
+                          Jadiin utama
                         </button>
                       )}
                       <button
@@ -157,7 +157,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
               initialName=""
               initialVoice=""
               pending={pending}
-              submitLabel="Simpen suara ini"
+              submitLabel="Simpen profil ini"
               onCancel={() => setEditing(null)}
               onSubmit={(name, voice) =>
                 run(() => createPersona(name, voice), () => setEditing(null))
@@ -174,7 +174,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
             }}
             className={btnCls}
           >
-            {personas.length === 0 ? "Bikin suara pertama" : "Tambah suara"}
+            {personas.length === 0 ? "Bikin profil tambahan" : "Tambah profil"}
           </button>
         )}
       </div>
@@ -210,7 +210,7 @@ function PersonaForm({
       }}
     >
       <label htmlFor={`${idPrefix}-name`} className="block text-mini font-semibold text-ink">
-        Nama suaranya
+        Nama profil
       </label>
       <input
         id={`${idPrefix}-name`}
@@ -223,11 +223,11 @@ function PersonaForm({
       />
 
       <label htmlFor={`${idPrefix}-voice`} className="mt-3 block text-mini font-semibold text-ink">
-        Gaya nulisnya kayak gimana?
+        Yang bikin profil ini beda?
       </label>
       <p className="mt-1 text-micro leading-relaxed text-muted">
-        Tulis apa adanya. Makin spesifik makin kekunci — kata yang lo pakai, yang lo hindarin,
-        panjang kalimatnya.
+        Ceritain niche, target orangnya, tujuan, platform utama, dan cara ngomongnya.
+        Gak perlu rapi — satu paragraf juga cukup.
       </p>
       <textarea
         id={`${idPrefix}-voice`}
@@ -236,7 +236,7 @@ function PersonaForm({
         onChange={(e) => setVoice(e.target.value)}
         maxLength={VOICE_MAX}
         disabled={pending}
-        placeholder="Santai, kalimat pendek-pendek, suka nyeletuk. Gak pernah pakai kata 'sobat' atau 'guys'."
+        placeholder="Akun affiliate skincare buat cewek 20–30. Fokus jualan halus di TikTok, bahasanya santai, kalimat pendek, gak pernah pakai kata ‘sobat’."
         className={`${inputCls} mt-1.5`}
       />
       <p className="mt-1 tabular text-micro text-muted">

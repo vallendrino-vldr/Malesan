@@ -158,7 +158,7 @@ export default function OnboardingPage() {
     <div className="flex min-h-[100dvh] flex-col bg-obsidian">
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col px-5 py-8">
         <header>
-          <p className="eyebrow text-ember">Creator DNA</p>
+          <p className="eyebrow text-ember">Profil konten utama</p>
           <h1 className="mt-2 font-display text-2xl font-bold leading-tight text-ink">
             Kenalan dulu bentar
           </h1>
@@ -264,7 +264,7 @@ export default function OnboardingPage() {
 
           {step === 1 && (
             <>
-              <Field label="Gaya persona lo gimana?">
+              <Field label="Cara ngomong lo gimana?">
                 <Chips
                   options={PERSONA_STYLES}
                   value={f.persona_style}
@@ -418,7 +418,7 @@ export default function OnboardingPage() {
               disabled={isSubmitting}
               className="flex-1 cursor-pointer rounded-xl bg-ember px-5 py-3 font-display text-sm font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:opacity-60"
             >
-              {isSubmitting ? "Lagi nyusun persona lo..." : "Simpan · 2 kredit"}
+              {isSubmitting ? "Lagi ngerangkum gaya lo..." : "Simpan · 2 kredit"}
             </button>
           )}
         </div>

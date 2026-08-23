@@ -86,6 +86,54 @@ assert.doesNotMatch(
   "provider fallback must remain below the credit layer",
 );
 
+// Creator-facing generation must preserve the choice from UI -> prompt ->
+// saved Pipeline content. These are source-level contracts on purpose: they
+// catch the exact regressions that previously made every follow-up silently
+// revert to TikTok even after the creator picked another platform.
+const contentOptions = read("src/lib/content-options.ts");
+for (const platform of [
+  "tiktok_reels",
+  "youtube_shorts",
+  "x",
+  "threads",
+  "facebook",
+  "linkedin",
+]) {
+  assert.match(contentOptions, new RegExp(`id: ["']${platform}["']`), `missing ${platform} option`);
+}
+for (const goal of ["views", "sales", "branding", "education", "engagement"]) {
+  assert.match(contentOptions, new RegExp(`id: ["']${goal}["']`), `missing ${goal} option`);
+}
+
+const todayUi = read("src/components/IdeHariIni.tsx");
+assert.match(todayUi, /TODAY_PLATFORMS\.map/);
+assert.match(todayUi, /TODAY_GOALS\.map/);
+assert.match(todayUi, /input:\s*\{\s*platform,\s*goal,/);
+
+const generateRoute = read("src/app/api/generate/route.ts");
+assert.match(generateRoute, /buildIdeHariIniPrompt\([\s\S]*?idePlatform,[\s\S]*?ideGoal,/);
+assert.match(generateRoute, /JSON\.stringify\(\{ status:/);
+assert.match(generateRoute, /platform:\s*storedPlatform\(/);
+
+const pipeline = read("src/components/PipelineBoard.tsx");
+assert.match(pipeline, /platform:\s*content\.platform\s*\|\|\s*["']tiktok["']/);
+assert.doesNotMatch(pipeline, /platform:\s*["']tiktok["']\s*,/);
+
+const progress = read("src/components/GenerationProgress.tsx");
+assert.match(progress, /role=["']status["']/);
+assert.doesNotMatch(progress, /const\s+STAGES\b|\bpct\b|style=\{\{\s*width:/);
+
+const topup = read("src/app/app/topup/page.tsx");
+assert.match(topup, /activeCreditPacks\(\)/);
+assert.match(topup, /packsError/);
+assert.match(topup, /selected\s*\?\s*`Rp \$\{selected\.price_idr/);
+
+assert.doesNotMatch(
+  read("src/components/ScriptView.tsx"),
+  /Makasih udah nonton sampai habis/,
+  "the UI must not invent a closing the model did not generate",
+);
+
 for (const file of [
   "src/lib/ai/discovery.ts",
   "src/lib/ai/balance.ts",

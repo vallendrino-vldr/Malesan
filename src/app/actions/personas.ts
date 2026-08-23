@@ -20,7 +20,7 @@ const VOICE_MAX = 2000;
 const LABEL_MAX = 60;
 
 const NO_SESSION = "Sesi lo abis. Masuk lagi dulu ya.";
-const GONE = "Suara itu udah gak ada di daftar lo. Refresh halamannya.";
+const GONE = "Profil itu udah gak ada di daftar lo. Muat ulang halamannya.";
 const WRITE_FAILED = "Gagal kesimpen ke server. Coba lagi sebentar lagi.";
 
 /**
@@ -29,7 +29,7 @@ const WRITE_FAILED = "Gagal kesimpen ke server. Coba lagi sebentar lagi.";
  * index talking; a raw Postgres string must never reach the screen.
  */
 function friendly(code: string | undefined): string {
-  return code === "23505" ? "Udah ada suara lain yang jadi default. Refresh dulu." : WRITE_FAILED;
+  return code === "23505" ? "Udah ada profil lain yang jadi default. Muat ulang dulu." : WRITE_FAILED;
 }
 
 function cleanName(raw: string): { ok: true; value: string } | { ok: false; error: string } {
@@ -41,7 +41,7 @@ function cleanName(raw: string): { ok: true; value: string } | { ok: false; erro
 
 function cleanVoice(raw: string): { ok: true; value: string } | { ok: false; error: string } {
   const value = raw.trim();
-  if (!value) return { ok: false, error: "Tulis dulu gaya nulisnya kayak gimana." };
+  if (!value) return { ok: false, error: "Ceritain dulu apa yang bikin profil ini beda." };
   if (value.length > VOICE_MAX) return { ok: false, error: `Kepanjangan. Maksimal ${VOICE_MAX} karakter.` };
   return { ok: true, value };
 }

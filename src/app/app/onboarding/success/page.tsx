@@ -39,12 +39,12 @@ export default function OnboardingSuccessPage() {
         </div>
         
         <h1 className="font-display text-4xl font-bold tracking-display-md text-ink">
-          DNA Lo Udah Di-scan!
+          Profil utama lo udah siap
         </h1>
         
         <p className="mt-4 text-sm leading-relaxed text-muted">
-          AI kita udah baca data lo dan ngerumusin *persona* unik lo. Semua
-          ide konten ke depannya bakal di-<i>generate</i> pake patokan ini:
+          Malesan udah ngerangkum siapa yang lo ajak ngobrol dan cara lo
+          ngomong. Mulai sekarang, hasilnya bakal ngikutin patokan ini:
         </p>
 
         {persona ? (
@@ -66,7 +66,7 @@ export default function OnboardingSuccessPage() {
             href="/app"
             className="inline-block w-full sm:w-auto rounded-xl bg-ember px-8 py-4 font-display text-base font-bold text-obsidian transition-all duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo glow-ember"
           >
-            Masuk ke Dashboard
+            Mulai bikin konten
           </Link>
         </div>
       </main>

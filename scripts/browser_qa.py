@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+import json
 import re
+import subprocess
 from pathlib import Path
 from urllib.parse import quote
 
@@ -30,13 +32,84 @@ def load_env() -> dict[str, str]:
     return values
 
 
+def production_session_cookies(env: dict[str, str], base: str) -> list[dict[str, str]]:
+    """Mint a normal Supabase session for the fixed QA admin, without a web backdoor.
+
+    The short-lived access/refresh cookies only travel from a captured Node
+    subprocess stdout into Playwright memory. They are never logged, written to
+    disk, or exposed to application JavaScript.
+    """
+
+    required = {
+        "QA_SUPABASE_URL": env.get("NEXT_PUBLIC_SUPABASE_URL", ""),
+        "QA_ANON_KEY": env.get("NEXT_PUBLIC_SUPABASE_ANON_KEY", ""),
+        "QA_SERVICE_KEY": env.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+        "QA_ADMIN_EMAIL": env.get("DEV_LOGIN_EMAIL", ""),
+    }
+    if not all(required.values()):
+        raise RuntimeError("Direct browser QA auth is not configured")
+
+    node_script = r"""
+import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
+
+const url = process.env.QA_SUPABASE_URL;
+const anon = process.env.QA_ANON_KEY;
+const service = createClient(url, process.env.QA_SERVICE_KEY, {
+  auth: { autoRefreshToken: false, persistSession: false },
+});
+const { data, error } = await service.auth.admin.generateLink({
+  type: 'magiclink',
+  email: process.env.QA_ADMIN_EMAIL,
+});
+if (error || !data?.properties?.hashed_token) process.exit(2);
+
+const jar = new Map();
+const ssr = createServerClient(url, anon, {
+  cookies: {
+    getAll: () => [...jar.entries()].map(([name, value]) => ({ name, value })),
+    setAll: (rows) => rows.forEach(({ name, value }) => jar.set(name, value)),
+  },
+});
+const verified = await ssr.auth.verifyOtp({
+  type: 'magiclink',
+  token_hash: data.properties.hashed_token,
+});
+if (verified.error || !verified.data.session) process.exit(3);
+process.stdout.write(JSON.stringify([...jar.entries()].map(([name, value]) => ({ name, value }))));
+"""
+    child_env = os.environ.copy()
+    child_env.update(required)
+    result = subprocess.run(
+        ["node", "--input-type=module", "-e", node_script],
+        cwd=ROOT,
+        env=child_env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        raise RuntimeError("Could not mint the browser QA session")
+    try:
+        rows = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("Browser QA session returned an invalid cookie jar") from exc
+    return [{"name": row["name"], "value": row["value"], "url": base} for row in rows]
+
+
 def main() -> None:
     env = load_env()
+    direct_auth = os.environ.get("MALESAN_QA_DIRECT_AUTH") == "1"
     secret = env.get("DEV_LOGIN_SECRET")
-    if not secret:
+    if not direct_auth and not secret:
         raise RuntimeError("DEV_LOGIN_SECRET is not configured")
 
-    base = os.environ.get("MALESAN_QA_BASE", "http://127.0.0.1:3000")
+    # Next 16 rejects dev assets requested through a host that differs from the
+    # dev server's canonical localhost origin. Using 127.0.0.1 made every page
+    # look server-rendered while its JS chunks returned 403 — a QA setup failure,
+    # not an application failure.
+    base = os.environ.get("MALESAN_QA_BASE", "http://localhost:3000")
     browser_name = os.environ.get("MALESAN_QA_BROWSER", "chromium").lower()
     if browser_name not in {"chromium", "webkit", "firefox"}:
         raise RuntimeError(f"Unsupported QA browser: {browser_name}")
@@ -48,10 +121,13 @@ def main() -> None:
     routes = [
         "/",
         "/app",
+        "/app?tab=studio&m=ide",
         "/app?tab=vibe",
         "/app?tab=pipeline",
         "/app?tab=profil",
         "/app?tab=studio&m=video",
+        "/app/profile",
+        "/app/onboarding",
         "/app/topup",
         "/admin",
         "/admin/ai",
@@ -60,7 +136,17 @@ def main() -> None:
         "/admin/ai/routing",
         "/admin/ai/biaya",
     ]
-    sizes = [(360, 800), (768, 1024), (1366, 768), (1920, 1080)]
+    # Android small phone, iPhone-class phone, phone landscape, tablet, laptop,
+    # and wide desktop. Landscape is explicit because a portrait-only matrix
+    # misses bottom-nav and short-viewport collisions.
+    sizes = [
+        (360, 800),
+        (375, 812),
+        (812, 375),
+        (768, 1024),
+        (1366, 768),
+        (1920, 1080),
+    ]
 
     with sync_playwright() as runner:
         browser = getattr(runner, browser_name).launch(headless=True)
@@ -85,11 +171,17 @@ def main() -> None:
             else None,
         )
 
-        login = f"{base}/dev-masuk?key={quote(secret, safe='')}&next=/admin/ai"
-        response = page.goto(login, wait_until="domcontentloaded", timeout=60_000)
-        if not response or response.status >= 400:
-            raise RuntimeError("Development login failed")
-        page.wait_for_url("**/admin/ai", timeout=30_000)
+        if direct_auth:
+            context.add_cookies(production_session_cookies(env, base))
+            response = page.goto(base + "/admin/ai", wait_until="domcontentloaded", timeout=60_000)
+            if not response or response.status >= 400:
+                raise RuntimeError("Production-session login failed")
+        else:
+            login = f"{base}/dev-masuk?key={quote(secret, safe='')}&next=/admin/ai"
+            response = page.goto(login, wait_until="domcontentloaded", timeout=60_000)
+            if not response or response.status >= 400:
+                raise RuntimeError("Development login failed")
+            page.wait_for_url("**/admin/ai", timeout=30_000)
         page.wait_for_load_state("networkidle", timeout=30_000)
 
         ai_text = page.locator("body").inner_text()
@@ -134,6 +226,25 @@ def main() -> None:
                 page.screenshot(path=str(SHOT_DIR / f"ai-center-{width}.png"), full_page=True)
 
         page.set_viewport_size({"width": 360, "height": 800})
+        page.goto(base + "/app?tab=studio&m=ide", wait_until="networkidle", timeout=60_000)
+        ide_text = page.locator("body").inner_text()
+        for expected in ("Mau posting di mana?", "Lagi ngejar apa?", "Profil konten"):
+            # Profil konten only renders when the QA account has an additional
+            # profile. The first two controls are unconditional.
+            if expected == "Profil konten" and expected not in ide_text:
+                continue
+            if expected not in ide_text:
+                failures.append(f"Ide Hari Ini missing {expected}")
+        page.screenshot(path=str(SHOT_DIR / "ide-mobile.png"), full_page=True)
+
+        page.set_viewport_size({"width": 812, "height": 375})
+        page.goto(base + "/app?tab=studio&m=ide", wait_until="networkidle", timeout=60_000)
+        page.screenshot(path=str(SHOT_DIR / "ide-landscape.png"), full_page=True)
+
+        page.set_viewport_size({"width": 360, "height": 800})
+        page.goto(base + "/app?tab=profil", wait_until="networkidle", timeout=60_000)
+        page.screenshot(path=str(SHOT_DIR / "profile-mobile.png"), full_page=True)
+
         page.goto(base + "/app?tab=studio&m=video", wait_until="networkidle", timeout=60_000)
         video_text = page.locator("body").inner_text()
         for expected in ("Video Editor", "Tap buat pilih video"):
@@ -161,18 +272,33 @@ def main() -> None:
             failures.append("Admin statistics still expose legacy Gemini pricing")
 
         # WebKit reports aborted requests during the rapid viewport/navigation
-        # matrix as CORS errors. Prove the actual client-side Supabase fetch on a
+        # matrix as CORS errors. Prove the authenticated server-action load on a
         # stable page instead of treating navigation cancellation as product
         # failure.
         page.goto(base + "/app/topup", wait_until="networkidle", timeout=60_000)
         page.wait_for_timeout(1_000)
         if page.get_by_role("button").filter(has_text="kredit").count() == 0:
             failures.append("Top-up credit packs did not load")
+        page.screenshot(path=str(SHOT_DIR / "topup-mobile.png"), full_page=True)
 
         page.goto(base + "/app", wait_until="networkidle", timeout=60_000)
+        # Make this assertion independent of an earlier run or a stored user
+        # preference. The old test always expected "soft" after one click, so a
+        # context that already started soft failed when the perfectly working
+        # switch changed it back to dark.
+        page.evaluate(
+            """() => {
+              localStorage.removeItem('malesan-theme');
+              localStorage.removeItem('malesan-theme-toggle-seen');
+              document.documentElement.removeAttribute('data-theme');
+              document.documentElement.removeAttribute('data-theme-seen');
+            }"""
+        )
+        page.reload(wait_until="networkidle", timeout=60_000)
         switch = page.locator('button[role="switch"]:visible').first
         if switch.count():
             switch.click()
+            page.wait_for_function("document.documentElement.dataset.theme === 'soft'")
             if page.locator("html").get_attribute("data-theme") != "soft":
                 failures.append("Theme switch did not activate soft mode")
         else:
@@ -196,7 +322,14 @@ def main() -> None:
 
     # Ignore browser noise from third-party font/CDN failures; application and
     # hydration errors are never ignored.
-    ignored_console = ("fonts.googleapis.com", "fonts.gstatic.com")
+    ignored_console = ("fonts.googleapis.com", "fonts.gstatic.com", "/_next/hmr")
+    if browser_name == "firefox":
+        # Supabase's Cloudflare edge may attach __cf_bm to the realtime
+        # websocket response. Firefox refuses that third-party cookie for an
+        # invalid domain and logs it as a JavaScript error; auth/realtime do not
+        # use the cookie, and the same stable-page checks above still prove the
+        # actual app connection.
+        ignored_console += ("has been rejected for invalid domain",)
     if browser_name == "webkit":
         ignored_console += ("due to access control checks", "realtime/v1/websocket")
     relevant_console = [

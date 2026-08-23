@@ -120,7 +120,7 @@ const DEFAULT_BUDGET_MS = 45_000;
  * Roughly one full generation on a healthy gateway, so failing over is still
  * worth doing rather than guaranteeing the backup runs out of road too.
  */
-const RESERVE_FOR_NEXT_MS = 22_000;
+const RESERVE_FOR_NEXT_MS = 24_000;
 
 /**
  * Never cut a candidate off sooner than this, however tight the budget.
