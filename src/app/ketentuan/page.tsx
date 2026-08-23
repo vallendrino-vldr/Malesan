@@ -45,7 +45,7 @@ export default function KetentuanPage() {
             </li>
             <li>Tiap fitur punya harga kredit yang ditampilkan sebelum lo pakai.</li>
             <li>
-              Kalau generate gagal karena kesalahan sistem kami, kredit lo
+              Kalau proses bikin konten gagal karena kesalahan sistem kami, kredit lo
               dikembalikan otomatis.
             </li>
             <li>
@@ -62,10 +62,10 @@ export default function KetentuanPage() {
 
         <section>
           <h2 className="font-display text-base font-bold text-ink">
-            Hasil generate
+            Hasil konten
           </h2>
           <p className="mt-2 text-muted">
-            Hasil yang lo generate jadi milik lo — bebas dipakai buat konten
+            Hasil yang Malesan bikinin jadi milik lo — bebas dipakai buat konten
             komersial. Tapi AI bisa salah: cek dulu fakta, angka, dan klaim
             sebelum diposting. Kami tidak bertanggung jawab atas konten yang lo
             terbitkan.

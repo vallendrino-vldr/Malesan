@@ -141,8 +141,8 @@ export function VibeQuestions({
           {busy
             ? "Bentar..."
             : answered === 0
-              ? "Generate tanpa jawaban"
-              : `Generate pakai ${answered} jawaban`}
+              ? "Lanjut tanpa jawaban"
+              : `Lanjut pakai ${answered} jawaban`}
         </button>
       </div>
     </div>

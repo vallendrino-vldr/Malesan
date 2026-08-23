@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return json({ error: "Unauthorized" }, 401);
+  if (!user) return json({ error: "Sesi lo udah habis. Masuk lagi ya." }, 401);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     .eq("user_id", user.id)
     .maybeSingle();
   if (!card) return json({ error: "Kontennya gak ketemu." }, 404);
-  if (card.status !== "posted") return json({ error: "Cuma konten yang udah 'Posted' yang bisa didaur ulang." }, 400);
+  if (card.status !== "posted") return json({ error: "Cuma konten yang udah tayang yang bisa didaur ulang." }, 400);
   if (Date.now() - new Date(card.created_at).getTime() < THIRTY_DAYS_MS) {
     return json({ error: "Konten ini belum cukup lama buat didaur ulang." }, 400);
   }

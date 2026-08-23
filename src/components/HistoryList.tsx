@@ -29,11 +29,11 @@ export type HistoryItem = {
 
 const MODULE_LABEL: Record<string, string> = {
   ide_hari_ini: "Ide Hari Ini",
-  idea: "Idea Engine",
-  hook: "Hook Lab",
-  script: "Script Builder",
-  repurpose: "Repurpose",
-  vibe_kit: "Vibe Kit",
+  idea: "Matengin Ide",
+  hook: "Bikin Hook",
+  script: "Bikin Script",
+  repurpose: "Ubah Format",
+  vibe_kit: "Bikin App",
 };
 
 export function HistoryList({ items }: { items: HistoryItem[] }) {
@@ -46,7 +46,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
     return (
       <div className="rounded-xl border border-dashed border-hairline px-4 py-8 text-center">
         <p className="text-sm text-muted">
-          Belum ada riwayat. Semua yang lo generate bakal kesimpen di sini.
+          Belum ada riwayat. Semua yang Malesan bikinin bakal kesimpen di sini.
         </p>
       </div>
     );
@@ -107,7 +107,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
             {confirmDel === it.id ? (
               <div className="mt-2.5 border-t border-hairline pt-2.5">
                 <p className="text-micro leading-relaxed text-ink">
-                  Hapus dari riwayat? AI juga berhenti belajar dari yang ini.
+                  Hapus dari riwayat? Malesan juga berhenti belajar dari yang ini.
                 </p>
                 <div className="mt-2 flex gap-2">
                   <button
@@ -141,7 +141,9 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                         s <= rating ? "text-ember" : "text-muted hover:text-ink"
                       }`}
                     >
-                      ★
+                      <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 fill-current">
+                        <path d="m12 2.7 2.8 5.7 6.3.9-4.6 4.4 1.1 6.3-5.6-3-5.6 3 1.1-6.3-4.6-4.4 6.3-.9L12 2.7Z" />
+                      </svg>
                     </button>
                   ))}
                 </div>
@@ -168,10 +170,10 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
           model learns what works for this specific creator. */}
       <div className="mt-1 rounded-xl border border-ember/20 bg-ember/5 p-3.5">
         <p className="text-mini font-semibold text-ember-lo">
-          Kasih bintang = AI-nya jadi makin pinter
+          Kasih bintang = hasil berikutnya makin nyambung
         </p>
         <p className="mt-1 text-micro leading-relaxed text-muted">
-          Tiap hasil yang lo kasih bintang beneran dibaca ulang pas generate
+          Tiap hasil yang lo kasih bintang beneran dibaca ulang pas bikin konten
           berikutnya. Yang lo kasih <span className="text-ink">4–5</span> dipakai
           jadi contoh pola yang cocok buat lo. Yang lo kasih{" "}
           <span className="text-ink">1–2</span> dipakai buat tau pola apa yang
@@ -179,7 +181,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
           <br />
           <br />
           Makin sering lo rating, makin nyambung hasilnya. Kalau nggak dirating
-          sama sekali, AI-nya mulai dari nol terus tiap kali.
+          sama sekali, Malesan harus nebak dari nol terus tiap kali.
         </p>
       </div>
     </div>

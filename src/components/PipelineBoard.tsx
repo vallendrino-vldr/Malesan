@@ -73,7 +73,7 @@ const COLUMNS: {
     label: "Ide",
     blurb: "Ide mentah yang belum digarap.",
     empty:
-      "Belum ada ide di sini. Generate di tab Studio, terus tap “Simpan ke pipeline” di kartu hasilnya.",
+      "Belum ada ide di sini. Bikin ide di tab Studio, terus tap “Simpan ke Alur” di kartu hasilnya.",
   },
   {
     id: "draft",
@@ -89,7 +89,7 @@ const COLUMNS: {
   },
   {
     id: "posted",
-    label: "Posted",
+    label: "Tayang",
     blurb: "Udah tayang. Kasih rating biar ide berikutnya makin nyambung.",
     empty: "Belum ada yang tayang. Geser kartu dari Siap kalau udah lo posting.",
   },
@@ -128,7 +128,7 @@ function nextStep(card: PipelineCard, hasHook: boolean): string {
         ? "Langkah 2 dari 3 — hook udah ada, lanjut bikin script."
         : "Kartu ini lompat tahap, hook-nya belum ada. Bikin hook dulu biar script-nya nyambung.";
     case "siap":
-      return "Langkah 3 dari 3 — syuting, posting, terus geser ke Posted.";
+      return "Langkah 3 dari 3 — syuting, posting, terus geser ke Tayang.";
     case "posted":
       return "Kasih rating performanya.";
     default:
@@ -405,7 +405,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       {/* ---------- what this board is (shown once, only while empty) ---------- */}
       {total === 0 && (
         <div className="surface-card rounded-2xl p-5">
-          <h2 className="font-display text-lg font-bold text-ink">Pipeline</h2>
+          <h2 className="font-display text-lg font-bold text-ink">Alur konten</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Tempat ide lo jalan dari mentah sampai tayang. Tiap kartu lewat tiga
             langkah: <span className="text-ink">hook</span> →{" "}
@@ -654,7 +654,7 @@ function PipelineCardItem({
     // leaking into the UI — it names fields the user never typed and offers no
     // way out. Catch it here and say what to actually do.
     if (!idea) {
-      setError("Kartu ini gak punya judul, jadi gak ada yang bisa digarap. Hapus aja terus generate ulang dari Studio.");
+      setError("Kartu ini gak punya judul, jadi gak ada yang bisa digarap. Hapus aja terus bikin ulang dari Studio.");
       return;
     }
     if (module === "script" && !hook) {
@@ -684,7 +684,7 @@ function PipelineCardItem({
         }),
       });
 
-      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal generate."));
+      if (!res.ok) throw new Error(await readErrorBody(res, "Kontennya belum berhasil dibikin."));
 
       let finalResult: unknown = null;
       let streamError: string | null = null;
@@ -726,7 +726,7 @@ function PipelineCardItem({
       } else {
         // A stream that ends without a terminal frame used to leave the card
         // sitting there with no explanation. Say so instead.
-        throw new Error("Generate-nya kepotong di tengah jalan. Coba lagi ya.");
+        throw new Error("Prosesnya kepotong di tengah jalan. Coba lagi ya.");
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Ada yang error.");

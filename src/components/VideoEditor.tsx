@@ -251,7 +251,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
 
       <header>
         <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
-          Video Editor — Auto CC
+          Subtitle Otomatis
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
           Upload video, AI tulisin subtitle-nya per kata, atur gayanya, terus export jadi
@@ -382,7 +382,7 @@ function UploadDrop({ onPick }: { onPick: (f: File | null) => void }) {
       </svg>
       <span className="text-sm font-semibold text-ink">Tap buat pilih video (MP4)</span>
       <span className="text-mini text-muted">
-        Maksimal ~10 menit. Diproses langsung di perangkat lo (HP atau laptop), gak diupload ke server.
+        Maksimal ~10 menit. Video tetap diproses di HP atau laptop lo, jadi filenya gak dikirim ke mana-mana.
       </span>
       <input
         type="file"
@@ -496,19 +496,14 @@ function StylePanel({
   const set = (p: Partial<CaptionStyle>) => onChange({ ...style, ...p });
   return (
     <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3">
-      <p className="text-mini font-semibold text-ink">Gaya subtitle</p>
-
-      <div className="grid grid-cols-2 gap-2">
-        <ColorField label="Warna teks" value={style.textColor} onChange={(v) => set({ textColor: v })} />
-        <ColorField
-          label="Warna highlight"
-          value={style.highlightColor}
-          onChange={(v) => set({ highlightColor: v })}
-        />
+      <div>
+        <p className="text-mini font-semibold text-ink">Pilih gaya videonya</p>
+        <p className="mt-0.5 text-micro leading-relaxed text-muted">
+          Presetnya udah ngatur ukuran, posisi, dan ritme subtitle. Tinggal pilih.
+        </p>
       </div>
 
       <div>
-        <span className="text-micro text-muted">Platform</span>
         <div className="mt-1 grid grid-cols-3 gap-1.5">
           {SOCIAL_PRESETS.map((preset) => (
             <button
@@ -531,115 +526,137 @@ function StylePanel({
         </p>
       </div>
 
-      <div>
-        <span className="text-micro text-muted">Munculnya</span>
-        <div className="mt-1 flex gap-1.5">
-          {(["word", "line"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => set({ mode: m })}
-              className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold transition-colors ${
-                style.mode === m
-                  ? "border-ember bg-ember/15 text-ember"
-                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-              }`}
+      <details className="overflow-hidden rounded-xl border border-hairline bg-obsidian/35">
+        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-mini font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
+          <span>Atur sendiri</span>
+          <span className="text-micro font-normal text-muted">Opsional</span>
+        </summary>
+        <div className="space-y-3 border-t border-hairline p-3.5">
+          <div className="grid grid-cols-2 gap-2">
+            <ColorField label="Warna teks" value={style.textColor} onChange={(v) => set({ textColor: v })} />
+            <ColorField
+              label="Warna highlight"
+              value={style.highlightColor}
+              onChange={(v) => set({ highlightColor: v })}
+            />
+          </div>
+
+          <div>
+            <span className="text-micro text-muted">Munculnya</span>
+            <div className="mt-1 flex gap-1.5">
+              {(["word", "line"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => set({ mode: m })}
+                  className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold transition-colors ${
+                    style.mode === m
+                      ? "border-ember bg-ember/15 text-ember"
+                      : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                  }`}
+                >
+                  {m === "word" ? "Per kata" : "Per kalimat"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="block">
+            <span className="text-micro text-muted">Font</span>
+            <select
+              value={style.fontFamily}
+              onChange={(e) => set({ fontFamily: e.target.value })}
+              className="mt-1 min-h-11 w-full rounded-lg border border-hairline bg-obsidian/40 px-2 py-2 text-mini text-ink outline-none focus:border-ember/50"
             >
-              {m === "word" ? "Per kata" : "Per kalimat"}
-            </button>
-          ))}
+              {CAPTION_FONTS.map((f) => (
+                <option key={f.family} value={f.family}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex gap-1.5">
+            {(["box", "outline", "plain"] as const).map((captionStyle) => (
+              <button
+                key={captionStyle}
+                type="button"
+                onClick={() => set({ style: captionStyle })}
+                className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
+                  style.style === captionStyle
+                    ? "border-ember bg-ember/15 text-ember"
+                    : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                }`}
+              >
+                {captionStyle}
+              </button>
+            ))}
+          </div>
+
+          <div>
+            <span className="text-micro text-muted">Animasi masuk</span>
+            <div className="mt-1 grid grid-cols-3 gap-1.5">
+              {(["none", "pop", "fade"] as const).map((animation) => (
+                <button
+                  key={animation}
+                  type="button"
+                  onClick={() => set({ animation })}
+                  className={`min-h-11 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
+                    style.animation === animation
+                      ? "border-ember bg-ember/15 text-ember"
+                      : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                  }`}
+                >
+                  {animation === "none" ? "Tanpa" : animation}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <label className="flex min-h-11 items-center gap-2 text-mini text-ink">
+            <input
+              type="checkbox"
+              checked={style.bold}
+              onChange={(e) => set({ bold: e.target.checked })}
+              className="size-4 accent-ember"
+            />
+            Extra tebal
+          </label>
+
+          <label className="block">
+            <span className="text-micro text-muted">Posisi (naik-turun)</span>
+            <input
+              type="range"
+              min={0.4}
+              max={0.9}
+              step={0.02}
+              value={style.position}
+              onChange={(e) => set({ position: Number(e.target.value) })}
+              className="mt-1 w-full accent-ember"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-micro text-muted">Ukuran teks ({Math.round(style.fontScale * 100)}%)</span>
+            <input
+              type="range"
+              min={0.7}
+              max={1.6}
+              step={0.05}
+              value={style.fontScale}
+              onChange={(e) => set({ fontScale: Number(e.target.value) })}
+              className="mt-1 w-full accent-ember"
+            />
+          </label>
+
+          <p className="text-[10px] leading-snug text-muted">
+            Detail kualitas: {bitrate} Mbps. File dibuat cukup tajam sebelum sosmed mengompres ulang.
+          </p>
         </div>
-      </div>
-
-      <label className="block">
-        <span className="text-micro text-muted">Font</span>
-        <select
-          value={style.fontFamily}
-          onChange={(e) => set({ fontFamily: e.target.value })}
-          className="mt-1 w-full rounded-lg border border-hairline bg-obsidian/40 px-2 py-2 text-mini text-ink outline-none focus:border-ember/50"
-        >
-          {CAPTION_FONTS.map((f) => (
-            <option key={f.family} value={f.family}>
-              {f.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="flex gap-1.5">
-        {(["box", "outline", "plain"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => set({ style: s })}
-            className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
-              style.style === s
-                ? "border-ember bg-ember/15 text-ember"
-                : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-            }`}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div>
-        <span className="text-micro text-muted">Animasi masuk</span>
-        <div className="mt-1 grid grid-cols-3 gap-1.5">
-          {(["none", "pop", "fade"] as const).map((animation) => (
-            <button
-              key={animation}
-              type="button"
-              onClick={() => set({ animation })}
-              className={`min-h-11 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
-                style.animation === animation
-                  ? "border-ember bg-ember/15 text-ember"
-                  : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-              }`}
-            >
-              {animation === "none" ? "Tanpa" : animation}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <label className="flex items-center gap-2 text-mini text-ink">
-        <input
-          type="checkbox"
-          checked={style.bold}
-          onChange={(e) => set({ bold: e.target.checked })}
-          className="accent-ember"
-        />
-        Extra tebal
-      </label>
-
-      <label className="block">
-        <span className="text-micro text-muted">Posisi (naik-turun)</span>
-        <input
-          type="range"
-          min={0.4}
-          max={0.9}
-          step={0.02}
-          value={style.position}
-          onChange={(e) => set({ position: Number(e.target.value) })}
-          className="mt-1 w-full accent-ember"
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-micro text-muted">Ukuran teks ({Math.round(style.fontScale * 100)}%)</span>
-        <input
-          type="range"
-          min={0.7}
-          max={1.6}
-          step={0.05}
-          value={style.fontScale}
-          onChange={(e) => set({ fontScale: Number(e.target.value) })}
-          className="mt-1 w-full accent-ember"
-        />
-      </label>
+      </details>
 
       <p className="text-[10px] leading-snug text-muted">
-        Kualitas export otomatis {bitrate} Mbps sesuai platform. Sosmed bakal compress ulang,
-        jadi file sengaja dibuat cukup tajam sebelum diupload.
+        Kualitas ekspor otomatis disesuaikan biar hasilnya tetap tajam.
       </p>
     </div>
   );

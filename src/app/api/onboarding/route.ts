@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Sesi lo udah habis. Masuk lagi ya." }, { status: 401 });
     }
 
     const { data: profile, error: profileError } = await supabase
@@ -58,11 +58,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError || !profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return NextResponse.json({ error: "Profil akun lo belum siap. Muat ulang atau masuk lagi ya." }, { status: 404 });
     }
 
     if (profile.is_banned) {
-      return NextResponse.json({ error: "Banned" }, { status: 403 });
+      return NextResponse.json({ error: "Akun ini lagi dibatasi. Hubungi bantuan kalau lo ngerasa ini keliru." }, { status: 403 });
     }
 
     const limited = await aiRateLimit(user.id, "onboarding", 4);

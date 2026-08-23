@@ -24,7 +24,7 @@ export type UserFacingError = {
 };
 
 const BUSY: UserFacingError = {
-  message: "AI-nya lagi penuh banget barusan. Tunggu sebentar terus coba lagi ya.",
+  message: "Malesan lagi penuh banget barusan. Tunggu sebentar terus coba lagi ya.",
   retryable: true,
 };
 
@@ -57,7 +57,7 @@ export function userFacingError(err: unknown): UserFacingError {
   if (/api key|unauthorized|401|403|invalid_api_key|permission|billing|insufficient/.test(raw)) {
     return {
       message:
-        "Ada yang salah di setelan AI-nya, bukan di lo. Udah dicatat buat diperbaiki — coba lagi nanti.",
+        "Ada yang salah di sistemnya, bukan di lo. Udah dicatat buat diperbaiki — coba lagi nanti.",
       retryable: false,
     };
   }
@@ -73,13 +73,13 @@ export function userFacingError(err: unknown): UserFacingError {
 
   if (/network|fetch failed|econn|socket|dns/.test(raw)) {
     return {
-      message: "Koneksi ke AI-nya putus. Cek internet lo, terus coba lagi.",
+      message: "Koneksinya putus di tengah. Kredit lo gak kepotong — coba lagi ya.",
       retryable: true,
     };
   }
 
   return {
-    message: "Gagal generate. Kredit lo gak kepotong — coba lagi sebentar lagi.",
+    message: "Kontennya belum berhasil dibikin. Kredit lo gak kepotong — coba lagi sebentar lagi.",
     retryable: true,
   };
 }

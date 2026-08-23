@@ -32,8 +32,8 @@ const WORK_CONTEXTS = [
   },
   {
     id: "brand",
-    label: "In-house di satu brand",
-    hint: "Ngomong atas nama brand, pakai “kami”.",
+    label: "Buat bisnis atau brand",
+    hint: "Cocok buat pemilik usaha dan tim brand. Kontennya ngomong sebagai bisnis.",
   },
 ];
 
@@ -238,7 +238,7 @@ export default function OnboardingPage() {
 
               {f.work_context !== "sendiri" && (
                 <Field
-                  label={f.work_context === "klien" ? "Kliennya jualan apa?" : "Brand-nya soal apa?"}
+                  label={f.work_context === "klien" ? "Kliennya jualan apa?" : "Bisnis atau brand-nya soal apa?"}
                   hint="Makin jelas, makin gak ngarang."
                 >
                   <textarea

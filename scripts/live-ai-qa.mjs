@@ -111,16 +111,23 @@ try {
     .eq("id", userId);
   if (profileError) throw profileError;
 
-  const auth = createClient(supabaseUrl, anonKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+  // Use GoTrue's password endpoint directly. auth-js on Node 24/Windows can
+  // occasionally leave a failed fetch handle behind after an admin request,
+  // while the same HTTPS request succeeds reliably through native fetch.
+  const signInResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+    signal: AbortSignal.timeout(15_000),
   });
-  const { data: signedIn, error: signInError } = await auth.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (signInError || !signedIn.session) {
-    throw signInError ?? new Error("Session QA gagal dibuat.");
+  if (!signInResponse.ok) {
+    throw new Error(`Session QA gagal dibuat (HTTP ${signInResponse.status}).`);
   }
+  const signedIn = await signInResponse.json();
+  invariant(signedIn.access_token && signedIn.refresh_token, "Session QA tidak lengkap.");
 
   const cookieJar = new Map();
   const ssr = createServerClient(supabaseUrl, anonKey, {
@@ -133,8 +140,8 @@ try {
     },
   });
   const { error: sessionError } = await ssr.auth.setSession({
-    access_token: signedIn.session.access_token,
-    refresh_token: signedIn.session.refresh_token,
+    access_token: signedIn.access_token,
+    refresh_token: signedIn.refresh_token,
   });
   if (sessionError) throw sessionError;
   const cookieHeader = [...cookieJar.entries()]

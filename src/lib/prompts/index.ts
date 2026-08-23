@@ -326,7 +326,7 @@ function buildSharedContext(
       context += `- Aman: sudut pandang orang kedua ke audiens, atau narasi atas nama brand.\n`;
       if (dna.client_brief) context += `- Tentang kliennya: ${dna.client_brief}\n`;
     } else if (dna.work_context === "brand") {
-      context += `- Kreator ini in-house, ngomong ATAS NAMA brand. Pakai "kami", bukan "gue".\n`;
+      context += `- Kreator ini ngomong ATAS NAMA bisnis atau brand yang dia kelola. Pakai nama brand atau "kami", bukan pengalaman pribadi palsu.\n`;
       context += `- Boleh klaim soal produk, tapi jangan ngarang fitur yang gak disebutin.\n`;
       if (dna.client_brief) context += `- Tentang brand-nya: ${dna.client_brief}\n`;
     } else {
@@ -682,7 +682,7 @@ Bikin konten buat: ${
     rawDna.work_context === "klien"
       ? "KLIEN (dia yang di balik kamera, bukan pemilik usahanya)"
       : rawDna.work_context === "brand"
-        ? "BRAND tempat dia kerja (ngomong atas nama 'kami')"
+        ? "BISNIS atau BRAND yang dia kelola (ngomong sebagai brand, bukan pengalaman pribadi palsu)"
         : "dirinya sendiri (personal brand, orang pertama)"
   }
 Tentang klien/brand: ${rawDna.client_brief || "-"}

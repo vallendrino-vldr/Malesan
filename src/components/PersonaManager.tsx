@@ -297,8 +297,8 @@ export function CtaSettings({
     <div className="surface-card rounded-2xl p-5">
       <h2 className="font-display text-lg font-bold text-ink">Ajakan penutup</h2>
       <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        Kalau nyala, tiap hasil generate bakal nutup dengan ajakan ke link lo — ditulis natural
-        sama AI-nya, nyambung sama isi kontennya, dan cuma sekali di paling akhir.
+        Kalau nyala, tiap hasil bakal nutup dengan ajakan ke link lo — ditulis natural
+        sama Malesan, nyambung sama isi kontennya, dan cuma sekali di paling akhir.
       </p>
 
       <form
@@ -374,7 +374,7 @@ export function CtaSettings({
           <span>
             <span className="block text-sm font-semibold text-ink">Nyalain ajakan penutup</span>
             <span className="block text-micro text-muted">
-              {enabled ? "Nyala — semua hasil bakal nutup ke link lo." : "Mati — hasil generate gak nyebut link lo sama sekali."}
+              {enabled ? "Nyala — semua hasil bakal nutup ke link lo." : "Mati — hasilnya gak nyebut link lo sama sekali."}
             </span>
           </span>
           <span

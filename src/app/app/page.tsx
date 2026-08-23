@@ -76,14 +76,11 @@ export default async function AppPage({
     );
   }
 
-  // Onboarding gate: only after they have seen the product work once.
-  if (!profile.onboarding_completed) {
-    const { count } = await supabase
-      .from("generations")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    if (count && count >= 1) redirect("/app/onboarding");
-  }
+  // Profil konten is guidance, not a gate. The old count-based redirect fired
+  // during router.refresh() right after somebody's first successful result,
+  // replacing that result with the onboarding form before it could be copied
+  // or saved. Keep the app usable and surface the setup where people expect it:
+  // at the top of the Profil tab below.
 
   // Everything below used to run in sequence on every single tab change: a
   // write to claim the refill, a full pipeline read, and five separate config
@@ -385,8 +382,36 @@ export default async function AppPage({
 
         profil: (
         <div className="reveal space-y-4">
-          {/* Accessibility controls first: someone who needs larger text needs
-              it before they can comfortably read anything else on the page. */}
+          <section className="surface-card overflow-hidden rounded-2xl border border-ember/30 p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="eyebrow text-ember">Profil konten lo</p>
+                <h2 className="mt-2 font-display text-lg font-bold text-ink">
+                  {profile.onboarding_completed ? "Malesan udah kenal gaya lo" : "Biar hasilnya makin berasa lo"}
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                  Simpan niche, cara ngomong, dan siapa yang mau lo ajak ngobrol.
+                  Bisa punya profil terpisah buat akun pribadi, bisnis, atau klien.
+                </p>
+              </div>
+              <span
+                className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-1 text-micro font-semibold ${
+                  profile.onboarding_completed
+                    ? "border-success/30 bg-success/10 text-success"
+                    : "border-ember/30 bg-ember/10 text-ember"
+                }`}
+              >
+                {profile.onboarding_completed ? "Siap" : "Belum lengkap"}
+              </span>
+            </div>
+            <Link
+              href={profile.onboarding_completed ? "/app/profile" : "/app/onboarding"}
+              className="btn-ember mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-4 font-display text-sm font-bold text-obsidian"
+            >
+              {profile.onboarding_completed ? "Kelola profil konten" : "Kenalin gaya gue"}
+            </Link>
+          </section>
+
           <section className="surface-card rounded-2xl p-4">
             <TextScale />
           </section>
@@ -416,8 +441,8 @@ export default async function AppPage({
             </div>
 
             <dl className="mt-5 grid grid-cols-2 gap-3">
-              <Stat label="Credit gratis" value={profile.credits_free} />
-              <Stat label="Credit berbayar" value={profile.credits_paid} />
+              <Stat label="Kredit gratis" value={profile.credits_free} />
+              <Stat label="Kredit berbayar" value={profile.credits_paid} />
             </dl>
 
             <div className="mt-4 rounded-xl border border-hairline bg-obsidian px-4 py-3">
@@ -433,7 +458,7 @@ export default async function AppPage({
               href="/app/topup"
               className="btn-ember grid place-items-center rounded-xl px-5 py-3.5 font-display text-[0.9375rem] font-bold text-obsidian"
             >
-              Top up credit
+              Top up kredit
             </Link>
             {/* Was a bare centred label with no icon and no press state, sitting
                 next to a filled primary button — it read as a disabled twin

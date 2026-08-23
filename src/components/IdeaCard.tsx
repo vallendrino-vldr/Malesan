@@ -31,6 +31,8 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState("");
   const normalizedPlatform = idea.platform ? normalizeTodayPlatform(idea.platform) : null;
   const isVideo = normalizedPlatform === "tiktok_reels" || normalizedPlatform === "youtube_shorts";
   const beatLabel =
@@ -50,9 +52,25 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       await saveToPipeline(idea.title, idea, generationId);
       setSaved(true);
     } catch {
-      setSaveError("Belum berhasil masuk Pipeline. Coba tap sekali lagi.");
+      setSaveError("Belum berhasil masuk Alur. Coba tap sekali lagi.");
     }
     setIsSaving(false);
+  };
+
+  const copyPayload = [idea.ready_copy, idea.caption, idea.hashtags?.join(" ")]
+    .filter((part): part is string => Boolean(part?.trim()))
+    .join("\n\n");
+
+  const handleCopy = async () => {
+    if (!copyPayload) return;
+    setCopyError("");
+    try {
+      await navigator.clipboard.writeText(copyPayload);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch {
+      setCopyError("Belum bisa disalin otomatis. Buka kontennya, lalu salin manual ya.");
+    }
   };
 
   // If streaming and title is missing, show a skeleton or partial text
@@ -107,7 +125,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       {(idea.opening || idea.ready_copy || idea.beats?.length || idea.caption || idea.hashtags?.length) && (
         <details className="mt-5 overflow-hidden rounded-xl border border-hairline bg-obsidian/45">
           <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-mini font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
-            <span>Versi siap dipakai</span>
+            <span>Konten siap posting</span>
             <span className="text-micro font-normal text-muted">Buka</span>
           </summary>
           <div className="space-y-4 border-t border-hairline px-4 py-4">
@@ -175,19 +193,39 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
 
       {!isStreaming && idea.title && (
         <div className="mt-4 space-y-3 border-t border-hairline pt-4">
-          <div className="flex justify-end">
+          <p className="text-mini font-semibold text-ink">Mau langsung dipakai?</p>
+          <div className={`grid gap-2 ${copyPayload ? "grid-cols-2" : "grid-cols-1"}`}>
+            {copyPayload && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className={`min-h-11 rounded-xl px-3 font-display text-xs font-bold transition-colors ${
+                  copied ? "bg-success text-obsidian" : "bg-ember text-obsidian hover:bg-ember-lo"
+                }`}
+              >
+                {copied ? "Udah tersalin" : "Salin konten"}
+              </button>
+            )}
             <button
+              type="button"
               onClick={handleSave}
               disabled={isSaving || saved}
-              className={`min-h-11 cursor-pointer font-display text-xs font-semibold transition-colors ${
-                saved ? "cursor-default text-success" : "text-ember hover:text-ember-lo"
+              className={`min-h-11 rounded-xl border px-3 font-display text-xs font-semibold transition-colors ${
+                saved
+                  ? "cursor-default border-success/30 bg-success/10 text-success"
+                  : "cursor-pointer border-hairline bg-surface-raised text-ink hover:border-ember/40 hover:text-ember-lo"
               }`}
             >
-              {saved ? "Udah masuk Pipeline" : isSaving ? "Lagi nyimpen..." : "Simpan ke Pipeline"}
+              {saved ? "Udah masuk Alur" : isSaving ? "Lagi nyimpen..." : "Simpan ke Alur"}
             </button>
           </div>
+          {copyError && (
+            <p role="alert" className="text-micro leading-relaxed text-danger">
+              {copyError}
+            </p>
+          )}
           {saveError && (
-            <p role="alert" className="text-right text-micro leading-relaxed text-danger">
+            <p role="alert" className="text-micro leading-relaxed text-danger">
               {saveError}
             </p>
           )}

@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!user) return new Response("Sesi lo udah habis. Masuk lagi ya.", { status: 401 });
 
   const [cardResult, profileResult] = await Promise.all([
     // Scoped to the owner on top of RLS: this route writes to the row it reads,
@@ -116,7 +116,9 @@ export async function POST(request: NextRequest) {
   if (!cardResult.data) {
     return Response.json({ error: "Kartunya udah gak ada di pipeline lo." }, { status: 404 });
   }
-  if (profileResult.data?.is_banned) return new Response("Banned", { status: 403 });
+  if (profileResult.data?.is_banned) {
+    return new Response("Akun ini lagi dibatasi. Hubungi bantuan kalau lo ngerasa ini keliru.", { status: 403 });
+  }
 
   const limited = await aiRateLimit(user.id, "pipeline_schedule", 12);
   if (limited) return limited;

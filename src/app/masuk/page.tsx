@@ -46,8 +46,8 @@ export default async function MasukPage({
           Masuk dulu.
         </h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Cuma lewat Google. Gak ada email-password, gak ada verifikasi email —
-          biar yang bikin akun ganda males duluan.
+          Cukup pakai akun Google. Gak perlu bikin password baru atau buka email
+          verifikasi.
         </p>
 
         {error && (
@@ -64,7 +64,7 @@ export default async function MasukPage({
         </div>
 
         <p className="mt-6 font-mono text-micro leading-relaxed text-muted">
-          Masuk pertama kali langsung dapet 5 credit. Tiap hari nambah 10 lagi.
+          Masuk pertama kali langsung dapet 5 kredit. Tiap hari nambah 10 lagi.
         </p>
       </main>
     </div>

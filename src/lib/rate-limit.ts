@@ -35,7 +35,7 @@ export async function aiRateLimit(
   if (error) {
     console.error("AI rate-limit check failed", { scope, code: error.code });
     return Response.json(
-      { error: "Sistem lagi ngatur antrean AI. Coba lagi sebentar ya." },
+      { error: "Malesan lagi ngatur antrean. Coba lagi sebentar ya." },
       { status: 503, headers: { "Retry-After": "5" } },
     );
   }

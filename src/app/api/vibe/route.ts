@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!user) return new Response("Sesi lo udah habis. Masuk lagi ya.", { status: 401 });
 
   // Same missing filter as /app had: `.single()` throws once the table holds
   // more than one readable row, so this returned 404 and the route exited before
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     .select("*")
     .eq("id", user.id)
     .single();
-  if (!profile) return new Response("Profile not found", { status: 404 });
-  if (profile.is_banned) return new Response("Banned", { status: 403 });
+  if (!profile) return new Response("Profil akun lo belum siap. Muat ulang atau masuk lagi ya.", { status: 404 });
+  if (profile.is_banned) return new Response("Akun ini lagi dibatasi. Hubungi bantuan kalau lo ngerasa ini keliru.", { status: 403 });
 
   const limited = await aiRateLimit(user.id, "vibe", 6);
   if (limited) return limited;

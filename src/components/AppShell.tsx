@@ -38,14 +38,14 @@ const TABS: { key: TabKey; label: string; icon: ReactNode }[] = [
   },
   {
     key: "vibe",
-    label: "Vibe",
+    label: "Bikin App",
     icon: (
       <path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4Zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4Z" />
     ),
   },
   {
     key: "pipeline",
-    label: "Pipeline",
+    label: "Alur",
     icon: (
       <path d="M4 5h6v14H4V5Zm10 0h6v9h-6V5ZM6 7v10h2V7H6Zm10 0v5h2V7h-2Z" />
     ),

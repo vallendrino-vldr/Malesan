@@ -106,8 +106,8 @@ export function StudioPanel({
             and delete this block then, or the Studio grows two of each. */}
         <div className="reveal relative z-10 mt-4 space-y-2">
           <div className="grid grid-cols-2 gap-2">
-            <StudioTile mod="clip" title="Clip Engine" cost={clipCost} />
-            <StudioTile mod="thread" title="Thread Engine" cost={threadCost} />
+            <StudioTile mod="clip" title="Potong Momen" cost={clipCost} />
+            <StudioTile mod="thread" title="Bikin Thread" cost={threadCost} />
           </div>
           {/* Full width rather than left in a lopsided 3rd grid cell: it is the
               flashiest tool here and earns the spotlight, and the row reads as

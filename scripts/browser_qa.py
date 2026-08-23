@@ -182,7 +182,11 @@ def main() -> None:
             if not response or response.status >= 400:
                 raise RuntimeError("Development login failed")
             page.wait_for_url("**/admin/ai", timeout=30_000)
-        page.wait_for_load_state("networkidle", timeout=30_000)
+        # The authenticated app keeps Supabase Realtime alive. Waiting for a
+        # completely idle network can therefore time out after the page is
+        # already rendered and interactive. Hydration gets a short deterministic
+        # settle instead; individual assertions below wait for what they use.
+        page.wait_for_timeout(750)
 
         ai_text = page.locator("body").inner_text()
         if "Otak AI" not in ai_text or "AI utama" not in ai_text:
@@ -222,11 +226,17 @@ def main() -> None:
                     failures.append(f"image without alt on {route} at {width}px")
 
             if width in (360, 1366):
-                page.goto(base + "/admin/ai", wait_until="networkidle", timeout=60_000)
+                page.goto(base + "/admin/ai", wait_until="domcontentloaded", timeout=60_000)
                 page.screenshot(path=str(SHOT_DIR / f"ai-center-{width}.png"), full_page=True)
 
         page.set_viewport_size({"width": 360, "height": 800})
-        page.goto(base + "/app?tab=studio&m=ide", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app?tab=studio&m=ide", wait_until="domcontentloaded", timeout=60_000)
+        try:
+            page.get_by_role("heading", name="Ide Hari Ini").wait_for(
+                state="visible", timeout=20_000
+            )
+        except Exception:
+            failures.append("Ide Hari Ini did not leave its loading state within 20s")
         ide_text = page.locator("body").inner_text()
         for expected in ("Mau posting di mana?", "Lagi ngejar apa?", "Profil konten"):
             # Profil konten only renders when the QA account has an additional
@@ -238,16 +248,22 @@ def main() -> None:
         page.screenshot(path=str(SHOT_DIR / "ide-mobile.png"), full_page=True)
 
         page.set_viewport_size({"width": 812, "height": 375})
-        page.goto(base + "/app?tab=studio&m=ide", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app?tab=studio&m=ide", wait_until="domcontentloaded", timeout=60_000)
         page.screenshot(path=str(SHOT_DIR / "ide-landscape.png"), full_page=True)
 
         page.set_viewport_size({"width": 360, "height": 800})
-        page.goto(base + "/app?tab=profil", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app?tab=profil", wait_until="domcontentloaded", timeout=60_000)
         page.screenshot(path=str(SHOT_DIR / "profile-mobile.png"), full_page=True)
 
-        page.goto(base + "/app?tab=studio&m=video", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app?tab=studio&m=video", wait_until="domcontentloaded", timeout=60_000)
+        try:
+            page.get_by_text("Tap buat pilih video (MP4)", exact=True).wait_for(
+                state="visible", timeout=20_000
+            )
+        except Exception:
+            failures.append("Video editor did not leave its loading state within 20s")
         video_text = page.locator("body").inner_text()
-        for expected in ("Video Editor", "Tap buat pilih video"):
+        for expected in ("Subtitle Otomatis", "Tap buat pilih video"):
             if expected not in video_text:
                 failures.append(f"Video editor missing {expected}")
         page.screenshot(path=str(SHOT_DIR / "video-mobile.png"), full_page=True)
@@ -266,7 +282,7 @@ def main() -> None:
                 failures.append("Video transcription returned too little text")
             page.screenshot(path=str(SHOT_DIR / "video-ready-mobile.png"), full_page=True)
 
-        page.goto(base + "/admin/stats", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/admin/stats", wait_until="domcontentloaded", timeout=60_000)
         stats_text = page.locator("body").inner_text()
         if "pemakaian Gemini" in stats_text or "price_in_per_mtok" in stats_text:
             failures.append("Admin statistics still expose legacy Gemini pricing")
@@ -275,13 +291,13 @@ def main() -> None:
         # matrix as CORS errors. Prove the authenticated server-action load on a
         # stable page instead of treating navigation cancellation as product
         # failure.
-        page.goto(base + "/app/topup", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app/topup", wait_until="domcontentloaded", timeout=60_000)
         page.wait_for_timeout(1_000)
         if page.get_by_role("button").filter(has_text="kredit").count() == 0:
             failures.append("Top-up credit packs did not load")
         page.screenshot(path=str(SHOT_DIR / "topup-mobile.png"), full_page=True)
 
-        page.goto(base + "/app", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app", wait_until="domcontentloaded", timeout=60_000)
         # Make this assertion independent of an earlier run or a stored user
         # preference. The old test always expected "soft" after one click, so a
         # context that already started soft failed when the perfectly working
@@ -294,8 +310,12 @@ def main() -> None:
               document.documentElement.removeAttribute('data-theme-seen');
             }"""
         )
-        page.reload(wait_until="networkidle", timeout=60_000)
+        page.reload(wait_until="domcontentloaded", timeout=60_000)
         switch = page.locator('button[role="switch"]:visible').first
+        try:
+            switch.wait_for(state="visible", timeout=20_000)
+        except Exception:
+            pass
         if switch.count():
             switch.click()
             page.wait_for_function("document.documentElement.dataset.theme === 'soft'")
@@ -304,11 +324,14 @@ def main() -> None:
         else:
             failures.append("Theme switch is not reachable")
 
+        page.get_by_role("link", name="Malesan").wait_for(state="visible", timeout=20_000)
         page.keyboard.press("Tab")
-        if page.evaluate("document.activeElement === document.body"):
+        try:
+            page.wait_for_function("document.activeElement !== document.body", timeout=5_000)
+        except Exception:
             failures.append("Keyboard focus never enters the app")
 
-        page.goto(base + "/app", wait_until="networkidle", timeout=60_000)
+        page.goto(base + "/app", wait_until="domcontentloaded", timeout=60_000)
         page.wait_for_function(
             "navigator.serviceWorker && navigator.serviceWorker.getRegistration().then(Boolean)",
             timeout=15_000,
@@ -332,8 +355,19 @@ def main() -> None:
         ignored_console += ("has been rejected for invalid domain",)
     if browser_name == "webkit":
         ignored_console += ("due to access control checks", "realtime/v1/websocket")
+    def ignored_navigation_abort(item: str) -> bool:
+        lower = item.lower()
+        return (
+            browser_name == "firefox"
+            and "realtime/v1/websocket" in lower
+            and "was interrupted while the page was loading" in lower
+        )
+
     relevant_console = [
-        item for item in console_errors if not any(token in item.lower() for token in ignored_console)
+        item
+        for item in console_errors
+        if not any(token in item.lower() for token in ignored_console)
+        and not ignored_navigation_abort(item)
     ]
     safe_console = [re.sub(r"(apikey=)[^&'\" ]+", r"\1[redacted]", item) for item in relevant_console]
     failures.extend(f"browser console: {item[:180]}" for item in safe_console)

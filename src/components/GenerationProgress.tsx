@@ -64,8 +64,8 @@ export function GenerationProgress({
   const detail = streaming
     ? "Jawabannya mulai masuk. Gue tunggu sampai lengkap dulu."
     : overrun
-      ? "Lebih lama dari biasanya, tapi request-nya masih jalan."
-      : "Request-nya udah jalan. Tombolnya gue kunci biar gak dobel.";
+      ? "Lebih lama dari biasanya, tapi prosesnya masih jalan."
+      : "Prosesnya udah jalan. Tombolnya gue kunci biar gak dobel.";
 
   return (
     <div

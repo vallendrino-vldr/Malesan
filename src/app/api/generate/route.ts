@@ -67,31 +67,31 @@ export async function POST(request: NextRequest) {
 
     const MODULES = ["ide_hari_ini", "idea", "hook", "script", "repurpose", "clip", "thread"];
     if (!module || !MODULES.includes(module)) {
-      return new Response("Invalid module", { status: 400 });
+      return new Response("Pilihannya gak dikenali. Muat ulang halaman lalu coba lagi.", { status: 400 });
     }
 
     if (module === "idea" && (!input?.text || input.text.trim().length === 0)) {
-      return new Response("Input is required for Idea Engine", { status: 400 });
+      return new Response("Tulis ide mentahnya dulu ya.", { status: 400 });
     }
     
     if (module === "hook" && (!input?.idea || input.idea.trim().length === 0)) {
-      return new Response("Idea input is required for Hook Lab", { status: 400 });
+      return new Response("Tulis atau pilih idenya dulu ya.", { status: 400 });
     }
 
     if (module === "script" && (!input?.idea || !input?.hook || !input?.duration)) {
-      return new Response("Idea, hook, and duration inputs are required for Script Builder", { status: 400 });
+      return new Response("Ide, pembuka, dan durasinya belum lengkap.", { status: 400 });
     }
 
     if (module === "repurpose" && (!input?.source_content || input.source_content.trim().length === 0)) {
-      return new Response("Source content is required for Repurpose", { status: 400 });
+      return new Response("Tempel konten yang mau diubah dulu ya.", { status: 400 });
     }
 
     if (module === "clip" && (!input?.moment || input.moment.trim().length === 0)) {
-      return new Response("Moment description is required for Clip Engine", { status: 400 });
+      return new Response("Ceritain momen yang mau dipotong dulu ya.", { status: 400 });
     }
 
     if (module === "thread" && (!input?.bullets || input.bullets.trim().length === 0)) {
-      return new Response("Bullet points are required for Thread Engine", { status: 400 });
+      return new Response("Tulis poin-poin threadnya dulu ya.", { status: 400 });
     }
 
     // 1. auth.getUser() - Never getSession()
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return new Response("Unauthorized", { status: 401 });
+      return new Response("Sesi lo udah habis. Masuk lagi ya.", { status: 401 });
     }
 
     // 2. Load profile and reject if banned
@@ -116,11 +116,11 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (profileError || !profile) {
-      return new Response("Profile not found", { status: 404 });
+      return new Response("Profil akun lo belum siap. Muat ulang atau masuk lagi ya.", { status: 404 });
     }
 
     if (profile.is_banned) {
-      return new Response("Banned", { status: 403 });
+      return new Response("Akun ini lagi dibatasi. Hubungi bantuan kalau lo ngerasa ini keliru.", { status: 403 });
     }
 
     const limited = await aiRateLimit(user.id, "generate", 12);

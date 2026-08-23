@@ -36,6 +36,24 @@ import { createPortal } from "react-dom";
 
 type Section = { q: string; a: React.ReactNode };
 
+const TUTORIAL_VIDEO_URL = process.env.NEXT_PUBLIC_TUTORIAL_VIDEO_URL?.trim();
+const TUTORIAL_CAPTIONS_URL = process.env.NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL?.trim();
+
+const QUICK_STEPS = [
+  {
+    title: "Pilih Ide Hari Ini",
+    body: "Kalau kepala masih kosong, mulai dari sini. Gak perlu nulis ide.",
+  },
+  {
+    title: "Pilih tempat dan tujuan",
+    body: "TikTok, Threads, jualan, atau cari views — tinggal tap yang paling pas.",
+  },
+  {
+    title: "Salin atau simpan",
+    body: "Kontennya langsung siap dipakai. Salin sekarang, atau simpan ke Alur buat dilanjutin.",
+  },
+] as const;
+
 const SECTIONS: Section[] = [
   {
     q: "Aplikasi ini buat apa sih?",
@@ -51,7 +69,7 @@ const SECTIONS: Section[] = [
     q: "Kredit itu apa? Kenapa kepotong?",
     a: (
       <>
-        Tiap kali AI mikir buat lo, itu makan biaya. Kredit cara ngukurnya.
+        Tiap kali Malesan mikir buat lo, itu makan biaya. Kredit cara ngukurnya.
         <br />
         <br />
         Lo dapet <span className="text-ink">kredit gratis tiap hari</span>, reset
@@ -59,7 +77,7 @@ const SECTIONS: Section[] = [
         Kredit yang lo beli <span className="text-ink">gak pernah hangus</span>.
         <br />
         <br />
-        Kalau generate-nya gagal karena sistem, kredit lo balik otomatis.
+        Kalau prosesnya gagal karena sistem, kredit lo balik otomatis.
       </>
     ),
   },
@@ -72,13 +90,13 @@ const SECTIONS: Section[] = [
         <br />
         <br />
         Kalau udah ada ide di kepala tapi masih mentah, pakai{" "}
-        <span className="text-ember">Idea Engine</span>: lempar idenya, balik jadi
+        <span className="text-ember">Matengin Ide</span>: lempar idenya, balik jadi
         5 yang udah mateng.
       </>
     ),
   },
   {
-    q: "Lima tombol di Studio itu bedanya apa?",
+    q: "Pilihan di Studio itu bedanya apa?",
     a: (
       <ul className="space-y-2">
         <li>
@@ -86,26 +104,26 @@ const SECTIONS: Section[] = [
           3 ide segar.
         </li>
         <li>
-          <span className="text-ink">Idea Engine</span> — punya ide mentah, dibikin
+          <span className="text-ink">Matengin Ide</span> — punya ide mentah, dibikin
           mateng.
         </li>
         <li>
-          <span className="text-ink">Hook Lab</span> — 3 detik pertama video. Ini
+          <span className="text-ink">Bikin Hook</span> — 3 detik pertama video. Ini
           yang nentuin orang lanjut nonton atau scroll.
         </li>
         <li>
-          <span className="text-ink">Script</span> — script lengkap per scene,
+          <span className="text-ink">Bikin Script</span> — script lengkap per scene,
           lengkap sama teks di layar dan footage yang perlu diambil.
         </li>
         <li>
-          <span className="text-ink">Repurpose</span> — satu konten jadi 5 versi
+          <span className="text-ink">Ubah Format</span> — satu konten jadi 5 versi
           buat 5 platform. Bukan copy-paste, tiap platform beda gaya.
         </li>
       </ul>
     ),
   },
   {
-    q: "Pipeline itu buat apa?",
+    q: "Alur konten itu buat apa?",
     a: (
       <>
         Tempat ide lo jalan dari mentah sampai tayang, biar gak ada yang kelupaan.
@@ -114,7 +132,7 @@ const SECTIONS: Section[] = [
         Urutannya: <span className="text-ink">Ide</span> →{" "}
         <span className="text-ink">Draft</span> (udah ada hook) →{" "}
         <span className="text-ink">Siap</span> (script kelar) →{" "}
-        <span className="text-ink">Posted</span>.
+        <span className="text-ink">Tayang</span>.
         <br />
         <br />
         Gak usah hafal urutannya. Tiap kartu bilang sendiri langkah berikutnya
@@ -135,12 +153,12 @@ const SECTIONS: Section[] = [
         <br />
         Makin lengkap, makin nyambung. Dan tiap hasil yang lo{" "}
         <span className="text-ink">kasih bintang</span> di Riwayat kepake — yang
-        bagus jadi contoh, yang jelek dihindarin di generate berikutnya.
+        bagus jadi contoh, yang jelek dihindarin di hasil berikutnya.
       </>
     ),
   },
   {
-    q: "Vibe Coding itu apa? Gue bukan programmer.",
+    q: "Bikin App itu buat apa? Gue bukan programmer.",
     a: (
       <>
         Buat yang mau bikin aplikasi pakai AI (Claude, Cursor, dan sejenisnya).
@@ -250,7 +268,51 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-5 py-4">
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
+              <section className="rounded-xl border border-ember/30 bg-ember/5 p-4">
+                <p className="eyebrow text-ember">Alur tercepat</p>
+                <h3 className="mt-1.5 font-display text-base font-bold text-ink">
+                  1 menit langsung ngerti
+                </h3>
+                <ol className="mt-3 space-y-2.5">
+                  {QUICK_STEPS.map((step, index) => (
+                    <li key={step.title} className="flex gap-3">
+                      <span className="tabular grid size-7 shrink-0 place-items-center rounded-full border border-ember/35 bg-obsidian font-mono text-micro font-bold text-ember">
+                        {index + 1}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-mini font-semibold text-ink">{step.title}</span>
+                        <span className="mt-0.5 block text-micro leading-relaxed text-muted">{step.body}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              {TUTORIAL_VIDEO_URL && (
+                <section className="overflow-hidden rounded-xl border border-hairline bg-obsidian">
+                  <video
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="aspect-video w-full bg-obsidian"
+                    aria-label="Video cara pakai Malesan dalam 60 detik"
+                  >
+                    <source src={TUTORIAL_VIDEO_URL} type="video/mp4" />
+                    {TUTORIAL_CAPTIONS_URL && (
+                      <track
+                        kind="captions"
+                        src={TUTORIAL_CAPTIONS_URL}
+                        srcLang="id"
+                        label="Bahasa Indonesia"
+                        default
+                      />
+                    )}
+                  </video>
+                </section>
+              )}
+
+              <p className="eyebrow px-1 pt-1 text-muted">Kalau masih bingung</p>
               {SECTIONS.map((s, i) => {
                 const on = expanded === i;
                 return (

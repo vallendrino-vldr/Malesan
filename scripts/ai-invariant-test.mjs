@@ -109,6 +109,45 @@ const todayUi = read("src/components/IdeHariIni.tsx");
 assert.match(todayUi, /TODAY_PLATFORMS\.map/);
 assert.match(todayUi, /TODAY_GOALS\.map/);
 assert.match(todayUi, /input:\s*\{\s*platform,\s*goal,/);
+assert.match(todayUi, /bottom-\[calc\(4\.5rem\+env\(safe-area-inset-bottom\)\)\]/);
+assert.match(todayUi, /scrollIntoView/);
+assert.match(todayUi, /ref=\{errorRef\}[\s\S]*?role="alert"/);
+
+// A first successful result is the product's value moment. It must never be
+// replaced by a count-based onboarding redirect during router.refresh().
+const appPage = read("src/app/app/page.tsx");
+assert.doesNotMatch(
+  appPage,
+  /from\(["']generations["']\)[\s\S]{0,300}redirect\(["']\/app\/onboarding["']\)/,
+  "the first generation must stay visible instead of forcing onboarding",
+);
+assert.match(appPage, /Profil konten lo/);
+assert.match(appPage, /profile\.onboarding_completed\s*\?\s*["']\/app\/profile["']\s*:\s*["']\/app\/onboarding["']/);
+
+const ideaCard = read("src/components/IdeaCard.tsx");
+assert.match(ideaCard, /navigator\.clipboard\.writeText/);
+assert.match(ideaCard, /Salin konten/);
+assert.match(ideaCard, /Simpan ke Alur/);
+
+const tutorial = read("src/components/TutorialSheet.tsx");
+assert.match(tutorial, /1 menit langsung ngerti/);
+assert.match(tutorial, /NEXT_PUBLIC_TUTORIAL_VIDEO_URL/);
+assert.match(tutorial, /NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL/);
+
+const videoEditor = read("src/components/VideoEditor.tsx");
+assert.match(videoEditor, /<details[\s\S]*?>[\s\S]*?Atur sendiri/);
+assert.match(videoEditor, /Subtitle Otomatis/);
+
+for (const file of [
+  "src/app/page.tsx",
+  "src/components/TutorialSheet.tsx",
+  "src/components/HistoryList.tsx",
+]) {
+  const source = read(file);
+  for (const oldLabel of ["Idea Engine", "Hook Lab", "Script Builder", "Repurpose"]) {
+    assert.doesNotMatch(source, new RegExp(oldLabel), `${file} still exposes ${oldLabel}`);
+  }
+}
 
 const generateRoute = read("src/app/api/generate/route.ts");
 assert.match(generateRoute, /buildIdeHariIniPrompt\([\s\S]*?idePlatform,[\s\S]*?ideGoal,/);

@@ -47,7 +47,7 @@ export default function PrivasiPage() {
               setup.
             </li>
             <li>
-              <span className="text-ink">Hasil generate:</span> ide, hook, script,
+              <span className="text-ink">Hasil yang dibikin:</span> ide, hook, script,
               dan dokumen yang dibuat lewat aplikasi ini, beserta rating yang lo
               kasih.
             </li>
@@ -68,7 +68,7 @@ export default function PrivasiPage() {
           </h2>
           <p className="mt-2 text-muted">
             Email dipakai buat mengenali akun lo. Profil kreator dipakai supaya
-            hasil generate nyambung sama gaya lo — itu inti produknya. Catatan
+            hasilnya nyambung sama gaya lo — itu inti produknya. Catatan
             kredit dipakai supaya saldo lo akurat. Kami tidak menjual data lo dan
             tidak memakainya untuk iklan.
           </p>
@@ -80,7 +80,7 @@ export default function PrivasiPage() {
           </h2>
           <p className="mt-2 text-muted">
             Isi yang lo ketik dikirim ke Google Gemini API untuk diproses jadi
-            hasil generate. Data disimpan di Supabase dan aplikasi berjalan di
+            hasil yang dibikin. Data disimpan di Supabase dan aplikasi berjalan di
             Vercel. Ketiganya punya kebijakan privasinya masing-masing.
           </p>
         </section>

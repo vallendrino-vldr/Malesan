@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IdeaCard, type IdeaData } from "./IdeaCard";
 import { GenerationProgress } from "./GenerationProgress";
 import { useRouter } from "next/navigation";
@@ -28,6 +28,27 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
   const [platform, setPlatform] = useState<TodayPlatform>("tiktok_reels");
   const [goal, setGoal] = useState<TodayGoal>("views");
   const router = useRouter();
+  const resultsRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
+
+  useEffect(() => {
+    if (isGenerating || ideas.length === 0) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "start",
+      });
+    });
+  }, [ideas.length, isGenerating]);
+
+  useEffect(() => {
+    if (!error || isGenerating) return;
+    requestAnimationFrame(() => {
+      errorRef.current?.scrollIntoView({ behavior: "auto", block: "center" });
+      errorRef.current?.focus({ preventScroll: true });
+    });
+  }, [error, isGenerating]);
 
   async function generate() {
     setIsGenerating(true);
@@ -97,7 +118,7 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-hairline bg-surface p-5 sm:p-8">
+      <div className="rounded-2xl border border-hairline bg-surface p-5 pb-24 sm:p-8">
         <h2 className="font-display text-2xl font-bold tracking-display-md text-ink">
           Ide Hari Ini
         </h2>
@@ -164,20 +185,33 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
         </div>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger border border-danger/20">
+          <p
+            ref={errorRef}
+            role="alert"
+            tabIndex={-1}
+            className="mt-4 rounded-lg border border-danger/20 bg-danger/10 px-4 py-3 text-sm text-danger outline-none"
+          >
             {error}
           </p>
         )}
 
-        <button
-          onClick={generate}
-          disabled={isGenerating}
-          className={`mt-6 w-full rounded-xl bg-ember px-5 py-3.5 font-display text-sm font-bold text-obsidian transition-all duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:opacity-50 disabled:cursor-not-allowed ${
-            isGenerating ? "glow-ember" : ""
+        <div
+          className={`z-30 ${
+            ideas.length === 0
+              ? "fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] mx-auto max-w-[46rem] rounded-2xl border border-hairline bg-obsidian p-2 shadow-[0_14px_48px_rgba(0,0,0,0.5)] sm:static sm:mt-6 sm:max-w-none sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none"
+              : "mt-6"
           }`}
         >
-          {isGenerating ? "Lagi mikirin buat lo..." : `Kasih 3 ide · ${cost} kredit`}
-        </button>
+          <button
+            onClick={generate}
+            disabled={isGenerating}
+            className={`w-full rounded-xl bg-ember px-5 py-3.5 font-display text-sm font-bold text-obsidian transition-all duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50 ${
+              isGenerating ? "glow-ember" : ""
+            }`}
+          >
+            {isGenerating ? "Lagi mikirin buat lo..." : `Kasih 3 ide · ${cost} kredit`}
+          </button>
+        </div>
       </div>
 
       {isGenerating && (
@@ -190,7 +224,7 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
       )}
 
       {(ideas.length > 0 || isGenerating) && (
-        <div className="space-y-4">
+        <div ref={resultsRef} className="scroll-mt-4 space-y-4">
           <h3 className="font-mono text-micro uppercase tracking-[0.14em] text-muted ml-1">
             3 ide buat {TODAY_PLATFORMS.find((option) => option.id === platform)?.label}
           </h3>

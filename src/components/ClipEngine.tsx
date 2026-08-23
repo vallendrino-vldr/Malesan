@@ -151,7 +151,7 @@ export function ClipEngine({ cost }: { cost: number }) {
     <div className="space-y-4">
       <section className="surface-card rounded-2xl p-5">
         <h2 className="font-display text-xl font-bold tracking-display-sm text-ink">
-          Clip Engine
+          Potong Momen Live
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Buat streamer. Ceritain momen yang kejadian pas live, balik jadi shot

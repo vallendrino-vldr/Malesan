@@ -11,25 +11,25 @@ const MODULES = [
     tag: "Tanpa input",
   },
   {
-    name: "Idea Engine",
+    name: "Matengin Ide",
     cost: 1,
     body: "Punya ide mentah yang masih setengah jadi? Lempar aja. Balik jadi 5 ide yang udah mateng dan siap difilmin.",
     tag: "Mentah → mateng",
   },
   {
-    name: "Hook Lab",
+    name: "Bikin Hook",
     cost: 2,
     body: "10 hook, 10 pola beda, tiap satu dikasih skor jujur. Yang lemah dibilang lemah — bukan dikasih 9 semua.",
     tag: "10 pola",
   },
   {
-    name: "Script Builder",
+    name: "Bikin Script",
     cost: 4,
     body: "Naskah lengkap sama timestamp, arahan visual, teks layar, CTA, caption, dan hashtag. Ritmenya nyesuain platform.",
     tag: "Siap syuting",
   },
   {
-    name: "Repurpose",
+    name: "Ubah Format",
     cost: 1,
     body: "Satu konten, sekali proses, jadi versi TikTok, Reels, Shorts, X, dan Threads. Ditulis ulang, bukan cuma disalin.",
     tag: "5 platform",
@@ -120,7 +120,7 @@ export default function Home() {
                 href="#beda"
                 className="inline-flex items-center justify-center rounded-xl border border-hairline bg-surface px-6 py-3.5 font-display text-[0.9375rem] font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised"
               >
-                Emang beda sama ChatGPT?
+                Kenapa lebih nyambung?
               </a>
             </div>
           </Reveal>
@@ -130,11 +130,11 @@ export default function Home() {
                 around it does not. */}
             <p className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
               <span className="tabular font-mono text-ink">10</span>
-              <span>credit gratis tiap hari</span>
+              <span>kredit gratis tiap hari</span>
               <span aria-hidden="true" className="text-muted/70">
                 •
               </span>
-              <span>login pakai Google, gak pake password</span>
+              <span>masuk pakai Google, tanpa password</span>
             </p>
           </Reveal>
         </section>
@@ -177,7 +177,7 @@ export default function Home() {
                           {m.cost}
                         </span>
                         <span className="text-xs text-muted">
-                          credit sekali pakai
+                          kredit sekali pakai
                         </span>
                       </div>
                     </article>
@@ -196,12 +196,12 @@ export default function Home() {
           <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
             <Reveal>
               <h2 className="max-w-2xl font-display text-[clamp(1.75rem,4.5vw,2.75rem)] font-bold leading-tight tracking-display-md text-ink">
-                Bedanya sama nge-prompt sendiri
+                Kenapa hasilnya lebih nyambung
               </h2>
               <p className="mt-4 max-w-xl text-muted">
-                ChatGPT gak tau lo siapa, gak tau hari ini lagi rame apa di
-                Indonesia, dan gak tau konten lo yang mana yang kemarin jalan.
-                Tiap chat mulai dari nol lagi.
+                Malesan nyimpen gaya konten lo, ngikutin yang lagi rame di
+                Indonesia, dan belajar dari hasil yang beneran jalan. Jadi lo
+                gak perlu jelasin diri dari nol tiap kali.
               </p>
             </Reveal>
 

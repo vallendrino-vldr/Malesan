@@ -126,7 +126,7 @@ export function ThreadEngine({ cost }: { cost: number }) {
     <div className="space-y-4">
       <section className="surface-card rounded-2xl p-5">
         <h2 className="font-display text-xl font-bold tracking-display-sm text-ink">
-          Thread Engine
+          Bikin Thread
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Buat yang bahas market atau tech. Lempar catatan mentah hari ini, balik

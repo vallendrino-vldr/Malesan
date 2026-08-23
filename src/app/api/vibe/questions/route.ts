@@ -37,15 +37,15 @@ export async function POST(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!user) return new Response("Sesi lo udah habis. Masuk lagi ya.", { status: 401 });
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("is_pro, is_banned")
     .eq("id", user.id)
     .single();
-  if (!profile) return new Response("Profile not found", { status: 404 });
-  if (profile.is_banned) return new Response("Banned", { status: 403 });
+  if (!profile) return new Response("Profil akun lo belum siap. Muat ulang atau masuk lagi ya.", { status: 404 });
+  if (profile.is_banned) return new Response("Akun ini lagi dibatasi. Hubungi bantuan kalau lo ngerasa ini keliru.", { status: 403 });
 
   const limited = await aiRateLimit(user.id, "vibe_questions", 10);
   if (limited) return limited;
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     // Questions are an enhancement, never a gate. If this fails the client is
     // told to carry on straight to generation.
     return Response.json(
-      { skip: true, error: "Gagal bikin pertanyaannya. Lanjut generate aja, hasilnya tetep jalan." },
+      { skip: true, error: "Pertanyaannya belum kebentuk. Lanjut aja, hasilnya tetep jalan." },
       { status: 200 },
     );
   }

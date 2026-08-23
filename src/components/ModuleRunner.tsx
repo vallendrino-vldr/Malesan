@@ -409,7 +409,7 @@ export function ModuleRunner({
         }),
       });
 
-      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal generate."));
+      if (!res.ok) throw new Error(await readErrorBody(res, "Kontennya belum berhasil dibikin."));
 
       let acc = "";
       let streamError: string | null = null;

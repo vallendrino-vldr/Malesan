@@ -93,7 +93,7 @@ export default async function ProfilePage() {
 
         <div className="surface-card rounded-2xl p-5">
           <h2 className="font-display text-lg font-bold text-ink">Program referral</h2>
-          <p className="mt-1.5 text-sm leading-relaxed text-muted">Ajak temen pakai Malesan. Lo dapet 10 kredit begitu dia kelar generate konten pertamanya — dan dia juga dapet 10. Gak ada batasnya.</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted">Ajak temen pakai Malesan. Lo dapet 10 kredit begitu dia kelar bikin konten pertamanya — dan dia juga dapet 10. Gak ada batasnya.</p>
           
           <div className="mt-4">
             <CopyField value={referralLink} label="Link referral lo" />
