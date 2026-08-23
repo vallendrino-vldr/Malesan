@@ -69,8 +69,13 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
   return (
     <section className="surface-card rounded-2xl border border-ember/25 p-4 sm:p-5">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-ember/15 text-lg" aria-hidden="true">
-          ♻️
+        <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-full bg-ember/15 border border-ember/30 text-ember" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+            <path d="M21 3v5h-5" />
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+            <path d="M8 16H3v5" />
+          </svg>
         </span>
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-base font-bold tracking-display-sm text-ink">

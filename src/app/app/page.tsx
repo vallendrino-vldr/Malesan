@@ -290,7 +290,7 @@ export default async function AppPage({
                   </div>
                   <div className="min-w-0">
                     <p className="eyebrow text-ember font-bold tracking-wider">
-                      {greet().toUpperCase()}, {profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR"} 👋
+                      {greet().toUpperCase()}, {profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR"}
                     </p>
                     <h1 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-display-sm text-ink leading-tight">
                       Mau bikin konten apa hari ini?
@@ -451,8 +451,10 @@ export default async function AppPage({
           {/* LEVEL 1: CREATOR ACHIEVEMENT & MILESTONE (TOP) */}
           <section className="surface-card rounded-3xl border border-ember/35 bg-gradient-to-br from-surface-raised/90 via-surface to-obsidian p-5 sm:p-6 shadow-md">
             <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold text-ember border border-ember/30">
-                <span>🔥</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
+                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                </svg>
                 <span>Pencapaian Kreator</span>
               </div>
               <span className="font-mono text-micro text-ember font-semibold bg-surface-raised px-2 py-0.5 rounded border border-hairline">Bulan Ini</span>

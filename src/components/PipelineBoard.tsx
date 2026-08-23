@@ -407,30 +407,43 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="eyebrow text-ember font-bold">🚀 Alur Kerja Kreator</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
+                  <path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z" />
+                  <path d="M12 13v8" />
+                  <path d="M12 3v3" />
+                </svg>
+                <span>Alur Kerja Kreator</span>
+              </div>
               <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-micro text-muted border border-hairline">
                 {total} konten aktif
               </span>
             </div>
-            <p className="mt-0.5 text-xs text-muted">
+            <p className="mt-1 text-xs text-muted">
               Pantau progres ide dari konsep awal sampai tayang di media sosial.
             </p>
           </div>
 
           <div className="flex items-center gap-1.5 overflow-x-auto text-micro font-medium text-muted">
-            <span className="flex items-center gap-1 text-ink font-semibold rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+            <span className="flex items-center gap-1 text-ink font-semibold rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
               <span className="size-1.5 rounded-full bg-ember" /> 1. Ide
             </span>
-            <span>→</span>
-            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-muted shrink-0">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
               2. Draft
             </span>
-            <span>→</span>
-            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-muted shrink-0">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
               3. Siap
             </span>
-            <span>→</span>
-            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-muted shrink-0">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
               4. Tayang
             </span>
           </div>
