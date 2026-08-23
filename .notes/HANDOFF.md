@@ -35,8 +35,41 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Compact Cinematic AI Companion Experience rebuild (§9z.5).
-**Newest work is §9z.5 — Compact Cinematic AI Companion Experience: Converted landing from long marketing page into focused 1.5–2 viewport product showcase (Apple / Linear / Raycast style); Maintained Hero as primary emotional experience with interactive Mascot 3D stage and concise copy; Replaced heavy feature grids with a single transformation story (ProductMagic.tsx: Menemukan Ide -> Menulis Script -> Konten Siap Dibuat); Added short closing section (CompactCTA.tsx: Siap bikin konten pertama lo?); Tested across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.5, then §9z.4.
+Last updated: **2026-08-24**, after the Living AI Workspace & Character-First Experience pass (§9z.6).
+**Newest work is §9z.6 — Living AI Workspace & Pixar-Personality Polish: Upgraded Mascot stage into an active Living AI Workspace with 5 sequential storytelling states (Layar Kosong -> Lagi Mikir -> Ide Ditemukan -> Naskah Selesai -> Siap Tayang); Removed all random collision particles in favor of pure purposeful warm ambient depth; Created dedicated mobile priority layout (Logo -> Mascot Workspace -> Headline -> CTA -> Stacked Checkmark Trust List); Built 5-stage AI Transformation Timeline in ProductMagic.tsx; Added mascot personality invitation to CompactCTA.tsx ("Gue bantu dari nol sampai siap tayang"); Verified across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.6, then §9z.5.
+
+---
+
+## §9z.6 — Living AI Workspace & Pixar-Personality Polish (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Character-First Living AI Workspace (`CompanionHero.tsx`)**:
+   - Mascot is the alive emotional center of the product.
+   - 5 companion states cycling smoothly:
+     - `01. LAYAR KOSONG` $\rightarrow$ Malesan siap kolaborasi
+     - `02. LAGI MIKIR...` $\rightarrow$ Membaca tren lokal & audiens
+     - `03. IDE DITEMUKAN` $\rightarrow$ 3 angle konten niche lo
+     - `04. NASKAH SELESAI` $\rightarrow$ Script 45 detik siap syuting
+     - `05. SIAP TAYANG` $\rightarrow$ Subtitle terbakar & 5 format
+   - Smooth idle breathing, active visor LED scanning, and live output snippet card.
+
+2. **Zero Random Particle Noise (`ThreeCanvas.tsx`)**:
+   - Replaced particle chaos with pure, purposeful GPU-accelerated warm ambient depth bloom.
+   - Zero collision with text, buttons, or navigation.
+
+3. **Mobile First-Viewport Layout with Stacked Trust List**:
+   - Order: Logo $\rightarrow$ Living Mascot Workspace $\rightarrow$ Headline $\rightarrow$ Subtitle $\rightarrow$ CTA $\rightarrow$ Stacked Trust List (`✓ 10 kredit gratis`, `✓ Login Google`, `✓ Siap 30 detik`).
+   - Fits seamlessly in the first viewport under 2 seconds.
+
+4. **AI Transformation Timeline (`ProductMagic.tsx`)**:
+   - 5 interactive steps with live output preview card.
+
+5. **Mascot Personality Closing Invitation (`CompactCTA.tsx`)**:
+   - Mini avatar speech bubble: *"Gue bantu dari nol sampai siap tayang."*
+   - Clear CTA *"Mulai gratis"*.
 
 ---
 
