@@ -35,24 +35,29 @@ const geistMono = Geist_Mono({
 // Vercel serves www as the canonical origin; the apex permanently redirects
 // there. Keep metadata/share URLs on the final origin instead of adding a hop.
 const SITE_URL = "https://www.malesan.my.id";
-const TITLE = "Malesan — Males mikirnya. Bukan bikinnya.";
+const TITLE = "Malesan — AI Creative Companion";
 const DESCRIPTION =
-  "Buat kreator konten Indonesia. Malesan ngilangin momen bengong depan layar kosong — ide, hook, sama naskah siap eksekusi dalam hitungan detik.";
+  "Bikin konten tanpa ribet. Ide, script, dan workflow kreator dalam satu AI companion.";
 
 export const metadata: Metadata = {
-  // The domain is confirmed and live (www.malesan.my.id), so relative OG/canonical
-  // URLs now resolve against it — without this, a shared link renders no
-  // preview card at all.
   metadataBase: new URL(SITE_URL),
   title: TITLE,
   description: DESCRIPTION,
   applicationName: "Malesan",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
   },
-  // The og:image itself comes from the file-convention `opengraph-image.tsx`,
-  // which Next injects automatically; this block carries the text and identity.
   openGraph: {
     type: "website",
     siteName: "Malesan",
@@ -60,11 +65,20 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     locale: "id_ID",
+    images: [
+      {
+        url: "/branding/logo-social.png",
+        width: 1200,
+        height: 630,
+        alt: "Malesan — AI Creative Companion",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: DESCRIPTION,
+    images: ["/branding/logo-social.png"],
   },
 };
 

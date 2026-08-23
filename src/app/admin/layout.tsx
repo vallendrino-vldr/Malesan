@@ -171,7 +171,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* ---------- sidebar (md+) ---------- */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-hairline bg-obsidian md:flex">
         <div className="flex items-center gap-2 px-5 py-5">
-          <Logo markClass="size-6" />
+          <Logo markClass="h-6 sm:h-7" />
           <span className="eyebrow text-ember-lo">admin</span>
         </div>
         <nav className="flex-1 space-y-1 px-3">
@@ -208,7 +208,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="shrink-0 border-b border-hairline/70 bg-obsidian/85 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <Logo markClass="size-6" />
+            <Logo markClass="h-6" />
             <span className="eyebrow text-ember-lo">admin</span>
           </div>
           <div className="flex items-center gap-1.5">

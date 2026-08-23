@@ -8,7 +8,7 @@ import { ImageResponse } from "next/og";
  * Deliberately no custom font file: ImageResponse's built-in sans is enough for
  * a title card, and a missing font URL is a classic way to break this route.
  */
-export const alt = "Malesan — Males mikirnya. Bukan bikinnya.";
+export const alt = "Malesan — AI Creative Companion";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -43,25 +43,25 @@ export default function OpengraphImage() {
         <div
           style={{
             marginTop: 30,
-            fontSize: 62,
+            fontSize: 58,
             fontWeight: 700,
             color: "#f5f0ea",
             letterSpacing: "-0.02em",
             lineHeight: 1.1,
           }}
         >
-          Males mikirnya. Bukan bikinnya.
+          AI Creative Companion
         </div>
         <div
           style={{
             marginTop: 28,
-            fontSize: 34,
+            fontSize: 32,
             color: "#99928a",
             maxWidth: 920,
             lineHeight: 1.35,
           }}
         >
-          Ide, hook, sama naskah siap eksekusi buat kreator konten Indonesia — dalam hitungan detik.
+          Bikin konten tanpa ribet. Ide, script, dan workflow kreator dalam satu AI companion.
         </div>
       </div>
     ),

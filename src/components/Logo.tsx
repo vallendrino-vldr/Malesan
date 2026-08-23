@@ -1,81 +1,30 @@
+import Image from "next/image";
+
 /**
- * The Malesan mark.
- *
- * A bead of heat at rest. The outer ring is cold obsidian, the core glows, and
- * a crescent of shadow sits across it like something half-asleep — the brand is
- * "males", not "mati". It reads at 20px in a header and at 512px as an app
- * icon, which is why it is built from three circles and an arc rather than
- * anything clever.
- *
- * Pure SVG: no image request, no layout shift, and it inherits currentColor for
- * the wordmark so one component serves the header, the splash and the icon.
+ * The official Malesan App Icon Mark.
+ * Sourced from /branding/app-icon.png.
  */
 export function LogoMark({ className = "size-7" }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      className={className}
-      role="img"
-      aria-label="Malesan"
-      fill="none"
-    >
-      <defs>
-        <radialGradient id="ml-core" cx="50%" cy="38%" r="62%">
-          <stop offset="0%" stopColor="#FFD9B0" />
-          <stop offset="38%" stopColor="#FFB067" />
-          <stop offset="72%" stopColor="#FF8A3D" />
-          <stop offset="100%" stopColor="#C2521A" />
-        </radialGradient>
-        <linearGradient id="ml-ring" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3A3128" />
-          <stop offset="100%" stopColor="#1A1611" />
-        </linearGradient>
-      </defs>
-
-      {/* Cold shell */}
-      <circle cx="16" cy="16" r="15" fill="url(#ml-ring)" />
-      <circle cx="16" cy="16" r="15" stroke="#2A241D" strokeWidth="1" />
-
-      {/* The ember */}
-      <circle cx="16" cy="16" r="9.5" fill="url(#ml-core)" />
-
-      {/* Half-lidded crescent — heat at rest, not heat gone */}
-      <path
-        d="M6.5 16a9.5 9.5 0 0 0 19 0c-2.6 2.4-6 3.7-9.5 3.7S9.1 18.4 6.5 16Z"
-        fill="#120E0A"
-        fillOpacity="0.55"
-      />
-
-      {/* Specular highlight: the single detail that stops it looking flat */}
-      <ellipse cx="12.6" cy="11.4" rx="3.1" ry="2.1" fill="#FFF3E4" fillOpacity="0.5" />
-    </svg>
+    <Image
+      src="/branding/app-icon.png"
+      alt="Malesan"
+      width={128}
+      height={128}
+      priority
+      unoptimized
+      className={`${className} object-contain rounded-xl shadow-xs`}
+    />
   );
 }
 
 /**
- * The wordmark.
- *
- * "Malesan" means lazy, and the old wordmark was bold display type with tight
- * tracking — which reads as "engineered", the opposite of the name, and looked
- * like every other startup logo. Nothing in it was ours.
- *
- * So the last letter slouches: it sits low, leans, and carries the ember while
- * the rest of the word stands up straight. One letter that cannot be bothered
- * is the entire brand in a single detail. It wakes up when you touch it — the
- * product's promise as a gesture — then slumps back on its own.
- *
- * Styling lives in globals.css under WORDMARK rather than in classes here,
- * because the interaction needs `:hover`, `:active` and `:focus-visible` on the
- * parent, which utility classes cannot express on a child.
- *
- * `size` is a rem string, not a Tailwind class, so the wordmark scales with the
- * text-size control like everything else.
+ * The official Malesan Header Brand Logo.
+ * Uses /branding/logo-header.png with responsive scaling and crisp presentation.
  */
 export function Logo({
   className = "",
-  markClass = "size-7",
-  showWord = true,
-  size = "1.0625rem",
+  markClass = "h-7 sm:h-8",
 }: {
   className?: string;
   markClass?: string;
@@ -83,15 +32,16 @@ export function Logo({
   size?: string;
 }) {
   return (
-    <span className={`inline-flex items-center gap-2 ${className}`}>
-      <LogoMark className={markClass} />
-      {showWord && (
-        <span className="wordmark" style={{ fontSize: size }}>
-          <span className="wordmark__rest">malesa</span>
-          <span className="wordmark__slouch">n</span>
-          <span aria-hidden="true" className="wordmark__bead" />
-        </span>
-      )}
+    <span className={`inline-flex items-center select-none ${className}`}>
+      <Image
+        src="/branding/logo-header.png"
+        alt="Malesan — AI Creative Companion"
+        width={217}
+        height={72}
+        priority
+        unoptimized
+        className={`${markClass} w-auto object-contain transition-transform duration-200 hover:scale-[1.02]`}
+      />
     </span>
   );
 }

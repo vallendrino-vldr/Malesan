@@ -254,7 +254,7 @@ export default function TopupPage() {
           {/* This route has its own header, so without this the one screen
               where someone is deciding to pay never shows them whose product
               they are paying for. */}
-          <Logo markClass="size-6" size="0.9375rem" className="shrink-0" />
+          <Logo markClass="h-6" className="shrink-0" />
         </div>
       </header>
 

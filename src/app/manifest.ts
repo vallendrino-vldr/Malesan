@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Malesan — Males mikirnya",
+    name: "Malesan — AI Creative Companion",
     short_name: "Malesan",
-    description: "Males mikirnya. Bukan bikinnya.",
+    description: "Bikin konten tanpa ribet. Ide, script, dan workflow kreator dalam satu AI companion.",
     start_url: "/app",
     scope: "/",
     display: "standalone",

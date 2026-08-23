@@ -53,7 +53,7 @@ export default async function DraftPage() {
           <h1 className="min-w-0 flex-1 truncate font-display text-base font-bold text-ink">
             Draf lo
           </h1>
-          <Logo markClass="size-6" size="0.9375rem" className="shrink-0" />
+          <Logo markClass="h-6" className="shrink-0" />
         </div>
       </header>
 

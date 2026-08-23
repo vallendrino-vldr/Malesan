@@ -66,7 +66,7 @@ export default function Home() {
             and normal tracking so the letters breathe. */}
         {/* Was a hand-rolled dot plus plain text — a third variant of the
             wordmark that drifted from the two real ones. One component now. */}
-        <Logo markClass="size-6" size="1.0625rem" />
+        <Logo markClass="h-7 sm:h-8" />
         {/* The toggle lived only in AppShell, which the landing page does not
             use — so the first screen anyone sees had no way to switch themes,
             and the feature looked like it had not shipped. */}
@@ -240,8 +240,8 @@ export default function Home() {
       </main>
 
       <footer className="relative z-10 border-t border-hairline">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-          <Logo markClass="size-5" size="0.875rem" />
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-5 sm:flex-row sm:px-8">
+          <Logo markClass="h-6 sm:h-7" />
           <span className="text-xs text-muted">
             Buat kreator Indonesia. Gratis 10 kredit tiap hari.
           </span>

@@ -156,7 +156,7 @@ export function AppShell({
             aria-label="Malesan"
             className="flex min-h-11 shrink-0 items-center transition-opacity hover:opacity-85"
           >
-            <Logo markClass="size-7" size="1.05rem" />
+            <Logo markClass="h-7 sm:h-8" />
           </Link>
 
           {/* Right utility & user cluster */}

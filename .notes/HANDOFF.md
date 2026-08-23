@@ -35,8 +35,38 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the Premium AI Creative Companion Splash Screen Experience pass (§9y).
-**Newest work is §9y — Splash Polish: Redesigned full-viewport loading experience to MascotSplashScreen (Centered animated working mascot with antenna pulse, typing arms, halo ambient glow, 'Lagi mikir' badge, brand companion copy, progress beam); Tested across Desktop & Mobile.** Read §9y, then §9x.
+Last updated: **2026-08-24**, after the Complete Brand System Architecture + Holographic AI Companion Splash Rebuild (§9z).
+**Newest work is §9z — Brand System + Splash Rebuild: Integrated official brand assets (/public/branding/logo-header.png, logo-social.png, app-icon.png); Replaced old placeholder circle mark with crisp Header Logo across AppShell, Landing, Admin, Draft, and Topup; Generated favicon, PWA icons (192, 512, maskable), apple-touch-icon, and OpenGraph/Twitter card metadata; Rebuilt MascotSplashScreen into a holographic AI companion workspace introduction with floating idea/script nodes, rotating orbit rings, and brand copy.** Read §9z, then §9y.
+
+---
+
+## §9z — Complete Brand System Architecture + Holographic AI Companion Splash Rebuild (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Brand Asset Architecture (`/public/branding/`)**:
+   - `public/branding/logo-header.png` (Header Brand Logo, 2172x724 crisp 3:1 banner).
+   - `public/branding/logo-social.png` (Social Preview & Open Graph asset).
+   - `public/branding/app-icon.png` (Crisp 1:1 App Icon / Favicon master).
+   - Generated `public/icon-192.png`, `public/icon-512.png`, `public/icon-maskable-512.png`, `public/apple-touch-icon.png`, `public/favicon.ico`, and `src/app/favicon.ico`.
+
+2. **Header Redesign Across All Surfaces (`src/components/Logo.tsx`, `AppShell.tsx`, `page.tsx`, `admin/layout.tsx`, `draft/page.tsx`, `topup/page.tsx`)**:
+   - Replaced old orange circle placeholder logo with the official `logo-header.png` using `<Image />` from `next/image` (`unoptimized`, `priority`).
+   - Responsive scaling: `h-7 sm:h-8` with smooth hover micro-interaction.
+
+3. **Holographic Creative AI Companion Splash Screen (`src/components/LavaLoader.tsx`, `app/loading.tsx`, `admin/loading.tsx`)**:
+   - Top: Clean official `logo-header.png`.
+   - Center: Animated working mascot on glowing halo glass stage with rotating dashed orbit ring, floating Hook node (*"Hook 3 Detik: Stop scrolling, tonton ini!"*), floating Naskah node (*"Naskah Video: Format 45s · Santai & Rapi"*), and pulsating `"AI Creative Companion"` status badge.
+   - Copy: *"Malesan sedang menyiapkan workspace kreatif kamu."* + *"AI Creative Companion siap nemenin lo bikin ide, hook, dan naskah viral."*
+   - Progress: Holographic laser progress beam with smooth shimmer.
+
+4. **Complete Metadata & PWA Integration (`src/app/layout.tsx`, `src/app/manifest.ts`, `src/app/opengraph-image.tsx`)**:
+   - `title`: "Malesan — AI Creative Companion"
+   - `description`: "Bikin konten tanpa ribet. Ide, script, dan workflow kreator dalam satu AI companion."
+   - Open Graph & Twitter card `summary_large_image` using `logo-social.png`.
+   - PWA manifest aligned to standalone portrait with maskable icons.
 
 ---
 

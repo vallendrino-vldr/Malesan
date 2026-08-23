@@ -6,8 +6,8 @@ import { MascotSplashScreen } from "@/components/LavaLoader";
 export default function AppLoading() {
   return (
     <MascotSplashScreen
-      title="Malesan lagi nyiapin workspace lo..."
-      subtitle="AI Creative Companion siap nemenin lo bikin konten."
+      title="Malesan sedang menyiapkan workspace kreatif kamu."
+      subtitle="AI Creative Companion siap nemenin lo bikin ide, hook, dan naskah viral."
     />
   );
 }

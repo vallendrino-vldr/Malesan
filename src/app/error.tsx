@@ -18,7 +18,7 @@ export default function RootError({
   return (
     <main className="grid min-h-[100dvh] w-full place-items-center bg-obsidian px-5">
       <div className="w-full max-w-sm text-center">
-        <Logo markClass="mx-auto size-9" />
+        <Logo markClass="mx-auto h-8" />
         <p className="mt-6 font-display text-4xl font-bold text-ember">Waduh!</p>
         <h1 className="mt-2 font-display text-xl font-bold text-ink">
           Ada yang nyangkut bentar
