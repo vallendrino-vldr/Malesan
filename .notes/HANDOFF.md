@@ -35,8 +35,36 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Landing Experience Correction & Motion Refinement pass (§9z.4).
-**Newest work is §9z.4 — Motion Refinement & Mobile Rebalance: Tightly contained Three.js particle field inside hero (25-32 subtle ambient dust points, 0 content collisions); Rebalanced mobile first viewport (Logo -> Mascot Companion Stage -> Headline -> Copy -> CTA all visible within 800px); Upgraded CTA buttons to solid confident orange (non-gaming); Implemented intelligent single-activity cycling companion hologram; Converted StorySection into 5 sequential cinematic frames; Reframed Capabilities into Problem-Action-Result creator moments; Tested across Desktop & Mobile.** Read §9z.4, then §9z.3.
+Last updated: **2026-08-24**, after the Compact Cinematic AI Companion Experience rebuild (§9z.5).
+**Newest work is §9z.5 — Compact Cinematic AI Companion Experience: Converted landing from long marketing page into focused 1.5–2 viewport product showcase (Apple / Linear / Raycast style); Maintained Hero as primary emotional experience with interactive Mascot 3D stage and concise copy; Replaced heavy feature grids with a single transformation story (ProductMagic.tsx: Menemukan Ide -> Menulis Script -> Konten Siap Dibuat); Added short closing section (CompactCTA.tsx: Siap bikin konten pertama lo?); Tested across 1366x768, 1920x1080, 1280x720, 375x812, 390x844, 412x915.** Read §9z.5, then §9z.4.
+
+---
+
+## §9z.5 — Compact Cinematic AI Companion Experience (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Ultra-Compact Product Showcase Architecture (`page.tsx`)**:
+   - Eliminated long scrolling, excessive feature grids, and comparison tables.
+   - Entire landing page now spans ~1.5–2 viewport heights on Desktop and 2–3 thumb swipes on Mobile.
+   - Apple / Linear / Raycast product showcase feel.
+
+2. **Section 1: Hero Experience (`CompanionHero.tsx`)**:
+   - Headline: *"Males mikirnya. Bukan bikinnya."*
+   - Subtitle: *"AI Creative Companion yang bantu lo cari ide, buat hook, tulis script, sampai siap tayang."*
+   - Mascot alive as central character with breathing, blinking, and rotating contextual activity cards.
+   - Clean solid orange CTA buttons with zero gaming glow.
+
+3. **Section 2: Product Magic (`ProductMagic.tsx`)**:
+   - Single cinematic transformation story: *01. Menemukan Ide* $\rightarrow$ *02. Menulis Script* $\rightarrow$ *03. Konten Siap Dibuat*.
+   - Interactive pill switcher with real structured output previews.
+
+4. **Section 3: Compact Closing Banner (`CompactCTA.tsx`)**:
+   - Headline: *"Siap bikin konten pertama lo?"*
+   - Button: *"Mulai gratis"* with subtext *"Tidak perlu prompt rumit. 10 kredit gratis langsung di akun lo."*
+   - 1-line minimalist footer.
 
 ---
 

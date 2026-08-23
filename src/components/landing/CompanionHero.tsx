@@ -159,7 +159,7 @@ export function CompanionHero() {
 
             {/* Supporting Copy */}
             <p className="mt-5 max-w-lg text-sm sm:text-base lg:text-lg leading-relaxed text-muted">
-              AI Creative Companion yang bantu lo cari ide, bikin script, sampai siap tayang.
+              AI Creative Companion yang bantu lo cari ide, buat hook, tulis script, sampai siap tayang.
             </p>
 
             {/* Refined CTA Actions (Solid, Clean, Non-Gaming) */}
@@ -176,7 +176,7 @@ export function CompanionHero() {
               </Link>
 
               <a
-                href="#alur"
+                href="#magic"
                 className="inline-flex items-center justify-center rounded-xl border border-hairline/80 bg-surface/60 px-6 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember-lo active:scale-[0.99]"
               >
                 Lihat cara kerja
