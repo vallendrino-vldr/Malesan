@@ -35,8 +35,26 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the Final SaaS Polish pass (§9q).
-**Newest work is §9q — Studio Creator Command Center (8 symmetric SVG cards + compact hero), Founder Dashboard Activity Timeline breakdown, Error Center 4-part structure, and Soft theme button contrast.** Read §9q, then §9p.
+Last updated: **2026-08-23**, after the Progressive Disclosure SaaS Studio pass (§9r).
+**Newest work is §9r — Studio Progressive Disclosure (1 Hero CTA, 3 Spacious Quick Actions, 1 Expandable More Tools drawer), zero-scroll mobile 375px experience, and anti-choice-paralysis architecture.** Read §9r, then §9q.
+
+---
+
+## §9r — Studio Progressive Disclosure & 3-Second First Value Architecture (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Progressive Disclosure Architecture (`src/components/StudioPanel.tsx`, `src/app/app/page.tsx`)**
+   - Eliminated feature catalogue / admin dashboard feeling where 8 tools were crammed simultaneously.
+   - **Hero Action (`StudioHero`)**: Single primary, uncrowded 1-click creative magic ("Kasih 3 Ide Konten Hari Ini" — 1 kredit, full-width gold button).
+   - **Top 3 Quick Creator Actions (`StudioQuickCard`)**: Spacious, generous padding, zero cramped text, readable descriptions for high schoolers & beginners:
+     1. 📝 *Naskah Video Lengkap* (1 kredit)
+     2. 🎬 *Subtitle Video Otomatis* (2 kredit / mnt)
+     3. 🪝 *Bikin Hook Nangkep* (1 kredit)
+   - **Expandable Secondary Tools (`StudioMoreTools`)**: Clean progressive disclosure button (*"Lihat 5 alat kreatif lainnya ▾"*) that smoothly reveals the remaining specialized tools (*Potong Momen Video, Ubah Format Konten, Matengin Ide Kasar, Bikin Utas, Draft & Catatan*).
+   - **Mobile 375px**: Fits above the fold cleanly, 0 text clipping, instant 3-second comprehension.
 
 ---
 

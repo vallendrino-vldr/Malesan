@@ -10,7 +10,7 @@ import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCos
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
-import { StudioPanel, StudioTile, StudioTileBig } from "@/components/StudioPanel";
+import { StudioPanel, StudioHero, StudioQuickCard, StudioMoreTools, StudioTile } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
@@ -277,20 +277,20 @@ export default async function AppPage({
 
           <RecycleBanner cards={postedCards} />
 
-          {/* Compact Header Sapaan & Maskot */}
+          {/* Header Sapaan Ramah */}
           <header className="surface-card relative overflow-hidden rounded-2xl border border-hairline p-4 sm:p-5 flex items-center justify-between gap-4 shadow-xs">
             <div className="min-w-0 flex-1">
               <span className="eyebrow text-ember font-bold">
-                {greet()}, {profile.display_name?.split(" ")[0] ?? "Kreator"}
+                {greet()}, {profile.display_name?.split(" ")[0] ?? "Kreator"} 👋
               </span>
-              <h1 className="mt-0.5 font-display text-lg font-bold tracking-display-sm text-ink sm:text-xl">
-                Males mikirnya. Bukan bikinnya.
+              <h1 className="mt-0.5 font-display text-lg sm:text-xl font-bold tracking-display-sm text-ink">
+                Mau bikin konten apa hari ini?
               </h1>
-              <p className="mt-1 text-xs text-muted">
-                Pilih menu di bawah untuk bikin konten otomatis tanpa mikir ribet.
+              <p className="mt-1 text-xs text-muted leading-relaxed">
+                Pilih cara paling cepat di bawah. Tanpa perlu mikir prompt rumit.
               </p>
             </div>
-            <div className="shrink-0 size-16 sm:size-20">
+            <div className="shrink-0 size-14 sm:size-16">
               <MascotStage className="size-full" />
             </div>
           </header>
@@ -298,59 +298,25 @@ export default async function AppPage({
           {/* Panduan Kilat Khusus Pemula */}
           <FirstTimeGuide />
 
-          {/* 1. HERO CTA UTAMA: Cari Ide Konten */}
-          <StudioTileBig
-            mod="ide"
-            title="Cari 3 Ide Konten Hari Ini"
-            body="Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook & naskah."
-            cost={costIde}
-            badge="Paling Populer & Cepat"
-            ctaText="Kasih 3 Ide Sekarang →"
-            primary
-          />
+          {/* 1. AKSI UTAMA INSTAN: Cari 3 Ide Hari Ini */}
+          <StudioHero mod="ide" cost={costIde} />
 
-          {/* 2. CREATOR COMMAND CENTER (8 Symmetric Tools) */}
-          <section>
-            <div className="mb-2.5 flex items-center justify-between px-0.5">
-              <div>
-                <h2 className="eyebrow text-muted">Alat Kreatif Lengkap</h2>
-                <p className="text-micro text-muted">Semua yang lo butuhin buat produksi konten</p>
-              </div>
-              <span className="text-micro font-mono text-muted">8 fitur siap pakai</span>
+          {/* 2. TOP 3 AKSI CEPAT KREATOR (Spacious & Obvious) */}
+          <section className="space-y-2.5">
+            <div className="flex items-center justify-between px-0.5">
+              <h2 className="eyebrow text-muted">Aksi Cepat Paling Populer</h2>
+              <span className="text-micro text-muted">Pilih satu yang lo butuhin</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <StudioTile
-                mod="idea"
-                title="Matengin Ide"
-                body="Punya ide kasar? Lempar, balik jadi 5 konsep mateng."
-                cost={costIdea}
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
-                    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-                    <path d="M9 18h6" />
-                    <path d="M10 22h4" />
-                  </svg>
-                }
-              />
-              <StudioTile
-                mod="hook"
-                title="Bikin Hook"
-                body="10 kalimat pembuka biar penonton betah & gak scroll."
-                cost={costHook}
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
-                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-                  </svg>
-                }
-              />
-              <StudioTile
+            <div className="space-y-2.5">
+              <StudioQuickCard
                 mod="script"
-                title="Naskah Video"
-                body="Script per-scene siap syuting + arahan visual & CTA."
+                title="Naskah Video Lengkap"
+                body="Script per-scene siap syuting lengkap dengan arahan visual, ekspresi & CTA."
                 cost={costScript}
+                badge="Paling Banyak Dipakai"
                 icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
                     <polyline points="14 2 14 8 20 8" />
                     <line x1="16" y1="13" x2="8" y2="13" />
@@ -358,79 +324,107 @@ export default async function AppPage({
                   </svg>
                 }
               />
-              <StudioTile
-                mod="repurpose"
-                title="Ubah Format"
-                body="1 materi jadi video TikTok, carousel IG, thread X & LinkedIn."
-                cost={costRepurpose}
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
-                    <polyline points="23 4 23 10 17 10" />
-                    <polyline points="1 20 1 14 7 14" />
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
-                }
-              />
-              <StudioTile
+              <StudioQuickCard
                 mod="video"
-                title="Subtitle Video"
-                body="Auto caption animasi kata-per-kata, export MP4 jernih."
+                title="Subtitle Video Otomatis"
+                body="Auto caption animasi kata-per-kata langsung nempel di video lo, export MP4 jernih."
                 cost={`${costVideo} kredit / mnt`}
                 badge="Video Auto-CC"
                 icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
                     <rect width="20" height="15" x="2" y="4.5" rx="3" />
                     <path d="M7 15h3a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H7v6z" />
                     <path d="M14 15h3a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-3v6z" />
                   </svg>
                 }
               />
-              <StudioTile
-                mod="clip"
-                title="Potong Momen"
-                body="Deteksi part paling seru & engaging dari video lo."
-                cost={costClip}
-                badge="Clip Engine"
+              <StudioQuickCard
+                mod="hook"
+                title="Bikin Hook Nangkep"
+                body="10 kalimat pembuka biar penonton gak scroll & betah nonton sampai habis."
+                cost={costHook}
                 icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
-                    <circle cx="6" cy="6" r="3" />
-                    <circle cx="6" cy="18" r="3" />
-                    <line x1="20" y1="4" x2="8.12" y2="15.88" />
-                    <line x1="14.47" y1="14.48" x2="20" y2="20" />
-                    <line x1="8.12" y1="8.12" x2="12" y2="12" />
-                  </svg>
-                }
-              />
-              <StudioTile
-                mod="thread"
-                title="Bikin Utas"
-                body="Rangkai cerita jadi thread yang enak dibaca di X & Threads."
-                cost={costThread}
-                badge="Thread Engine"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    <line x1="8" y1="9" x2="16" y2="9" />
-                    <line x1="8" y1="13" x2="13" y2="13" />
-                  </svg>
-                }
-              />
-              <StudioTile
-                href="/app/draft"
-                title="Draft & Catatan"
-                body="Nulis bebas dengan autosave otomatis & AI Tab-to-complete."
-                cost="Gratis"
-                badge="Editor"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
                   </svg>
                 }
               />
             </div>
           </section>
 
-          {/* 3. VALUE STRIP */}
+          {/* 3. PROGRESSIVE DISCLOSURE (5 ALAT LAINNYA) */}
+          <StudioMoreTools count={5}>
+            <StudioTile
+              mod="clip"
+              title="Potong Momen Video"
+              body="Deteksi part paling seru & engaging dari video lo."
+              cost={costClip}
+              badge="Clip Engine"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <circle cx="6" cy="6" r="3" />
+                  <circle cx="6" cy="18" r="3" />
+                  <line x1="20" y1="4" x2="8.12" y2="15.88" />
+                  <line x1="14.47" y1="14.48" x2="20" y2="20" />
+                  <line x1="8.12" y1="8.12" x2="12" y2="12" />
+                </svg>
+              }
+            />
+            <StudioTile
+              mod="repurpose"
+              title="Ubah Format Konten"
+              body="1 materi jadi video TikTok, carousel IG, thread X & LinkedIn."
+              cost={costRepurpose}
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
+              }
+            />
+            <StudioTile
+              mod="idea"
+              title="Matengin Ide Kasar"
+              body="Punya ide mentah? Lempar, balik jadi 5 konsep mateng."
+              cost={costIdea}
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+                  <path d="M9 18h6" />
+                  <path d="M10 22h4" />
+                </svg>
+              }
+            />
+            <StudioTile
+              mod="thread"
+              title="Bikin Utas / Thread"
+              body="Rangkai cerita jadi thread yang enak dibaca di X & Threads."
+              cost={costThread}
+              badge="Thread Engine"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  <line x1="8" y1="9" x2="16" y2="9" />
+                  <line x1="8" y1="13" x2="13" y2="13" />
+                </svg>
+              }
+            />
+            <StudioTile
+              href="/app/draft"
+              title="Draft & Catatan Bebas"
+              body="Nulis bebas dengan autosave otomatis & AI Tab-to-complete."
+              cost="Gratis"
+              badge="Editor"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                </svg>
+              }
+            />
+          </StudioMoreTools>
+
+          {/* 4. VALUE STRIP */}
           <ul className="grid grid-cols-3 gap-2 rounded-2xl border border-hairline bg-surface/50 p-3.5 shadow-xs">
             {[
               { k: "Nyambung", v: "Ngikutin gaya persona lo" },
