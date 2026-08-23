@@ -98,14 +98,9 @@ export default function KetentuanPage() {
         </section>
 
         <section>
-          <h2 className="font-display text-base font-bold text-ink">Kontak</h2>
+          <h2 className="font-display text-base font-bold text-ink">Kontak &amp; Bantuan</h2>
           <p className="mt-2 text-muted">
-            <a
-              href="mailto:vadlyvldr@gmail.com"
-              className="text-ember underline-offset-2 hover:underline"
-            >
-              vadlyvldr@gmail.com
-            </a>
+            Laporkan kendala atau kirim saran melalui menu Laporan di dashboard Malesan.
           </p>
         </section>
       </div>

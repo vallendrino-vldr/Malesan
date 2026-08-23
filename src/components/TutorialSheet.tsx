@@ -356,7 +356,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
             </div>
 
             <p className="shrink-0 border-t border-hairline px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 text-micro leading-relaxed text-muted">
-              Masih bingung? Email vadlyvldr@gmail.com — dibales orang, bukan bot.
+              Masih bingung? Kirim pertanyaan atau saran melalui menu Laporan di dashboard Malesan.
             </p>
           </div>
         </div>,

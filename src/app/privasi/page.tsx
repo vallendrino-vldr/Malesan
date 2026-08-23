@@ -90,30 +90,17 @@ export default function PrivasiPage() {
             Hapus akun dan data
           </h2>
           <p className="mt-2 text-muted">
-            Kirim email ke{" "}
-            <a
-              href="mailto:vadlyvldr@gmail.com?subject=Hapus%20akun%20Malesan"
-              className="text-ember underline-offset-2 hover:underline"
-            >
-              vadlyvldr@gmail.com
-            </a>{" "}
-            dari alamat email yang lo pakai daftar. Akun dan semua data yang
-            terkait akan dihapus permanen dalam 7 hari kerja. Kredit yang belum
-            terpakai hangus dan tidak bisa diuangkan.
+            Kirim permintaan hapus akun melalui menu Laporan di aplikasi Malesan.
+            Akun dan semua data yang terkait akan dihapus permanen dalam 7 hari
+            kerja. Kredit yang belum terpakai hangus dan tidak bisa diuangkan.
           </p>
         </section>
 
         <section>
-          <h2 className="font-display text-base font-bold text-ink">Kontak</h2>
+          <h2 className="font-display text-base font-bold text-ink">Kontak &amp; Dukungan</h2>
           <p className="mt-2 text-muted">
-            Ada pertanyaan soal data lo? Email{" "}
-            <a
-              href="mailto:vadlyvldr@gmail.com"
-              className="text-ember underline-offset-2 hover:underline"
-            >
-              vadlyvldr@gmail.com
-            </a>
-            .
+            Ada pertanyaan atau kendala seputar data akun lo? Laporkan kendala
+            atau kirim saran melalui menu Laporan di dashboard Malesan.
           </p>
         </section>
       </div>

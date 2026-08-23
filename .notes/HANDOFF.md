@@ -35,8 +35,36 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Final Header Experience Polish pass (§9z.2).
-**Newest work is §9z.2 — Final Header Experience Polish: Compensated internal PNG whitespace with wrapper overflow-visible and controlled scale(1.22) so the brand logo commands the header like a $100M SaaS product; Redesigned utility controls into premium soft 40px pills (ThemeToggle, TutorialSheet, RefreshButton); Upgraded CreditDisplay to 40px with pulsing indicator; Structured two-row mobile header with logo + credit/profile in top row and soft utility strip below; Tested across Desktop & Mobile.** Read §9z.2, then §9z.1.
+Last updated: **2026-08-24**, after the Malesan Brand Experience Rebuild & Premium AI Companion Landing System (§9z.3).
+**Newest work is §9z.3 — Brand Experience Rebuild: Audited and removed all private email addresses from public pages (/privasi, /ketentuan, TutorialSheet), replaced with in-app reporting system; Built 3D WebGL particle mesh (ThreeCanvas.tsx) with reduced-motion fallback; Built interactive Mascot 3D holographic workspace stage (CompanionHero.tsx); Built transformation storytelling pipeline (StorySection.tsx, IDE -> SCRIPT -> HOOK -> CONTENT READY); Built AI Capabilities showcase (CapabilitiesSection.tsx) & Comparison matrix (ComparisonSection.tsx); Tested across Desktop & Mobile.** Read §9z.3, then §9z.2.
+
+---
+
+## §9z.3 — Malesan Brand Experience Rebuild & AI Companion Landing System (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Privacy & Contact Audit (Zero Personal Emails)**:
+   - Audited `/privasi`, `/ketentuan`, and `TutorialSheet.tsx`.
+   - Removed all instances of `vadlyvldr@gmail.com` and `mailto:` links.
+   - Replaced with in-app reporting system (*"Laporkan kendala atau kirim saran melalui menu Laporan di dashboard Malesan."*).
+
+2. **Hero Experience — Interactive Mascot Character (`src/components/landing/CompanionHero.tsx`)**:
+   - Refined copy: *"Males mikirnya. Bukan bikinnya."* + *"AI Creative Companion yang bantu lo cari ide, bikin script, sampai siap tayang."*
+   - Interactive 3D Mascot holographic glass stage with dynamic breathing, thinking, and working animations.
+   - Floating interactive creative nodes: *Ide Harian*, *Hook 3 Detik*, *Script Studio*, *Video Auto-CC*.
+   - Three.js WebGL particle field (`ThreeCanvas.tsx`) with ambient warm ember vortex and `prefers-reduced-motion` graceful throttling.
+
+3. **Transformation Narrative & Storytelling (`src/components/landing/StorySection.tsx`)**:
+   - Problem statement: *"Kreator bukan kehabisan ide. Mereka capek mulai dari nol."*
+   - Step pipeline: `01. IDE` $\rightarrow$ `02. SCRIPT` $\rightarrow$ `03. HOOK` $\rightarrow$ `04. CONTENT READY`.
+   - Live interactive stage showing real structured transformation output.
+
+4. **Capabilities Showcase & Comparison Matrix (`CapabilitiesSection.tsx`, `ComparisonSection.tsx`)**:
+   - 6 AI capabilities (Idea Engine, Script Studio, Hook Intelligence, Repurpose Engine, Auto-CC, Otak Kedua Persona).
+   - Direct comparison against generic AI bots with high-converting pre-footer CTA banner.
 
 ---
 
