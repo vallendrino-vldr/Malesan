@@ -11,8 +11,9 @@ creators. Live on Vercel, auto-deploys from `main`, takes real money.
 
 **Is it healthy right now?** Yes. `next build`, `tsc --noEmit`, `npm run lint`,
 `npm test`, and `npm audit` all pass; lint is now **0** and the production build
-emits 43 app pages/routes. Authenticated Chromium + WebKit QA passed 13 routes
-at 360/768/1366/1920px, including a real Auto-CC transcription. See §9m.
+emits 43 app pages/routes. Authenticated Chromium + Firefox + WebKit QA passed
+16 routes at six mobile/tablet/desktop viewports, including a real Auto-CC
+transcription. See §9n.
 
 **Do NOT re-audit for "damage from the antigravity gemini session".** It was
 checked on 2026-08-06 against `git reflog`: that agent never touched this repo.
@@ -34,14 +35,82 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after Final Excellence hardening (§9m).
-**Newest work is §9m — cross-instance AI throttling, gateway SSRF protection,
-Brain-aware Gemini quota admission, accurate owner analytics, Auto-CC recovery,
-zero lint/audit findings, and authenticated Chromium/WebKit QA.** Read §9m,
-then §9l before touching AI; §9k is the provider-layer foundation beneath it.
+Last updated: **2026-08-23**, after creator product excellence (§9n).
+**Newest work is §9n — platform-aware zero-brief ideas, truthful AI progress,
+content-profile language, reliable top-up loading, tuned primary/fallback time,
+and authenticated three-engine QA.** Read §9n, then §9m and §9l before touching
+AI; §9k is the provider-layer foundation beneath it.
 §9j before it: deterministic frame-by-frame video export (WebCodecs + mp4-muxer,
 NOT MediaRecorder). §9i: 3 Auto-CC bugs + netizen/roast + smart recycle.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
+
+---
+
+## §9n — Creator product excellence (2026-08-23)
+
+**Code checkpoint:** `7f1c747` on `main`. This phase intentionally adds no
+migration and does not change `spend_credits`, `refund_credits`, auth, RLS,
+provider selection or the Global Brain contract.
+
+### Product flow
+
+- Ide Hari Ini is now zero-brief: choose platform + business goal, then get
+  three bounded ideas with an opening, exactly three beats, ready-to-publish
+  copy, caption and hashtags. Supported choices are TikTok/Reels, YouTube
+  Shorts, X, Threads, Facebook and LinkedIn.
+- The selected platform/goal is normalized on the server, enters the prompt,
+  returns in each result, and follows the idea into Pipeline and later
+  Hook/Script work. The legacy `generations.platform` constraint remains
+  compatible; rich values live in JSON/pipeline instead of forcing a risky
+  migration.
+- Technical names were translated for the creator: Idea Engine → Matengin Ide,
+  Hook Lab → Bikin Hook, Script Builder → Bikin Script, Repurpose → Ubah Format,
+  Persona → Profil konten, Otak Kedua → Pakai bahan sendiri. Internal keys and
+  tables stay unchanged for backward compatibility.
+- `personas` is reused as optional multi-content profiles; Creator DNA remains
+  the main profile. No duplicate personalization architecture was added.
+- Script rendering has a text-platform path and no longer appends an invented
+  closing line that the model/user never supplied.
+
+### Reliability and truthful state
+
+- AI progress renders only backend status, received characters and elapsed
+  time. Fake stage timers and percentages were removed. Module, Idea, Clip,
+  Thread and Pipeline surfaces now consume the same real status evidence.
+- Pipeline no longer hardcodes generated ideas to TikTok and surfaces real save
+  failures instead of silently pretending a card was stored.
+- Top-up loads active packs through authenticated `activeCreditPacks()` and has
+  explicit loading, retry, empty and error states. A failed read can no longer
+  become a Rp0 transfer instruction.
+- Ide output length was bounded after live timeouts. Generate now uses a 56s
+  route abort, 54s engine budget and 24s backup reserve: primary can use 30s,
+  fallback still has a real attempt, and persistence/refund retains headroom
+  before Vercel's 60s kill.
+
+### Evidence
+
+- Two consecutive disposable ordinary-user tests against the production bundle
+  reached DeepSeek primary, returned all three full ideas, recorded real tokens
+  and prepaid rupiah cost, wrote exactly one credit charge, persisted the
+  generation and cleaned all test data.
+- A natural DeepSeek timeout → Gemini free-quota fallback completed with one
+  charge. Earlier explicit primary/fallback/all-failed tests in §9l remain the
+  proof that an exhausted chain refunds by the immutable spend ref.
+- Authenticated Chromium, Firefox and WebKit passed 16 routes × six viewports
+  (360×800, 375×812, 812×375 landscape, 768×1024, 1366×768, 1920×1080), including
+  a real Auto-CC ffmpeg → Groq transcription → style UI path. Screenshots were
+  visually inspected for mobile layout and technical leakage.
+- `npm run typecheck`, `npm run lint` (0), `npm test`, `npm audit --omit=dev`
+  (0 vulnerabilities) and `npm run build` (43 routes) pass.
+
+### Remaining real risks
+
+- Long generations are still bounded synchronous serverless work. They now fail
+  and refund cleanly, but only a durable queue can resume after a hard process
+  kill; do not disguise that limit by reducing output quality.
+- Physical Android/iPhone installed-PWA update and real-money top-up approval
+  remain human acceptance gates. Automated browser engines are strong evidence,
+  not a claim that physical-device acceptance happened.
 
 ---
 
@@ -859,9 +928,9 @@ call it, and a function invoked inside a policy runs as the caller.
 | Shadow prompt (admin) | Textarea on `/admin/config`, `shadow_prompt` in app_config, injected into `/api/generate`, `/api/autocomplete` **and `/api/vibe`** |
 | Token pricing (admin) | `price_in_per_mtok` / `price_out_per_mtok`, feeding the profit panel |
 | Profit dashboard | `ProfitPanel` on `/admin/stats` — revenue vs estimated model cost vs credits burned, 14 days |
-| Reference engine | Collapsible "Otak Kedua" field on the module runners; sent as `input.reference` |
-| Persona picker | Dropdown on the module runners; sent as `input.persona_id` |
-| Persona CRUD + CTA | `PersonaManager` + `CtaSettings` on `/app/profile` |
+| Reference engine | Collapsible “Pakai bahan sendiri” field on the module runners; sent as `input.reference` |
+| Content profile picker | Dropdown on the module runners; sent as internal `input.persona_id` |
+| Content profile CRUD + CTA | `PersonaManager` (owner label: Profil konten) + `CtaSettings` on `/app/profile` |
 | Kanban + AI tagging | `PipelineBoard` drag/reorder + realtime; `POST /api/pipeline/schedule` writes `schedule_label` |
 | Clip / Thread engines | `ClipEngine` / `ThreadEngine`, registered in `StudioPanel`, modules `clip` / `thread` |
 | Draft editor | `/app/draft` + `DraftEditor` (autosave, Tab-to-complete) + `POST /api/autocomplete` |
