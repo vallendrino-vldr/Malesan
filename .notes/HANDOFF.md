@@ -35,8 +35,30 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the RSC Client Component Event Handler serialization fix (§9u).
-**Newest work is §9u — Fix: Encapsulate StudioHeroCard inside Client Component boundary to eliminate Next.js RSC `Event handlers cannot be passed to Client Component props` error on /app route.** Read §9u, then §9t.
+Last updated: **2026-08-23**, after the Responsive Desktop Horizontal Canvas & Mobile Native App pass (§9v).
+**Newest work is §9v — Studio Responsive Architecture: Desktop Horizontal Command Canvas (Left: Mascot + Greeting + Thesis, Right: Spotlight Hero CTA, Full-width 4x2 Tools Grid in max-w-6xl container); Mobile Native App Layout (Centered mascot, compact hero, 2x4 grid); Tested on 1366x768, 1920x1080, 375x812, 390x844 viewports.** Read §9v, then §9u.
+
+---
+
+## §9v — Studio Responsive Architecture: Desktop Horizontal Canvas & Mobile Native App (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Desktop Horizontal Command Center (`>=1024px`, container: `max-w-6xl`)**
+   - **Horizontal Hero Split**:
+     - Left (col-span-5): Large interactive MascotStage + Sapaan (`MALAM, VLDR 👋`) + Headline (*"Mau bikin konten apa hari ini?"*) + Tagline.
+     - Right (col-span-7): Primary Spotlight CTA Card (*"Cari 3 Ide Konten Hari Ini"*, 1 kredit, gold button *"Kasih 3 Ide Sekarang →"*).
+   - **Command Grid**: Full-width 4-column × 2-row grid of spacious, uniform cards (`min-h-[92px]`), utilizing the desktop canvas without dead space. Fits completely within 1 viewport height (768px-1080px).
+
+2. **Mobile Native App Experience (`<=768px`)**
+   - Centered mascot stage with ambient glow, bold greeting, full-width primary CTA card.
+   - 2-column × 4-row compact grid (`h-[84px]`), 1-line subtitles, 0 text clipping, 0 drawers.
+
+3. **Viewport Testing:**
+   - Desktop: `1366x768`, `1920x1080`
+   - Mobile: `375x812`, `390x844`
 
 ---
 

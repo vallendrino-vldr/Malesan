@@ -270,7 +270,7 @@ export function AppShell({
       <main className="area-main relative z-10">
         <div
           className={`mx-auto w-full px-4 py-4 sm:py-6 ${
-            shown === "pipeline" ? "max-w-[1600px]" : shown === "studio" ? "max-w-5xl" : "max-w-3xl"
+            shown === "pipeline" ? "max-w-[1600px]" : shown === "studio" ? "max-w-6xl" : "max-w-3xl"
           }`}
         >
           {/* Inactive panels stay mounted but hidden. Re-rendering them on every

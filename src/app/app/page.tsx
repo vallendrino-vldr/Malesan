@@ -277,31 +277,35 @@ export default async function AppPage({
           <RecycleBanner cards={postedCards} />
 
           {/* LEVEL 1: HERO SPOTLIGHT EXPERIENCE (AI Creative Companion) */}
-          <section className="relative overflow-hidden rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/90 via-surface to-obsidian p-5 sm:p-7 text-center shadow-lg transition-all">
-            {/* Ambient Warmth & Glow */}
-            <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 size-64 sm:size-80 rounded-full bg-ember/15 blur-3xl" />
+          <section className="relative overflow-hidden rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/90 via-surface to-obsidian p-5 sm:p-6 lg:p-7 shadow-lg transition-all">
+            {/* Ambient Warmth Glow */}
+            <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-72 sm:size-96 rounded-full bg-ember/15 blur-3xl" />
 
-            <div className="relative z-10 mx-auto max-w-lg flex flex-col items-center">
-              {/* Maskot Stage — Centerpiece Personality */}
-              <div className="size-24 sm:size-32">
-                <MascotStage className="size-full" />
+            <div className="relative z-10 grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-12 lg:items-center">
+              {/* [ LEFT AREA: Mascot + Greeting + Thesis ] (lg:col-span-5) */}
+              <div className="flex flex-col items-center text-center lg:items-start lg:text-left lg:col-span-5">
+                <div className="flex flex-col items-center lg:flex-row lg:items-center gap-3.5 lg:gap-5">
+                  <div className="size-20 sm:size-24 lg:size-28 shrink-0">
+                    <MascotStage className="size-full" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="eyebrow text-ember font-bold tracking-wider">
+                      {greet().toUpperCase()}, {profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR"} 👋
+                    </p>
+                    <h1 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-display-sm text-ink leading-tight">
+                      Mau bikin konten apa hari ini?
+                    </h1>
+                    <p className="mt-1 text-micro sm:text-xs text-muted leading-relaxed">
+                      Pilih cara paling cepat. Tanpa mikir prompt rumit.
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              {/* Sapaan Personal & Headline */}
-              <div className="mt-2.5 text-center">
-                <p className="eyebrow text-ember font-bold tracking-wider">
-                  {greet().toUpperCase()}, {profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR"} 👋
-                </p>
-                <h1 className="mt-1 font-display text-xl sm:text-3xl font-bold tracking-display-sm text-ink">
-                  Mau bikin konten apa hari ini?
-                </h1>
-                <p className="mt-1 text-micro sm:text-xs text-muted max-w-sm mx-auto leading-relaxed">
-                  Pilih cara paling cepat. Tanpa mikir prompt rumit.
-                </p>
+              {/* [ RIGHT AREA: Spotlight Hero Card ] (lg:col-span-7) */}
+              <div className="w-full lg:col-span-7">
+                <StudioHeroCard cost={costIde} />
               </div>
-
-              {/* PRIMARY CTA CARD — The #1 Obvious Action on Screen */}
-              <StudioHeroCard cost={costIde} />
             </div>
           </section>
 
