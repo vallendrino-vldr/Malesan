@@ -1,9 +1,13 @@
-import { LavaScreen } from "@/components/LavaLoader";
+import { MascotSplashScreen } from "@/components/LavaLoader";
 
 /**
- * Admin pages each run several counts and aggregates before rendering, so they
- * have the same dead-air problem the app tabs had.
+ * Admin pages loading screen.
  */
 export default function AdminLoading() {
-  return <LavaScreen label="Lagi ngambil data..." />;
+  return (
+    <MascotSplashScreen
+      title="Malesan lagi ngambil data admin..."
+      subtitle="Menghubungkan ke database &amp; metrik sistem."
+    />
+  );
 }

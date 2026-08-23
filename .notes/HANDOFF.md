@@ -35,8 +35,29 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the Emoji Removal & Premium SVG Icon System pass (§9x).
-**Newest work is §9x — Micro Polish: Removed all emoji UI icons (⚡, 🚀, 🔥, ♻️, 👋) across authenticated app; replaced with clean inline SVG Lucide-style icons and consistent uppercase badge styling.** Read §9x, then §9w.
+Last updated: **2026-08-23**, after the Premium AI Creative Companion Splash Screen Experience pass (§9y).
+**Newest work is §9y — Splash Polish: Redesigned full-viewport loading experience to MascotSplashScreen (Centered animated working mascot with antenna pulse, typing arms, halo ambient glow, 'Lagi mikir' badge, brand companion copy, progress beam); Tested across Desktop & Mobile.** Read §9y, then §9x.
+
+---
+
+## §9y — Premium AI Companion Splash Screen Experience (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **`MascotSplashScreen` (`src/components/LavaLoader.tsx`, `src/app/app/loading.tsx`, `src/app/admin/loading.tsx`)**:
+   - Replaced the generic blank/orange blob loading screen with a high-end AI Companion Splash Screen.
+   - **Composition**:
+     - Top: Clean `Logo` mark.
+     - Center: Mascot in `working={true}` state (active scanning visor, pulsing antenna LED, typing arms) set on a halo glass stage with ambient ember warmth bloom and a subtle `"Lagi mikir"` status pill.
+     - Copy: Brand-aligned title (*"Malesan lagi nyiapin workspace lo..."*) + subtitle (*"AI Creative Companion siap nemenin lo bikin konten."*).
+     - Progress: Modern pulse beam progress indicator.
+     - Bottom: Subtle whisper (*"Malesan AI · Creative Companion"*).
+   - Zero heavy dependencies; pure lightweight SVG and CSS compositing.
+
+2. **Visual Viewport Verification**:
+   - Verified on Desktop (`1366x768`, `1920x1080`) and Mobile (`375x812`, `390x844`).
 
 ---
 
