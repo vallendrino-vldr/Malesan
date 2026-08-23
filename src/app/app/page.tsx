@@ -10,11 +10,10 @@ import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCos
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
-import { StudioPanel, StudioHero, StudioTile } from "@/components/StudioPanel";
+import { StudioPanel, StudioTile } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
-import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { jakartaDayKey } from "@/lib/time";
 
 export const metadata: Metadata = {
@@ -277,42 +276,74 @@ export default async function AppPage({
 
           <RecycleBanner cards={postedCards} />
 
-          {/* Header Sapaan Ramah */}
-          <header className="surface-card relative overflow-hidden rounded-2xl border border-hairline p-4 sm:p-5 flex items-center justify-between gap-4 shadow-xs">
-            <div className="min-w-0 flex-1">
-              <span className="eyebrow text-ember font-bold">
-                {greet()}, {profile.display_name?.split(" ")[0] ?? "Kreator"} 👋
-              </span>
-              <h1 className="mt-0.5 font-display text-lg sm:text-xl font-bold tracking-display-sm text-ink">
-                Mau bikin konten apa hari ini?
-              </h1>
-              <p className="mt-1 text-xs text-muted leading-relaxed">
-                Pilih cara paling cepat di bawah. Tanpa perlu mikir prompt rumit.
-              </p>
+          {/* LEVEL 1: HERO SPOTLIGHT EXPERIENCE (AI Creative Companion) */}
+          <section className="relative overflow-hidden rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/90 via-surface to-obsidian p-5 sm:p-7 text-center shadow-lg transition-all">
+            {/* Ambient Warmth & Glow */}
+            <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 size-64 sm:size-80 rounded-full bg-ember/15 blur-3xl" />
+
+            <div className="relative z-10 mx-auto max-w-lg flex flex-col items-center">
+              {/* Maskot Stage — Centerpiece Personality */}
+              <div className="size-24 sm:size-32">
+                <MascotStage className="size-full" />
+              </div>
+
+              {/* Sapaan Personal & Headline */}
+              <div className="mt-2.5 text-center">
+                <p className="eyebrow text-ember font-bold tracking-wider">
+                  {greet().toUpperCase()}, {profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR"} 👋
+                </p>
+                <h1 className="mt-1 font-display text-xl sm:text-3xl font-bold tracking-display-sm text-ink">
+                  Mau bikin konten apa hari ini?
+                </h1>
+                <p className="mt-1 text-micro sm:text-xs text-muted max-w-sm mx-auto leading-relaxed">
+                  Pilih cara paling cepat. Tanpa mikir prompt rumit.
+                </p>
+              </div>
+
+              {/* PRIMARY CTA CARD — The #1 Obvious Action on Screen */}
+              <div className="mt-4 sm:mt-5 w-full rounded-2xl border border-ember/40 bg-surface/90 p-4 sm:p-5 text-left shadow-sm transition-all hover:border-ember/60">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold text-ember border border-ember/30">
+                    <span className="size-1.5 rounded-full bg-ember animate-pulse" />
+                    ⚡ 1-Click Instan
+                  </span>
+                  <span className="rounded-md bg-surface-raised px-2 py-0.5 font-mono text-micro font-bold text-ember border border-hairline">
+                    {costIde} kredit
+                  </span>
+                </div>
+
+                <h2 className="mt-2 font-display text-base sm:text-lg font-bold text-ink">
+                  Cari 3 Ide Konten Hari Ini
+                </h2>
+                <p className="mt-0.5 text-micro sm:text-xs text-muted leading-relaxed">
+                  Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook &amp; naskah video.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "ide" }))
+                  }
+                  className="btn-ember mt-3 inline-flex min-h-11 sm:min-h-12 w-full items-center justify-center rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] hover:brightness-105"
+                >
+                  Kasih 3 Ide Sekarang →
+                </button>
+              </div>
             </div>
-            <div className="shrink-0 size-14 sm:size-16">
-              <MascotStage className="size-full" />
-            </div>
-          </header>
+          </section>
 
-          {/* Panduan Kilat Khusus Pemula */}
-          <FirstTimeGuide />
-
-          {/* 1. AKSI UTAMA INSTAN: Cari 3 Ide Hari Ini */}
-          <StudioHero mod="ide" cost={costIde} />
-
-          {/* 2. CREATOR COMMAND CENTER (8 Tools Terlihat Langsung Tanpa Drawer) */}
-          <section>
-            <div className="mb-2 flex items-center justify-between px-0.5">
-              <h2 className="eyebrow text-muted">Semua Alat Kreatif</h2>
+          {/* LEVEL 2: CREATIVE COMMAND TILES (8 Fitur Kompak) */}
+          <section className="space-y-2">
+            <div className="flex items-center justify-between px-0.5">
+              <h2 className="eyebrow text-muted font-bold">Semua Alat Kreatif</h2>
               <span className="text-micro font-mono text-muted">8 fitur siap pakai</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-4">
               <StudioTile
                 mod="script"
                 title="Naskah Video"
-                subtitle="Script per-scene"
+                subtitle="Script siap syuting"
                 cost={costScript}
                 icon={
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
@@ -365,7 +396,7 @@ export default async function AppPage({
               <StudioTile
                 mod="repurpose"
                 title="Ubah Format"
-                subtitle="TikTok, IG, X, LinkedIn"
+                subtitle="TikTok, IG, X, LI"
                 cost={costRepurpose}
                 icon={
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
@@ -378,7 +409,7 @@ export default async function AppPage({
               <StudioTile
                 mod="idea"
                 title="Matengin Ide"
-                subtitle="Konsep dari ide kasar"
+                subtitle="Ide kasar jadi konsep"
                 cost={costIdea}
                 icon={
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
@@ -415,8 +446,8 @@ export default async function AppPage({
             </div>
           </section>
 
-          {/* 3. VALUE STRIP */}
-          <ul className="grid grid-cols-3 gap-2 rounded-2xl border border-hairline bg-surface/50 p-3.5 shadow-xs">
+          {/* LEVEL 3: VALUE STRIP */}
+          <ul className="grid grid-cols-3 gap-2 rounded-2xl border border-hairline bg-surface/50 p-3 shadow-xs">
             {[
               { k: "Nyambung", v: "Ngikutin gaya persona lo" },
               { k: "Update", v: "Tau tren creator hari ini" },

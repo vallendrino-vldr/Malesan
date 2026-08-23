@@ -269,8 +269,8 @@ export function AppShell({
           which is where the desktop layout collapsed into one word per line. */}
       <main className="area-main relative z-10">
         <div
-          className={`mx-auto w-full px-4 py-4 ${
-            shown === "pipeline" ? "max-w-[1600px]" : "max-w-3xl"
+          className={`mx-auto w-full px-4 py-4 sm:py-6 ${
+            shown === "pipeline" ? "max-w-[1600px]" : shown === "studio" ? "max-w-5xl" : "max-w-3xl"
           }`}
         >
           {/* Inactive panels stay mounted but hidden. Re-rendering them on every

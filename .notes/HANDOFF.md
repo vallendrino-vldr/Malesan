@@ -35,8 +35,27 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the Compact 8-Tool Command Center pass (§9s).
-**Newest work is §9s — Studio Compact Command Center (all 8 tools visible without drawer, punchy 1-line subtitles, compact horizontal hero, 2x4 mobile & 4x2 desktop grid with zero text truncation).** Read §9s, then §9r.
+Last updated: **2026-08-23**, after the AI Creative Companion & Mascot Spotlight pass (§9t).
+**Newest work is §9t — Studio AI Creative Companion (Level 1: Large charismatic Mascot Stage + Sapaan + Primary CTA Card spotlight; Level 2: 8 Compact Command Tiles in 4x2 desktop / 2x4 mobile grid; Level 3: Value Strip).** Read §9t, then §9s.
+
+---
+
+## §9t — Studio AI Creative Companion: Mascot Spotlight & 3-Level Hierarchy (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **AI Creative Companion Positioning (`src/app/app/page.tsx`, `src/components/AppShell.tsx`)**
+   - **Level 1 (Primary Experience - Spotlight)**:
+     - Interactive Mascot Stage restored to center stage with ambient warmth/glow (`size-24 sm:size-32`, idle pulse, reactive poke lines).
+     - Bold greeting (`MALAM, VLDR 👋`) and thesis headline (*"Mau bikin konten apa hari ini?"*).
+     - Primary CTA Card: *"Cari 3 Ide Konten Hari Ini"* (1 credit) with dominating full-width gold button *"Kasih 3 Ide Sekarang →"*.
+   - **Level 2 (Creative Command Tiles)**:
+     - 8 compact tiles in 4x2 grid (desktop) and 2x4 grid (mobile) with punchy 1-line subtitles. No drawers, no hidden tools.
+   - **Level 3 (Contextual Information)**:
+     - 3-pillar value strip (*Nyambung • Update • Praktis*).
+   - **AppShell desktop container**: Expanded Studio panel max-width to `max-w-5xl` to utilize desktop viewport gracefully without dead space.
 
 ---
 
