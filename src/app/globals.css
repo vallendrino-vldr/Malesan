@@ -836,10 +836,10 @@
 }
 
 /* ---- the primary action ----
-   Keeps a real accent fill rather than becoming another grey pillow. The
-   canonical neumorphic button is unreadable as a primary CTA precisely because
-   it looks identical to a disabled one. */
+   Keeps a real accent fill with crisp white text. */
 :root[data-theme="soft"] .btn-ember {
+  color: #ffffff !important;
+  font-weight: 700;
   background-color: var(--color-ember);
   background-image: linear-gradient(
     180deg,
@@ -852,11 +852,28 @@
     5px 5px 14px 0 color-mix(in oklab, var(--color-ember) 35%, transparent);
 }
 
+:root[data-theme="soft"] .btn-ember:hover {
+  background-color: color-mix(in oklab, var(--color-ember) 90%, #000);
+}
+
 :root[data-theme="soft"] .btn-ember:active,
 :root[data-theme="soft"] .skeu-press:active {
   box-shadow:
     inset 3px 3px 8px 0 color-mix(in oklab, var(--soft-shade) 70%, transparent),
     inset -2px -2px 6px 0 var(--soft-light);
+}
+
+:root[data-theme="soft"] .surface-card-interactive:hover {
+  border-color: color-mix(in oklab, var(--color-ember) 60%, transparent);
+  background-color: var(--color-surface-raised);
+}
+
+:root[data-theme="soft"] button:disabled,
+:root[data-theme="soft"] .btn-ember:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: grayscale(25%);
+  box-shadow: none;
 }
 
 /* ---- chrome bars ---- */

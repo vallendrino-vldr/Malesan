@@ -26,11 +26,12 @@ type Row = {
   created_at: string;
 };
 
-/** Plain-language reading: Masalah -> Dampak -> Solusi */
+/** Plain-language reading: 4 Pertanyaan Kunci Founder */
 function explain(r: Row): {
   masalah: string;
   dampak: string;
-  solusi: string;
+  sistemAction: string;
+  founderAction: string;
   severity: "low" | "medium" | "high";
 } {
   const m = r.message.toLowerCase();
@@ -38,7 +39,8 @@ function explain(r: Row): {
     return {
       masalah: "Kuota Harian API AI Kepentok",
       dampak: "Pembuatan konten sempat tertunda atau gagal sebelum berpindah key.",
-      solusi: "Sistem otomatis merotasi ke key cadangan. Jika semua key habis, tunggu kuota reset jam 07:00 WIB atau tambahkan API key baru di Vercel env.",
+      sistemAction: "Sistem otomatis merotasi ke key cadangan berikutnya dan refund kredit pengguna jika gagal.",
+      founderAction: "Jika semua key habis, tunggu kuota reset jam 07:00 WIB atau tambahkan API key Gemini baru di Vercel env.",
       severity: "high",
     };
   }
@@ -46,7 +48,8 @@ function explain(r: Row): {
     return {
       masalah: "Model AI Tidak Dikenal Provider",
       dampak: "Semua request yang diarahkan ke model ini akan gagal total.",
-      solusi: `ID model "${r.model ?? "?"}" tidak valid. Cek ejaan ID model di menu Otak AI / Provider di admin panel.`,
+      sistemAction: "Sistem mencatat error log dan mencoba fallback ke model default jika terkonfigurasi.",
+      founderAction: `Periksa ID model "${r.model ?? "?"}" di menu Otak AI / Provider. Pastikan ejaannya persis dengan dokumentasi provider.`,
       severity: "high",
     };
   }
@@ -54,30 +57,34 @@ function explain(r: Row): {
     return {
       masalah: "API Key Ditolak oleh Provider",
       dampak: "Request ke provider terkait ditolak dan gagal dieksekusi.",
-      solusi: "API key dicabut, tidak valid, atau API belum diaktifkan di Google Cloud Console. Ganti dengan key yang aktif.",
+      sistemAction: "Sistem menonaktifkan sementara key bermasalah dan mencoba key berikutnya.",
+      founderAction: "Cek apakah API key dicabut di Google Cloud / AI Studio atau aktifkan Generative Language API.",
       severity: "high",
     };
   }
   if (r.status === 400 || m.includes("invalid")) {
     return {
       masalah: "Format Request Ditolak AI",
-      dampak: "Sebagian input user yang terlalu panjang gagal diproses AI.",
-      solusi: "Input atau prompt terlalu panjang. Sistem sudah memotong input secara otomatis.",
+      dampak: "Sebagian input teks pengguna yang tidak standar gagal diproses AI.",
+      sistemAction: "Sistem memotong input panjang secara otomatis dan membatasi ukuran payload.",
+      founderAction: "Tidak ada tindakan mendesak, sistem sudah memproteksi schema input.",
       severity: "medium",
     };
   }
   if ((r.status ?? 0) >= 500 || m.includes("unavailable") || m.includes("overloaded")) {
     return {
       masalah: "Server AI Upstream Sedang Sibuk / Gangguan",
-      dampak: "Beberapa percobaan pembuatan konten gagal sementara.",
-      solusi: "Gangguan dari pihak Google/provider. Sistem otomatis melakukan retry ke key cadangan. Tidak perlu tindakan manual kecuali gangguan berlanjut.",
+      dampak: "Beberapa percobaan pembuatan konten sempat gagal sementara.",
+      sistemAction: "Sistem otomatis melakukan retry ke key/provider alternatif dan memastikan kredit aman.",
+      founderAction: "Gangguan berasal dari pihak Google/provider. Pantau status hingga server upstream stabil.",
       severity: "medium",
     };
   }
   return {
-    masalah: "Kendala Sistem / Koneksi",
-    dampak: "Request tidak berhasil diselesaikan.",
-    solusi: "Periksa detail pesan teknis di bawah untuk melihat penyebab spesifiknya.",
+    masalah: "Kendala Sistem / Jaringan",
+    dampak: "Request tidak berhasil diselesaikan pada percobaan ini.",
+    sistemAction: "Sistem mencatat rincian kegagalan dan mengembalikan kredit pengguna.",
+    founderAction: "Buka accordion detail teknis di bawah untuk melihat penyebab spesifiknya.",
     severity: "low",
   };
 }
@@ -116,12 +123,12 @@ export default async function AdminErrorsPage() {
       <LiveRefresh tables={["error_log"]} label="Error baru tercatat" />
 
       <header className="border-b border-hairline pb-4">
-        <span className="eyebrow text-ember">Pusat Diagnostik</span>
+        <span className="eyebrow text-ember font-bold">Pusat Diagnostik</span>
         <h1 className="mt-1 font-display text-2xl font-bold tracking-display-md text-ink">
           Error Center
         </h1>
-        <p className="mt-1 text-xs text-muted">
-          Penyebab kendala yang diterjemahkan menjadi <strong>Masalah → Dampak → Solusi</strong> agar founder tahu tindakan yang harus diambil.
+        <p className="mt-1 text-xs text-muted leading-relaxed">
+          Penyebab kendala yang diterjemahkan menjadi <strong>Masalah → Dampak → Aksi Sistem → Tindakan Founder</strong> agar operasional bisnis tetap aman tanpa kebingungan teknis.
         </p>
       </header>
 
@@ -151,7 +158,7 @@ export default async function AdminErrorsPage() {
             return (
               <div
                 key={i}
-                className={`surface-card rounded-2xl border p-5 space-y-4 transition-all ${severityBg}`}
+                className={`surface-card rounded-2xl border p-5 space-y-4 transition-all shadow-xs ${severityBg}`}
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -178,27 +185,40 @@ export default async function AdminErrorsPage() {
                   </span>
                 </div>
 
-                {/* Struktur Masalah -> Dampak -> Solusi */}
-                <div className="grid gap-2.5 sm:grid-cols-2">
-                  <div className="rounded-xl border border-hairline bg-surface p-3.5">
-                    <span className="eyebrow text-muted">💥 Dampak ke User</span>
-                    <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
-                      {g.info.dampak}
-                    </p>
+                {/* 4 Pertanyaan Kunci Founder */}
+                <div className="grid gap-2.5 sm:grid-cols-3">
+                  <div className="rounded-xl border border-hairline bg-surface p-3.5 flex flex-col justify-between">
+                    <div>
+                      <span className="eyebrow text-muted">💥 Dampak ke User</span>
+                      <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
+                        {g.info.dampak}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="rounded-xl border border-ember/30 bg-ember/10 p-3.5">
-                    <span className="eyebrow text-ember">🛠️ Solusi &amp; Tindakan</span>
-                    <p className="mt-1.5 text-xs leading-relaxed text-ember-lo font-medium">
-                      {g.info.solusi}
-                    </p>
+                  <div className="rounded-xl border border-hairline bg-surface p-3.5 flex flex-col justify-between">
+                    <div>
+                      <span className="eyebrow text-muted">🤖 Aksi Otomatis Sistem</span>
+                      <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
+                        {g.info.sistemAction}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-ember/30 bg-ember/10 p-3.5 flex flex-col justify-between">
+                    <div>
+                      <span className="eyebrow text-ember font-bold">🛠️ Tindakan Founder</span>
+                      <p className="mt-1.5 text-xs leading-relaxed text-ember-lo font-medium">
+                        {g.info.founderAction}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Technical details (collapsible) */}
                 <details className="group border-t border-hairline/60 pt-2.5">
                   <summary className="cursor-pointer text-micro font-semibold text-muted hover:text-ink select-none flex items-center gap-1.5">
-                    <span>🔍 Lihat Pesan Log Teknis Asli</span>
+                    <span>🔍 Lihat Log Teknis Asli</span>
                   </summary>
                   <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-hairline bg-obsidian p-3 font-mono text-micro leading-relaxed text-muted">
                     {latest.message}

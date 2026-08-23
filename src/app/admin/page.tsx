@@ -348,7 +348,7 @@ export default async function AdminDashboardPage() {
         <div className="mb-2.5 flex items-center justify-between">
           <div>
             <h2 className="eyebrow text-muted">Aktivitas Nyata Kreator</h2>
-            <p className="text-micro text-muted">Siapa, bikin apa, berhasil/gagal, dan alasan jika gagal</p>
+            <p className="text-micro text-muted">Timeline interaksi real-time: siapa, bikin apa, hasil, dan biaya</p>
           </div>
           <span className="text-micro text-muted">12 aktivitas terakhir</span>
         </div>
@@ -358,7 +358,7 @@ export default async function AdminDashboardPage() {
             Belum ada aktivitas konten tercatat hari ini.
           </p>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-hairline bg-surface">
+          <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-xs">
             <ul className="divide-y divide-hairline">
               {recentUsageLogs.map((log) => {
                 const userProfile = log.user_id ? usageProfileMap.get(log.user_id) : null;
@@ -367,15 +367,15 @@ export default async function AdminDashboardPage() {
                 const isSuccess = log.status === "success";
 
                 return (
-                  <li key={log.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-surface-raised/40 transition-colors">
-                    <div className="min-w-0 flex-1">
+                  <li key={log.id} className="p-4 hover:bg-surface-raised/40 transition-colors space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-xs text-ink truncate">{userName}</span>
-                        <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold bg-surface-raised border border-hairline text-muted">
-                          {modName}
+                        <span className="font-display text-xs font-bold text-ink truncate">{userName}</span>
+                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold bg-surface-raised border border-hairline text-ink">
+                          Membuat {modName}
                         </span>
                         <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.2 text-[10px] font-bold ${
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                             isSuccess
                               ? "bg-success/10 text-success border border-success/30"
                               : "bg-danger/10 text-danger border border-danger/30"
@@ -385,17 +385,37 @@ export default async function AdminDashboardPage() {
                         </span>
                       </div>
 
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 text-micro text-muted">
-                        <span>Biaya AI: {formatRp(log.cost_idr || 0)}</span>
-                        <span>• Kredit: {log.credits_charged || 0}</span>
-                        {!isSuccess && log.error_message && (
-                          <span className="text-danger font-medium line-clamp-1">
-                            • Alasan: {log.error_message}
-                          </span>
+                      <span className="font-mono text-micro text-muted">{timeAgo(log.created_at)}</span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-3 text-micro text-muted font-mono">
+                      <span>Biaya AI: {formatRp(log.cost_idr || 0)}</span>
+                      <span>• Kredit: -{log.credits_charged || 1}</span>
+                    </div>
+
+                    {!isSuccess && (
+                      <div className="rounded-xl border border-danger/25 bg-danger/5 p-3 space-y-1.5 text-xs">
+                        <p className="text-ink">
+                          <strong className="text-danger">Masalah:</strong> AI sedang sibuk atau input kepanjangan
+                        </p>
+                        <p className="text-ink">
+                          <strong className="text-danger">Dampak:</strong> Konten sempat gagal dibuat pada percobaan ini
+                        </p>
+                        <p className="text-ink">
+                          <strong className="text-success">Solusi:</strong> Sistem otomatis mencoba cadangan &amp; kredit pengguna aman
+                        </p>
+                        {log.error_message && (
+                          <details className="mt-1.5 pt-1.5 border-t border-danger/15">
+                            <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">
+                              Detail pesan teknis
+                            </summary>
+                            <p className="mt-1 font-mono text-[10px] text-muted whitespace-pre-wrap bg-obsidian/60 p-2 rounded-lg">
+                              {log.error_message}
+                            </p>
+                          </details>
                         )}
                       </div>
-                    </div>
-                    <span className="shrink-0 text-micro text-muted font-mono">{timeAgo(log.created_at)}</span>
+                    )}
                   </li>
                 );
               })}

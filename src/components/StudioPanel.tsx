@@ -129,11 +129,14 @@ export function StudioPanel({
   );
 }
 
+import Link from "next/link";
+
 /**
- * A goal-oriented module card.
+ * A goal-oriented module card with disciplined SaaS metrics and uniform sizing.
  */
 export function StudioTile({
   mod,
+  href,
   title,
   body,
   cost,
@@ -141,7 +144,8 @@ export function StudioTile({
   badge,
   full = false,
 }: {
-  mod: Mod;
+  mod?: Mod;
+  href?: string;
   title: string;
   body?: string;
   cost: number | string;
@@ -149,43 +153,69 @@ export function StudioTile({
   badge?: string;
   full?: boolean;
 }) {
+  const inner = (
+    <div className="flex h-full flex-col justify-between">
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {icon && (
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-raised border border-hairline text-ember shadow-xs transition-colors group-hover:border-ember/40 group-hover:bg-ember/10">
+                {icon}
+              </span>
+            )}
+            <div className="min-w-0">
+              <span className="block font-display text-sm font-bold leading-tight text-ink group-hover:text-ember truncate">
+                {title}
+              </span>
+              {badge && (
+                <span className="inline-block mt-0.5 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-ember/15 text-ember">
+                  {badge}
+                </span>
+              )}
+            </div>
+          </div>
+          <span className="shrink-0 rounded-md bg-surface-raised/80 px-2 py-0.5 font-mono text-[11px] font-medium text-ember border border-hairline whitespace-nowrap">
+            {typeof cost === "number" ? `${cost} kredit` : cost}
+          </span>
+        </div>
+        {body && (
+          <p className="mt-2.5 text-micro leading-snug text-muted line-clamp-2">
+            {body}
+          </p>
+        )}
+      </div>
+
+      <div className="mt-3 flex items-center justify-end">
+        <span className="text-[11px] font-semibold text-muted/80 group-hover:text-ember flex items-center gap-1 transition-colors">
+          Buka <span>→</span>
+        </span>
+      </div>
+    </div>
+  );
+
+  const cardClasses = `surface-card surface-card-interactive group relative flex w-full flex-col justify-between rounded-2xl border p-4 text-left transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:shadow-sm min-h-[125px] sm:min-h-[135px] ${
+    full ? "border-ember/35" : "border-hairline"
+  }`;
+
+  if (href) {
+    return (
+      <Link href={href} className={cardClasses}>
+        {inner}
+      </Link>
+    );
+  }
+
   return (
     <button
       type="button"
-      onClick={() =>
-        window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
-      }
-      className={`surface-card surface-card-interactive group relative flex w-full cursor-pointer flex-col justify-between rounded-xl border p-3.5 text-left transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 ${
-        full ? "border-ember/30" : "border-hairline"
-      }`}
+      onClick={() => {
+        if (mod) {
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }));
+        }
+      }}
+      className={cardClasses}
     >
-      <div className="flex w-full items-start justify-between gap-2">
-        <div className="flex items-center gap-2.5 min-w-0">
-          {icon && (
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-obsidian border border-hairline text-ember text-sm">
-              {icon}
-            </span>
-          )}
-          <div className="min-w-0">
-            <span className="block text-sm font-bold leading-tight text-ink group-hover:text-ember-lo truncate">
-              {title}
-            </span>
-            {badge && (
-              <span className="inline-block mt-0.5 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-ember/15 text-ember">
-                {badge}
-              </span>
-            )}
-          </div>
-        </div>
-        <span className="shrink-0 font-mono text-micro text-ember font-medium whitespace-nowrap">
-          {typeof cost === "number" ? `${cost} kredit` : cost}
-        </span>
-      </div>
-      {body && (
-        <p className="mt-2 text-micro leading-relaxed text-muted line-clamp-2">
-          {body}
-        </p>
-      )}
+      {inner}
     </button>
   );
 }
@@ -198,8 +228,8 @@ export function StudioTileBig({
   title,
   body,
   cost,
-  badge = "Paling Gampang",
-  ctaText = "Minta 3 Ide Sekarang →",
+  badge = "Paling Populer & Cepat",
+  ctaText = "Kasih 3 Ide Sekarang →",
   primary = false,
 }: {
   mod: Mod;
@@ -212,16 +242,18 @@ export function StudioTileBig({
 }) {
   return (
     <div
-      className={`surface-card surface-card-interactive relative overflow-hidden rounded-2xl border p-4 sm:p-5 text-left transition-all duration-[var(--duration-standard)] ease-heat ${
-        primary ? "border-ember/50 shadow-sm" : "border-hairline"
+      className={`surface-card relative overflow-hidden rounded-2xl border p-4 sm:p-5 text-left transition-all duration-[var(--duration-standard)] ease-heat ${
+        primary ? "border-ember/50 shadow-md bg-gradient-to-br from-surface via-surface to-ember/5" : "border-hairline"
       }`}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="eyebrow text-ember flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="eyebrow text-ember flex items-center gap-1.5 font-bold">
           <span className="size-2 rounded-full bg-ember animate-pulse" />
           {badge}
         </span>
-        <span className="font-mono text-xs font-semibold text-ember">{cost} kredit</span>
+        <span className="rounded-full bg-ember/15 px-2.5 py-0.5 font-mono text-xs font-bold text-ember border border-ember/30">
+          {cost} kredit
+        </span>
       </div>
 
       <h2 className="mt-2 font-display text-lg font-bold tracking-display-sm text-ink sm:text-xl">
@@ -234,11 +266,12 @@ export function StudioTileBig({
         onClick={() =>
           window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
         }
-        className="btn-ember mt-3.5 inline-flex min-h-10 w-full items-center justify-center rounded-xl px-4 font-display text-xs sm:text-sm font-bold text-obsidian shadow-sm transition-transform active:scale-[0.99]"
+        className="btn-ember mt-3.5 inline-flex min-h-11 w-full items-center justify-center rounded-xl px-5 font-display text-sm font-bold text-obsidian shadow-sm transition-transform active:scale-[0.99] hover:brightness-105"
       >
         {ctaText}
       </button>
     </div>
   );
 }
+
 
