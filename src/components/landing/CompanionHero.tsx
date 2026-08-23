@@ -4,85 +4,22 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Mascot } from "@/components/Mascot";
 import { ThreeCanvas } from "./ThreeCanvas";
-
-type CompanionState = {
-  id: string;
-  stepNum: string;
-  badge: string;
-  title: string;
-  desc: string;
-  outputTag: string;
-  outputPreview: string;
-  isWorking: boolean;
-};
-
-const COMPANION_STATES: CompanionState[] = [
-  {
-    id: "idle",
-    stepNum: "01",
-    badge: "LAYAR KOSONG",
-    title: "Malesan siap nemenin lo",
-    desc: "Gak perlu bingung mau mulai dari mana. Begitu dibuka, Malesan langsung aktif.",
-    outputTag: "Siap Kolaborasi",
-    outputPreview: "Menunggu topik atau niche lo...",
-    isWorking: false,
-  },
-  {
-    id: "thinking",
-    stepNum: "02",
-    badge: "LAGI MIKIR...",
-    title: "Membaca tren lokal & audiens",
-    desc: "Menganalisis topik viral di Indonesia yang relate dengan target audiens lo.",
-    outputTag: "Analisis Tren",
-    outputPreview: "Menyaring 100+ pola konten viral hari ini...",
-    isWorking: true,
-  },
-  {
-    id: "ideas",
-    stepNum: "03",
-    badge: "IDE DITEMUKAN",
-    title: "3 Angle Konten Niche Lo",
-    desc: "Bukan prompt mentah, tapi 3 sudut pandang matang siap pilih.",
-    outputTag: "3 Angle Siap",
-    outputPreview: "Angle: Trik rahasia dapet klien tanpa portofolio",
-    isWorking: true,
-  },
-  {
-    id: "script",
-    stepNum: "04",
-    badge: "NASKAH SELESAI",
-    title: "Script 45 Detik Siap Syuting",
-    desc: "Lengkap dengan timestamp detik, arahan kamera, dan kalimat CTA.",
-    outputTag: "Naskah 45s",
-    outputPreview: "[00:00] Hook: Stop kirim CV kosongan...",
-    isWorking: true,
-  },
-  {
-    id: "ready",
-    stepNum: "05",
-    badge: "SIAP TAYANG",
-    title: "Subtitle Terbakar & 5 Format",
-    desc: "Auto-CC menyinkronkan teks per kata, format otomatis TikTok & Threads.",
-    outputTag: "Siap Upload",
-    outputPreview: "Video 9:16 + Word-level captions siap export",
-    isWorking: false,
-  },
-];
+import { LivingStudioCanvas, STUDIO_STATES } from "./LivingStudioCanvas";
 
 export function CompanionHero() {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(2); // Start at "Ide Ditemukan"
+  const [isPaused, setIsPaused] = useState(false);
 
   // Auto-advance companion states smoothly
   useEffect(() => {
-    if (isHovered) return;
+    if (isPaused) return;
     const interval = setInterval(() => {
-      setActiveIdx((prev) => (prev + 1) % COMPANION_STATES.length);
-    }, 3600);
+      setActiveIdx((prev) => (prev + 1) % STUDIO_STATES.length);
+    }, 3800);
     return () => clearInterval(interval);
-  }, [isHovered]);
+  }, [isPaused]);
 
-  const current = COMPANION_STATES[activeIdx];
+  const current = STUDIO_STATES[activeIdx];
 
   return (
     <section className="relative overflow-hidden pt-4 pb-12 sm:pt-10 sm:pb-18 lg:pt-12 lg:pb-20">
@@ -98,8 +35,8 @@ export function CompanionHero() {
           <div className="flex justify-center mb-6 lg:hidden">
             <div
               className="relative flex w-full max-w-[340px] flex-col rounded-2xl border border-hairline/80 bg-surface/50 p-4 shadow-sm backdrop-blur-md"
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
             >
               <div className="flex items-center gap-3">
                 <div className="relative size-14 shrink-0 grid place-items-center">
@@ -116,7 +53,7 @@ export function CompanionHero() {
                     {current.title}
                   </p>
                   <p className="font-mono text-[10px] text-muted truncate mt-0.5">
-                    {current.outputPreview}
+                    {current.previewSnippet}
                   </p>
                 </div>
               </div>
@@ -125,13 +62,13 @@ export function CompanionHero() {
               <div className="mt-3 flex items-center justify-between border-t border-hairline/60 pt-2">
                 <span className="font-mono text-[9px] text-muted">Tahap {current.stepNum} dari 05</span>
                 <div className="flex items-center gap-1">
-                  {COMPANION_STATES.map((_, idx) => (
+                  {STUDIO_STATES.map((_, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveIdx(idx)}
                       aria-label={`Tahap ${idx + 1}`}
                       className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        activeIdx === idx ? "w-4 bg-ember" : "w-1.5 bg-muted/30"
+                        activeIdx === idx ? "w-4 bg-ember shadow-[0_0_6px_rgba(255,138,61,0.6)]" : "w-1.5 bg-muted/30"
                       }`}
                     />
                   ))}
@@ -159,7 +96,7 @@ export function CompanionHero() {
               <span className="text-gradient-ember">Bukan bikinnya.</span>
             </h1>
 
-            {/* Short Supporting Subtitle */}
+            {/* Short Supporting Subtitle (Brand Tone) */}
             <p className="mt-4 max-w-lg text-sm sm:text-base lg:text-lg leading-relaxed text-muted">
               AI Creative Companion yang bantu lo cari ide, buat hook, tulis script, sampai siap tayang.
             </p>
@@ -185,8 +122,8 @@ export function CompanionHero() {
               </a>
             </div>
 
-            {/* Trust List: Stacked on Mobile, Horizontal on Desktop */}
-            {/* Desktop Trust Strip */}
+            {/* Trust Info: 3 Compact Cards on Mobile, Horizontal Strip on Desktop */}
+            {/* Desktop Horizontal Strip */}
             <div className="hidden sm:flex mt-7 items-center gap-4 border-t border-hairline/60 pt-4 text-xs text-muted">
               <div className="flex items-center gap-1.5 font-medium">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
@@ -210,91 +147,35 @@ export function CompanionHero() {
               </div>
             </div>
 
-            {/* Mobile Stacked Trust List */}
-            <div className="flex sm:hidden flex-col gap-1.5 mt-5 border-t border-hairline/60 pt-3 text-xs text-muted">
-              <div className="flex items-center gap-2 font-medium">
-                <span className="text-ember font-bold">✓</span>
-                <span><strong className="text-ink">10 kredit gratis</strong> tiap hari</span>
+            {/* Mobile 3 Compact Cards */}
+            <div className="grid sm:hidden grid-cols-3 gap-2 mt-5 w-full border-t border-hairline/60 pt-3 text-[11px]">
+              <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-hairline/70 bg-surface/40 text-center">
+                <span className="font-bold text-ink">10 Kredit</span>
+                <span className="text-[10px] text-muted">Gratis Tiap Hari</span>
               </div>
-              <div className="flex items-center gap-2 font-medium">
-                <span className="text-ember font-bold">✓</span>
-                <span>Login Google tanpa password</span>
+              <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-hairline/70 bg-surface/40 text-center">
+                <span className="font-bold text-ink">Google OAuth</span>
+                <span className="text-[10px] text-muted">Tanpa Password</span>
               </div>
-              <div className="flex items-center gap-2 font-medium">
-                <span className="text-ember font-bold">✓</span>
-                <span>Siap dalam 30 detik</span>
+              <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-hairline/70 bg-surface/40 text-center">
+                <span className="font-bold text-ink">30 Detik</span>
+                <span className="text-[10px] text-muted">Siap Pakai</span>
               </div>
             </div>
           </div>
 
           {/* =========================================================================
-              DESKTOP ONLY: Living AI Workspace (Pixar-personality companion stage) (5 Cols)
+              DESKTOP ONLY: Living AI Studio (3D Holographic Workspace) (5 Cols)
              ========================================================================= */}
-          <div className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center">
-            <div
-              className="relative flex w-full max-w-[420px] min-h-[390px] flex-col items-center justify-between rounded-3xl border border-hairline/80 bg-surface/30 p-7 shadow-xl backdrop-blur-xl transition-all duration-300"
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-            >
-              {/* Subtle Concentric Stage Rings */}
-              <div className="pointer-events-none absolute size-52 rounded-full border border-ember/20 bg-gradient-to-b from-ember/10 via-ember/3 to-transparent shadow-[0_0_40px_-10px_rgba(255,138,61,0.2)]" />
-              <div className="pointer-events-none absolute size-64 rounded-full border border-dashed border-ember/15 animate-[spin_40s_linear_infinite]" />
-
-              {/* Workspace Top Status Header */}
-              <div className="relative z-10 flex w-full items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-ember animate-ping" />
-                  <span className="font-mono text-[10px] font-bold text-ember uppercase tracking-wider">
-                    {current.badge}
-                  </span>
-                </div>
-                {/* 5-Step Mini Indicators */}
-                <div className="flex items-center gap-1">
-                  {COMPANION_STATES.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveIdx(idx)}
-                      aria-label={`Tahap ${idx + 1}`}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        activeIdx === idx ? "w-4 bg-ember" : "w-1.5 bg-muted/30 hover:bg-ember/40"
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Living Mascot Center Stage with Organic Breathing & Visor Scan */}
-              <div className="relative z-10 my-auto flex flex-col items-center">
-                <div className="relative size-32 transition-transform duration-300 hover:scale-105 animate-[bounce-gentle_4s_ease-in-out_infinite]">
-                  <Mascot working={current.isWorking} className="size-full filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.55)]" />
-                </div>
-              </div>
-
-              {/* Intelligent Output Hologram Card */}
-              <div className="relative z-10 w-full rounded-2xl border border-hairline/80 bg-surface/90 p-4 shadow-md backdrop-blur-md transition-all duration-300">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[10px] font-bold text-ember uppercase tracking-wider">
-                    Tahap {current.stepNum} · {current.outputTag}
-                  </span>
-                  <span className="rounded-md border border-hairline bg-surface-raised px-2 py-0.5 font-mono text-[9px] text-muted">
-                    Companion Live
-                  </span>
-                </div>
-
-                <p className="mt-2 font-display text-sm font-bold text-ink">
-                  {current.title}
-                </p>
-                <p className="mt-1 text-micro text-muted leading-relaxed">
-                  {current.desc}
-                </p>
-
-                {/* Live Output Snippet */}
-                <div className="mt-2.5 rounded-lg border border-hairline/60 bg-obsidian/70 px-3 py-1.5 font-mono text-[11px] text-ink/90 truncate">
-                  <span className="text-ember font-bold mr-1.5">›</span>
-                  {current.outputPreview}
-                </div>
-              </div>
-            </div>
+          <div
+            className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+          >
+            <LivingStudioCanvas
+              activeIdx={activeIdx}
+              onSelectState={(idx) => setActiveIdx(idx)}
+            />
           </div>
 
         </div>

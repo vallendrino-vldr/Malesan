@@ -5,7 +5,7 @@ import { Mascot } from "@/components/Mascot";
 
 export function CompactCTA() {
   return (
-    <section className="relative border-t border-hairline/60 bg-obsidian py-14 sm:py-20">
+    <section className="relative border-t border-hairline/60 bg-obsidian py-12 sm:py-16">
       <div className="mx-auto w-full max-w-3xl px-5 sm:px-8 text-center flex flex-col items-center">
         
         {/* Companion Mini Avatar & Dialogue Bubble */}
@@ -14,21 +14,21 @@ export function CompactCTA() {
             <Mascot working={false} className="size-full" />
           </div>
           <span className="text-xs sm:text-sm font-medium text-ink">
-            &ldquo;Gue bantu dari nol sampai siap tayang.&rdquo;
+            &ldquo;Lo mulai aja dulu. Sisanya biar Malesan.&rdquo;
           </span>
         </div>
 
         {/* Closing Invitation Headline */}
-        <h2 className="mt-5 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
+        <h2 className="mt-4 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
           Siap bikin konten pertama lo?
         </h2>
         
         <p className="mt-2 text-xs sm:text-base text-muted max-w-md">
-          Tidak perlu prompt rumit. 10 kredit gratis langsung aktif di akun lo tiap hari.
+          Ga perlu prompt ribet. 10 kredit gratis langsung aktif di akun lo tiap hari.
         </p>
 
         {/* Clean Solid CTA Button */}
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
+        <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
           <Link
             href="/masuk"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-ember px-8 py-3.5 font-display text-base font-bold text-obsidian shadow-sm transition-all duration-200 hover:bg-ember-lo hover:shadow-[0_4px_20px_rgba(255,138,61,0.25)] hover:scale-[1.01] active:scale-[0.99]"
@@ -41,7 +41,7 @@ export function CompactCTA() {
           </Link>
         </div>
 
-        <p className="mt-3.5 text-micro text-muted/70">
+        <p className="mt-3 text-micro text-muted/70">
           Masuk dengan akun Google · Tanpa kartu kredit
         </p>
       </div>

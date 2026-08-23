@@ -3,6 +3,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompanionHero } from "@/components/landing/CompanionHero";
 import { ProductMagic } from "@/components/landing/ProductMagic";
+import { CreatorTestimonials } from "@/components/landing/CreatorTestimonials";
 import { CompactCTA } from "@/components/landing/CompactCTA";
 
 export default function Home() {
@@ -46,15 +47,18 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Experience (Compact 1-2 Viewports) */}
+      {/* Main Experience (Compact 1.5–2 Viewports Total) */}
       <main className="relative z-10 flex-1">
-        {/* Section 1: Hero Experience (Mascot as main character + Headline + CTA) */}
+        {/* Section 1: Hero Experience (Living AI Studio Workspace + Headline + CTA) */}
         <CompanionHero />
 
-        {/* Section 2: Product Magic (Single transformation story) */}
+        {/* Section 2: AI Transformation Timeline */}
         <ProductMagic />
 
-        {/* Section 3: Final Closing CTA */}
+        {/* Section 3: Creator Micro-Testimonials */}
+        <CreatorTestimonials />
+
+        {/* Section 4: Final Closing CTA with Mascot Reaction */}
         <CompactCTA />
       </main>
 
