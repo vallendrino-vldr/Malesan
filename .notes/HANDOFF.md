@@ -35,14 +35,105 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after creator product excellence (§9n).
-**Newest work is §9n — platform-aware zero-brief ideas, truthful AI progress,
-content-profile language, reliable top-up loading, tuned primary/fallback time,
-and authenticated three-engine QA.** Read §9n, then §9m and §9l before touching
-AI; §9k is the provider-layer foundation beneath it.
+Last updated: **2026-08-23**, after the novice first-value pass (§9o).
+**Newest work is §9o — the first result no longer disappears into onboarding,
+the mobile action/result/error path is visible, creator wording is simpler, and
+production first-result QA is reproducible.** Read §9o, then §9n, §9m and §9l
+before touching AI; §9k is the provider-layer foundation beneath it.
 §9j before it: deterministic frame-by-frame video export (WebCodecs + mp4-muxer,
 NOT MediaRecorder). §9i: 3 Auto-CC bugs + netizen/roast + smart recycle.
 Canonical rules live in `AGENTS.md`. This file is state, history and traps.
+
+---
+
+## §9o — Novice first-value and product-language pass (2026-08-23)
+
+**Code checkpoint:** `8bd1dfb`, pushed to `main`. GitHub's Vercel status is
+`success`; `https://www.malesan.my.id` serves HTTP 200 with the new **Matengin
+Ide / Bikin Hook** labels. Service worker is HTTP 200 with `no-store,
+must-revalidate, no-cache`, manifest remains standalone, `/dev-masuk` is 404,
+and anonymous `/api/generate` is 401. No migration was added.
+
+### Root causes found from real user-role walkthroughs
+
+- An ordinary user's first live Ide Hari Ini completed and spent one credit,
+  then `router.refresh()` hit `/app`'s generation-count onboarding gate. Five
+  seconds later the result had been replaced by `/app/onboarding` before it
+  could be read or saved. The gate, not the AI route, caused the loss.
+- At 375×812 the only primary Ide action started below the initial viewport.
+  A person who does not scroll could not reach the product's value action.
+- Finished cards hid usable copy inside disclosure and exposed only a quiet
+  Pipeline text action. A first-time creator could get an answer without seeing
+  what to do next.
+- A zero-credit error rendered below the fixed mobile action dock. It existed in
+  the DOM but the screenshot proved it was outside the user's visible area.
+- Profil mixed accessibility/history/account controls but had no clear entry to
+  the content profile. UMKM owners were forced into creator/in-house language.
+- Auto-CC exposed all style controls at once even though social presets already
+  encode the safe default.
+
+### Product changes
+
+- Removed the count-based onboarding redirect. Onboarding/Creator DNA remains
+  intact and optional from a new **Profil konten lo** card in Profil; completed
+  users manage profiles at `/app/profile`, incomplete users go to
+  `/app/onboarding`.
+- Ide Hari Ini docks **Kasih 3 ide** above the phone nav until results exist,
+  scrolls to a completed result, and focuses a visible alert on failure. Result
+  cards now expose **Salin konten** and **Simpan ke Alur** with explicit success
+  feedback.
+- Creator-facing labels describe outcomes (Matengin Ide, Bikin Hook, Bikin
+  Script, Ubah Format, Bikin App, Alur, Potong Momen, Subtitle Otomatis). Internal
+  module keys, database values and compatibility contracts are unchanged.
+- **Cara pakai** opens with a three-step, one-minute path. It supports an
+  optional captioned video through `NEXT_PUBLIC_TUTORIAL_VIDEO_URL` and
+  `NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL`; the production script/storyboard is
+  `docs/TUTORIAL_VIDEO.md`. No empty video placeholder appears before assets are
+  configured.
+- Auto-CC is preset-first. Detailed colour/font/animation/position/bitrate
+  controls remain under **Atur sendiri — Opsional**. WebCodecs/OPFS rendering,
+  credit charging and export quality were not changed.
+- Login, errors, legal/help and history use human product language. The
+  business/brand profile context now covers an owner-managed business and the
+  prompt explicitly forbids invented personal experience.
+
+### Protected architecture
+
+No change to Global Brain selection, OpenAI-compatible providers, fallback
+ordering, `spend_credits`, ref-keyed refunds, AI usage/cost logging, auth, RLS,
+PWA update logic, or database schema. This was a product-boundary pass, not an
+AI/database rewrite.
+
+### Evidence
+
+- Live ordinary-user API QA: DeepSeek V4 Flash was attempted first; Gemini 3.5
+  Flash succeeded as fallback; exactly one credit was charged; 3,702 tokens were
+  logged; cost mode was `free_quota`; one generation persisted; test data was
+  removed.
+- Deterministic browser regression on local production build **and the custom
+  production domain**: first result stayed visible after refresh, clipboard
+  feedback worked, one real Alur row persisted, and a zero-credit user produced
+  no negative ledger, generation, usage or Alur row. All disposable users were
+  removed.
+- Authenticated Chromium, Firefox and WebKit each passed 16 routes × six
+  viewports (360×800, 375×812, 812×375, 768×1024, 1366×768, 1920×1080), including
+  theme, keyboard focus, PWA registration/manifest, owner AI summary and
+  responsive overflow/accessibility checks.
+- `npm test`, `npm run typecheck`, `npm run lint`, `npm audit --omit=dev` (zero)
+  and `npm run build` (43 routes) pass. `git diff --check` is clean.
+
+### Remaining honest risks
+
+- Ipeenk/DeepSeek was intermittent during this QA window. One call fell back and
+  succeeded; other attempts exhausted the bounded chain and returned the
+  friendly failure path. Do not increase the 60s serverless ceiling. Watch AI
+  Center health/quota and add another fast compatible backup if it repeats.
+- The tutorial video asset has a script and integration slot but has **not** been
+  recorded/configured. The three-step text tutorial is the shipped fallback.
+- WebKit automation is not a physical iPhone. Real iPhone/Android installed-PWA
+  update and real-money top-up approval remain human acceptance gates.
+- The GitHub PAT rotation item in §10 remains unresolved; never print the remote
+  credential while checking it.
 
 ---
 

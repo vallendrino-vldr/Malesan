@@ -68,6 +68,12 @@ const credits = Number(process.env.QA_START_CREDITS ?? '5');
 const service = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+const refillDate = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Jakarta',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(new Date());
 const adminHeaders = {
   apikey: serviceKey,
   Authorization: `Bearer ${serviceKey}`,
@@ -93,7 +99,13 @@ try {
   for (let attempt = 0; attempt < 8; attempt++) {
     const updated = await service
       .from('profiles')
-      .update({ credits_free: credits, credits_paid: 0, is_pro: false, role: 'user' })
+      .update({
+        credits_free: credits,
+        credits_paid: 0,
+        is_pro: false,
+        role: 'user',
+        last_refill_date: refillDate,
+      })
       .eq('id', userId)
       .select('id')
       .maybeSingle();
@@ -361,6 +373,11 @@ def main() -> None:
                 locale="id-ID",
                 timezone_id="Asia/Jakarta",
                 permissions=["clipboard-read", "clipboard-write"],
+                # A production service worker can answer before Playwright's
+                # deterministic /api/generate route sees the request. PWA
+                # behavior has its own browser matrix; this regression owns the
+                # product flow and therefore blocks workers in this context.
+                service_workers="block",
             )
             attach_session(context, success)
             page = context.new_page()
@@ -414,6 +431,7 @@ def main() -> None:
                 reduced_motion="reduce",
                 locale="id-ID",
                 timezone_id="Asia/Jakarta",
+                service_workers="block",
             )
             attach_session(zero_context, zero)
             zero_page = zero_context.new_page()
