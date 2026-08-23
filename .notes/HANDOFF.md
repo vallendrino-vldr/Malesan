@@ -35,8 +35,29 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Complete Brand System Architecture + Holographic AI Companion Splash Rebuild (§9z).
-**Newest work is §9z — Brand System + Splash Rebuild: Integrated official brand assets (/public/branding/logo-header.png, logo-social.png, app-icon.png); Replaced old placeholder circle mark with crisp Header Logo across AppShell, Landing, Admin, Draft, and Topup; Generated favicon, PWA icons (192, 512, maskable), apple-touch-icon, and OpenGraph/Twitter card metadata; Rebuilt MascotSplashScreen into a holographic AI companion workspace introduction with floating idea/script nodes, rotating orbit rings, and brand copy.** Read §9z, then §9y.
+Last updated: **2026-08-24**, after the Header Brand Scale & Presence Polish pass (§9z.1).
+**Newest work is §9z.1 — Header Brand Scale Polish: Expanded desktop header height to 72px (h-16 lg:h-[72px]), scaled official logo to 42px on desktop (h-[30px] sm:h-[32px] lg:h-[42px]), added subtle ember hover glow, established crisp visual hierarchy (Logo > Main Content > Secondary User Actions); Tested across Desktop & Mobile.** Read §9z.1, then §9z.
+
+---
+
+## §9z.1 — Header Brand Scale & Visual Hierarchy Polish (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Desktop Header Scale (`src/components/AppShell.tsx`, `src/components/Logo.tsx`, `src/app/page.tsx`)**:
+   - Header container height expanded to `h-16 lg:h-[72px]`, allowing ample breathing room and alignment.
+   - Logo scaled up to 42px on desktop (`h-[30px] sm:h-[32px] lg:h-[42px]`) preserving exact 3:1 aspect ratio with no stretching.
+   - Added subtle brand glow on hover (`hover:drop-shadow-[0_0_16px_rgba(255,138,61,0.3)] hover:scale-[1.02]`).
+
+2. **Mobile Header Precision**:
+   - Clean 30-32px logo height on phones (`h-[30px] sm:h-[32px]`), perfectly balanced with credit badge and avatar cluster.
+
+3. **Visual Hierarchy Verified**:
+   - Primary Visual Anchor: Malesan Brand Logo.
+   - Secondary: Main workspace canvas.
+   - Tertiary: Quick actions and utility icons.
 
 ---
 

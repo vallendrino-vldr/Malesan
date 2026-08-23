@@ -149,14 +149,14 @@ export function AppShell({
           effect. `/85` over the same colour was likewise indistinguishable from
           solid. Both are gone; the bars look identical. */}
       <header className="area-header relative z-20 border-b border-hairline/70 bg-obsidian">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 lg:h-[72px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo & Brand Identity */}
           <Link
             href="/app"
             aria-label="Malesan"
-            className="flex min-h-11 shrink-0 items-center transition-opacity hover:opacity-85"
+            className="flex shrink-0 items-center transition-opacity hover:opacity-95"
           >
-            <Logo markClass="h-7 sm:h-8" />
+            <Logo markClass="h-[30px] sm:h-[32px] lg:h-[42px]" />
           </Link>
 
           {/* Right utility & user cluster */}

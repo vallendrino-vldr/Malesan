@@ -24,7 +24,7 @@ export function LogoMark({ className = "size-7" }: { className?: string }) {
  */
 export function Logo({
   className = "",
-  markClass = "h-7 sm:h-8",
+  markClass = "h-[30px] sm:h-[32px] lg:h-[42px]",
 }: {
   className?: string;
   markClass?: string;
@@ -40,7 +40,7 @@ export function Logo({
         height={72}
         priority
         unoptimized
-        className={`${markClass} w-auto object-contain transition-transform duration-200 hover:scale-[1.02]`}
+        className={`${markClass} w-auto object-contain transition-all duration-200 hover:drop-shadow-[0_0_16px_rgba(255,138,61,0.3)] hover:scale-[1.02]`}
       />
     </span>
   );

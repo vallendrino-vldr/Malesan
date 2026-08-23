@@ -66,7 +66,7 @@ export default function Home() {
             and normal tracking so the letters breathe. */}
         {/* Was a hand-rolled dot plus plain text — a third variant of the
             wordmark that drifted from the two real ones. One component now. */}
-        <Logo markClass="h-7 sm:h-8" />
+        <Logo markClass="h-[30px] sm:h-[34px] lg:h-[42px]" />
         {/* The toggle lived only in AppShell, which the landing page does not
             use — so the first screen anyone sees had no way to switch themes,
             and the feature looked like it had not shipped. */}
