@@ -196,46 +196,42 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
   return (
     <section className="space-y-6">
       <header>
-        <p className="eyebrow text-ember">Buat yang mau vibe coding</p>
-        <h2 className="mt-3 font-display text-[1.625rem] font-bold leading-tight tracking-display-md text-ink sm:text-3xl">
-          Ceritain aplikasinya. Speknya gue yang bikin.
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-3 py-1 text-micro font-bold text-ember border border-ember/30">
+          <span>⚡</span>
+          <span>AI Builder Studio</span>
+        </div>
+        <h2 className="mt-3 font-display text-2xl font-bold leading-tight tracking-display-md text-ink sm:text-3xl">
+          Ceritain aplikasi yang mau lo bikin.
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-          AI coding agent gak bakal ngasih hasil bagus kalau dikasih instruksi
-          setengah mateng. Ini bikinin lo enam dokumen yang dia baca duluan —
-          PRD, design system, roadmap, aturan agent, skema database, sama prompt
-          pembukanya.
+        <p className="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-muted">
+          AI coding agent butuh instruksi matang. Malesan bakal racik seluruh Blueprint Arsitektur siap koding — PRD, design system, roadmap, aturan agent, skema database, dan prompt pembuka.
         </p>
       </header>
 
-      {/* ---- input ---- */}
-      <div className="surface-card rounded-2xl border border-hairline p-4 sm:p-5">
-        <label htmlFor="vibe-idea" className="eyebrow block text-muted">
-          Mau bikin apa
+      {/* ---- input hero ---- */}
+      <div className="surface-card rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/80 via-surface to-obsidian p-5 sm:p-6 shadow-md">
+        <label htmlFor="vibe-idea" className="eyebrow block text-ember font-bold">
+          Ide &amp; Konsep Aplikasi
         </label>
         <textarea
           id="vibe-idea"
           value={idea}
           onChange={(e) => setIdea(e.target.value)}
           rows={4}
-          placeholder="Contoh: aplikasi buat nyatet pengeluaran harian bareng pasangan, bisa split bill, ada grafik bulanan."
-          className="mt-2 w-full resize-y skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-3 text-[0.9375rem] leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+          placeholder="Contoh: Aplikasi buat nyatet pengeluaran harian bareng pasangan, bisa split bill, ada grafik bulanan, dan gampang dipakai sambil jalan."
+          className="mt-2.5 w-full resize-y skeu-inset rounded-2xl border border-hairline bg-obsidian px-4 py-3.5 text-sm sm:text-base leading-relaxed text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
         />
 
-        {/* A blank textarea is the hardest thing to face on this screen. These
-            are deliberately specific — a vague seed produces a vague spec, and
-            the point of the starters is to show what "enough detail" looks
-            like, not just to fill the box. */}
         {!idea.trim() && (
-          <div className="mt-2.5">
-            <p className="text-micro text-muted">Belum kepikiran? Mulai dari sini:</p>
+          <div className="mt-3">
+            <p className="text-micro text-muted font-medium">Belum kepikiran? Mulai dari ide cepat ini:</p>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {IDEA_STARTERS.map((s) => (
                 <button
                   key={s.label}
                   type="button"
                   onClick={() => setIdea(s.seed)}
-                  className="cursor-pointer rounded-full border border-hairline px-3 py-1.5 text-mini font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+                  className="cursor-pointer rounded-full border border-hairline/80 bg-surface-raised/60 px-3 py-1.5 text-mini font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
                 >
                   {s.label}
                 </button>
@@ -244,54 +240,48 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
           </div>
         )}
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {/* Secondary options in clean subtle grid */}
+        <div className="mt-4 grid gap-3 border-t border-hairline/60 pt-4 sm:grid-cols-2">
           <div>
             <label htmlFor="vibe-stack" className="eyebrow block text-muted">
-              Stack <span className="normal-case tracking-normal">(opsional)</span>
+              Tech Stack <span className="normal-case tracking-normal text-muted/70">(opsional)</span>
             </label>
             <input
               id="vibe-stack"
               value={stack}
               onChange={(e) => setStack(e.target.value)}
-              placeholder="Next.js + Supabase, atau kosongin"
-              className="mt-2 w-full skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+              placeholder="Next.js + Supabase, Flutter, dll."
+              className="mt-1.5 w-full skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-xs sm:text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
             />
           </div>
           <div>
             <label htmlFor="vibe-audience" className="eyebrow block text-muted">
-              Buat siapa{" "}
-              <span className="normal-case tracking-normal">(opsional)</span>
+              Target User <span className="normal-case tracking-normal text-muted/70">(opsional)</span>
             </label>
             <input
               id="vibe-audience"
               value={audience}
               onChange={(e) => setAudience(e.target.value)}
-              placeholder="Pasangan muda di kota besar"
-              className="mt-2 w-full skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
+              placeholder="Pasangan muda, UMKM, mahasiswa"
+              className="mt-1.5 w-full skeu-inset rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-xs sm:text-sm text-ink outline-none transition-colors duration-[var(--duration-standard)] ease-heat placeholder:text-muted/60 focus:border-ember/50"
             />
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <button
             type="button"
             onClick={ask}
             disabled={pending || asking || idea.trim().length < 12}
-            className="btn-ember inline-flex items-center justify-center rounded-xl px-5 py-3 font-display text-[0.9375rem] font-bold text-obsidian disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-ember inline-flex min-h-12 items-center justify-center rounded-xl px-6 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {asking ? "Nyiapin pertanyaan..." : pending ? "Lagi mikirin buat lo..." : "Males mikir. Bikinin speknya."}
+            {asking ? "Nyiapin pertanyaan..." : pending ? "Lagi meracik blueprint..." : "Males mikir. Bikinin Blueprint App →"}
           </button>
-          {/* Read from app_config, not the compiled-in constant. Vibe pricing
-              became admin-editable but this label kept showing 6, so changing
-              the price in the panel left the UI quoting the old one. */}
           <span className="text-xs text-muted">
-            <span className="tabular font-mono text-ink">{cost}</span> kredit · 6
-            dokumen sekali jalan
+            <span className="tabular font-mono font-bold text-ember">{cost}</span> kredit · 6 dokumen arsitektur lengkap
           </span>
         </div>
 
-        {/* Real progress: a step count and a bar that actually advances as each
-            document lands, plus the lava mark so the wait has a heartbeat. */}
         {questions && (
           <div className="mt-5 border-t border-hairline pt-5">
             <VibeQuestions
@@ -308,10 +298,10 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
             <div className="flex items-center gap-3">
               <span className="lava size-8 shrink-0" aria-hidden="true" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm text-ember-lo">{status}</p>
+                <p className="truncate text-sm font-semibold text-ember-lo">{status}</p>
                 {step && (
                   <p className="mt-0.5 font-mono text-micro text-muted">
-                    {step.done} dari {step.total} langkah
+                    {step.done} dari {step.total} dokumen
                   </p>
                 )}
               </div>
@@ -336,26 +326,32 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
         )}
       </div>
 
-      {/* ---- what you get, shown before paying ---- */}
+      {/* ---- what you get: AI Build Blueprint ---- */}
       {!kit && (
-        <ul className="grid list-none gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {VIBE_KIT_DOCS.map((d) => (
-            <li
-              key={d.key}
-              className="surface-card rounded-xl border border-hairline p-4"
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-display text-[0.9375rem] font-bold tracking-display-sm text-ink">
-                  {d.label}
-                </span>
-                <span className="font-mono text-micro text-muted">{d.file}</span>
-              </div>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                {d.blurb}
-              </p>
-            </li>
-          ))}
-        </ul>
+        <section className="space-y-3">
+          <div className="flex items-center justify-between px-0.5">
+            <h3 className="eyebrow text-muted font-bold tracking-wider">AI Build Blueprint</h3>
+            <span className="text-micro font-mono text-muted">6 dokumen standar industri</span>
+          </div>
+          <ul className="grid list-none gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {VIBE_KIT_DOCS.map((d) => (
+              <li
+                key={d.key}
+                className="surface-card rounded-2xl border border-hairline p-4 transition-all hover:border-ember/40 hover:shadow-xs"
+              >
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="font-display text-sm sm:text-[0.9375rem] font-bold tracking-display-sm text-ink">
+                    {d.label}
+                  </span>
+                  <span className="font-mono text-micro text-ember bg-surface-raised px-1.5 py-0.5 rounded border border-hairline">{d.file}</span>
+                </div>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">
+                  {d.blurb}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {/* ---- result ---- */}

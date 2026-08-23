@@ -447,18 +447,22 @@ export default async function AppPage({
         pipeline: <PipelineBoard initialCards={pipelineCards || []} />,
 
         profil: (
-        <div className="reveal space-y-4">
-          <section className="surface-card rounded-2xl border border-ember/30 p-5 shadow-xs">
+        <div className="reveal space-y-5">
+          {/* LEVEL 1: CREATOR ACHIEVEMENT & MILESTONE (TOP) */}
+          <section className="surface-card rounded-3xl border border-ember/35 bg-gradient-to-br from-surface-raised/90 via-surface to-obsidian p-5 sm:p-6 shadow-md">
             <div className="flex items-center justify-between">
-              <span className="eyebrow text-ember font-bold">🔥 Pencapaian Kreator</span>
-              <span className="font-mono text-micro text-ember font-semibold">Bulan Ini</span>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold text-ember border border-ember/30">
+                <span>🔥</span>
+                <span>Pencapaian Kreator</span>
+              </div>
+              <span className="font-mono text-micro text-ember font-semibold bg-surface-raised px-2 py-0.5 rounded border border-hairline">Bulan Ini</span>
             </div>
-            <p className="mt-2 font-display text-lg font-bold text-ink sm:text-xl">
+            <p className="mt-3 font-display text-xl sm:text-2xl font-bold text-ink leading-tight">
               {monthlyGens > 0
                 ? `Lo udah bikin ${monthlyGens} konten bulan ini!`
                 : "Mulai bikin konten pertama lo bulan ini!"}
             </p>
-            <p className="mt-1 text-xs text-muted leading-relaxed">
+            <p className="mt-1.5 text-xs sm:text-sm text-muted leading-relaxed max-w-2xl">
               {monthlyGens >= 20
                 ? "Konsistensi lo gokil banget! Ide lo makin berkembang & akun lo siap terbang."
                 : monthlyGens >= 5
@@ -467,107 +471,110 @@ export default async function AppPage({
             </p>
           </section>
 
-          <section className="surface-card overflow-hidden rounded-2xl border border-ember/30 p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="eyebrow text-ember">Profil konten lo</p>
-                <h2 className="mt-2 font-display text-lg font-bold text-ink">
-                  {profile.onboarding_completed ? "Malesan udah kenal gaya lo" : "Biar hasilnya makin berasa lo"}
-                </h2>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                  Simpan niche, cara ngomong, dan siapa yang mau lo ajak ngobrol.
-                  Bisa punya profil terpisah buat akun pribadi, bisnis, atau klien.
+          {/* LEVEL 2: CREATOR IDENTITY & CREDITS (2-COL ON DESKTOP) */}
+          <div className="grid gap-4 lg:grid-cols-2">
+            {/* Creator DNA & Voice Profile */}
+            <section className="surface-card flex flex-col justify-between rounded-3xl border border-hairline p-5 sm:p-6 transition-all hover:border-ember/40 hover:shadow-xs">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="eyebrow text-ember font-bold">Profil konten lo</span>
+                  <span
+                    className={`rounded-full border px-2.5 py-0.5 text-micro font-semibold ${
+                      profile.onboarding_completed
+                        ? "border-success/30 bg-success/10 text-success"
+                        : "border-ember/30 bg-ember/10 text-ember"
+                    }`}
+                  >
+                    {profile.onboarding_completed ? "Aktif" : "Belum lengkap"}
+                  </span>
+                </div>
+                <h3 className="mt-2 font-display text-lg font-bold text-ink">
+                  {profile.onboarding_completed ? "Malesan kenal gaya konten lo" : "Biar hasilnya makin berasa lo"}
+                </h3>
+                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted">
+                  Simpan niche, cara ngomong, dan siapa yang mau lo ajak ngobrol biar AI langsung nyambung tanpa instruksi berulang.
                 </p>
               </div>
-              <span
-                className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-1 text-micro font-semibold ${
-                  profile.onboarding_completed
-                    ? "border-success/30 bg-success/10 text-success"
-                    : "border-ember/30 bg-ember/10 text-ember"
-                }`}
+
+              <Link
+                href={profile.onboarding_completed ? "/app/profile" : "/app/onboarding"}
+                className="btn-ember mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 font-display text-sm font-bold text-obsidian shadow-xs"
               >
-                {profile.onboarding_completed ? "Siap" : "Belum lengkap"}
-              </span>
+                {profile.onboarding_completed ? "Kelola Profil Konten" : "Kenalin Gaya Gue →"}
+              </Link>
+            </section>
+
+            {/* Account & Credits Overview */}
+            <section className="surface-card flex flex-col justify-between rounded-3xl border border-hairline p-5 sm:p-6 transition-all hover:border-ember/40 hover:shadow-xs">
+              <div>
+                <div className="flex items-center gap-3.5">
+                  <div className="size-12 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface">
+                    {avatar ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatar} alt="" className="size-full object-cover" />
+                    ) : (
+                      <span className="grid size-full place-items-center font-display text-base font-bold text-muted">
+                        {profile.display_name?.charAt(0).toUpperCase() ?? "?"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-display text-base font-bold text-ink">
+                      {profile.display_name ?? "Kreator"}
+                    </p>
+                    <p className="truncate text-xs text-muted">{profile.email}</p>
+                  </div>
+                </div>
+
+                <dl className="mt-4 grid grid-cols-2 gap-2.5">
+                  <Stat label="Kredit gratis" value={profile.credits_free} />
+                  <Stat label="Kredit berbayar" value={profile.credits_paid} />
+                </dl>
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Link
+                  href="/app/topup"
+                  className="btn-ember flex-1 inline-flex min-h-11 items-center justify-center rounded-xl px-4 font-display text-xs sm:text-sm font-bold text-obsidian shadow-xs"
+                >
+                  Top Up Kredit
+                </Link>
+                <Link
+                  href="/app/profile"
+                  className="skeu skeu-press flex-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-4 font-display text-xs sm:text-sm font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
+                >
+                  Referral &amp; Akun
+                </Link>
+              </div>
+            </section>
+          </div>
+
+          {/* LEVEL 3: CREATOR ACTIVITY TIMELINE (HISTORY) */}
+          <section className="space-y-2.5">
+            <div className="flex items-center justify-between px-0.5">
+              <h3 className="eyebrow text-muted font-bold tracking-wider">Aktivitas &amp; Riwayat Konten</h3>
+              <span className="text-micro font-mono text-muted">{history.length} hasil tersimpan</span>
             </div>
-            <Link
-              href={profile.onboarding_completed ? "/app/profile" : "/app/onboarding"}
-              className="btn-ember mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-4 font-display text-sm font-bold text-obsidian"
-            >
-              {profile.onboarding_completed ? "Kelola profil konten" : "Kenalin gaya gue"}
-            </Link>
-          </section>
-
-          <section className="surface-card rounded-2xl p-4">
-            <TextScale />
-          </section>
-
-          <section>
-            <h2 className="eyebrow mb-2 ml-1 text-muted">Riwayat</h2>
             <HistoryList items={history} />
           </section>
-          <section className="surface-card rounded-2xl border border-hairline p-5">
-            <div className="flex items-center gap-4">
-              <div className="size-14 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface">
-                {avatar ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatar} alt="" className="size-full object-cover" />
-                ) : (
-                  <span className="grid size-full place-items-center font-display text-lg font-bold text-muted">
-                    {profile.display_name?.charAt(0).toUpperCase() ?? "?"}
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate font-display text-lg font-bold tracking-display-sm text-ink">
-                  {profile.display_name ?? "Kreator"}
-                </p>
-                <p className="truncate text-sm text-muted">{profile.email}</p>
-              </div>
-            </div>
 
-            <dl className="mt-5 grid grid-cols-2 gap-3">
-              <Stat label="Kredit gratis" value={profile.credits_free} />
-              <Stat label="Kredit berbayar" value={profile.credits_paid} />
-            </dl>
+          {/* FOOTER CONTROLS & UTILITIES */}
+          <div className="space-y-3 pt-2">
+            <section className="surface-card rounded-2xl border border-hairline p-4">
+              <TextScale />
+            </section>
 
-            <div className="mt-4 rounded-xl border border-hairline bg-obsidian px-4 py-3">
-              <p className="eyebrow text-muted">Kode referral</p>
-              <p className="tabular mt-1.5 font-mono text-lg text-ember">
-                {profile.referral_code}
-              </p>
-            </div>
-          </section>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Link
-              href="/app/topup"
-              className="btn-ember grid place-items-center rounded-xl px-5 py-3.5 font-display text-[0.9375rem] font-bold text-obsidian"
-            >
-              Top up kredit
-            </Link>
-            <Link
-              href="/app/profile"
-              className="skeu skeu-press flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-raised px-5 py-3.5 font-display text-[0.9375rem] font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 shrink-0 fill-current">
-                <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm7.4-2.6.1-.9-.1-.9 1.9-1.5-1.9-3.2-2.3.8a7.2 7.2 0 0 0-1.6-.9l-.3-2.4h-3.7l-.4 2.4a7.2 7.2 0 0 0-1.5.9l-2.3-.8L5.4 9.6l1.9 1.5-.1.9.1.9-1.9 1.5 1.8 3.2 2.3-.8c.5.4 1 .7 1.6.9l.3 2.4h3.7l.4-2.4c.5-.2 1-.5 1.5-.9l2.3.8 1.9-3.2-1.9-1.5Z" />
-              </svg>
-              Referral &amp; akun
-            </Link>
-          </div>
-
-          <div className="pt-1">
             <FeedbackModal />
-          </div>
 
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="w-full rounded-xl border border-hairline px-5 py-3 text-sm font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-danger"
-            >
-              Keluar
-            </button>
-          </form>
+            <form action="/auth/signout" method="post">
+              <button
+                type="submit"
+                className="w-full rounded-xl border border-hairline px-5 py-3 text-xs sm:text-sm font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/40 hover:text-danger"
+              >
+                Keluar dari Akun
+              </button>
+            </form>
+          </div>
         </div>
         ),
       }}

@@ -149,31 +149,24 @@ export function AppShell({
           effect. `/85` over the same colour was likewise indistinguishable from
           solid. Both are gone; the bars look identical. */}
       <header className="area-header relative z-20 border-b border-hairline/70 bg-obsidian">
-        <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
-          {/* The name is always here now.
-              It was dropped on phones to win back 78px, and that was the wrong
-              trade: a product people cannot name is a product they cannot
-              recommend, and the header is the only place the name ever appears. */}
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          {/* Logo & Brand Identity */}
           <Link
             href="/app"
             aria-label="Malesan"
-            className="flex min-h-11 shrink-0 items-center"
+            className="flex min-h-11 shrink-0 items-center transition-opacity hover:opacity-85"
           >
-            <Logo markClass="size-7" size="1rem" />
+            <Logo markClass="size-7" size="1.05rem" />
           </Link>
 
-          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            {/* From `sm` up there is room for these in the bar itself. On a
-                phone they move to the strip below — visible and labelled, not
-                hidden behind a menu. */}
+          {/* Right utility & user cluster */}
+          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             <div className="hidden items-center gap-1 sm:flex">
               <RefreshButton variant="icon" />
               <ThemeToggle />
               <TutorialSheet />
             </div>
-            {/* Was a muted hairline pill that read as decoration — the one
-                entry point to the whole admin area, and it went unfound. It is
-                now tinted with the accent so it reads as an action. */}
+
             {isAdmin && (
               <Link
                 href={pendingTopups > 0 ? "/admin/topups" : "/admin"}
@@ -182,11 +175,7 @@ export function AppShell({
                     ? `Panel admin — ${pendingTopups} topup nunggu di-approve`
                     : "Panel admin"
                 }
-                // Idle state carries its "this is an action" signal in the
-                // border, not a background tint. A 10% ember wash under
-                // ember-lo text measured 4.41:1 in the light theme — the tint
-                // was eating exactly the contrast the token was chosen for.
-                className={`relative flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-2.5 transition-colors duration-[var(--duration-standard)] ease-heat ${
+                className={`relative flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                   pendingTopups > 0
                     ? "border-ember bg-ember text-obsidian hover:bg-ember-lo"
                     : "border-ember/45 bg-surface text-ember hover:border-ember hover:bg-surface-raised"
@@ -195,11 +184,6 @@ export function AppShell({
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
                   <path d="M12 2 4 5.5v5.9c0 4.6 3.2 8.4 8 10.6 4.8-2.2 8-6 8-10.6V5.5L12 2Zm0 2.2 6 2.6v4.6c0 3.6-2.4 6.6-6 8.4-3.6-1.8-6-4.8-6-8.4V6.8l6-2.6Z" />
                 </svg>
-                {/* Filled and counted rather than a bare dot: "3" tells the
-                    owner how much money is waiting, a dot only says "something". */}
-                {/* The word is dropped on phones and the count becomes a
-                    badge on the shield. The signal that matters — "someone is
-                    waiting" — survives; the label was what did not fit. */}
                 <span className="eyebrow hidden sm:inline">
                   {pendingTopups > 0 ? `${pendingTopups} topup` : "Admin"}
                 </span>
@@ -213,15 +197,15 @@ export function AppShell({
                 )}
               </Link>
             )}
+
             <CreditDisplay credits={credits} />
-            {/* 44px hit area wrapping a 32px visual avatar, same pattern as
-                the other header icon buttons. */}
+
             <Link
               href="/app?tab=profil"
               aria-label="Profil"
               className="flex min-h-11 min-w-11 shrink-0 items-center justify-center"
             >
-              <span className="block size-8 overflow-hidden rounded-full border border-hairline bg-surface">
+              <span className="block size-8 overflow-hidden rounded-full border border-hairline bg-surface transition-transform hover:scale-105">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -238,39 +222,20 @@ export function AppShell({
             </Link>
           </div>
         </div>
-
-        {/* ---------- phones: the same three controls, spelled out ----------
-            A "⋯" button hid these behind a tap nobody had a reason to make, so
-            somebody could use the product for weeks without ever learning it
-            had a light theme, a reload, or an explanation of itself. A row of
-            named chips costs about 34px of height and removes the guessing.
-            Labels, not icons: an icon is a riddle at this size. */}
       </header>
 
-      {/* ---------- phones: the same three controls, spelled out ----------
-          A "⋯" button hid these behind a tap nobody had a reason to make, so
-          somebody could use the product for weeks without ever learning it
-          had a light theme, a reload, or an explanation of itself. A row of
-          named chips costs about 34px of height and removes the guessing.
-          Labels, not icons: an icon is a riddle at this size.
-
-          It is its own grid area rather than a strip inside the header. Same
-          position on screen, but the header stops being two unrelated rows
-          glued together, and the row can be given to something else on desktop
-          without unpicking the header. */}
-      <div className="area-nav relative z-20 flex items-stretch gap-1 border-b border-hairline/60 bg-obsidian px-3 pb-1.5 sm:hidden">
+      {/* Mobile utility strip */}
+      <div className="area-nav relative z-20 flex items-stretch gap-1 border-b border-hairline/60 bg-obsidian px-4 pb-1.5 sm:hidden">
         <ThemeToggle variant="chip" />
         <TutorialSheet variant="chip" />
         <RefreshButton variant="chip" />
       </div>
 
-      {/* ---------- content: the only scrollable region ---------- */}
-      {/* The pipeline is a four-column board; 3xl leaves each column ~170px,
-          which is where the desktop layout collapsed into one word per line. */}
+      {/* Content scroll area */}
       <main className="area-main relative z-10">
         <div
-          className={`mx-auto w-full px-4 py-4 sm:py-6 ${
-            shown === "pipeline" ? "max-w-[1600px]" : shown === "studio" ? "max-w-6xl" : "max-w-3xl"
+          className={`mx-auto w-full px-4 py-4 sm:py-6 sm:px-6 ${
+            shown === "pipeline" ? "max-w-[1600px]" : "max-w-6xl"
           }`}
         >
           {/* Inactive panels stay mounted but hidden. Re-rendering them on every

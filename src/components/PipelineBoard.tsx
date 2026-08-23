@@ -402,19 +402,40 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           drop is noise. */}
       <LiveRefresh tables={LIVE_TABLES} silent />
 
-      {/* ---------- what this board is (shown once, only while empty) ---------- */}
-      {total === 0 && (
-        <div className="surface-card rounded-2xl p-5">
-          <h2 className="font-display text-lg font-bold text-ink">Alur konten</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Tempat ide lo jalan dari mentah sampai tayang. Tiap kartu lewat tiga
-            langkah: <span className="text-ink">hook</span> →{" "}
-            <span className="text-ink">script</span> →{" "}
-            <span className="text-ink">posting</span>. Gak usah mikirin urutannya,
-            tiap kartu bakal ngomong sendiri langkah berikutnya apa.
-          </p>
+      {/* ---------- Creator Workflow Roadmap Strip ---------- */}
+      <div className="surface-card rounded-2xl border border-hairline/80 p-4 sm:p-4.5 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="eyebrow text-ember font-bold">🚀 Alur Kerja Kreator</span>
+              <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-micro text-muted border border-hairline">
+                {total} konten aktif
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-muted">
+              Pantau progres ide dari konsep awal sampai tayang di media sosial.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto text-micro font-medium text-muted">
+            <span className="flex items-center gap-1 text-ink font-semibold rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+              <span className="size-1.5 rounded-full bg-ember" /> 1. Ide
+            </span>
+            <span>→</span>
+            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+              2. Draft
+            </span>
+            <span>→</span>
+            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+              3. Siap
+            </span>
+            <span>→</span>
+            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2 py-1 border border-hairline">
+              4. Tayang
+            </span>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* ---------- phones: stage switcher, one stage at a time ---------- */}
       <div className="md:hidden">

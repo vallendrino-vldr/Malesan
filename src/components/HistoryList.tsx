@@ -83,24 +83,24 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {items.map((it) => {
         const rating = local[it.id] ?? it.performance_rating ?? 0;
         return (
-          <div key={it.id} className="surface-card rounded-xl p-3.5">
+          <div key={it.id} className="surface-card rounded-2xl border border-hairline p-4 transition-all hover:border-ember/40">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="eyebrow text-ember">{MODULE_LABEL[it.module] ?? it.module}</p>
-                <p className="mt-1 line-clamp-2 text-sm leading-snug text-ink">{it.gist}</p>
+                <div className="flex items-center gap-2">
+                  <span className="eyebrow text-ember font-bold">{MODULE_LABEL[it.module] ?? it.module}</span>
+                  <span className="font-mono text-[10px] text-muted bg-surface-raised px-1.5 py-0.5 rounded border border-hairline">{it.credits_spent} kredit</span>
+                </div>
+                <p className="mt-1.5 line-clamp-2 text-xs sm:text-sm leading-snug text-ink">{it.gist}</p>
               </div>
-              <span className="shrink-0 text-right">
-                <span className="block font-mono text-micro text-muted">
-                  {new Date(it.created_at).toLocaleDateString("id-ID", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </span>
-                <span className="eyebrow text-muted">{it.credits_spent} kredit</span>
+              <span className="shrink-0 text-right font-mono text-micro text-muted">
+                {new Date(it.created_at).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "short",
+                })}
               </span>
             </div>
 

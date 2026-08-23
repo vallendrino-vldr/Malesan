@@ -35,8 +35,36 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the Responsive Desktop Horizontal Canvas & Mobile Native App pass (§9v).
-**Newest work is §9v — Studio Responsive Architecture: Desktop Horizontal Command Canvas (Left: Mascot + Greeting + Thesis, Right: Spotlight Hero CTA, Full-width 4x2 Tools Grid in max-w-6xl container); Mobile Native App Layout (Centered mascot, compact hero, 2x4 grid); Tested on 1366x768, 1920x1080, 375x812, 390x844 viewports.** Read §9v, then §9u.
+Last updated: **2026-08-23**, after the Final Product Polish across all 4 authenticated tabs (§9w).
+**Newest work is §9w — Final Product Polish: Unified Design System (Header h-16 max-w-6xl, Bikin App AI Builder Studio, Alur Creator Workflow Roadmap, Profil Creator Achievement & DNA Hierarchy, card rounded-2xl harmony); Tested across Desktop & Mobile.** Read §9w, then §9v.
+
+---
+
+## §9w — Final Product Polish: Unified Design System Across Authenticated App (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Global Header & Container System (`src/components/AppShell.tsx`)**
+   - Harmonized Header container width to `max-w-6xl` (matching main content area), height `h-16`, clean right-side utility & user cluster.
+   - Main content container unified to `max-w-6xl` (`px-4 sm:px-6`) across all tabs for consistent desktop alignment.
+
+2. **Bikin App Tab: AI Builder Experience (`src/components/VibeCodingStudio.tsx`)**
+   - Header badge `⚡ AI Builder Studio`, prompt hero textarea, subtle tech stack & target user options, gold action button *"Males mikir. Bikinin Blueprint App →"*.
+   - Output cards framed as *"AI Build Blueprint"* (6 industry-standard docs).
+
+3. **Alur Tab: Creator Workflow Roadmap (`src/components/PipelineBoard.tsx`)**
+   - Added Onboarding Journey bar: `1. Ide ➔ 2. Draft ➔ 3. Siap ➔ 4. Tayang`.
+   - Kanban boards expand to fill horizontal room smoothly.
+
+4. **Profil Tab: Creator Profile & DNA Hierarchy (`src/app/app/page.tsx`, `src/components/HistoryList.tsx`)**
+   - Level 1: Monthly creator achievement milestone card.
+   - Level 2: Creator DNA & voice profile + Account balance & quick topup CTA.
+   - Level 3: Activity & content history timeline with harmonized `rounded-2xl` cards.
+
+5. **Full Visual Browser Verification:**
+   - Captured and verified 8 screenshots across Desktop (`1366x768`, `1920x1080`) and Mobile (`375x812`, `390x844`) for all 4 tabs: Studio, Bikin App, Alur, Profil.
 
 ---
 
