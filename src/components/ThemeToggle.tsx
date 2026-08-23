@@ -121,17 +121,17 @@ export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip
         onClick={flip}
         role="switch"
         aria-checked={soft}
-        className="hchip"
+        className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-micro font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink cursor-pointer"
         aria-label={soft ? "Lagi tema terang. Tap buat ganti gelap." : "Lagi tema gelap. Tap buat ganti terang."}
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true" className={`size-4 fill-current ${soft ? "text-ember" : ""}`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true" className={`size-3.5 fill-current ${soft ? "text-ember" : ""}`}>
           {soft ? (
             <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-13V2m0 20v-2m8-8h2M2 12h2m12.9-5.9 1.4-1.4M5.7 18.3l1.4-1.4m9.8 1.4 1.4 1.4M5.7 5.7 7.1 7.1" />
           ) : (
             <path d="M12 3a9 9 0 1 0 9 9c0-.3 0-.6 0-.9A7 7 0 0 1 12.9 3H12Z" />
           )}
         </svg>
-        <span className="truncate">{soft ? "Tema terang" : "Tema gelap"}</span>
+        <span className="truncate">{soft ? "Terang" : "Gelap"}</span>
       </button>
     );
   }
@@ -143,63 +143,21 @@ export function ThemeToggle({ variant = "switch" }: { variant?: "switch" | "chip
       aria-checked={soft}
       aria-label={soft ? "Lagi tema terang. Tap buat ganti gelap." : "Lagi tema gelap. Tap buat ganti terang."}
       title={soft ? "Tema terang" : "Tema gelap"}
-      // The button's own box is padded past the visible track so the tap
-      // target clears 44px even though the pill itself reads slimmer — a
-      // control this small is otherwise the easiest thing on the header to miss.
-      className="group relative flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center"
+      className="group relative flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink"
     >
-      <span
-        aria-hidden="true"
-        className={`skeu-inset relative flex h-7 w-[52px] items-center rounded-full border border-hairline px-[3px] transition-colors duration-300 ease-heat ${
-          hint ? "theme-toggle-hint" : ""
-        }`}
-      >
-        {/* Track glyphs. Faded when the thumb is over them, full strength on
-            the side currently active — the icon reinforces state, not just
-            the thumb position, so it reads correctly even color-blind. */}
-        <svg
-          viewBox="0 0 24 24"
-          className={`absolute left-1.5 size-3.5 fill-current transition-opacity duration-300 ${
-            soft ? "text-muted opacity-40" : "text-ember opacity-90"
-          }`}
-        >
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={`size-3.5 fill-current transition-colors ${soft ? "text-ember" : "text-muted"}`}>
+        {soft ? (
           <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-13V2m0 20v-2m8-8h2M2 12h2m12.9-5.9 1.4-1.4M5.7 18.3l1.4-1.4m9.8 1.4 1.4 1.4M5.7 5.7 7.1 7.1" />
-          <circle cx="12" cy="12" r="4" />
-        </svg>
-        <svg
-          viewBox="0 0 24 24"
-          className={`absolute right-1.5 size-3.5 fill-current transition-opacity duration-300 ${
-            soft ? "text-ember-lo opacity-90" : "text-muted opacity-40"
-          }`}
-        >
+        ) : (
           <path d="M12 3a9 9 0 1 0 9 9c0-.3 0-.6 0-.9A7 7 0 0 1 12.9 3H12Z" />
-        </svg>
-
-        {/* The thumb. Raised (not inset) so it visibly protrudes off the
-            recessed track — that contrast is what reads as "3D" and
-            "physically pressable" rather than a flat coloured dot. */}
-        <span
-          className={`skeu relative z-10 flex size-[22px] items-center justify-center rounded-full border border-hairline bg-surface-raised text-ember transition-transform duration-300 ease-heat group-active:scale-90 ${
-            soft ? "translate-x-[24px]" : "translate-x-0"
-          }`}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3 fill-current">
-            {soft ? (
-              <path d="M12 3a9 9 0 1 0 9 9c0-.3 0-.6 0-.9A7 7 0 0 1 12.9 3H12Z" />
-            ) : (
-              <>
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-13V2m0 20v-2m8-8h2M2 12h2m12.9-5.9 1.4-1.4M5.7 18.3l1.4-1.4m9.8 1.4 1.4 1.4M5.7 5.7 7.1 7.1" />
-              </>
-            )}
-          </svg>
-        </span>
-      </span>
+        )}
+      </svg>
+      <span className="hidden xl:inline">{soft ? "Terang" : "Gelap"}</span>
 
       {hint && (
         <span
           role="status"
-          className="pointer-events-none absolute top-full mt-1.5 whitespace-nowrap rounded-md border border-ember/30 bg-obsidian px-2 py-1 text-micro font-semibold text-ember-lo shadow-lg"
+          className="pointer-events-none absolute top-full mt-2 whitespace-nowrap rounded-md border border-ember/30 bg-obsidian px-2.5 py-1 text-micro font-semibold text-ember-lo shadow-lg"
         >
           Coba tema terang →
         </span>

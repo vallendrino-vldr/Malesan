@@ -114,7 +114,12 @@ export function RefreshButton({
 
   if (variant === "chip") {
     return (
-      <button onClick={go} disabled={spinning} className="hchip" aria-label="Muat ulang">
+      <button
+        onClick={go}
+        disabled={spinning}
+        className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-micro font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink disabled:opacity-50 cursor-pointer"
+        aria-label="Muat ulang"
+      >
         {spinner}
         <span className="truncate">{note || "Muat ulang"}</span>
       </button>
@@ -129,17 +134,16 @@ export function RefreshButton({
           disabled={spinning}
           aria-label="Muat ulang"
           title="Muat ulang"
-          className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center disabled:opacity-70"
+          className="flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink disabled:opacity-50"
         >
-          <span className="skeu-press flex size-8 items-center justify-center rounded-full border border-hairline text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45 hover:text-ember">
-            {spinner}
-          </span>
+          {spinner}
+          <span className="hidden xl:inline">{note || "Refresh"}</span>
         </button>
         {note && (
           <span
             role="status"
             aria-live="polite"
-            className="pointer-events-none fixed inset-x-0 top-16 z-40 mx-auto w-fit rounded-full border border-ember/35 bg-ember/15 px-3 py-1.5 text-micro font-semibold text-ember-lo"
+            className="pointer-events-none fixed inset-x-0 top-20 z-40 mx-auto w-fit rounded-full border border-ember/35 bg-ember/15 px-3 py-1.5 text-micro font-semibold text-ember-lo shadow-lg"
           >
             {note}
           </span>

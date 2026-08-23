@@ -35,8 +35,31 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Header Brand Scale & Presence Polish pass (§9z.1).
-**Newest work is §9z.1 — Header Brand Scale Polish: Expanded desktop header height to 72px (h-16 lg:h-[72px]), scaled official logo to 42px on desktop (h-[30px] sm:h-[32px] lg:h-[42px]), added subtle ember hover glow, established crisp visual hierarchy (Logo > Main Content > Secondary User Actions); Tested across Desktop & Mobile.** Read §9z.1, then §9z.
+Last updated: **2026-08-24**, after the Final Header Experience Polish pass (§9z.2).
+**Newest work is §9z.2 — Final Header Experience Polish: Compensated internal PNG whitespace with wrapper overflow-visible and controlled scale(1.22) so the brand logo commands the header like a $100M SaaS product; Redesigned utility controls into premium soft 40px pills (ThemeToggle, TutorialSheet, RefreshButton); Upgraded CreditDisplay to 40px with pulsing indicator; Structured two-row mobile header with logo + credit/profile in top row and soft utility strip below; Tested across Desktop & Mobile.** Read §9z.2, then §9z.1.
+
+---
+
+## §9z.2 — Final Header Experience Polish & SaaS Pill System (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Logo Visual Presence Compensation (`src/components/Logo.tsx`, `AppShell.tsx`, `page.tsx`)**:
+   - Diagnosed 36% transparent vertical padding inside the official PNG asset.
+   - Fixed rendering container with `overflow-visible`, `scale-[1.22]`, `origin-left`, rendering a solid ~38-42px drawn logo mark on desktop (`h-[36px] sm:h-[40px] lg:h-[48px]`).
+   - Sits as the bold, unmistakable visual anchor of the application.
+
+2. **Premium SaaS Pill Button System (`ThemeToggle.tsx`, `TutorialSheet.tsx`, `RefreshButton.tsx`, `CreditDisplay.tsx`)**:
+   - Redesigned all header utility buttons into soft, cohesive 40px pills (36px on mobile).
+   - Low contrast subtle styling (`bg-surface/40 hover:bg-surface-raised border border-hairline/60 text-muted/80 hover:text-ink`) so they don't compete with the brand.
+   - Crisp SVG icons, no emoji, comfortable 14-16px horizontal breathing room.
+   - `CreditDisplay` upgraded to 40px interactive link to `/app/topup` with pulsing ember dot.
+
+3. **Mobile Native App Header Layout**:
+   - Top row: Bold brand logo on left, Credit pill + Avatar on right.
+   - Sub-strip: 3 balanced soft pill buttons spanning the full width with zero clipping or text truncation.
 
 ---
 

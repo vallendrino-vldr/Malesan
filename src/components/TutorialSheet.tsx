@@ -214,25 +214,28 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
           stays 32px so the header does not bloat, and the button's own box
           absorbs the extra hit area. */}
       {variant === "chip" ? (
-        <button onClick={() => setOpen(true)} className="hchip" aria-label="Cara pakai">
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+        <button
+          onClick={() => setOpen(true)}
+          className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-micro font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink cursor-pointer"
+          aria-label="Cara pakai"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm-1 12h2v2h-2v-2Zm1-9c-1.8 0-3 1.1-3 2.8h2c0-.7.4-1 1-1s1 .3 1 .9c0 .5-.3.8-.9 1.2-.8.5-1.1 1-1.1 2.1h2c0-.6.2-.9.9-1.3.9-.6 1.4-1.2 1.4-2.3C15.2 8.1 13.9 7 12 7Z" />
           </svg>
           <span className="truncate">Cara pakai</span>
         </button>
       ) : (
-      <button
-        onClick={() => setOpen(true)}
-        aria-label="Cara pakai"
-        title="Cara pakai"
-        className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center"
-      >
-        <span className="skeu-press flex size-8 items-center justify-center rounded-full border border-hairline text-muted transition-colors duration-[var(--duration-standard)] ease-heat group-hover:border-ember/45 hover:border-ember/45 hover:text-ember">
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Cara pakai"
+          title="Cara pakai"
+          className="flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current text-muted">
             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm-1 12h2v2h-2v-2Zm1-9c-1.8 0-3 1.1-3 2.8h2c0-.7.4-1 1-1s1 .3 1 .9c0 .5-.3.8-.9 1.2-.8.5-1.1 1-1.1 2.1h2c0-.6.2-.9.9-1.3.9-.6 1.4-1.2 1.4-2.3C15.2 8.1 13.9 7 12 7Z" />
           </svg>
-        </span>
-      </button>
+          <span className="hidden xl:inline">Panduan</span>
+        </button>
       )}
 
       {open && mounted && createPortal(

@@ -66,15 +66,15 @@ export default function Home() {
             and normal tracking so the letters breathe. */}
         {/* Was a hand-rolled dot plus plain text — a third variant of the
             wordmark that drifted from the two real ones. One component now. */}
-        <Logo markClass="h-[30px] sm:h-[34px] lg:h-[42px]" />
+        <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
         {/* The toggle lived only in AppShell, which the landing page does not
             use — so the first screen anyone sees had no way to switch themes,
             and the feature looked like it had not shipped. */}
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2.5">
           <ThemeToggle />
           <Link
             href="/masuk"
-            className="rounded-full border border-hairline bg-surface/80 px-4 py-2 font-display text-sm font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+            className="flex h-10 items-center justify-center rounded-full border border-hairline/80 bg-surface/80 px-4 font-display text-sm font-semibold text-ink transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember-lo"
           >
             Masuk
           </Link>

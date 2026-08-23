@@ -149,19 +149,19 @@ export function AppShell({
           effect. `/85` over the same colour was likewise indistinguishable from
           solid. Both are gone; the bars look identical. */}
       <header className="area-header relative z-20 border-b border-hairline/70 bg-obsidian">
-        <div className="mx-auto flex h-16 lg:h-[72px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 lg:h-[76px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo & Brand Identity */}
           <Link
             href="/app"
             aria-label="Malesan"
-            className="flex shrink-0 items-center transition-opacity hover:opacity-95"
+            className="flex shrink-0 items-center overflow-visible transition-opacity hover:opacity-95"
           >
-            <Logo markClass="h-[30px] sm:h-[32px] lg:h-[42px]" />
+            <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
           </Link>
 
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            <div className="hidden items-center gap-1 sm:flex">
+            <div className="hidden items-center gap-2 sm:flex">
               <RefreshButton variant="icon" />
               <ThemeToggle />
               <TutorialSheet />
@@ -175,10 +175,10 @@ export function AppShell({
                     ? `Panel admin — ${pendingTopups} topup nunggu di-approve`
                     : "Panel admin"
                 }
-                className={`relative flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                className={`relative flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                   pendingTopups > 0
                     ? "border-ember bg-ember text-obsidian hover:bg-ember-lo"
-                    : "border-ember/45 bg-surface text-ember hover:border-ember hover:bg-surface-raised"
+                    : "border-ember/30 bg-surface/50 text-ember hover:border-ember hover:bg-surface-raised"
                 }`}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
@@ -203,9 +203,9 @@ export function AppShell({
             <Link
               href="/app?tab=profil"
               aria-label="Profil"
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center"
+              className="flex h-10 w-10 shrink-0 items-center justify-center"
             >
-              <span className="block size-8 overflow-hidden rounded-full border border-hairline bg-surface transition-transform hover:scale-105">
+              <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -225,7 +225,7 @@ export function AppShell({
       </header>
 
       {/* Mobile utility strip */}
-      <div className="area-nav relative z-20 flex items-stretch gap-1 border-b border-hairline/60 bg-obsidian px-4 pb-1.5 sm:hidden">
+      <div className="area-nav relative z-20 flex items-center justify-between gap-2 border-b border-hairline/60 bg-obsidian px-4 py-2 sm:hidden">
         <ThemeToggle variant="chip" />
         <TutorialSheet variant="chip" />
         <RefreshButton variant="chip" />
