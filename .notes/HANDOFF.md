@@ -35,8 +35,36 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after the Malesan Brand Experience Rebuild & Premium AI Companion Landing System (§9z.3).
-**Newest work is §9z.3 — Brand Experience Rebuild: Audited and removed all private email addresses from public pages (/privasi, /ketentuan, TutorialSheet), replaced with in-app reporting system; Built 3D WebGL particle mesh (ThreeCanvas.tsx) with reduced-motion fallback; Built interactive Mascot 3D holographic workspace stage (CompanionHero.tsx); Built transformation storytelling pipeline (StorySection.tsx, IDE -> SCRIPT -> HOOK -> CONTENT READY); Built AI Capabilities showcase (CapabilitiesSection.tsx) & Comparison matrix (ComparisonSection.tsx); Tested across Desktop & Mobile.** Read §9z.3, then §9z.2.
+Last updated: **2026-08-24**, after the Landing Experience Correction & Motion Refinement pass (§9z.4).
+**Newest work is §9z.4 — Motion Refinement & Mobile Rebalance: Tightly contained Three.js particle field inside hero (25-32 subtle ambient dust points, 0 content collisions); Rebalanced mobile first viewport (Logo -> Mascot Companion Stage -> Headline -> Copy -> CTA all visible within 800px); Upgraded CTA buttons to solid confident orange (non-gaming); Implemented intelligent single-activity cycling companion hologram; Converted StorySection into 5 sequential cinematic frames; Reframed Capabilities into Problem-Action-Result creator moments; Tested across Desktop & Mobile.** Read §9z.4, then §9z.3.
+
+---
+
+## §9z.4 — Landing Experience Correction & Motion Refinement (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **Controlled Ambient Particle System (`ThreeCanvas.tsx`)**:
+   - Strictly contained within the Hero container (`relative overflow-hidden`).
+   - Reduced to 25-32 micro dust points with 15-25% opacity and slow organic drift.
+   - Zero overlap or collision with headlines, CTAs, cards, or other sections.
+
+2. **Mobile First Viewport Rebalance (`CompanionHero.tsx`)**:
+   - On mobile (`<lg`), Mascot companion stage is rendered prominently above the headline.
+   - Full hierarchy (Logo, Active Mascot, Headline, Copy, CTA, Badges) visible in the first viewport under 2 seconds without scrolling.
+
+3. **Intelligent Single-Card Companion Hologram**:
+   - Replaced multi-card clutter with a single focused activity card that cycles smoothly (*"Ide Harian Ditemukan"* $\rightarrow$ *"Hook 3 Detik Teruji"* $\rightarrow$ *"Script Studio Selesai"* $\rightarrow$ *"Video Auto-CC Terbakar"*).
+   - Interactive manual dots allow instant jumping.
+
+4. **Refined Solid Non-Gaming CTA Styling**:
+   - Clean, confident solid ember button (`bg-ember text-obsidian`) with crisp typography and subtle hover elevation (`hover:bg-ember-lo hover:shadow-[0_4px_20px_rgba(255,138,61,0.25)]`).
+
+5. **5-Frame Sequential Storytelling & Creator Moment Capabilities**:
+   - `StorySection.tsx`: 5 sequential frames from blank screen to content ready.
+   - `CapabilitiesSection.tsx`: 6 Problem $\rightarrow$ AI Action $\rightarrow$ Result creator moments (*"Ketika lo kehabisan ide"*, *"Ketika bingung nulis naskah"*, etc.).
 
 ---
 

@@ -4,8 +4,9 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 /**
- * Lightweight Three.js WebGL Particle Field & Ambient Ember Vortex.
- * GPU-accelerated, SSR-safe, throttles smoothly under reduced-motion.
+ * Refined Three.js WebGL Ambient Particle Field.
+ * Strictly contained, low density (25-35 particles), subtle opacity (15-25%),
+ * slow organic drift. Never collides with content or spills outside hero.
  */
 export function ThreeCanvas({ className = "" }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -14,93 +15,82 @@ export function ThreeCanvas({ className = "" }: { className?: string }) {
     const container = containerRef.current;
     if (!container) return;
 
-    // Check prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // Setup Scene, Camera, Renderer
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
-      60,
+      50,
       container.clientWidth / container.clientHeight,
       0.1,
       1000,
     );
-    camera.position.z = 85;
+    camera.position.z = 90;
 
     let renderer: THREE.WebGLRenderer | null = null;
     try {
       renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
       renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       container.appendChild(renderer.domElement);
     } catch {
-      // Fallback gracefully if WebGL is unavailable
       return;
     }
 
-    // Create particle geometry
-    const particleCount = prefersReducedMotion ? 60 : 160;
+    // Low particle count for ultra-clean, non-distracting ambient dust
+    const particleCount = prefersReducedMotion ? 18 : 32;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
-    const scales = new Float32Array(particleCount);
 
     const emberColor = new THREE.Color("#ff8a3d");
-    const warmGold = new THREE.Color("#ffb347");
-    const deepObsidian = new THREE.Color("#ff5722");
+    const warmGold = new THREE.Color("#ffb86c");
 
     for (let i = 0; i < particleCount; i++) {
       const theta = Math.random() * Math.PI * 2;
-      const radius = 15 + Math.random() * 45;
-      const y = (Math.random() - 0.5) * 60;
+      const radius = 12 + Math.random() * 32;
+      const y = (Math.random() - 0.5) * 45;
 
       positions[i * 3] = Math.cos(theta) * radius;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = Math.sin(theta) * radius;
 
-      // Color variation
-      const mixRatio = Math.random();
-      const mixedColor = mixRatio > 0.5 ? emberColor.clone().lerp(warmGold, Math.random()) : emberColor.clone().lerp(deepObsidian, Math.random());
-
-      colors[i * 3] = mixedColor.r;
-      colors[i * 3 + 1] = mixedColor.g;
-      colors[i * 3 + 2] = mixedColor.b;
-
-      scales[i] = Math.random() * 3.5 + 1.2;
+      const mixed = emberColor.clone().lerp(warmGold, Math.random() * 0.5);
+      colors[i * 3] = mixed.r;
+      colors[i * 3 + 1] = mixed.g;
+      colors[i * 3 + 2] = mixed.b;
     }
 
     geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
-    // Particle Material
     const material = new THREE.PointsMaterial({
-      size: 2.2,
+      size: 1.6,
       vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.22,
       blending: THREE.AdditiveBlending,
+      depthWrite: false,
     });
 
     const particles = new THREE.Points(geometry, material);
     scene.add(particles);
 
-    // Mouse parallax tracking
-    let mouseX = 0;
-    let mouseY = 0;
+    // Subtle parallax
     let targetX = 0;
     let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
 
     const onMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      targetX = x * 10;
-      targetY = y * 8;
+      targetX = x * 4;
+      targetY = y * 3;
     };
 
     window.addEventListener("mousemove", onMouseMove, { passive: true });
 
-    // Resize handler
     const onResize = () => {
       if (!container || !renderer) return;
       const width = container.clientWidth;
@@ -113,23 +103,20 @@ export function ThreeCanvas({ className = "" }: { className?: string }) {
     const resizeObserver = new ResizeObserver(onResize);
     resizeObserver.observe(container);
 
-    // Animation loop
     let animationFrameId: number;
-    const speedMultiplier = prefersReducedMotion ? 0.0006 : 0.0018;
+    const speed = prefersReducedMotion ? 0.0003 : 0.0008;
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Smooth camera interpolation
-      mouseX += (targetX - mouseX) * 0.05;
-      mouseY += (targetY - mouseY) * 0.05;
-      camera.position.x = mouseX;
-      camera.position.y = mouseY;
+      currentX += (targetX - currentX) * 0.03;
+      currentY += (targetY - currentY) * 0.03;
+      camera.position.x = currentX;
+      camera.position.y = currentY;
       camera.lookAt(scene.position);
 
-      // Rotate particle cloud
-      particles.rotation.y += speedMultiplier;
-      particles.rotation.x += speedMultiplier * 0.4;
+      particles.rotation.y += speed;
+      particles.rotation.x += speed * 0.3;
 
       if (renderer) {
         renderer.render(scene, camera);

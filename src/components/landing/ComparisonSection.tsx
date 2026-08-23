@@ -138,10 +138,10 @@ export function ComparisonSection() {
 
             <Link
               href="/masuk"
-              className="mt-8 group inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-ember-hi via-ember to-ember-deep px-8 py-4 font-display text-base font-bold text-obsidian shadow-[0_4px_24px_-4px_rgba(255,138,61,0.45)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_8px_32px_-4px_rgba(255,138,61,0.7)] active:scale-[0.98]"
+              className="mt-7 inline-flex items-center gap-2 rounded-xl bg-ember px-8 py-4 font-display text-base font-bold text-obsidian shadow-sm transition-all duration-200 hover:bg-ember-lo hover:shadow-[0_4px_20px_rgba(255,138,61,0.25)] hover:scale-[1.01] active:scale-[0.99]"
             >
               <span>Mulai bikin konten gratis</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 transition-transform group-hover:translate-x-0.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                 <line x1="5" y1="12" x2="19" y2="12" />
                 <polyline points="12 5 19 12 12 19" />
               </svg>
