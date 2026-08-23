@@ -35,14 +35,43 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-23**, after the novice first-value pass (§9o).
-**Newest work is §9o — the first result no longer disappears into onboarding,
-the mobile action/result/error path is visible, creator wording is simpler, and
-production first-result QA is reproducible.** Read §9o, then §9n, §9m and §9l
-before touching AI; §9k is the provider-layer foundation beneath it.
-§9j before it: deterministic frame-by-frame video export (WebCodecs + mp4-muxer,
-NOT MediaRecorder). §9i: 3 Auto-CC bugs + netizen/roast + smart recycle.
-Canonical rules live in `AGENTS.md`. This file is state, history and traps.
+Last updated: **2026-08-23**, after the SaaS release polish & founder cockpit pass (§9p).
+**Newest work is §9p — Error boundaries across routes, Founder Cockpit in /admin, Studio goal-oriented hierarchy, user feedback center, monthly achievement milestone, and theme harmonization.** Read §9p, then §9o and §9n.
+
+---
+
+## §9p — SaaS Release Polish, Studio Simplification, Founder Cockpit & Feedback Center (2026-08-23)
+
+**Code checkpoint:** Verified via `next build` (42 static/dynamic routes compiled), `tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings), and `npm test` (all invariant & video tests pass).
+
+### Summary of What Was Delivered:
+
+1. **P0: Error Boundaries Across All Route Segments (`src/app/error.tsx`, `src/app/app/error.tsx`, `src/app/admin/error.tsx`)**
+   - Eliminated white-screen crashes for unhandled component errors with Indonesian branded error screens and instant retry buttons.
+
+2. **P1: Founder Cockpit Transformation (`src/app/admin/page.tsx`)**
+   - Transformed `/admin` from developer stats into a Founder Dashboard:
+     - Real Today's Financials (Revenue in IDR, Real AI Cost from `ai_usage_log`, Net Profit, Margin %)
+     - Key Business Metrics Grid (Total Users, Active Pro Users, Today Generations)
+     - Actionable Urgent Items (Pending Topups alert, Gemini API Health)
+     - Live Real User Activity Feed (content created with masked emails and direct timestamps)
+
+3. **P2: Studio UX Simplification & Goal-Oriented Hierarchy (`src/app/app/page.tsx`, `src/components/StudioPanel.tsx`)**
+   - Primary Hero Card: "Cari 3 Ide Konten Hari Ini" with prominent CTA button and fast badge.
+   - Goal Grid: 2-column organized actions ("Matengin Ide", "Bikin Hook", "Naskah Video Lengkap", "Ubah Format Konten", "Subtitle Video Otomatis", "Potong Momen Video", "Bikin Utas / Thread").
+   - Integrated Draft writing link directly in Studio.
+
+4. **P3: Lightweight User Feedback System (`supabase/migrations/00025_user_feedback.sql`, `src/app/actions/feedback.ts`, `src/components/FeedbackModal.tsx`, `src/app/admin/feedback/page.tsx`)**
+   - Applied remote Supabase migration for `user_feedback` table with strict RLS and realtime subscriptions.
+   - Creator-facing modal accessible from Profil tab with topic selector (`Lapor Kendala`, `Usul Fitur`, `Tanya Sesuatu`, `Lainnya`).
+   - Admin management dashboard at `/admin/feedback` with status tags (`Baru`, `Ditinjau`, `Diproses`, `Selesai`) and internal admin notes.
+
+5. **P4: Soft Selling Milestone Achievement (`src/app/app/page.tsx`)**
+   - Added encouraging milestone card in Profil tab counting monthly creations (`"Lo udah bikin X konten bulan ini 🔥"`) instead of aggressive sales prompts.
+
+6. **P5 & P6: Theme Harmony & First-Time Quick Guide (`src/app/globals.css`, `src/components/FirstTimeGuide.tsx`)**
+   - Harmonized soft theme color tokens (`--header-surface`) with the warm obsidian palette.
+   - Added contextual 5-second beginner hint in Studio without intrusive blocking modals.
 
 ---
 

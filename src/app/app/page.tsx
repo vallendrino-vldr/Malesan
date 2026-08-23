@@ -13,6 +13,8 @@ import { LowCreditNotice } from "@/components/CreditNudge";
 import { StudioPanel, StudioTile, StudioTileBig } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
+import { FeedbackModal } from "@/components/FeedbackModal";
+import { FirstTimeGuide } from "@/components/FirstTimeGuide";
 import { jakartaDayKey } from "@/lib/time";
 
 export const metadata: Metadata = {
@@ -95,8 +97,7 @@ export default async function AppPage({
   const needsRefill = profile.last_refill_date !== todayWib;
 
   const isAdmin = profile.role === "admin";
-
-  const [refillResult, pipelineResult, costs, waitingTopups] = await Promise.all([
+  const [refillResult, pipelineResult, costs, waitingTopups, monthlyGens] = await Promise.all([
     // Supabase's builder is a PromiseLike, not a Promise, so it has no
     // `.catch` — wrap it before attaching one. Never block the app on a
     // refill failure.
@@ -151,6 +152,14 @@ export default async function AppPage({
           .eq("status", "pending")
           .then((r) => r.count ?? 0)
       : Promise.resolve(0),
+
+    // Monthly milestone generations
+    supabase
+      .from("generations")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString())
+      .then((r) => r.count ?? 0),
   ]);
 
   if (typeof refillResult === "number") totalCredits = refillResult;
@@ -251,100 +260,130 @@ export default async function AppPage({
               videoNoWm: costVideoNoWm,
             }}
             home={
-        // This used to force everything into `min-h-[calc(100dvh-9.5rem)]` with
-        // `justify-center`, back when it held a hero and two tiles. It now holds
-        // five tiles and a value strip, and squeezing that into a fixed height
-        // is what made it read as cramped and colliding. Natural flow with real
-        // spacing instead — scrolling a little beats crushing everything.
         <div className="reveal relative flex flex-col gap-4 py-1">
-          {/* Warmth lives at the shell level now (AppShell mounts AmbientField
-              full-bleed behind every tab), so it fills the black margins around
-              this centred column instead of being trapped inside it. Content
-              stays z-10 to sit above that layer. */}
           <div className="relative z-10 flex flex-col gap-4">
-          {/* Owner-controlled line, edited live in the admin panel. Absent when
-              empty — no empty box, no reserved space. */}
           {notice && (
             <p className="rounded-xl border border-ember/30 bg-ember/10 px-4 py-2.5 text-sm leading-relaxed text-ember-lo">
               {notice}
             </p>
           )}
 
-          {/* Credits arrive from outside this tab — an admin approving a top-up,
-              the daily refill, a referral paying out. Until now the balance only
-              moved on reload, so the moment someone paid was the moment the
-              product looked broken. This page is a server component, so a
-              refresh re-runs it and the pill recomputes with no client state to
-              keep in sync. RLS scopes the subscription to the user's own row. */}
           <LiveRefresh tables={["profiles"]} label="Kredit lo udah masuk" />
 
-          {/* A heads-up while they can still finish something, not a wall at
-              zero. Hides itself entirely above the threshold. */}
           <LowCreditNotice
             credits={totalCredits}
             mostExpensive={Math.max(costIde, costIdea, costHook, costScript, costRepurpose, costVibe)}
           />
 
-          {/* Content that has been sitting posted for 30+ days, offered for a
-              Gemini re-angle. Renders nothing when there is nothing stale. */}
           <RecycleBanner cards={postedCards} />
 
-          <section className="surface-card relative overflow-hidden rounded-2xl border border-hairline px-5 pb-5 pt-5">
-            <MascotStage className="mx-auto size-28 sm:size-40" />
-            <div className="mt-1 text-center">
+          {/* Header Sapaan & Maskot */}
+          <section className="surface-card relative overflow-hidden rounded-2xl border border-hairline px-5 py-4 text-center">
+            <MascotStage className="mx-auto size-24 sm:size-32" />
+            <div className="mt-1">
               <p className="eyebrow text-ember">
                 {greet()}, {profile.display_name?.split(" ")[0] ?? "kreator"}
               </p>
-              <h1 className="mt-2 font-display text-[1.3125rem] font-bold leading-tight tracking-display-md text-ink sm:text-2xl">
-                Gak usah mikir. Tinggal pilih.
+              <h1 className="mt-1 font-display text-lg font-bold tracking-display-md text-ink sm:text-xl">
+                Males mikirnya. Bukan bikinnya.
               </h1>
             </div>
           </section>
 
-          <div className="grid gap-3">
-            {/* Costs are admin-editable now, so reading them from config keeps
-                the tile from advertising a price that is no longer charged. */}
-            <StudioTileBig
-              mod="ide"
-              title="Ide Hari Ini"
-              body="Gak usah ngetik apa-apa. Langsung dapet 3 ide buat hari ini."
-              cost={costIde}
-              primary
-            />
-            <StudioTileBig
-              mod="idea"
-              title="Matengin Ide"
-              body="Punya ide mentah? Lempar, balik jadi 5 yang udah mateng."
-              cost={costIdea}
-            />
-          </div>
+          {/* Panduan Kilat Khusus Pemula */}
+          <FirstTimeGuide />
 
-          {/* Hook Lab, Script Builder and Repurpose shipped in the backend from
-              the start with no way in. Compact row so the dashboard still fits
-              one screen — the two primaries stay the headline. */}
-          <div className="grid grid-cols-3 gap-2">
-            <StudioTile mod="hook" title="Bikin Hook" cost={costHook} />
-            <StudioTile mod="script" title="Bikin Script" cost={costScript} />
-            <StudioTile mod="repurpose" title="Ubah Format" cost={costRepurpose} />
-          </div>
+          {/* 1. HERO CTA UTAMA: Cari Ide Konten */}
+          <StudioTileBig
+            mod="ide"
+            title="Cari 3 Ide Konten Hari Ini"
+            body="Gak usah ngetik apa-apa. Langsung dapet 3 ide segar siap posting lengkap dengan hook & naskah."
+            cost={costIde}
+            badge="Paling Populer & Cepat"
+            ctaText="Kasih 3 Ide Sekarang →"
+            primary
+          />
 
-          {/* The only door to /app/draft. The editor and its route shipped with
-              nothing linking to them, which is the same failure as Hook Lab and
-              Script above: built, working, and unreachable.
+          {/* 2. MENU TUJUAN KREATIF */}
+          <section>
+            <div className="mb-2 flex items-center justify-between px-0.5">
+              <h2 className="eyebrow text-muted">Mau Bikin Bagian Apa?</h2>
+              <span className="text-micro text-muted">Pilih tujuan lo</span>
+            </div>
 
-              A real <Link>, not a StudioTile, because the drafts live on their
-              own route rather than in the client-side module switcher — and it
-              carries no credit price, because writing is free. */}
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              <StudioTile
+                mod="idea"
+                title="Matengin Ide Mentah"
+                body="Punya ide kasar? Lempar, balik jadi 5 konsep mateng."
+                cost={costIdea}
+                icon="💡"
+              />
+              <StudioTile
+                mod="hook"
+                title="Bikin Hook Nangkep"
+                body="10 kalimat pembuka biar penonton betah & gak scroll."
+                cost={costHook}
+                icon="🪝"
+              />
+              <StudioTile
+                mod="script"
+                title="Naskah Video Lengkap"
+                body="Script per-scene siap syuting + arahan visual & CTA."
+                cost={costScript}
+                icon="📝"
+              />
+              <StudioTile
+                mod="repurpose"
+                title="Ubah Format Konten"
+                body="1 materi jadi video TikTok, carousel IG, thread X, & LinkedIn."
+                cost={costRepurpose}
+                icon="♻️"
+              />
+              <StudioTile
+                mod="video"
+                title="Subtitle Video Otomatis"
+                body="Auto caption animasi kata-per-kata, export MP4 jernih."
+                cost={`${costVideo}/m`}
+                icon="🎬"
+                badge="Tools Video"
+              />
+              <StudioTile
+                mod="clip"
+                title="Potong Momen Video"
+                body="Deteksi part paling seru & engaging dari video lo."
+                cost={costClip}
+                icon="✂️"
+              />
+              <StudioTile
+                mod="thread"
+                title="Bikin Utas / Thread"
+                body="Rangkai cerita jadi thread yang enak dibaca di X & Threads."
+                cost={costThread}
+                icon="💬"
+              />
+            </div>
+          </section>
+
+          {/* 3. DRAFT & CATATAN BEBAS */}
           <Link
             href="/app/draft"
             className="group flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface px-4 py-3 transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35"
           >
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-ink">Draft lo</span>
-              <span className="mt-0.5 block text-micro leading-snug text-muted">
-                Nulis sendiri, kesimpen otomatis. Mentok? Tekan Tab, biar gue terusin.
+            <div className="flex items-center gap-3 min-w-0">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-obsidian border border-hairline text-ember text-sm">
+                ✍️
               </span>
-            </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="block text-sm font-semibold text-ink group-hover:text-ember-lo">Draft & Catatan Bebas</span>
+                  <span className="rounded px-1.5 py-0.2 text-[10px] font-semibold bg-surface-raised border border-hairline text-muted">Gratis</span>
+                </div>
+                <span className="mt-0.5 block text-micro leading-snug text-muted">
+                  Nulis sendiri, kesimpen otomatis. Mentok? Tekan Tab, biar gue terusin.
+                </span>
+              </div>
+            </div>
             <svg
               viewBox="0 0 24 24"
               aria-hidden="true"
@@ -354,10 +393,7 @@ export default async function AppPage({
             </svg>
           </Link>
 
-          {/* The dashboard never said what the product is good for. Three lines,
-              no scroll added, and no swipes at anything else. */}
-          {/* `truncate` was cutting these off on a 360px screen — three columns
-              of clipped text is worse than no strip at all. Wrapping instead. */}
+          {/* 4. VALUE STRIP */}
           <ul className="grid grid-cols-3 gap-2 rounded-xl border border-hairline bg-surface/50 px-3 py-3">
             {[
               { k: "Nyambung", v: "Ngikutin gaya lo" },
@@ -371,7 +407,7 @@ export default async function AppPage({
             ))}
           </ul>
           </div>
-            </div>
+        </div>
             }
           />
         ),
@@ -382,6 +418,26 @@ export default async function AppPage({
 
         profil: (
         <div className="reveal space-y-4">
+          {/* PENCAPAIAN BULAN INI (Soft Sell / Milestone Progress) */}
+          <section className="surface-card rounded-2xl border border-ember/30 bg-ember/5 p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <span className="eyebrow text-ember">🔥 Pencapaian Lo</span>
+              <span className="font-mono text-micro text-ember font-semibold">Bulan Ini</span>
+            </div>
+            <p className="mt-2 font-display text-lg font-bold text-ink sm:text-xl">
+              {monthlyGens > 0
+                ? `Lo udah bikin ${monthlyGens} konten bulan ini!`
+                : "Mulai bikin konten pertama lo bulan ini!"}
+            </p>
+            <p className="mt-1 text-xs text-muted leading-relaxed">
+              {monthlyGens >= 20
+                ? "Konsistensi lo gokil banget! Algoritma suka kreator yang aktif kayak lo."
+                : monthlyGens >= 5
+                ? "Langkah awal yang keren. Lanjutin terus biar makin terbiasa bikin konten."
+                : "Konsisten adalah kunci. Satu ide sehari bisa bawa akun lo terbang."}
+            </p>
+          </section>
+
           <section className="surface-card overflow-hidden rounded-2xl border border-ember/30 p-5">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -460,10 +516,6 @@ export default async function AppPage({
             >
               Top up kredit
             </Link>
-            {/* Was a bare centred label with no icon and no press state, sitting
-                next to a filled primary button — it read as a disabled twin
-                rather than a secondary action. Same physics as the module tiles
-                now: raised surface, chevron, and a press response. */}
             <Link
               href="/app/profile"
               className="skeu skeu-press flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-raised px-5 py-3.5 font-display text-[0.9375rem] font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
@@ -473,6 +525,10 @@ export default async function AppPage({
               </svg>
               Referral &amp; akun
             </Link>
+          </div>
+
+          <div className="pt-1">
+            <FeedbackModal />
           </div>
 
           <form action="/auth/signout" method="post">
@@ -501,10 +557,6 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-/**
- * WIB, not the server's timezone. A greeting that says "selamat pagi" to
- * someone in Jakarta at 9pm is a small thing that makes a product feel foreign.
- */
 function greet() {
   const wib = new Date(Date.now() + 7 * 3600 * 1000).getUTCHours();
   // 00:00-03:59 is not "pagi" to anyone awake at that hour — it was greeting

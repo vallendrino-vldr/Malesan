@@ -13,6 +13,8 @@ import { LiveRefresh } from "@/components/LiveRefresh";
  * one problem, not a hundred.
  */
 
+export const dynamic = "force-dynamic";
+
 type Row = {
   id: number;
   scope: string;
@@ -24,50 +26,70 @@ type Row = {
   created_at: string;
 };
 
-/** Plain-language reading of the common upstream failures. */
-function explain(r: Row): { title: string; fix: string } {
+/** Plain-language reading: Masalah -> Dampak -> Solusi */
+function explain(r: Row): {
+  masalah: string;
+  dampak: string;
+  solusi: string;
+  severity: "low" | "medium" | "high";
+} {
   const m = r.message.toLowerCase();
   if (r.status === 429 || m.includes("rate limit") || m.includes("quota")) {
     return {
-      title: "Kuota Gemini kepentok",
-      fix: "Key ini udah nyampe batas harian. Tambah key baru di env, atau tunggu reset jam 07:00 WIB (00:00 Pacific).",
+      masalah: "Kuota Harian API AI Kepentok",
+      dampak: "Pembuatan konten sempat tertunda atau gagal sebelum berpindah key.",
+      solusi: "Sistem otomatis merotasi ke key cadangan. Jika semua key habis, tunggu kuota reset jam 07:00 WIB atau tambahkan API key baru di Vercel env.",
+      severity: "high",
     };
   }
   if (r.status === 404 || m.includes("not found")) {
     return {
-      title: "Model gak ketemu",
-      fix: `Id model "${r.model ?? "?"}" gak dikenal Google. Cek ejaannya di Otak AI — salah satu huruf aja bikin semua generate gagal.`,
+      masalah: "Model AI Tidak Dikenal Provider",
+      dampak: "Semua request yang diarahkan ke model ini akan gagal total.",
+      solusi: `ID model "${r.model ?? "?"}" tidak valid. Cek ejaan ID model di menu Otak AI / Provider di admin panel.`,
+      severity: "high",
     };
   }
   if (r.status === 403 || m.includes("permission") || m.includes("api key")) {
     return {
-      title: "Key ditolak",
-      fix: "API key-nya gak valid, dicabut, atau Generative Language API belum diaktifin di project Google-nya.",
+      masalah: "API Key Ditolak oleh Provider",
+      dampak: "Request ke provider terkait ditolak dan gagal dieksekusi.",
+      solusi: "API key dicabut, tidak valid, atau API belum diaktifkan di Google Cloud Console. Ganti dengan key yang aktif.",
+      severity: "high",
     };
   }
   if (r.status === 400 || m.includes("invalid")) {
     return {
-      title: "Request ditolak",
-      fix: "Biasanya schema atau prompt kepanjangan. Ini bug di sisi kita, bukan salah user.",
+      masalah: "Format Request Ditolak AI",
+      dampak: "Sebagian input user yang terlalu panjang gagal diproses AI.",
+      solusi: "Input atau prompt terlalu panjang. Sistem sudah memotong input secara otomatis.",
+      severity: "medium",
     };
   }
   if ((r.status ?? 0) >= 500 || m.includes("unavailable") || m.includes("overloaded")) {
     return {
-      title: "Server Gemini lagi bermasalah",
-      fix: "Dari sisi Google. Sistem udah otomatis nyoba key lain dan retry — kalau sering, kurangi beban.",
+      masalah: "Server AI Upstream Sedang Sibuk / Gangguan",
+      dampak: "Beberapa percobaan pembuatan konten gagal sementara.",
+      solusi: "Gangguan dari pihak Google/provider. Sistem otomatis melakukan retry ke key cadangan. Tidak perlu tindakan manual kecuali gangguan berlanjut.",
+      severity: "medium",
     };
   }
-  return { title: "Error lain", fix: "Baca pesan aslinya di bawah." };
+  return {
+    masalah: "Kendala Sistem / Koneksi",
+    dampak: "Request tidak berhasil diselesaikan.",
+    solusi: "Periksa detail pesan teknis di bawah untuk melihat penyebab spesifiknya.",
+    severity: "low",
+  };
 }
 
-const timeAgo = (iso: string) => {
+function timeAgo(iso: string) {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (mins < 1) return "barusan";
   if (mins < 60) return `${mins} menit lalu`;
   const h = Math.floor(mins / 60);
   if (h < 24) return `${h} jam lalu`;
   return `${Math.floor(h / 24)} hari lalu`;
-};
+}
 
 export default async function AdminErrorsPage() {
   const { data } = await createServiceRoleClient()
@@ -82,7 +104,7 @@ export default async function AdminErrorsPage() {
   const groups = new Map<string, { rows: Row[]; info: ReturnType<typeof explain> }>();
   for (const r of rows) {
     const info = explain(r);
-    const key = `${info.title}|${r.status ?? ""}|${r.model ?? ""}`;
+    const key = `${info.masalah}|${r.status ?? ""}|${r.model ?? ""}`;
     const g = groups.get(key);
     if (g) g.rows.push(r);
     else groups.set(key, { rows: [r], info });
@@ -90,56 +112,95 @@ export default async function AdminErrorsPage() {
   const grouped = [...groups.values()].sort((a, b) => b.rows.length - a.rows.length);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <LiveRefresh tables={["error_log"]} label="Error baru tercatat" />
 
-      <header>
-        <h1 className="font-display text-xl font-bold text-ink">Error</h1>
-        <p className="mt-1 text-sm leading-relaxed text-muted">
-          Kenapa gagal, bukan cuma berapa kali. Dikelompokin biar seratus kejadian
-          dari satu masalah kebaca sebagai satu masalah.
+      <header className="border-b border-hairline pb-4">
+        <span className="eyebrow text-ember">Pusat Diagnostik</span>
+        <h1 className="mt-1 font-display text-2xl font-bold tracking-display-md text-ink">
+          Error Center
+        </h1>
+        <p className="mt-1 text-xs text-muted">
+          Penyebab kendala yang diterjemahkan menjadi <strong>Masalah → Dampak → Solusi</strong> agar founder tahu tindakan yang harus diambil.
         </p>
       </header>
 
       {grouped.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-hairline px-4 py-10 text-center">
-          <p className="text-sm text-muted">
-            Belum ada error tercatat. Kalau grafik nunjukin error tapi di sini
-            kosong, berarti error-nya kejadian sebelum pencatatan ini dipasang.
+        <div className="rounded-2xl border border-dashed border-hairline px-4 py-12 text-center bg-surface">
+          <span className="text-3xl">✨</span>
+          <p className="mt-3 font-display text-base font-bold text-success">
+            Tidak Ada Error Tercatat
+          </p>
+          <p className="mt-1 text-xs text-muted">
+            Semua sistem berjalan normal tanpa kendala kegagalan AI.
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-4">
           {grouped.map((g, i) => {
             const latest = g.rows[0];
+            const severityBg =
+              g.info.severity === "high"
+                ? "border-danger/40 bg-danger/5"
+                : "border-amber-500/30 bg-amber-500/5";
+            const badgeColor =
+              g.info.severity === "high"
+                ? "bg-danger/10 text-danger border-danger/30"
+                : "bg-amber-500/10 text-amber-400 border-amber-500/30";
+
             return (
-              <div key={i} className="surface-card rounded-xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-display text-[0.9375rem] font-bold text-ink">
-                      {g.info.title}
-                    </p>
-                    <p className="mt-0.5 flex flex-wrap gap-x-2 text-micro text-muted">
-                      {latest.status && <span className="text-danger">HTTP {latest.status}</span>}
-                      {latest.model && <span>{latest.model}</span>}
-                      {latest.key_index != null && <span>key {latest.key_index}</span>}
-                      <span>{timeAgo(latest.created_at)}</span>
+              <div
+                key={i}
+                className={`surface-card rounded-2xl border p-5 space-y-4 transition-all ${severityBg}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">
+                        {g.info.severity === "high" ? "🚨" : "⚠️"}
+                      </span>
+                      <h2 className="font-display text-base font-bold text-ink">
+                        {g.info.masalah}
+                      </h2>
+                    </div>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-micro text-muted font-mono">
+                      {latest.status && <span className="text-danger font-semibold">HTTP {latest.status}</span>}
+                      {latest.model && <span>• {latest.model}</span>}
+                      {latest.key_index != null && <span>• key #{latest.key_index}</span>}
+                      <span>• {timeAgo(latest.created_at)}</span>
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-danger/10 px-2.5 py-1 font-mono text-micro text-danger">
-                    {g.rows.length}×
+
+                  <span
+                    className={`shrink-0 rounded-full border px-3 py-1 font-mono text-xs font-bold ${badgeColor}`}
+                  >
+                    Terjadi {g.rows.length}×
                   </span>
                 </div>
 
-                <p className="mt-2.5 rounded-lg border border-ember/20 bg-ember/5 px-3 py-2 text-mini leading-relaxed text-ember-lo">
-                  {g.info.fix}
-                </p>
+                {/* Struktur Masalah -> Dampak -> Solusi */}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="rounded-xl border border-hairline bg-surface p-3.5">
+                    <span className="eyebrow text-muted">💥 Dampak ke User</span>
+                    <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
+                      {g.info.dampak}
+                    </p>
+                  </div>
 
-                <details className="mt-2">
-                  <summary className="cursor-pointer text-micro text-muted hover:text-ink">
-                    Pesan asli dari Google
+                  <div className="rounded-xl border border-ember/30 bg-ember/10 p-3.5">
+                    <span className="eyebrow text-ember">🛠️ Solusi &amp; Tindakan</span>
+                    <p className="mt-1.5 text-xs leading-relaxed text-ember-lo font-medium">
+                      {g.info.solusi}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Technical details (collapsible) */}
+                <details className="group border-t border-hairline/60 pt-2.5">
+                  <summary className="cursor-pointer text-micro font-semibold text-muted hover:text-ink select-none flex items-center gap-1.5">
+                    <span>🔍 Lihat Pesan Log Teknis Asli</span>
                   </summary>
-                  <pre className="mt-1.5 max-h-40 overflow-auto whitespace-pre-wrap rounded-lg bg-obsidian p-2.5 font-mono text-micro leading-relaxed text-muted">
+                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-hairline bg-obsidian p-3 font-mono text-micro leading-relaxed text-muted">
                     {latest.message}
                   </pre>
                 </details>

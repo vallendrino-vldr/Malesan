@@ -1340,7 +1340,7 @@ button:active .wordmark__slouch,
 }
 
 :root[data-theme="soft"] {
-  --header-surface: #f4f5f7;
+  --header-surface: var(--color-surface);
   --header-shadow:
     0 1px 2px 0 color-mix(in oklab, var(--soft-shade) 30%, transparent),
     0 8px 24px -12px color-mix(in oklab, var(--soft-shade) 55%, transparent);

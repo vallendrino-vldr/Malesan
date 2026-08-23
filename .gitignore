@@ -71,3 +71,6 @@ graphify-out/
 skills-lock.json
 .claude/*
 !.claude/launch.json
+__pycache__/
+*.pyc
+

@@ -96,26 +96,9 @@ export function StudioPanel({
   const videoCost = costs.video ?? 2;
   const videoNoWmCost = costs.videoNoWm ?? 5;
 
-  if (!mod)
-    return (
-      <>
-        {home}
-        {/* The two niche engines, appended here rather than in the dashboard's
-            server pass because that file belongs to another change in flight.
-            Move these into the tile grid in app/page.tsx when it next opens —
-            and delete this block then, or the Studio grows two of each. */}
-        <div className="reveal relative z-10 mt-4 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <StudioTile mod="clip" title="Potong Momen" cost={clipCost} />
-            <StudioTile mod="thread" title="Bikin Thread" cost={threadCost} />
-          </div>
-          {/* Full width rather than left in a lopsided 3rd grid cell: it is the
-              flashiest tool here and earns the spotlight, and the row reads as
-              intentional instead of half-empty. */}
-          <StudioTile mod="video" title="Video Auto-CC" cost={videoCost} full />
-        </div>
-      </>
-    );
+  if (!mod) {
+    return <>{home}</>;
+  }
 
   return (
     <div className="reveal space-y-4">
@@ -147,23 +130,23 @@ export function StudioPanel({
 }
 
 /**
- * A module tile.
- *
- * Renders as a button rather than a link because there is no navigation left to
- * make — the module is already loaded. That also removes the "tapped twice"
- * failure mode at its source: there is no pending state to sit through, because
- * there is no request.
+ * A goal-oriented module card.
  */
 export function StudioTile({
   mod,
   title,
+  body,
   cost,
+  icon,
+  badge,
   full = false,
 }: {
   mod: Mod;
   title: string;
-  cost: number;
-  /** Span the row on its own instead of sitting in a grid cell. */
+  body?: string;
+  cost: number | string;
+  icon?: ReactNode;
+  badge?: string;
   full?: boolean;
 }) {
   return (
@@ -172,70 +155,90 @@ export function StudioTile({
       onClick={() =>
         window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
       }
-      className={`skeu skeu-press group flex min-h-[72px] w-full cursor-pointer flex-col justify-center rounded-xl border border-hairline bg-surface-raised px-2.5 py-3 text-center transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/45 ${
-        full ? "border-ember/30" : ""
+      className={`surface-card surface-card-interactive group relative flex w-full cursor-pointer flex-col justify-between rounded-xl border p-3.5 text-left transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/45 ${
+        full ? "border-ember/30" : "border-hairline"
       }`}
     >
-      <span className="flex items-center justify-center gap-1">
-        <span className="text-mini font-bold leading-tight text-ink group-hover:text-ember-lo">
-          {title}
+      <div className="flex w-full items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5 min-w-0">
+          {icon && (
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-obsidian border border-hairline text-ember text-sm">
+              {icon}
+            </span>
+          )}
+          <div className="min-w-0">
+            <span className="block text-sm font-bold leading-tight text-ink group-hover:text-ember-lo truncate">
+              {title}
+            </span>
+            {badge && (
+              <span className="inline-block mt-0.5 rounded px-1.5 py-0.2 text-[10px] font-semibold bg-ember/15 text-ember">
+                {badge}
+              </span>
+            )}
+          </div>
+        </div>
+        <span className="shrink-0 font-mono text-micro text-ember font-medium whitespace-nowrap">
+          {typeof cost === "number" ? `${cost} kredit` : cost}
         </span>
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-          className="size-3 shrink-0 fill-muted transition-colors group-hover:fill-ember"
-        >
-          <path d="M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6-1.4-1.4Z" />
-        </svg>
-      </span>
-      <span className="mt-1 block font-mono text-micro text-ember-lo">{cost} kredit</span>
+      </div>
+      {body && (
+        <p className="mt-2 text-micro leading-relaxed text-muted line-clamp-2">
+          {body}
+        </p>
+      )}
     </button>
   );
 }
 
 /**
- * The two headline modules. Same dispatch, more room to explain themselves.
+ * The hero headline module tile.
  */
 export function StudioTileBig({
   mod,
   title,
   body,
   cost,
+  badge = "Paling Gampang",
+  ctaText = "Minta 3 Ide Sekarang →",
   primary = false,
 }: {
   mod: Mod;
   title: string;
   body: string;
   cost: number;
+  badge?: string;
+  ctaText?: string;
   primary?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      onClick={() =>
-        window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
-      }
-      className={`surface-card surface-card-interactive group flex w-full cursor-pointer items-center gap-4 rounded-2xl border p-4 text-left ${
-        primary ? "border-ember/35" : "border-hairline"
+    <div
+      className={`surface-card surface-card-interactive relative overflow-hidden rounded-2xl border p-4 sm:p-5 text-left transition-all duration-[var(--duration-standard)] ease-heat ${
+        primary ? "border-ember/50 shadow-sm" : "border-hairline"
       }`}
     >
-      <span
-        aria-hidden="true"
-        className={`grid size-11 shrink-0 place-items-center rounded-xl ${
-          primary ? "btn-ember text-obsidian" : "border border-hairline bg-obsidian text-ember"
-        }`}
-      >
-        <svg viewBox="0 0 24 24" className="size-5 fill-current">
-          <path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2Zm-2 18h4v1a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-1Z" />
-        </svg>
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block font-display text-[1rem] font-bold tracking-display-sm text-ink">
-          {title}
+      <div className="flex items-center justify-between gap-2">
+        <span className="eyebrow text-ember flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-ember animate-pulse" />
+          {badge}
         </span>
-        <span className="mt-0.5 block text-mini leading-relaxed text-muted">{body}</span>
-      </span>
-      <span className="shrink-0 font-mono text-micro text-ember-lo">{cost} kredit</span>
-    </button>
+        <span className="font-mono text-xs font-semibold text-ember">{cost} kredit</span>
+      </div>
+
+      <h2 className="mt-2 font-display text-lg font-bold tracking-display-sm text-ink sm:text-xl">
+        {title}
+      </h2>
+      <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted">{body}</p>
+
+      <button
+        type="button"
+        onClick={() =>
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: mod }))
+        }
+        className="btn-ember mt-3.5 inline-flex min-h-10 w-full items-center justify-center rounded-xl px-4 font-display text-xs sm:text-sm font-bold text-obsidian shadow-sm transition-transform active:scale-[0.99]"
+      >
+        {ctaText}
+      </button>
+    </div>
   );
 }
+
