@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Mascot } from "@/components/Mascot";
 
 const PHASE_MESSAGES: Record<number, string> = {
   1: "Gue baca dulu ide lo...",
   2: "Lagi cari angle yang bikin orang berhenti scroll...",
   3: "Oke, gue susun alurnya...",
+  4: "Hampir selesai. Tinggal gue rapihin...",
 };
 
 interface LivingProcessingCompanionProps {
@@ -22,36 +23,39 @@ export function LivingProcessingCompanion({
 }: LivingProcessingCompanionProps) {
   const [displayedText, setDisplayedText] = useState(PHASE_MESSAGES[1]);
   const [fade, setFade] = useState(true);
+  const currentTextRef = useRef(PHASE_MESSAGES[1]);
 
-  // Smooth crossfade on message change without flickering
   useEffect(() => {
     let targetText = "";
     if (isCompleted || progress >= 100) {
       targetText = "Siap! Konten lo udah beres.";
-    } else if (progress < 30) {
+    } else if (progress < 25) {
       targetText = PHASE_MESSAGES[1];
-    } else if (progress < 65) {
+    } else if (progress < 55) {
       targetText = PHASE_MESSAGES[2];
-    } else {
+    } else if (progress < 85) {
       targetText = PHASE_MESSAGES[3];
+    } else {
+      targetText = PHASE_MESSAGES[4];
     }
 
-    if (targetText && targetText !== displayedText) {
+    if (targetText && targetText !== currentTextRef.current) {
+      currentTextRef.current = targetText;
       setFade(false);
-      const timeout = setTimeout(() => {
+      const timer = setTimeout(() => {
         setDisplayedText(targetText);
         setFade(true);
-      }, 250);
-      return () => clearTimeout(timeout);
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  }, [progress, isCompleted, displayedText]);
+  }, [progress, isCompleted]);
 
-  // Determine mascot mood based on processing phase
+  // Determine mascot mood based on processing progress
   const mascotMood = isCompleted || progress >= 100
     ? "ready"
-    : progress < 30
+    : progress < 25
     ? "thinking"
-    : progress < 65
+    : progress < 55
     ? "ideas"
     : "script";
 
@@ -66,7 +70,7 @@ export function LivingProcessingCompanion({
         } ${
           fade
             ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 -translate-y-1.5 scale-95"
+            : "opacity-0 -translate-y-1 scale-95"
         }`}
       >
         <p
@@ -101,7 +105,7 @@ export function LivingProcessingCompanion({
 
         {/* Mascot Centerpiece with Continuous Breathing Motion */}
         <div className="relative z-10 size-20 sm:size-24 animate-[bounce-gentle_3s_ease-in-out_infinite] drop-shadow-[0_8px_24px_rgba(255,138,61,0.3)]">
-          <Mascot mood={mascotMood} className="size-full" />
+          <Mascot mood={mascotMood as any} className="size-full" />
         </div>
 
         {/* Glowing Pedestal Base */}

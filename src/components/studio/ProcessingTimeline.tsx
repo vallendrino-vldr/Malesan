@@ -17,32 +17,32 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
     title: "Membaca ide lo",
     subtitle: "Nyari pola terbaik dari topik yang kamu kasih.",
     minProgress: 0,
-    maxProgress: 30,
+    maxProgress: 25,
     label: "0%",
   },
   {
     id: 2,
     title: "Nyaring kemungkinan",
     subtitle: "Milih angle yang paling cocok buat audiens lo.",
-    minProgress: 30,
-    maxProgress: 65,
-    label: "30%",
+    minProgress: 25,
+    maxProgress: 55,
+    label: "25%",
   },
   {
     id: 3,
     title: "Menyusun naskah",
     subtitle: "Ngebangun hook 3 detik, isi daging, dan CTA.",
-    minProgress: 65,
-    maxProgress: 95,
-    label: "65%",
+    minProgress: 55,
+    maxProgress: 85,
+    label: "55%",
   },
   {
     id: 4,
     title: "Siap dipakai",
     subtitle: "Konten pertama lo sudah siap.",
-    minProgress: 95,
+    minProgress: 85,
     maxProgress: 100,
-    label: "100%",
+    label: "85%",
   },
 ];
 
@@ -58,6 +58,7 @@ export function ProcessingTimeline({
 }: ProcessingTimelineProps) {
   // Clamped display progress (0 to 100)
   const displayProgress = Math.min(100, Math.max(0, isCompleted ? 100 : progress));
+  const completedOr100 = isCompleted || displayProgress >= 100;
 
   return (
     <div className="relative w-full space-y-4 px-1 sm:px-2">
@@ -67,14 +68,14 @@ export function ProcessingTimeline({
       <div className="relative mb-3.5 w-full">
         {/* Track Background */}
         <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/[0.08] border border-white/[0.05]">
-          {/* Active Gradient Fill Bar */}
+          {/* Active Gradient Fill Bar (Direct RAF GPU transform without CSS lag/conflict) */}
           <div
-            className={`h-full rounded-full transition-all duration-300 ease-out ${
-              isCompleted || displayProgress >= 100
+            className={`h-full rounded-full ${
+              completedOr100
                 ? "bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-[0_0_14px_rgba(52,211,153,0.7)]"
                 : "bg-gradient-to-r from-ember via-[#ff9b4e] to-ember shadow-[0_0_12px_rgba(255,138,61,0.6)]"
             }`}
-            style={{ width: `${displayProgress}%` }}
+            style={{ width: `${displayProgress}%`, willChange: "width" }}
           />
         </div>
 
@@ -82,24 +83,20 @@ export function ProcessingTimeline({
         {displayProgress > 2 && displayProgress < 99 && !isCompleted && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-3.5 rounded-full bg-[#FFE5CC] border-2 border-ember shadow-[0_0_10px_#ff8a3d,0_0_16px_rgba(255,138,61,0.8)] transition-all duration-300 ease-out"
-            style={{ left: `${displayProgress}%` }}
+            className="pointer-events-none absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-3.5 rounded-full bg-[#FFE5CC] border-2 border-ember shadow-[0_0_10px_#ff8a3d,0_0_16px_rgba(255,138,61,0.8)]"
+            style={{ left: `${displayProgress}%`, willChange: "left" }}
           />
         )}
 
-        {/* 4 Stage Percent Labels on Track */}
+        {/* 5 Stage Percent Labels on Track: 0%, 25%, 55%, 85%, 100% */}
         <div className="mt-1.5 flex items-center justify-between px-1 font-mono text-[9px] sm:text-[10px]">
           {TIMELINE_PHASES.map((p) => {
-            const isPassed = isCompleted || displayProgress >= p.minProgress;
-            const isFinal = p.id === 4;
-
+            const isPassed = completedOr100 || displayProgress >= p.minProgress;
             return (
               <span
                 key={p.id}
-                className={`transition-colors duration-300 ${
-                  isFinal && (isCompleted || displayProgress >= 100)
-                    ? "text-emerald-400 font-semibold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]"
-                    : isPassed
+                className={`transition-colors duration-200 ${
+                  isPassed
                     ? "text-ember font-semibold drop-shadow-[0_0_6px_rgba(255,138,61,0.4)]"
                     : "text-muted/40"
                 }`}
@@ -108,11 +105,22 @@ export function ProcessingTimeline({
               </span>
             );
           })}
+
+          {/* 100% End Marker */}
+          <span
+            className={`transition-colors duration-200 ${
+              completedOr100
+                ? "text-emerald-400 font-semibold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]"
+                : "text-muted/40"
+            }`}
+          >
+            100%
+          </span>
         </div>
       </div>
 
       {/* =====================================================================
-          2. 100% CONTINUOUS, GLITCH-FREE VERTICAL TIMELINE
+          2. 100% CONTINUOUS, LIQUID SMOOTH VERTICAL TIMELINE
          ===================================================================== */}
       <div className="flex flex-col">
         {TIMELINE_PHASES.map((phase, idx) => {
@@ -120,17 +128,17 @@ export function ProcessingTimeline({
 
           // Glitch-Free Phase Logic:
           // Node 1, 2, 3 complete when progress passes their max.
-          // Node 4 is ONLY completed when whole process reaches 100% / isCompleted.
-          const isDone = isCompleted || (!isLast && progress >= phase.maxProgress) || (isLast && (isCompleted || progress >= 100));
+          // Node 4 completes when reaching 100% or isCompleted.
+          const isDone = completedOr100 || (!isLast && progress >= phase.maxProgress) || (isLast && progress >= 100);
           
-          // Node 4 never enters temporary 50ms active pulsing state; Node 3 stays active until completion.
-          const isActive = !isCompleted && !isDone && progress >= phase.minProgress && !isLast;
+          // An individual node is active while progress is within its range
+          const isActive = !completedOr100 && !isDone && progress >= phase.minProgress;
 
           // Compute individual vertical connection line fill percentage (0 to 100%)
           let lineFill = 0;
           if (isDone) {
             lineFill = 100;
-          } else if (isActive || (isLast && progress >= 65)) {
+          } else if (isActive) {
             const range = phase.maxProgress - phase.minProgress;
             lineFill = Math.min(100, Math.max(0, ((progress - phase.minProgress) / range) * 100));
           }
@@ -138,7 +146,7 @@ export function ProcessingTimeline({
           return (
             <div
               key={phase.id}
-              className={`relative flex items-stretch gap-3.5 pb-4 last:pb-0 transition-opacity duration-300 ${
+              className={`relative flex items-stretch gap-3.5 pb-4 last:pb-0 transition-opacity duration-200 ${
                 isActive || (isLast && isDone)
                   ? "opacity-100"
                   : isDone
@@ -152,7 +160,7 @@ export function ProcessingTimeline({
                 <div className="relative z-10 flex size-6 shrink-0 items-center justify-center">
                   {isDone ? (
                     <span
-                      className={`flex size-6 items-center justify-center rounded-full transition-all duration-500 ${
+                      className={`flex size-6 items-center justify-center rounded-full transition-all duration-300 ${
                         isLast
                           ? "bg-emerald-500 text-obsidian shadow-[0_0_16px_rgba(16,185,129,0.7)]"
                           : "bg-ember text-obsidian shadow-[0_0_12px_rgba(255,138,61,0.5)]"
@@ -188,10 +196,10 @@ export function ProcessingTimeline({
                     aria-hidden="true"
                     className="absolute top-[24px] bottom-[-16px] left-1/2 -translate-x-1/2 w-[2px] bg-white/[0.1] pointer-events-none"
                   >
-                    {/* Progressively Filled Gradient Line */}
+                    {/* Progressively Filled Gradient Line (Instant RAF sync without CSS transition stutter) */}
                     <div
-                      className="w-full bg-gradient-to-b from-ember to-ember/60 transition-all duration-300 ease-out"
-                      style={{ height: `${lineFill}%` }}
+                      className="w-full bg-gradient-to-b from-ember to-ember/60"
+                      style={{ height: `${lineFill}%`, willChange: "height" }}
                     />
                   </div>
                 )}
@@ -201,7 +209,7 @@ export function ProcessingTimeline({
               <div className="min-w-0 flex-1 pt-0.5">
                 <div className="flex items-center justify-between gap-2">
                   <p
-                    className={`font-display text-xs sm:text-sm font-semibold transition-colors duration-300 ${
+                    className={`font-display text-xs sm:text-sm font-semibold transition-colors duration-200 ${
                       isLast && isDone
                         ? "text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]"
                         : isActive
@@ -216,9 +224,11 @@ export function ProcessingTimeline({
 
                   {/* Right Status Badge */}
                   <span
-                    className={`rounded-full px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-semibold transition-all duration-300 ${
+                    className={`rounded-full px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-semibold transition-all duration-200 ${
                       isDone
-                        ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        ? isLast
+                          ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                          : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                         : isActive
                         ? "border border-ember/40 bg-ember/15 text-ember animate-pulse"
                         : "border border-white/[0.06] bg-white/[0.03] text-muted/40"
@@ -230,7 +240,7 @@ export function ProcessingTimeline({
 
                 {/* Subtitle helper text */}
                 <p
-                  className={`mt-0.5 text-micro leading-relaxed transition-colors duration-300 ${
+                  className={`mt-0.5 text-micro leading-relaxed transition-colors duration-200 ${
                     isActive ? "text-muted" : isDone ? "text-muted/70" : "text-muted/40"
                   }`}
                 >

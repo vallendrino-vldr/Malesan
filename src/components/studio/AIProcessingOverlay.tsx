@@ -108,22 +108,24 @@ export function GlobalStudioProcessingOverlay() {
         const secs = (now - startTimeRef.current) / 1000;
         setElapsed(secs);
 
-        // Smooth continuous progress curve (0 to 90%)
+        // Smooth continuous 4-phase progress curve (0 to 89%)
         let nextProgress = 0;
         if (secs < 3) {
-          nextProgress = (secs / 3) * 30; // 0-30%
+          nextProgress = (secs / 3) * 25; // 0-25%
         } else if (secs < 7) {
-          nextProgress = 30 + ((secs - 3) / 4) * 35; // 30-65%
+          nextProgress = 25 + ((secs - 3) / 4) * 30; // 25-55%
+        } else if (secs < 13) {
+          nextProgress = 55 + ((secs - 7) / 6) * 30; // 55-85%
         } else {
-          const remainingTime = secs - 7;
-          nextProgress = 65 + (1 - Math.exp(-remainingTime / 6)) * 25; // 65-90%
+          const remainingTime = secs - 13;
+          nextProgress = 85 + (1 - Math.exp(-remainingTime / 8)) * 4; // 85-89%
         }
 
         if (data.chars > 0) {
-          nextProgress = Math.max(nextProgress, 65 + Math.min(23, data.chars / 30));
+          nextProgress = Math.max(nextProgress, 70 + Math.min(18, data.chars / 30));
         }
 
-        const clamped = Math.min(90, Math.max(progressRef.current, nextProgress));
+        const clamped = Math.min(89, Math.max(progressRef.current, nextProgress));
         setProgress(clamped);
         animationRef.current = requestAnimationFrame(loop);
       };
@@ -139,7 +141,7 @@ export function GlobalStudioProcessingOverlay() {
 
       const startProgress = progressRef.current;
       const targetProgress = 100;
-      const durationMs = 500; // Smooth continuous glide to 100%
+      const durationMs = 450; // Smooth continuous glide to 100%
       const startTweenTime = Date.now();
 
       const tweenLoop = () => {
@@ -156,11 +158,11 @@ export function GlobalStudioProcessingOverlay() {
           setProgress(100);
           setVisualCompleted(true);
 
-          // Hold the 100% celebratory completion state for 900ms, then smoothly exit
+          // Hold the 100% celebratory completion state for 850ms, then smoothly exit
           const exitTimer = setTimeout(() => {
             closeStudioProcessing();
             isCompletingRef.current = false;
-          }, 900);
+          }, 850);
 
           return () => clearTimeout(exitTimer);
         }
@@ -180,11 +182,13 @@ export function GlobalStudioProcessingOverlay() {
   const isCompleted = visualCompleted || progress >= 100;
   const currentPhase = isCompleted
     ? 4
-    : progress < 30
+    : progress < 25
     ? 1
-    : progress < 65
+    : progress < 55
     ? 2
-    : 3;
+    : progress < 85
+    ? 3
+    : 4;
 
   const timerFormatted = `${String(Math.floor(elapsed)).padStart(2, "0")}s`;
 
@@ -208,7 +212,7 @@ export function GlobalStudioProcessingOverlay() {
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
             animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 bg-black/65 backdrop-blur-md"
             aria-hidden="true"
           />
@@ -224,11 +228,11 @@ export function GlobalStudioProcessingOverlay() {
             exit={{
               opacity: 0,
               scale: 0.94,
-              y: 20,
-              transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+              y: 16,
+              transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
             }}
-            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative z-10 w-full max-w-[520px] max-h-[92vh] flex flex-col justify-between rounded-[28px] border border-white/[0.08] bg-[#111111] p-4.5 sm:p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85),0_0_60px_rgba(255,138,61,0.22)] backdrop-blur-2xl transition-all duration-500 ${
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            className={`relative z-10 w-full max-w-[520px] max-h-[92vh] flex flex-col justify-between rounded-[28px] border border-white/[0.08] bg-[#111111] p-4.5 sm:p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85),0_0_60px_rgba(255,138,61,0.22)] backdrop-blur-2xl transition-all duration-300 ${
               isCompleted
                 ? "ring-2 ring-emerald-500/50 shadow-[0_0_80px_rgba(16,185,129,0.35)]"
                 : ""
@@ -237,7 +241,7 @@ export function GlobalStudioProcessingOverlay() {
             {/* Ambient Internal Radial Glow */}
             <div
               aria-hidden="true"
-              className={`pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-80 rounded-full blur-2xl transition-all duration-700 ${
+              className={`pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-80 rounded-full blur-2xl transition-all duration-500 ${
                 isCompleted
                   ? "bg-[radial-gradient(circle,rgba(16,185,129,0.25)_0%,transparent_70%)]"
                   : "bg-[radial-gradient(circle,rgba(255,138,61,0.22)_0%,transparent_70%)]"
@@ -263,7 +267,7 @@ export function GlobalStudioProcessingOverlay() {
                   />
                 </span>
                 <span
-                  className={`truncate font-mono text-xs font-bold tracking-wider uppercase transition-colors duration-300 ${
+                  className={`truncate font-mono text-xs font-bold tracking-wider uppercase transition-colors duration-200 ${
                     isCompleted ? "text-emerald-400" : "text-ember"
                   }`}
                 >
@@ -309,7 +313,7 @@ export function GlobalStudioProcessingOverlay() {
             {/* Bottom-most Status Strip */}
             <div className="relative z-10 mt-2.5 sm:mt-3.5 text-center">
               <p
-                className={`font-mono text-[10px] sm:text-micro transition-colors duration-300 ${
+                className={`font-mono text-[10px] sm:text-micro transition-colors duration-200 ${
                   isCompleted ? "text-emerald-400 font-semibold" : "text-muted/60"
                 }`}
               >
