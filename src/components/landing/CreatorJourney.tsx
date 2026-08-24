@@ -83,9 +83,9 @@ export function CreatorJourney() {
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
         {/* =========================================================================
-            LIVING KINETIC NODE: Guaranteed 100% Inline CSS Animation Execution
+            LIVING KINETIC NODE: Exempt from reduced-motion, 100% active on all OS
            ========================================================================= */}
-        <div className="mx-auto mb-6 flex flex-col items-center select-none">
+        <div className="kinetic-node mx-auto mb-6 flex flex-col items-center select-none">
           {/* Laser Guide Wire with Flowing Photon Pulse */}
           <div className="relative h-14 w-8 flex justify-center overflow-hidden">
             {/* Ambient Background Track */}
@@ -93,7 +93,7 @@ export function CreatorJourney() {
             
             {/* Flowing Kinetic Photon Bullet */}
             <div
-              className="absolute top-0 w-1.5 h-6 rounded-full bg-gradient-to-b from-ember-lo via-ember to-transparent shadow-xs"
+              className="kinetic-photon absolute top-0 w-1.5 h-6 rounded-full bg-gradient-to-b from-ember-lo via-ember to-transparent shadow-xs"
               style={{
                 animation: "photon-drop 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite",
               }}
@@ -105,13 +105,13 @@ export function CreatorJourney() {
             type="button"
             onClick={handleScrollToSteps}
             aria-label="Lihat alur perjalanan kreator"
-            className="group relative flex items-center justify-center size-9 rounded-full border border-ember/50 bg-obsidian shadow-sm cursor-pointer transition-transform duration-300 hover:scale-115 active:scale-95"
+            className="kinetic-node group relative flex items-center justify-center size-9 rounded-full border border-ember/50 bg-obsidian shadow-sm cursor-pointer transition-transform duration-300 hover:scale-115 active:scale-95"
           >
             {/* Rotating Micro Orbital Dash Ring */}
             <svg
               viewBox="0 0 36 36"
               fill="none"
-              className="absolute inset-0 size-full"
+              className="kinetic-orbital absolute inset-0 size-full"
               style={{
                 animation: "orbital-spin 3s linear infinite",
                 transformOrigin: "center center",
@@ -131,7 +131,7 @@ export function CreatorJourney() {
 
             {/* Living Breathing Ember Jewel Core */}
             <div
-              className="size-3 rounded-full bg-ember shadow-xs"
+              className="kinetic-core size-3 rounded-full bg-ember shadow-xs"
               style={{
                 animation: "core-breathe 1.8s ease-in-out infinite",
               }}

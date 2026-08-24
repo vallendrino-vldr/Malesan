@@ -256,8 +256,8 @@
    This is part of the quality floor, not an enhancement. DESIGN.md §4.
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  /* .reveal, .animate-ticker-marquee, and mascot are exempt so the core product character and activity feed remain alive. */
-  *:not(.reveal):not(.animate-ticker-marquee):not(.animate-ticker-marquee *):not(.mascot-body):not(.mascot-scan):not(.mascot-led):not(.mascot-idle-body):not(.mascot-idle-eyes):not(.mascot-arm-a):not(.mascot-arm-b),
+  /* .reveal, .animate-ticker-marquee, .kinetic-node, and mascot are exempt so the core product character and activity feed remain alive. */
+  *:not(.reveal):not(.animate-ticker-marquee):not(.animate-ticker-marquee *):not(.kinetic-node):not(.kinetic-node *):not(.mascot-body):not(.mascot-scan):not(.mascot-led):not(.mascot-idle-body):not(.mascot-idle-eyes):not(.mascot-arm-a):not(.mascot-arm-b),
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
@@ -272,6 +272,18 @@
 
   .animate-ticker-marquee {
     animation: marquee 32s linear infinite !important;
+  }
+
+  .kinetic-photon {
+    animation: photon-drop 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+  }
+
+  .kinetic-orbital {
+    animation: orbital-spin 3s linear infinite !important;
+  }
+
+  .kinetic-core {
+    animation: core-breathe 1.8s ease-in-out infinite !important;
   }
 
   html {

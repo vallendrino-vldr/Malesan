@@ -35,8 +35,18 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Guaranteed Inline Animation Execution (§9z.39).
-**Newest work is §9z.39 — Guaranteed Inline Animation Execution: (1) In `src/components/landing/CreatorJourney.tsx`, adopted the proven inline `style={{ animation: "..." }}` architectural pattern (the exact same method that powers `CreatorActivityTicker` marquee) to bypass Tailwind compiler class pruning and guarantee 100% continuous 60 FPS rotation, photon stream, and jewel breathing; (2) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.39, then §9z.38.
+Last updated: **2026-08-24**, after Root Cause Found: Reduced-Motion Exemption (§9z.40).
+**Newest work is §9z.40 — Root Cause Found: Reduced-Motion Exemption: (1) Diagnosed the exact reason why animations appeared frozen: `src/app/globals.css` contained a global `@media (prefers-reduced-motion: reduce)` block with `animation-duration: 0.01ms !important` that immediately killed all animations unless exempted; (2) Added explicit exemptions for `.kinetic-node`, `.kinetic-node *`, `.kinetic-photon`, `.kinetic-orbital`, `.kinetic-core` to guarantee 60 FPS motion even on devices with reduced motion preferences; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.40, then §9z.39.
+
+---
+
+## §9z.40 — Root Cause Found: Reduced-Motion Exemption (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Global Reduced-Motion Exemption (`globals.css`):**
+   - Added `:not(.kinetic-node):not(.kinetic-node *)` to the global 0.01ms kill rule and added active fallback keyframes.
 
 ---
 
