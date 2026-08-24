@@ -71,50 +71,57 @@ export function CreatorJourney() {
   const [activeIdx, setActiveIdx] = useState(2); // Default to "66% 3 Sudut Pandang"
   const current = JOURNEY_STEPS[activeIdx];
 
+  const handleScrollToSteps = () => {
+    const el = document.getElementById("journey-steps");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <section id="journey" className="relative scroll-mt-16 pt-4 pb-12 sm:pt-6 sm:pb-18">
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
         {/* =========================================================================
-            LIVING KINETIC NODE: Laser Wire with Downward Photon + Orbital Core Puck
+            LIVING KINETIC NODE (ACTIONABLE + HIGH-VISIBILITY 60 FPS ORBITAL MOTION)
            ========================================================================= */}
         <div className="mx-auto mb-6 flex flex-col items-center select-none">
           {/* Laser Guide Wire with Flowing Photon Pulse */}
           <div className="relative h-12 w-6 flex justify-center overflow-hidden">
             {/* Ambient Background Track */}
-            <div className="h-full w-[1.5px] rounded-full bg-gradient-to-b from-transparent via-white/10 to-ember/40" />
+            <div className="h-full w-[1.5px] rounded-full bg-gradient-to-b from-transparent via-white/15 to-ember/50" />
             
             {/* Flowing Kinetic Photon Bullet */}
-            <div
-              className="absolute top-0 w-[2px] h-5 rounded-full bg-gradient-to-b from-transparent via-ember to-ember-lo"
-              style={{
-                animation: "stream-down 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-              }}
-            />
+            <div className="animate-photon-drop absolute top-0 w-1 h-5 rounded-full bg-gradient-to-b from-ember-lo via-ember to-transparent" />
           </div>
 
-          {/* Micro Orbital Node Puck */}
-          <div className="relative flex items-center justify-center size-7 rounded-full border border-white/[0.12] bg-surface/90 shadow-sm backdrop-blur-md">
+          {/* Actionable Micro Orbital Node Button */}
+          <button
+            type="button"
+            onClick={handleScrollToSteps}
+            aria-label="Lihat alur perjalanan kreator"
+            className="group relative flex items-center justify-center size-8 rounded-full border border-ember/40 bg-obsidian/90 shadow-sm backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-115 hover:border-ember active:scale-95"
+          >
             {/* Rotating Micro Orbital Dash Ring */}
             <svg
-              viewBox="0 0 28 28"
+              viewBox="0 0 32 32"
               fill="none"
-              className="absolute inset-0 size-full animate-[spin_8s_linear_infinite]"
+              className="animate-orbital-spin absolute inset-0 size-full"
             >
               <circle
-                cx="14"
-                cy="14"
-                r="11"
+                cx="16"
+                cy="16"
+                r="13"
                 stroke="currentColor"
-                strokeWidth="1.2"
-                strokeDasharray="4 6"
-                className="text-ember/60"
+                strokeWidth="1.8"
+                strokeDasharray="5 7"
+                className="text-ember transition-opacity group-hover:opacity-100"
               />
             </svg>
 
             {/* Living Breathing Ember Jewel Core */}
-            <div className="size-2 rounded-full bg-ember animate-pulse shadow-xs" />
-          </div>
+            <div className="animate-core-breathe size-2.5 rounded-full bg-ember" />
+          </button>
 
           {/* Subtle Bottom Ground Lead */}
           <div className="h-4 w-[1.5px] bg-gradient-to-b from-ember/40 to-transparent" />
@@ -135,7 +142,7 @@ export function CreatorJourney() {
         </div>
 
         {/* 4 Step Selector Buttons */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div id="journey-steps" className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5 scroll-mt-24">
           {JOURNEY_STEPS.map((step, idx) => {
             const isActive = activeIdx === idx;
             return (

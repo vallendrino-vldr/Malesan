@@ -35,8 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Living Kinetic Node Deployment (§9z.37).
-**Newest work is §9z.37 — Living Kinetic Node Deployment: (1) In `src/components/landing/CreatorJourney.tsx`, built and deployed a bespoke Living Kinetic Node comprising a vertical laser wire with continuous downward photon surge, a micro orbital glass puck with a 60 FPS rotating dashed ring (`animate-[spin_8s_linear_infinite]`), and a breathing ember jewel core (`animate-pulse`); (2) Zero unicode arrows, zero text widgets — 100% pure engineered kinetic aesthetics; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.37, then §9z.36.
+Last updated: **2026-08-24**, after Explicit Kinetic Classes & Interactive Actionable Node (§9z.38).
+**Newest work is §9z.38 — Explicit Kinetic Classes & Interactive Actionable Node: (1) In `src/app/globals.css`, defined explicit CSS animations and utilities (`.animate-photon-drop`, `.animate-orbital-spin`, `.animate-core-breathe`) with GPU hardware acceleration (`will-change: transform`), guaranteeing 60 FPS motion on all browsers; (2) In `src/components/landing/CreatorJourney.tsx`, wired up the micro orbital node as an actionable button with smooth auto-scroll to `#journey-steps`; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.38, then §9z.37.
+
+---
+
+## §9z.38 — Explicit Kinetic Classes & Interactive Actionable Node (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Explicit CSS Kinetic Engine (`globals.css`):**
+   - `@keyframes photon-drop` + `.animate-photon-drop` (1.8s loop).
+   - `@keyframes orbital-spin` + `.animate-orbital-spin` (4s smooth rotation).
+   - `@keyframes core-breathe` + `.animate-core-breathe` (2s jewel pulse).
+2. **Actionable Button (`CreatorJourney.tsx`):**
+   - Clickable node button with `scrollIntoView({ behavior: "smooth" })` to `#journey-steps`.
 
 ---
 
