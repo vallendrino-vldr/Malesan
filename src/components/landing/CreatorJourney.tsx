@@ -83,16 +83,21 @@ export function CreatorJourney() {
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
         {/* =========================================================================
-            LIVING KINETIC NODE (ACTIONABLE + HIGH-VISIBILITY 60 FPS ORBITAL MOTION)
+            LIVING KINETIC NODE: Guaranteed 100% Inline CSS Animation Execution
            ========================================================================= */}
         <div className="mx-auto mb-6 flex flex-col items-center select-none">
           {/* Laser Guide Wire with Flowing Photon Pulse */}
-          <div className="relative h-12 w-6 flex justify-center overflow-hidden">
+          <div className="relative h-14 w-8 flex justify-center overflow-hidden">
             {/* Ambient Background Track */}
-            <div className="h-full w-[1.5px] rounded-full bg-gradient-to-b from-transparent via-white/15 to-ember/50" />
+            <div className="h-full w-[2px] rounded-full bg-gradient-to-b from-transparent via-white/15 to-ember/50" />
             
             {/* Flowing Kinetic Photon Bullet */}
-            <div className="animate-photon-drop absolute top-0 w-1 h-5 rounded-full bg-gradient-to-b from-ember-lo via-ember to-transparent" />
+            <div
+              className="absolute top-0 w-1.5 h-6 rounded-full bg-gradient-to-b from-ember-lo via-ember to-transparent shadow-xs"
+              style={{
+                animation: "photon-drop 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+              }}
+            />
           </div>
 
           {/* Actionable Micro Orbital Node Button */}
@@ -100,27 +105,37 @@ export function CreatorJourney() {
             type="button"
             onClick={handleScrollToSteps}
             aria-label="Lihat alur perjalanan kreator"
-            className="group relative flex items-center justify-center size-8 rounded-full border border-ember/40 bg-obsidian/90 shadow-sm backdrop-blur-md cursor-pointer transition-all duration-300 hover:scale-115 hover:border-ember active:scale-95"
+            className="group relative flex items-center justify-center size-9 rounded-full border border-ember/50 bg-obsidian shadow-sm cursor-pointer transition-transform duration-300 hover:scale-115 active:scale-95"
           >
             {/* Rotating Micro Orbital Dash Ring */}
             <svg
-              viewBox="0 0 32 32"
+              viewBox="0 0 36 36"
               fill="none"
-              className="animate-orbital-spin absolute inset-0 size-full"
+              className="absolute inset-0 size-full"
+              style={{
+                animation: "orbital-spin 3s linear infinite",
+                transformOrigin: "center center",
+              }}
             >
               <circle
-                cx="16"
-                cy="16"
-                r="13"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeDasharray="5 7"
-                className="text-ember transition-opacity group-hover:opacity-100"
+                cx="18"
+                cy="18"
+                r="14"
+                stroke="#ff8a3d"
+                strokeWidth="2"
+                strokeDasharray="6 6"
+                strokeLinecap="round"
+                opacity="0.85"
               />
             </svg>
 
             {/* Living Breathing Ember Jewel Core */}
-            <div className="animate-core-breathe size-2.5 rounded-full bg-ember" />
+            <div
+              className="size-3 rounded-full bg-ember shadow-xs"
+              style={{
+                animation: "core-breathe 1.8s ease-in-out infinite",
+              }}
+            />
           </button>
 
           {/* Subtle Bottom Ground Lead */}

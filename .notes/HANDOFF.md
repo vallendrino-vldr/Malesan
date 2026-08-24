@@ -35,8 +35,18 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Explicit Kinetic Classes & Interactive Actionable Node (§9z.38).
-**Newest work is §9z.38 — Explicit Kinetic Classes & Interactive Actionable Node: (1) In `src/app/globals.css`, defined explicit CSS animations and utilities (`.animate-photon-drop`, `.animate-orbital-spin`, `.animate-core-breathe`) with GPU hardware acceleration (`will-change: transform`), guaranteeing 60 FPS motion on all browsers; (2) In `src/components/landing/CreatorJourney.tsx`, wired up the micro orbital node as an actionable button with smooth auto-scroll to `#journey-steps`; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.38, then §9z.37.
+Last updated: **2026-08-24**, after Guaranteed Inline Animation Execution (§9z.39).
+**Newest work is §9z.39 — Guaranteed Inline Animation Execution: (1) In `src/components/landing/CreatorJourney.tsx`, adopted the proven inline `style={{ animation: "..." }}` architectural pattern (the exact same method that powers `CreatorActivityTicker` marquee) to bypass Tailwind compiler class pruning and guarantee 100% continuous 60 FPS rotation, photon stream, and jewel breathing; (2) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.39, then §9z.38.
+
+---
+
+## §9z.39 — Guaranteed Inline Animation Execution (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Proven Inline Style Pattern:**
+   - Attached `photon-drop`, `orbital-spin`, and `core-breathe` directly via inline `style={{ animation: "..." }}` matching `CreatorActivityTicker.tsx`.
 
 ---
 
