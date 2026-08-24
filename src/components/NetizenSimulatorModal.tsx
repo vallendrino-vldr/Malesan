@@ -79,6 +79,15 @@ const ARCHETYPE_META: Record<
   },
 };
 
+const PERSONA_PREVIEWS = [
+  { icon: "🧐", label: "Skeptis", name: "@bayu_analis99" },
+  { icon: "😍", label: "FOMO", name: "@siska_checkout_terus" },
+  { icon: "😂", label: "Receh", name: "@rian_saldo_tipis" },
+  { icon: "🤓", label: "Detail", name: "@dimas_pakar_dadakan" },
+  { icon: "🤍", label: "Relate", name: "@nadiacurhat_id" },
+  { icon: "💡", label: "Solusi", name: "@farhan_tips_id" },
+];
+
 export function NetizenSimulatorModal({
   isOpen,
   onClose,
@@ -91,9 +100,9 @@ export function NetizenSimulatorModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [comments, setComments] = useState<NetizenComment[]>([]);
-  const [potensiViral, setPotensiViral] = useState("8.8 / 10 (Tinggi)");
-  const [dayaDebat, setDayaDebat] = useState("8.0 / 10 (Aktif)");
-  const [rasioKonversi, setRasioKonversi] = useState("Tinggi (Relate & Edukasi)");
+  const [potensiViral, setPotensiViral] = useState("");
+  const [dayaDebat, setDayaDebat] = useState("");
+  const [rasioKonversi, setRasioKonversi] = useState("");
   const [suggestedPinnedComment, setSuggestedPinnedComment] = useState("");
   const [copiedPinned, setCopiedPinned] = useState(false);
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
@@ -294,7 +303,8 @@ export function NetizenSimulatorModal({
                 <h3 id="netizen-simulator-title" className="text-sm font-bold text-ink">
                   Simulasi Respon Netizen
                 </h3>
-                <span className="rounded-full bg-ember/15 border border-ember/30 px-2 py-0.2 text-[10px] font-semibold text-ember">
+                <span className="rounded-full bg-ember/15 border border-ember/30 px-2 py-0.2 text-[10px] font-semibold text-ember flex items-center gap-1">
+                  <span className="size-1.5 rounded-full bg-ember animate-pulse" />
                   AI Real-Time
                 </span>
               </div>
@@ -315,45 +325,104 @@ export function NetizenSimulatorModal({
 
         {/* Engagement Health & Sentiment Ticker */}
         <div className="grid grid-cols-3 gap-2 border-b border-hairline/40 bg-surface/30 px-4 py-2 sm:px-5 text-center text-[11px]">
-          <div className="rounded-lg bg-white/[0.03] p-1.5 border border-white/[0.04]">
+          <div className="rounded-lg bg-white/[0.03] p-1.5 border border-white/[0.04] min-h-[46px] flex flex-col justify-center">
             <div className="text-[10px] text-muted">🔥 Potensi Viral</div>
-            <div className="font-bold text-emerald-400 truncate">{potensiViral}</div>
+            {isLoading && !potensiViral ? (
+              <div className="h-3.5 w-16 bg-white/[0.08] rounded animate-pulse mx-auto mt-1" />
+            ) : (
+              <div className="font-bold text-emerald-400 truncate">{potensiViral || "8.8 / 10 (Tinggi)"}</div>
+            )}
           </div>
-          <div className="rounded-lg bg-white/[0.03] p-1.5 border border-white/[0.04]">
+          <div className="rounded-lg bg-white/[0.03] p-1.5 border border-white/[0.04] min-h-[46px] flex flex-col justify-center">
             <div className="text-[10px] text-muted">⚡ Daya Debat</div>
-            <div className="font-bold text-ember truncate">{dayaDebat}</div>
+            {isLoading && !dayaDebat ? (
+              <div className="h-3.5 w-16 bg-white/[0.08] rounded animate-pulse mx-auto mt-1" />
+            ) : (
+              <div className="font-bold text-ember truncate">{dayaDebat || "8.0 / 10 (Aktif)"}</div>
+            )}
           </div>
-          <div className="rounded-lg bg-white/[0.03] p-1.5 border border-white/[0.04]">
+          <div className="rounded-lg bg-white/[0.03] p-1.5 border border-white/[0.04] min-h-[46px] flex flex-col justify-center">
             <div className="text-[10px] text-muted">🎯 Rasio Konversi</div>
-            <div className="font-bold text-sky-400 truncate">{rasioKonversi}</div>
+            {isLoading && !rasioKonversi ? (
+              <div className="h-3.5 w-20 bg-white/[0.08] rounded animate-pulse mx-auto mt-1" />
+            ) : (
+              <div className="font-bold text-sky-400 truncate">{rasioKonversi || "Tinggi (Relate)"}</div>
+            )}
           </div>
         </div>
 
         {/* Scrollable Comments Feed / Loading Skeleton */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 divide-y divide-hairline/30 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 divide-y divide-hairline/30 custom-scrollbar">
           {isLoading ? (
-            <div className="py-8 text-center space-y-3">
-              <div className="inline-flex size-10 items-center justify-center rounded-full bg-ember/20 text-ember text-lg animate-spin">
-                ⏳
+            <div className="space-y-4">
+              {/* Studio AI Engine Pulse Indicator */}
+              <div className="rounded-xl border border-ember/25 bg-gradient-to-br from-ember/10 via-ember/5 to-transparent p-3 sm:p-3.5 relative overflow-hidden">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-ember/20 text-ember text-sm shrink-0 animate-pulse">
+                    ⚡
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold text-ink flex items-center gap-1.5">
+                      <span>Membaca naskah & meracik 6 karakter netizen...</span>
+                    </div>
+                    <p className="text-[10px] text-muted">
+                      Menganalisis topik &ldquo;{title || "konten lo"}&rdquo; secara mendalam
+                    </p>
+                  </div>
+                </div>
+
+                {/* Animated Persona Chips */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {PERSONA_PREVIEWS.map((p, idx) => (
+                    <div
+                      key={p.name}
+                      style={{ animationDelay: `${idx * 150}ms` }}
+                      className="inline-flex items-center gap-1 rounded-md bg-white/[0.05] border border-white/[0.08] px-2 py-0.5 text-[10px] text-ink/80 animate-pulse"
+                    >
+                      <span>{p.icon}</span>
+                      <span className="font-medium">{p.label}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className="text-xs font-semibold text-ink">
-                Membaca naskah & mensimulasikan reaksi 6 karakter netizen...
-              </p>
-              <p className="text-[11px] text-muted">
-                Menciptakan respon otentik sesuai topik naskah lo
-              </p>
-              <div className="pt-3 space-y-2.5 max-w-sm mx-auto">
-                <div className="h-10 rounded-xl bg-white/[0.04] animate-pulse" />
-                <div className="h-10 rounded-xl bg-white/[0.04] animate-pulse delay-100" />
-                <div className="h-10 rounded-xl bg-white/[0.04] animate-pulse delay-200" />
-              </div>
+
+              {/* Realistic Feed Skeleton Rows */}
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="pt-3.5 first:pt-0 flex gap-3 items-start animate-pulse">
+                  {/* Avatar Skeleton */}
+                  <div className="size-8 rounded-full bg-white/[0.08] shrink-0" />
+
+                  {/* Body Skeleton */}
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="h-3.5 w-24 rounded bg-white/[0.1]" />
+                      <div className="h-3 w-16 rounded bg-white/[0.05]" />
+                      <div className="h-3.5 w-20 rounded bg-ember/15" />
+                    </div>
+                    <div
+                      className={`h-3 rounded bg-white/[0.08] ${
+                        i % 2 === 0 ? "w-[92%]" : "w-[84%]"
+                      }`}
+                    />
+                    <div
+                      className={`h-3 rounded bg-white/[0.05] ${
+                        i % 2 === 0 ? "w-[68%]" : "w-[75%]"
+                      }`}
+                    />
+                    <div className="flex items-center gap-3 pt-0.5">
+                      <div className="h-2.5 w-8 rounded bg-white/[0.05]" />
+                      <div className="h-2.5 w-10 rounded bg-white/[0.04]" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : error && comments.length === 0 ? (
             <div className="py-8 text-center space-y-2">
               <p className="text-xs text-danger">{error}</p>
               <button
                 onClick={fetchNetizenReactions}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-ink hover:bg-white/15"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs text-ink hover:bg-white/15 cursor-pointer"
               >
                 <span>🔄 Coba Lagi</span>
               </button>
@@ -425,13 +494,16 @@ export function NetizenSimulatorModal({
               {copiedPinned ? "✓ Disalin!" : "Salin Komen"}
             </button>
           </div>
-          <p className="text-xs text-muted italic bg-black/40 rounded-lg p-2 border border-hairline/40 leading-relaxed">
-            {suggestedPinnedComment ? (
-              <>&ldquo;{suggestedPinnedComment}&rdquo;</>
-            ) : (
-              <span className="text-muted/60">Menghasilkan saran pin komentar yang memicu debat...</span>
-            )}
-          </p>
+          {isLoading && !suggestedPinnedComment ? (
+            <div className="space-y-1.5 bg-black/40 rounded-lg p-2.5 border border-hairline/40 animate-pulse">
+              <div className="h-3 w-5/6 rounded bg-white/[0.08]" />
+              <div className="h-3 w-2/3 rounded bg-white/[0.05]" />
+            </div>
+          ) : (
+            <p className="text-xs text-muted italic bg-black/40 rounded-lg p-2.5 border border-hairline/40 leading-relaxed">
+              &ldquo;{suggestedPinnedComment}&rdquo;
+            </p>
+          )}
         </div>
 
         {/* Footer Actions */}
