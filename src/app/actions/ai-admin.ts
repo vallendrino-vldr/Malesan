@@ -607,7 +607,7 @@ export async function saveBrain(
 
 export async function quickSwitchPrimaryModel(modelId: string): Promise<void> {
   await verifyAdmin();
-  const { models } = await getFleet();
+  const { models, providers } = await getFleet();
 
   const targetModel = models.find((m) => m.id === modelId);
   if (!targetModel) throw new Error("Model tidak ditemukan.");
@@ -615,9 +615,10 @@ export async function quickSwitchPrimaryModel(modelId: string): Promise<void> {
     throw new Error(`Model "${targetModel.label ?? targetModel.model_id}" sedang dinonaktifkan. Aktifkan dulu di pengaturan.`);
   }
 
-  // Set all other active models as automatic failover fallbacks
+  // Set all other active models with active providers as automatic failover fallbacks
+  const activeProviderIds = new Set(providers.filter((p) => p.is_active).map((p) => p.id));
   const autoFallbacks = models
-    .filter((m) => m.is_active && m.id !== modelId)
+    .filter((m) => m.is_active && activeProviderIds.has(m.provider_id) && m.id !== modelId)
     .slice(0, 3)
     .map((m) => m.id);
 

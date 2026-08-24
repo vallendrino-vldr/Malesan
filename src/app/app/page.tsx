@@ -571,9 +571,14 @@ export default async function AppPage({
             <form action="/auth/signout" method="post">
               <button
                 type="submit"
-                className="w-full rounded-xl border border-hairline px-5 py-3 text-xs sm:text-sm font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/40 hover:text-danger"
+                className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-hairline/80 bg-surface/50 px-5 py-3.5 text-xs sm:text-sm font-semibold text-muted transition-all duration-200 hover:border-danger/40 hover:bg-danger/5 hover:text-danger cursor-pointer active:scale-[0.99]"
               >
-                Keluar dari Akun
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 transition-transform duration-200 group-hover:-translate-x-0.5">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Keluar dari Akun</span>
               </button>
             </form>
           </div>

@@ -35,8 +35,24 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Instant Navigation & Artificial Delay Elimination (§9z.42).
-**Newest work is §9z.42 — Instant Navigation & Artificial Delay Elimination: (1) Diagnosed and eliminated the artificial 1.05s setTimeout delay chain and heavy 20px blur filters from `src/components/landing/CinematicTransitionContext.tsx` that previously rendered the black void loading curtain ("MEMBUKA RUANG KERJA MALESAN...") and caused severe GPU lag; (2) Re-architected `src/components/landing/TransitionButton.tsx` to render native Next.js `<Link>` elements with automatic prefetching, restoring instant (<50ms) transition from the landing page to `/masuk`; (3) Verified via `next build` (42 routes) and `npm test`.** Read §9z.42, then §9z.41.
+Last updated: **2026-08-25**, after Full Admin, Error Center, AI Brain & Profile Overhaul (§9z.43).
+**Newest work is §9z.43 — Full Admin, Error Center, AI Brain & Profile Overhaul: (1) Fixed stale fallback model reference in `ai_brain` config and updated `quickSwitchPrimaryModel` in `src/app/actions/ai-admin.ts` to strictly filter active models, ensuring Cadangan 1 (Gemini 3.7 Flash) displays as healthy green; (2) In `src/app/admin/page.tsx`, equalized all metric card heights (`StatCard` flex-1 justify-between) and polished creator activity timeline; (3) In `src/app/admin/errors/ErrorActionCenter.tsx` & `admin.ts`, transformed Error Center into an interactive action hub with key probe testing (`probeGeminiKeys`) and error log purging (`clearErrorLogs`); (4) Redesigned feedback button in `FeedbackModal.tsx` into a glowing Creator Concierge Card; (5) Overhauled `TextScale.tsx` and signout button in `/app` profile tab; (6) Verified via `next build` (42 routes) and `npm test`.** Read §9z.43, then §9z.42.
+
+---
+
+## §9z.43 — Full Admin, Error Center, AI Brain & Profile Overhaul (2026-08-25)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled in 3.1s), `npm test` (11 tests passed), and visual inspection.
+
+### Summary of Changes:
+1. **AI Brain Fallback Health:**
+   - Switched fallback from deactivated `gemini-3.5-flash` to active `gemini-3.7-flash` (`2e88cd36...`).
+2. **Interactive Error Center:**
+   - Added `ErrorActionCenter` with live key probe and log cleanup actions.
+3. **Card Alignment & Feed Polish:**
+   - Unified `StatCard` heights with single-line labels and sleek auto-refund timeline indicators.
+4. **Creator Concierge Feedback & Profile UI:**
+   - Redesigned feedback trigger card, compact segmented text scaler, and polished signout button.
 
 ---
 

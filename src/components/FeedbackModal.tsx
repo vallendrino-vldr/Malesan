@@ -52,9 +52,30 @@ export function FeedbackModal() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface px-4 py-3 text-xs font-semibold text-muted transition-colors hover:border-ember/40 hover:text-ink w-full"
+        className="group relative flex w-full items-center justify-between overflow-hidden rounded-2xl border border-ember/25 bg-gradient-to-r from-surface to-surface-raised p-4 text-left transition-all duration-200 hover:border-ember/50 hover:shadow-xs active:scale-[0.99] cursor-pointer"
       >
-        <span>💬</span> Ada kendala atau saran buat Malesan?
+        <div className="flex items-center gap-3.5">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-ember/30 bg-ember/15 text-ember shadow-xs transition-transform duration-200 group-hover:scale-105">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              <path d="M12 7v2" />
+              <path d="M12 13h.01" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
+              Punya saran atau ada kendala?
+            </p>
+            <p className="mt-0.5 text-micro sm:text-xs text-muted">
+              Kirim masukan langsung ke founder Malesan ✨
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1 rounded-full border border-white/[0.08] bg-obsidian/60 px-3 py-1 text-micro font-semibold text-ember group-hover:border-ember/40">
+          <span>Kirim</span>
+          <span className="transition-transform duration-200 group-hover:translate-x-0.5">→</span>
+        </div>
       </button>
 
       {open && isClient && createPortal(

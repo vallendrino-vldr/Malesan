@@ -55,14 +55,16 @@ export function TextScale() {
 
   return (
     <div>
-      <p className="text-sm font-semibold text-ink">Ukuran teks</p>
-      <p className="mt-0.5 text-micro leading-relaxed text-muted">
-        Cuma tulisannya yang berubah — tombol dan menu tetap di tempatnya.
-      </p>
+      <div>
+        <p className="font-display text-xs sm:text-sm font-bold text-ink">Ukuran Teks Aplikasi</p>
+        <p className="mt-0.5 text-micro text-muted">
+          Sesuaikan kenyamanan membaca tulisan di seluruh aplikasi.
+        </p>
+      </div>
       <div
         role="radiogroup"
         aria-label="Ukuran teks"
-        className="mt-2.5 grid grid-cols-4 gap-1.5"
+        className="mt-3 flex rounded-xl border border-hairline bg-obsidian p-1 gap-1"
       >
         {STEPS.map((s) => {
           const on = scale === s.id;
@@ -73,22 +75,20 @@ export function TextScale() {
               aria-checked={on}
               onClick={() => pick(s.id)}
               title={s.hint}
-              className={`skeu-press flex min-h-11 cursor-pointer flex-col items-center justify-center rounded-xl border transition-colors duration-[var(--duration-standard)] ease-heat ${
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 rounded-lg cursor-pointer transition-all ${
                 on
-                  ? "border-ember/45 bg-ember/10 text-ember"
-                  : "border-hairline bg-surface-raised text-muted hover:text-ink"
+                  ? "bg-ember/20 text-ember border border-ember/40 shadow-xs font-bold"
+                  : "text-muted hover:text-ink hover:bg-surface/60 font-medium"
               }`}
             >
-              {/* The glyph previews the size it selects, so the control
-                  demonstrates its own effect before you commit to it. */}
               <span
                 aria-hidden="true"
-                className="font-display font-bold leading-none"
-                style={{ fontSize: { sm: 11, md: 13, lg: 15, xl: 17 }[s.id] }}
+                className="font-display leading-none"
+                style={{ fontSize: { sm: 12, md: 14, lg: 16, xl: 18 }[s.id] }}
               >
                 A
               </span>
-              <span className="mt-1 text-micro font-semibold leading-none">{s.label}</span>
+              <span className="mt-1 text-[11px] leading-none">{s.label}</span>
             </button>
           );
         })}

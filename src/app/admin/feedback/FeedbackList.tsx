@@ -68,11 +68,13 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
   const [filter, setFilter] = useState<string>("all");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const filtered = items.filter((x) => (filter === "all" ? true : x.status === filter));
 
   const handleStatusChange = async (id: string, newStatus: FeedbackStatus) => {
     setUpdatingId(id);
+    setErrorMsg(null);
     try {
       await updateFeedbackStatusAction({ id, status: newStatus });
       setItems((prev) =>
@@ -80,7 +82,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
       );
     } catch (err) {
       console.error(err);
-      alert("Gagal update status feedback");
+      setErrorMsg(err instanceof Error ? err.message : "Gagal update status feedback");
     } finally {
       setUpdatingId(null);
     }
@@ -90,6 +92,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
     const note = noteDrafts[id];
     if (typeof note === "undefined") return;
     setUpdatingId(id);
+    setErrorMsg(null);
     try {
       const current = items.find((x) => x.id === id);
       if (!current) return;
@@ -99,7 +102,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
       );
     } catch (err) {
       console.error(err);
-      alert("Gagal simpan catatan");
+      setErrorMsg(err instanceof Error ? err.message : "Gagal simpan catatan");
     } finally {
       setUpdatingId(null);
     }
@@ -144,6 +147,12 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
           );
         })}
       </div>
+
+      {errorMsg && (
+        <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
+          {errorMsg}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-hairline bg-surface p-8 text-center">

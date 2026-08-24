@@ -328,7 +328,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       {/* 2. RINGKASAN METRIK KUNCI */}
-      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 items-stretch">
         <StatCard
           label="User Aktif Hari Ini"
           value={activeUsersToday}
@@ -336,7 +336,7 @@ export default async function AdminDashboardPage() {
           href="/admin/users"
         />
         <StatCard
-          label="Konten Dibuat Hari Ini"
+          label="Konten Dibuat"
           value={todayGenerations}
           note={`Sukses: ${successRate}% (Total ${totalGenerations})`}
         />
@@ -428,11 +428,11 @@ export default async function AdminDashboardPage() {
                 const isSuccess = log.status === "success";
 
                 return (
-                  <li key={log.id} className="p-4 hover:bg-surface-raised/40 transition-colors space-y-2">
+                  <li key={log.id} className="p-3.5 sm:p-4 hover:bg-surface-raised/30 transition-colors space-y-1.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-display text-xs font-bold text-ink truncate">{userName}</span>
-                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold bg-surface-raised border border-hairline text-ink">
+                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold bg-surface-raised border border-white/[0.06] text-ink">
                           Membuat {modName}
                         </span>
                         <span
@@ -452,30 +452,22 @@ export default async function AdminDashboardPage() {
                     <div className="flex flex-wrap items-center gap-x-3 text-micro text-muted font-mono">
                       <span>Biaya AI: {formatRp(log.cost_idr || 0)}</span>
                       <span>• Kredit: -{log.credits_charged || 1}</span>
+                      {!isSuccess && (
+                        <span className="text-danger/90">
+                          (Kredit otomatis di-refund ke pengguna)
+                        </span>
+                      )}
                     </div>
 
-                    {!isSuccess && (
-                      <div className="rounded-xl border border-danger/25 bg-danger/5 p-3 space-y-1.5 text-xs">
-                        <p className="text-ink">
-                          <strong className="text-danger">Masalah:</strong> AI sedang sibuk atau input kepanjangan
+                    {!isSuccess && log.error_message && (
+                      <details className="mt-1 pt-1 text-xs">
+                        <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">
+                          Lihat detail kegagalan
+                        </summary>
+                        <p className="mt-1 font-mono text-[10px] text-muted whitespace-pre-wrap bg-obsidian/60 p-2.5 rounded-lg border border-hairline">
+                          {log.error_message}
                         </p>
-                        <p className="text-ink">
-                          <strong className="text-danger">Dampak:</strong> Konten sempat gagal dibuat pada percobaan ini
-                        </p>
-                        <p className="text-ink">
-                          <strong className="text-success">Solusi:</strong> Sistem otomatis mencoba cadangan &amp; kredit pengguna aman
-                        </p>
-                        {log.error_message && (
-                          <details className="mt-1.5 pt-1.5 border-t border-danger/15">
-                            <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">
-                              Detail pesan teknis
-                            </summary>
-                            <p className="mt-1 font-mono text-[10px] text-muted whitespace-pre-wrap bg-obsidian/60 p-2 rounded-lg">
-                              {log.error_message}
-                            </p>
-                          </details>
-                        )}
-                      </div>
+                      </details>
                     )}
                   </li>
                 );
@@ -564,21 +556,23 @@ function StatCard({
 }) {
   const content = (
     <div
-      className={`rounded-xl border bg-surface p-3.5 transition-colors ${
+      className={`flex h-full flex-col justify-between rounded-xl border bg-surface p-3.5 transition-colors ${
         alert ? "border-ember/45 bg-ember/5" : "border-hairline hover:border-hairline/90"
       }`}
     >
-      <p className="eyebrow text-muted">{label}</p>
-      <p className={`mt-1 font-display text-2xl font-bold ${alert ? "text-ember" : "text-ink"}`}>
-        {value}
-      </p>
-      {note && <p className="mt-1 text-micro leading-snug text-muted">{note}</p>}
+      <div>
+        <p className="eyebrow text-muted truncate">{label}</p>
+        <p className={`mt-1 font-display text-2xl font-bold ${alert ? "text-ember" : "text-ink"}`}>
+          {value}
+        </p>
+      </div>
+      {note && <p className="mt-2 text-micro leading-snug text-muted truncate">{note}</p>}
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="block">
+      <Link href={href} className="block h-full">
         {content}
       </Link>
     );

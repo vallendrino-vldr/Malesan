@@ -579,6 +579,16 @@ export async function probeGeminiKeys() {
   return results;
 }
 
+export async function clearErrorLogs() {
+  const adminId = await verifyAdmin();
+  const serviceRole = createServiceRoleClient();
+  const { error } = await serviceRole.from("error_log").delete().gte("id", 0);
+  if (error) throw new Error(`Gagal membersihkan log error: ${error.message}`);
+  await audit(adminId, "error_log.clear", "all", {});
+  revalidatePath("/admin/errors");
+  revalidatePath("/admin");
+}
+
 /** Recent admin activity, newest first. Powers the trail shown in the panel. */
 export async function recentAuditLog(limit = 30) {
   await verifyAdmin();

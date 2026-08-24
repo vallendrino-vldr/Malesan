@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
+import { ErrorActionCenter } from "./ErrorActionCenter";
 
 /**
  * Why things failed.
@@ -131,6 +132,9 @@ export default async function AdminErrorsPage() {
           Penyebab kendala yang diterjemahkan menjadi <strong>Masalah → Dampak → Aksi Sistem → Tindakan Founder</strong> agar operasional bisnis tetap aman tanpa kebingungan teknis.
         </p>
       </header>
+
+      {/* Action Center for Founder */}
+      <ErrorActionCenter totalErrors={rows.length} />
 
       {grouped.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-hairline px-4 py-12 text-center bg-surface">
