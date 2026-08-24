@@ -29,8 +29,10 @@ import {
 import {
   buildClipEnginePrompt,
   buildThreadEnginePrompt,
+  buildAffiliateEnginePrompt,
   CLIP_ENGINE_SCHEMA,
   THREAD_ENGINE_SCHEMA,
+  AFFILIATE_ENGINE_SCHEMA,
 } from "@/lib/prompts/engines";
 
 export const maxDuration = 60; // Vercel Hobby max. Script gen + key backoff passed 30s and hard-timed-out (which also skips the refund below), so raised to the real cap.
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { module, input, platform } = body as {
-      module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread";
+      module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "affiliate";
       input?: Record<string, string>;
       platform?: string;
     };
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
     const idePlatform = normalizeTodayPlatform(platform);
     const ideGoal = normalizeTodayGoal(input?.goal);
 
-    const MODULES = ["ide_hari_ini", "idea", "hook", "script", "repurpose", "clip", "thread"];
+    const MODULES = ["ide_hari_ini", "idea", "hook", "script", "repurpose", "clip", "thread", "affiliate"];
     if (!module || !MODULES.includes(module)) {
       return new Response("Pilihannya gak dikenali. Muat ulang halaman lalu coba lagi.", { status: 400 });
     }
@@ -92,6 +94,10 @@ export async function POST(request: NextRequest) {
 
     if (module === "thread" && (!input?.bullets || input.bullets.trim().length === 0)) {
       return new Response("Tulis poin-poin threadnya dulu ya.", { status: 400 });
+    }
+
+    if (module === "affiliate" && (!input?.product_name || input.product_name.trim().length === 0)) {
+      return new Response("Tulis nama produk yang mau dijual dulu ya.", { status: 400 });
     }
 
     // 1. auth.getUser() - Never getSession()
@@ -337,6 +343,17 @@ export async function POST(request: NextRequest) {
         extras,
       );
       schema = THREAD_ENGINE_SCHEMA;
+    } else if (module === "affiliate") {
+      promptText = buildAffiliateEnginePrompt(
+        input!.product_name,
+        input!.selling_points || "",
+        input!.style || "Campuran",
+        dna,
+        trends || [],
+        learned,
+        extras,
+      );
+      schema = AFFILIATE_ENGINE_SCHEMA;
     }
 
     const encoder = new TextEncoder();

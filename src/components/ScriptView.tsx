@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { adaptSceneFootage } from "@/app/actions/pipeline";
 import { saveOfflineScriptCache, markOfflineScriptSynced } from "@/lib/offline-draft-cache";
+import { VoicePreview } from "./VoicePreview";
 
 export type ScriptScene = {
   timestamp?: string;
@@ -118,6 +119,7 @@ export function ScriptView({
   platform?: string;
   onSaveScript?: (updated: ScriptOutput) => Promise<void>;
 }) {
+  const [prevScript, setPrevScript] = useState<ScriptOutput>(script);
   const [currentScript, setCurrentScript] = useState<ScriptOutput>(script);
   const [tab, setTab] = useState<"scene" | "baca">("scene");
   const [copied, setCopied] = useState("");
@@ -126,11 +128,12 @@ export function ScriptView({
   const [adaptingSceneIdx, setAdaptingSceneIdx] = useState<number | null>(null);
   const [openFootageNoteIdx, setOpenFootageNoteIdx] = useState<number | null>(null);
 
-  // Sync state when incoming prop changes
-  useEffect(() => {
+  // Sync state when incoming prop changes (React 19 pattern)
+  if (prevScript !== script) {
+    setPrevScript(script);
     setCurrentScript(script);
     setHasChanges(false);
-  }, [script]);
+  }
 
   const textMode = isTextPlatform(platform);
   const readThrough = useMemo(() => buildReadThrough(currentScript, textMode), [currentScript, textMode]);
@@ -475,6 +478,11 @@ export function ScriptView({
             {currentScript.hashtags.join(" ")}
           </p>
         )}
+      </div>
+
+      {/* 🎙️ Voice Preview Player */}
+      <div className="p-2 border-t border-hairline/60">
+        <VoicePreview text={readThrough} title={title} />
       </div>
 
       {/* Bottom Action Strip */}

@@ -8,9 +8,11 @@ import { ModuleRunner } from "./ModuleRunner";
 import { ClipEngine } from "./ClipEngine";
 import { ThreadEngine } from "./ThreadEngine";
 import { VideoEditor } from "./VideoEditor";
+import { AffiliateEngine } from "./AffiliateEngine";
+import { CarouselGenerator } from "./CarouselGenerator";
 
-type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video";
-const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video"];
+type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video" | "affiliate" | "carousel";
+const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video", "affiliate", "carousel"];
 
 export type StudioCosts = {
   ide: number;
@@ -22,6 +24,7 @@ export type StudioCosts = {
   thread?: number;
   video?: number;
   videoNoWm?: number;
+  affiliate?: number;
 };
 
 export function StudioPanel({
@@ -59,6 +62,7 @@ export function StudioPanel({
   const threadCost = costs.thread ?? 3;
   const videoCost = costs.video ?? 2;
   const videoNoWmCost = costs.videoNoWm ?? 5;
+  const affiliateCost = costs.affiliate ?? 3;
 
   if (!mod) {
     return <>{home}</>;
@@ -86,6 +90,10 @@ export function StudioPanel({
         <ThreadEngine cost={threadCost} />
       ) : mod === "video" ? (
         <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} />
+      ) : mod === "affiliate" ? (
+        <AffiliateEngine cost={affiliateCost} />
+      ) : mod === "carousel" ? (
+        <CarouselGenerator />
       ) : (
         <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
       )}

@@ -23,7 +23,8 @@ export type ModuleKey =
   // Niche engines. Separate module keys rather than a flag on `script`, because
   // they carry their own price, their own on/off switch and their own schema.
   | "clip"
-  | "thread";
+  | "thread"
+  | "affiliate";
 
 const FALLBACK_COST: Record<ModuleKey, number> = {
   ide_hari_ini: 1,
@@ -34,6 +35,7 @@ const FALLBACK_COST: Record<ModuleKey, number> = {
   vibe: 6,
   clip: 4,
   thread: 3,
+  affiliate: 3,
 };
 
 const TTL_MS = 30_000;

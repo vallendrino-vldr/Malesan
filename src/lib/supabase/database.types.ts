@@ -580,7 +580,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate";
           platform: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input: Json | null;
           output: Json | null;
@@ -593,7 +593,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;
@@ -640,6 +640,7 @@ export type Database = {
           sort_order: number;
           updated_at: string;
           scheduled_date: string | null;
+          scheduled_time: string | null;
           ai_score: number | null;
         };
         Insert: {
@@ -655,6 +656,7 @@ export type Database = {
           sort_order?: number;
           updated_at?: string;
           scheduled_date?: string | null;
+          scheduled_time?: string | null;
           ai_score?: number | null;
         };
         Update: {
@@ -670,6 +672,7 @@ export type Database = {
           sort_order?: number;
           updated_at?: string;
           scheduled_date?: string | null;
+          scheduled_time?: string | null;
           ai_score?: number | null;
         };
         Relationships: [

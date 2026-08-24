@@ -218,6 +218,13 @@ export const AI_FEATURES: FeatureSpec[] = [
     note: "Engine niche buat thread X/Threads.",
   },
   {
+    key: "affiliate",
+    label: "Naskah Affiliate",
+    requires: ["text"],
+    suggested: "balanced",
+    note: "Engine niche naskah video TikTok Shop & Shopee berkonversi tinggi.",
+  },
+  {
     key: "vibe",
     label: "Vibe Coding Kit",
     requires: ["text"],

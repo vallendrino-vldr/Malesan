@@ -514,8 +514,20 @@ function CalendarCardItem({
 
       {/* Card Footer: Clean, zero text collision */}
       <div className="mt-2.5 flex items-center justify-between border-t border-hairline/60 pt-1.5 text-[10px] text-muted">
-        <span className="truncate text-micro text-muted/70">
-          {content?.est_duration ? String(content.est_duration) : card.schedule_label || "Rencana"}
+        <span className="inline-flex items-center gap-1 font-mono font-semibold text-ember text-[10px]">
+          {card.scheduled_time ? (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5 text-ember">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span>{card.scheduled_time}</span>
+            </>
+          ) : (
+            <span className="truncate text-micro text-muted/70">
+              {content?.est_duration ? String(content.est_duration) : card.schedule_label || "Rencana"}
+            </span>
+          )}
         </span>
 
         {onUnschedule && (

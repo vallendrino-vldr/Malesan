@@ -5,7 +5,6 @@ import type { PipelineCard } from "@/lib/supabase/database.types";
 import {
   updateCardStatus,
   updateCardContentAndStatus,
-  updateCardScheduleDate,
   deletePipelineCard,
 } from "@/app/actions/pipeline";
 import { todayPlatformLabel, normalizeTodayPlatform } from "@/lib/content-options";
@@ -200,10 +199,12 @@ export function PipelineCardModal({
     }
   };
 
-  const handleChangeDate = async (newDate: string) => {
+  const handleChangeSchedule = async (newDate: string | null, newTime: string | null) => {
     try {
       const dateVal = newDate ? newDate : null;
-      const updated = await updateCardScheduleDate(card.id, dateVal);
+      const timeVal = newTime ? newTime : null;
+      const { updateCardSchedule } = await import("@/app/actions/pipeline");
+      const updated = await updateCardSchedule(card.id, dateVal, timeVal);
       onCardUpdated(updated);
     } catch (e) {
       console.error(e);
@@ -377,7 +378,7 @@ export function PipelineCardModal({
               {Boolean(scoreReason) && (
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3.5">
                   <p className="eyebrow mb-1 text-ember">Alasan Sudut Pandang Ini Menang:</p>
-                  <p className="text-xs leading-relaxed text-ink/90">"{scoreReason}"</p>
+                  <p className="text-xs leading-relaxed text-ink/90">&ldquo;{scoreReason}&rdquo;</p>
                 </div>
               )}
 
@@ -573,35 +574,77 @@ export function PipelineCardModal({
           )}
         </div>
 
-        {/* Modal Footer: Schedule Date & Close */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-hairline/80 bg-surface-raised/40 p-4">
-          <div className="flex items-center gap-2">
-            <span className="text-micro font-medium text-muted">Tanggal Tayang:</span>
-            <input
-              type="date"
-              value={card.scheduled_date || ""}
-              onChange={(e) => handleChangeDate(e.target.value)}
-              className="rounded-lg border border-hairline bg-surface px-2.5 py-1 text-xs text-ink focus:border-ember focus:outline-hidden"
-            />
-            {card.scheduled_date && (
-              <button
-                type="button"
-                onClick={() => handleChangeDate("")}
-                className="text-[10px] text-muted hover:text-danger"
-                title="Hapus dari jadwal tanggal"
-              >
-                Lepas
-              </button>
-            )}
+        {/* Modal Footer: Precise Schedule Date & Time + Close */}
+        <div className="border-t border-hairline/80 bg-surface-raised/40 p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-micro font-bold text-muted">📅 Tanggal:</span>
+                <input
+                  type="date"
+                  value={card.scheduled_date || ""}
+                  onChange={(e) => handleChangeSchedule(e.target.value, card.scheduled_time || "19:30")}
+                  className="rounded-lg border border-hairline bg-surface px-2.5 py-1 text-xs text-ink focus:border-ember focus:outline-hidden"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-micro font-bold text-muted">⏰ Jam Posting:</span>
+                <input
+                  type="time"
+                  value={card.scheduled_time || "19:30"}
+                  onChange={(e) => handleChangeSchedule(card.scheduled_date || new Date().toISOString().split("T")[0], e.target.value)}
+                  className="rounded-lg border border-hairline bg-surface px-2.5 py-1 text-xs font-mono font-bold text-ink focus:border-ember focus:outline-hidden"
+                />
+              </div>
+
+              {card.scheduled_date && (
+                <button
+                  type="button"
+                  onClick={() => handleChangeSchedule(null, null)}
+                  className="text-[11px] text-muted hover:text-danger underline decoration-dotted"
+                  title="Hapus dari jadwal"
+                >
+                  Lepas Jadwal
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg bg-surface-raised px-4 py-2 text-xs font-semibold text-ink border border-hairline hover:bg-surface"
+            >
+              Tutup
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg bg-surface-raised px-4 py-2 text-xs font-semibold text-ink border border-hairline hover:bg-surface"
-          >
-            Tutup
-          </button>
+          {/* Quick Time Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/[0.04]">
+            <span className="text-[10px] text-muted font-medium">Preset Cepat:</span>
+            {[
+              { label: "☀️ 12:00 Siang", time: "12:00" },
+              { label: "🌇 17:00 Sore", time: "17:00" },
+              { label: "🔥 19:30 Prime Time", time: "19:30" },
+              { label: "🌙 21:00 Malam", time: "21:00" },
+            ].map((preset) => (
+              <button
+                key={preset.time}
+                type="button"
+                onClick={() => {
+                  const today = card.scheduled_date || new Date().toISOString().split("T")[0];
+                  handleChangeSchedule(today, preset.time);
+                }}
+                className={`rounded-md px-2 py-0.5 text-[10px] font-mono transition-colors ${
+                  card.scheduled_time === preset.time
+                    ? "bg-ember/20 text-ember border border-ember/40 font-bold"
+                    : "bg-surface text-muted hover:text-ink border border-hairline"
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>

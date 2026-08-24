@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LivingProcessingCompanion } from "./LivingProcessingCompanion";
-import { ProcessingTimeline, TimelinePhase, DEFAULT_TIMELINE_PHASES } from "./ProcessingTimeline";
+import { ProcessingTimeline, TimelinePhase } from "./ProcessingTimeline";
 
 export type ModuleTimelineConfig = {
   headerTitleDesktop: string;
@@ -381,7 +381,7 @@ export function GlobalStudioProcessingOverlay() {
   const [visualCompleted, setVisualCompleted] = useState(false);
 
   const animationRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
+  const startTimeRef = useRef<number>(0);
   const progressRef = useRef<number>(0);
   const isCompletingRef = useRef<boolean>(false);
 
@@ -406,10 +406,13 @@ export function GlobalStudioProcessingOverlay() {
     if (data.isOpen && !data.isCompleted) {
       // RESET for new run
       isCompletingRef.current = false;
-      setVisualCompleted(false);
       startTimeRef.current = Date.now();
-      setProgress(0);
-      setElapsed(0);
+
+      animationRef.current = requestAnimationFrame(() => {
+        setVisualCompleted(false);
+        setProgress(0);
+        setElapsed(0);
+      });
 
       const loop = () => {
         const now = Date.now();

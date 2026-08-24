@@ -280,9 +280,13 @@ Gunakan Bahasa Indonesia kasual, praktis, to the point. Langsung berikan teks ar
 }
 
 /**
- * Update the scheduled date for a pipeline card (used by Calendar View drag/reassign).
+ * Update both scheduled date and manual posting time for a pipeline card.
  */
-export async function updateCardScheduleDate(cardId: string, scheduledDate: string | null) {
+export async function updateCardSchedule(
+  cardId: string,
+  scheduledDate: string | null,
+  scheduledTime: string | null = null,
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -291,7 +295,7 @@ export async function updateCardScheduleDate(cardId: string, scheduledDate: stri
 
   const { data, error } = await supabase
     .from("pipeline_cards")
-    .update({ scheduled_date: scheduledDate })
+    .update({ scheduled_date: scheduledDate, scheduled_time: scheduledTime })
     .eq("id", cardId)
     .eq("user_id", user.id)
     .select()
@@ -300,6 +304,13 @@ export async function updateCardScheduleDate(cardId: string, scheduledDate: stri
   if (error) throw error;
   revalidatePath("/app");
   return data;
+}
+
+/**
+ * Update the scheduled date for a pipeline card (used by Calendar View drag/reassign).
+ */
+export async function updateCardScheduleDate(cardId: string, scheduledDate: string | null) {
+  return updateCardSchedule(cardId, scheduledDate, null);
 }
 
 /**

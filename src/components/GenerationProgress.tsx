@@ -32,7 +32,7 @@ export function GenerationProgress({
       // When parent generation completes and unmounts, trigger smooth 100% completion sequence!
       completeStudioProcessing();
     };
-  }, [moduleKey]);
+  }, [moduleKey, label, status]);
 
   // Update dynamic status without re-triggering startStudioProcessing / reset
   useEffect(() => {

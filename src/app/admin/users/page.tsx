@@ -6,7 +6,6 @@ import {
   banUser,
   unbanUser,
   adjustCredits,
-  injectCredits,
   setProStatus,
   setAdminRole,
   deleteUser,

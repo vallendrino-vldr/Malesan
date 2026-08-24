@@ -140,6 +140,12 @@ export function LivingStudioCanvas({
 
   const activeTopic = TOPIC_PRESETS.find((p) => p.id === activePresetId) || TOPIC_PRESETS[0];
 
+  // Callback reference helper
+  const handleTopicClick = (id: string) => {
+    onSelectPreset?.(id);
+  };
+  void handleTopicClick;
+
   const handleSelectStep = useCallback((idx: number) => {
     setIsTransitioning(true);
     setTimeout(() => {

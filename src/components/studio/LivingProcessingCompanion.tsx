@@ -31,13 +31,13 @@ export function LivingProcessingCompanion({
   if (isCompleted || progress >= 100) {
     text = activeMessages[5] || "Siap! Konten lo udah beres.";
   } else if (progress < 25) {
-    text = activeMessages[1] || DEFAULT_PHASE_MESSAGES[1];
+    text = activeMessages[phase] || activeMessages[1] || DEFAULT_PHASE_MESSAGES[1];
   } else if (progress < 55) {
-    text = activeMessages[2] || DEFAULT_PHASE_MESSAGES[2];
+    text = activeMessages[phase] || activeMessages[2] || DEFAULT_PHASE_MESSAGES[2];
   } else if (progress < 85) {
-    text = activeMessages[3] || DEFAULT_PHASE_MESSAGES[3];
+    text = activeMessages[phase] || activeMessages[3] || DEFAULT_PHASE_MESSAGES[3];
   } else {
-    text = activeMessages[4] || DEFAULT_PHASE_MESSAGES[4];
+    text = activeMessages[phase] || activeMessages[4] || DEFAULT_PHASE_MESSAGES[4];
   }
 
   // Determine mascot mood based on processing phase

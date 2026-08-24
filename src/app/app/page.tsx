@@ -138,6 +138,7 @@ export default async function AppPage({
       getCost("thread"),
       getVideoCostPerMin(),
       getVideoNoWatermarkCost(),
+      getCost("affiliate"),
     ]),
 
     // Owner-only. A bank transfer lands in `topups` and then waits for someone
@@ -173,7 +174,7 @@ export default async function AppPage({
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .slice(0, 8)
     .map((c) => ({ id: c.id, title: c.title ?? "", created_at: c.created_at }));
-  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm] =
+  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm, costAffiliate] =
     costs;
 
   // Owner's live announcement. Same config cache the costs above just warmed, so
@@ -257,6 +258,7 @@ export default async function AppPage({
               thread: costThread,
               video: costVideo,
               videoNoWm: costVideoNoWm,
+              affiliate: costAffiliate,
             }}
             home={
         <div className="reveal relative flex flex-col gap-4 py-1">
@@ -309,14 +311,14 @@ export default async function AppPage({
             </div>
           </section>
 
-          {/* LEVEL 2: CREATIVE COMMAND TILES (8 Fitur Kompak) */}
+          {/* LEVEL 2: CREATIVE COMMAND TILES (10 Fitur Kompak) */}
           <section className="space-y-2">
             <div className="flex items-center justify-between px-0.5">
               <h2 className="eyebrow text-muted font-bold">Semua Alat Kreatif</h2>
-              <span className="text-micro font-mono text-muted">8 fitur siap pakai</span>
+              <span className="text-micro font-mono text-muted">10 fitur siap pakai</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-5">
               <StudioTile
                 mod="script"
                 title="Naskah Video"
@@ -328,6 +330,32 @@ export default async function AppPage({
                     <polyline points="14 2 14 8 20 8" />
                     <line x1="16" y1="13" x2="8" y2="13" />
                     <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                }
+              />
+              <StudioTile
+                mod="affiliate"
+                title="Naskah Affiliate"
+                subtitle="TikTok & Shopee"
+                cost={costAffiliate}
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                  </svg>
+                }
+              />
+              <StudioTile
+                mod="carousel"
+                title="Slide Carousel"
+                subtitle="Ekspor PNG IG/LI"
+                cost="Gratis"
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M7 3v18" />
+                    <path d="M17 3v18" />
                   </svg>
                 }
               />

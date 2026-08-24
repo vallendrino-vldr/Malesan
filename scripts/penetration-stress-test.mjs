@@ -39,7 +39,7 @@ function getAllFiles(dir, fileList = []) {
         fileList.push(p);
       }
     }
-  } catch (e) {
+  } catch {
     // Directory might not exist if not built yet
   }
   return fileList;
@@ -68,7 +68,7 @@ for (const file of staticFiles) {
               if (payload.role === "service_role") {
                 leakedSecrets.push({ file, secret: pattern.name });
               }
-            } catch (e) {}
+            } catch {}
           } else {
             leakedSecrets.push({ file, secret: pattern.name });
           }

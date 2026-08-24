@@ -188,3 +188,105 @@ JSON:
   "alt_hooks": ["2 alternatif hook kalau yang pertama kurang nendang"]
 }`;
 }
+
+export const AFFILIATE_ENGINE_SCHEMA = {
+  type: "object",
+  properties: {
+    product_name: { type: "string" },
+    key_appeal: { type: "string" },
+    variants: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          angle_name: { type: "string" },
+          hook_spoken: { type: "string" },
+          hook_visual: { type: "string" },
+          scenes: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                scene: { type: "number" },
+                duration: { type: "string" },
+                spoken: { type: "string" },
+                visual: { type: "string" },
+                on_screen_text: { type: "string" },
+              },
+              required: ["scene", "duration", "spoken", "visual", "on_screen_text"],
+            },
+          },
+          cta_fomo: { type: "string" },
+          caption: { type: "string" },
+          hashtags: { type: "array", items: { type: "string" } },
+        },
+        required: ["angle_name", "hook_spoken", "hook_visual", "scenes", "cta_fomo", "caption", "hashtags"],
+      },
+    },
+  },
+  required: ["product_name", "key_appeal", "variants"],
+};
+
+/**
+ * TikTok Shop & Shopee Affiliate Short Video Script Engine.
+ */
+export function buildAffiliateEnginePrompt(
+  productName: string,
+  sellingPoints: string,
+  style: string,
+  dna: CreatorDna | null,
+  trends: TrendCard[],
+  learned?: LearnedNote[],
+  extras?: PromptExtras,
+): string {
+  const shared = buildEngineContext(dna, trends, learned, extras);
+
+  return `${shared}
+Tugas lo adalah bikin 3 VARIAN NASKAH VIDEO PENDEK (30-60 detik) berkonversi tinggi untuk jualan affiliate TikTok Shop / Shopee / Reels.
+
+PRODUK YANG DIJUAL:
+Nama Produk: "${productName}"
+Keunggulan / Detail Harga: "${sellingPoints}"
+Gaya Pendekatan Pilihan: "${style || "Campuran (Masalah, Demo Jujur, Flash Sale)"}"
+
+ATURAN PSIKOLOGI AFFILIATE INDONESIA:
+1. HOOK HARUS KUAT & ANTI-IKLAN:
+   - JANGAN buka dengan "Halo guys hari ini aku mau review...". Itu bikin penonton langsung scroll.
+   - Buka dengan masalah relate, kebiasaan salah, rahasia harga murah, atau unboxing heboh.
+2. POLA 3 VARIAN:
+   - Varian 1: "Masalah Keseharian -> Solusi Produk" (Storytelling relate).
+   - Varian 2: "Unboxing & Tes Jujur Tanpa Basa-basi" (Demonstrasi fitur dan perbandingan).
+   - Varian 3: "Racun Belanja / FOMO Diskon & Keranjang Kuning" (Spill harga diskon dan stok menipis).
+3. INSTRUKSI VISUAL & KERANJANG KUNING:
+   - Berikan visual cue yang jelas kapan harus tunjuk ke pojok kiri bawah (keranjang kuning) atau bio profile.
+4. CALL TO ACTION (CTA):
+   - Gunakan pemicu psikologis FOMO (harga promo, voucher gratis ongkir, promo tanggal kembar).
+5. BAHASA:
+   - Bahasa Indonesia gaul, luwes, natural seperti teman merekomendasikan barang bagus ke teman.
+
+Format JSON Wajib:
+{
+  "product_name": "${productName}",
+  "key_appeal": "${sellingPoints}",
+  "variants": [
+    {
+      "angle_name": "Solusi Masalah Keseharian",
+      "hook_spoken": "Kalimat pembuka 3 detik pertama yang bikin orang berhenti scrolling",
+      "hook_visual": "Tindakan di layar saat hook diucapkan",
+      "scenes": [
+        {
+          "scene": 1,
+          "duration": "00:00-00:05",
+          "spoken": "Kalimat yang diucapkan kreator",
+          "visual": "Aksi visual di kamera (misal: tunjuk barang, zoom in)",
+          "on_screen_text": "Teks singkat di layar"
+        }
+      ],
+      "cta_fomo": "Kalimat penutup ajakan klik keranjang kuning",
+      "caption": "Caption menarik + pertanyaan interaksi",
+      "hashtags": ["#racuntiktok", "#affiliate", "#reviewjujur"]
+    }
+  ]
+}`;
+}
+

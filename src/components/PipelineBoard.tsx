@@ -25,6 +25,7 @@ import { normalizeTodayPlatform, todayPlatformLabel } from "@/lib/content-option
 import { PipelineCalendarView } from "./PipelineCalendarView";
 import { PipelineCardModal } from "./PipelineCardModal";
 import { PipelineClearModal } from "./PipelineClearModal";
+import { checkScheduleReminders } from "@/lib/notifications";
 
 /**
  * Pipeline.
@@ -275,6 +276,15 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
     const t = setTimeout(() => setUndoCard(null), UNDO_WINDOW_MS);
     return () => clearTimeout(t);
   }, [undoCard]);
+
+  // Periodic check for today's scheduled posting cards
+  useEffect(() => {
+    checkScheduleReminders(cards);
+    const interval = setInterval(() => {
+      checkScheduleReminders(cards);
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [cards]);
 
   const colRefs = useRef<{ [key in Column]: HTMLDivElement | null }>({
     ide: null,
@@ -1125,7 +1135,7 @@ function PipelineCardItem({
           {showAnalysis && (
             <div className="mt-2 space-y-1.5 border-t border-hairline/60 pt-2 text-[11px]">
               {scoreReason && (
-                <p className="mb-2 text-micro leading-relaxed text-muted italic">"{scoreReason}"</p>
+                <p className="mb-2 text-micro leading-relaxed text-muted italic">&ldquo;{scoreReason}&rdquo;</p>
               )}
               <div className="grid grid-cols-2 gap-1.5 text-[10px] text-muted">
                 <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">

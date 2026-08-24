@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { Mascot } from "@/components/Mascot";
@@ -12,6 +12,9 @@ const AI_THOUGHTS = [
   "Udah siap bikin sesuatu hari ini?",
   "Sini masuk, gue temenin dari nol sampai siap tayang.",
 ];
+
+const emptySubscribe = () => () => {};
+const useMounted = () => useSyncExternalStore(emptySubscribe, () => true, () => false);
 
 interface MasukWorkspaceViewProps {
   safeNext: string;
@@ -27,11 +30,9 @@ export function MasukWorkspaceView({
   const [thoughtIndex, setThoughtIndex] = useState(0);
   const [fadeThought, setFadeThought] = useState(true);
   const [standbyMessage, setStandbyMessage] = useState("Lagi nunggu ide lo...");
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useMounted();
 
   useEffect(() => {
-    setIsMounted(true);
-
     // Thought bubble rotation timer every 6s
     const thoughtInterval = setInterval(() => {
       setFadeThought(false);

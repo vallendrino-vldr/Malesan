@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { TabKey } from "./AppShell";
 
 export interface CommandItem {
@@ -28,6 +29,7 @@ export function CommandOmnibar({
   onOpenTutorial,
   isAdmin = false,
 }: CommandOmnibarProps) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -190,7 +192,8 @@ export function CommandOmnibar({
           </svg>
         ),
         onSelect: () => {
-          window.location.href = "/app/topup";
+          onClose();
+          router.push("/app/topup");
         },
       },
       {
@@ -221,7 +224,7 @@ export function CommandOmnibar({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ink/80">
             <circle cx="12" cy="12" r="10" />
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-            <line x1="12" x2="12.01" y1="17" y2="17" />
+            <line x1="12" y1="12.01" x2="17" y2="17" />
           </svg>
         ),
         onSelect: () => {
@@ -243,13 +246,14 @@ export function CommandOmnibar({
           </svg>
         ),
         onSelect: () => {
-          window.location.href = "/admin";
+          onClose();
+          router.push("/admin");
         },
       });
     }
 
     return list;
-  }, [onSelectTab, onOpenTutorial, isAdmin, onClose]);
+  }, [onSelectTab, onOpenTutorial, isAdmin, onClose, router]);
 
   // Filter commands by search query
   const filteredCommands = useMemo(() => {
@@ -263,17 +267,29 @@ export function CommandOmnibar({
     );
   }, [commands, query]);
 
-  // Reset index when query changes
-  useEffect(() => {
+  const [prevQuery, setPrevQuery] = useState(query);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  // Sync state on query change (React 19 pattern)
+  if (query !== prevQuery) {
+    setPrevQuery(query);
     setSelectedIndex(0);
-  }, [query]);
+  }
+
+  // Reset query and selectedIndex when modal opens
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setQuery("");
+      setSelectedIndex(0);
+    }
+  }
 
   // Auto-focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setQuery("");
-      setSelectedIndex(0);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
