@@ -26,6 +26,7 @@ import { PipelineCalendarView } from "./PipelineCalendarView";
 import { PipelineCardModal } from "./PipelineCardModal";
 import { PipelineClearModal } from "./PipelineClearModal";
 import { checkScheduleReminders } from "@/lib/notifications";
+import { NetizenSimulatorModal } from "./NetizenSimulatorModal";
 
 /**
  * Pipeline.
@@ -178,6 +179,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
   const [strategyStatus, setStrategyStatus] = useState<string>("");
   const [strategySuccess, setStrategySuccess] = useState<string>("");
   const [selectedCard, setSelectedCard] = useState<PipelineCard | null>(null);
+  const [netizenModalCard, setNetizenModalCard] = useState<PipelineCard | null>(null);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const router = useRouter();
 
@@ -699,6 +701,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                         onSchedule={tagSchedule}
                         isScheduling={scheduling.includes(card.id)}
                         draggable={false}
+                        onOpenNetizenSimulator={(c) => setNetizenModalCard(c)}
                       />
                     ))
                   )}
@@ -747,6 +750,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                           onSchedule={tagSchedule}
                           isScheduling={scheduling.includes(card.id)}
                           draggable
+                          onOpenNetizenSimulator={(c) => setNetizenModalCard(c)}
                           onDragStart={() => setDragging(true)}
                           onDragEnd={(event, info) => handleDragEnd(card.id, event, info)}
                         />
@@ -823,6 +827,15 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           router.refresh();
         }}
       />
+
+      {/* Netizen Reaction Simulator Modal */}
+      <NetizenSimulatorModal
+        isOpen={Boolean(netizenModalCard)}
+        onClose={() => setNetizenModalCard(null)}
+        title={netizenModalCard?.title || ""}
+        platform={String((netizenModalCard?.content as Record<string, unknown> | null)?.platform || "TikTok / Reels")}
+        scriptContent={JSON.stringify((netizenModalCard?.content as Record<string, unknown> | null)?.generated_script || "")}
+      />
     </div>
   );
 }
@@ -845,6 +858,7 @@ function PipelineCardItem({
   onSchedule,
   isScheduling,
   draggable,
+  onOpenNetizenSimulator,
   onDragStart,
   onDragEnd,
 }: {
@@ -857,6 +871,7 @@ function PipelineCardItem({
   onSchedule: (cardId: string) => void | Promise<void>;
   isScheduling: boolean;
   draggable: boolean;
+  onOpenNetizenSimulator?: (card: PipelineCard) => void;
   onDragStart?: () => void;
   onDragEnd?: (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => void;
 }) {
@@ -1260,7 +1275,18 @@ function PipelineCardItem({
       )}
 
       {status === "siap" && (
-        <div className="mt-3 border-t border-hairline pt-3">
+        <div className="mt-3 space-y-2 border-t border-hairline pt-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenNetizenSimulator?.(card);
+            }}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-ember/30 bg-ember/10 px-4 py-2 text-xs font-bold text-ember transition-all duration-[var(--duration-standard)] ease-heat hover:bg-ember/20 active:scale-[0.98] cursor-pointer"
+          >
+            <span>💬</span>
+            <span>Simulasi Respon Netizen</span>
+          </button>
+
           <button
             onClick={() => onMove(card.id, "posted")}
             className="w-full cursor-pointer rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"

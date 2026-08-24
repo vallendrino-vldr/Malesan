@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/pipeline";
 import { todayPlatformLabel, normalizeTodayPlatform } from "@/lib/content-options";
 import { completeStudioProcessing } from "./studio/AIProcessingOverlay";
+import { NetizenSimulatorModal } from "./NetizenSimulatorModal";
 
 type Column = "ide" | "draft" | "siap" | "posted";
 
@@ -53,6 +54,7 @@ export function PipelineCardModal({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<"detail" | "rubric">("detail");
   const [pickedHookIndex, setPickedHookIndex] = useState<number>(0);
+  const [showNetizenSimulator, setShowNetizenSimulator] = useState(false);
 
   if (!isOpen || !card) return null;
 
@@ -226,12 +228,13 @@ export function PipelineCardModal({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="card-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5"
-    >
+    <>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="card-modal-title"
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5"
+      >
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -528,9 +531,18 @@ export function PipelineCardModal({
                 <div className="space-y-3 rounded-xl border border-hairline bg-surface-raised p-4">
                   <div className="flex items-center justify-between">
                     <span className="eyebrow text-success">Naskah Video Siap Syuting:</span>
-                    <span className="text-micro text-muted">
-                      {generatedScript.scenes?.length ?? 0} Scene
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowNetizenSimulator(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-2.5 py-1 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 cursor-pointer active:scale-95"
+                      >
+                        <span>💬</span>
+                        <span>Simulasi Netizen</span>
+                      </button>
+                      <span className="text-micro text-muted">
+                        {generatedScript.scenes?.length ?? 0} Scene
+                      </span>
+                    </div>
                   </div>
 
                   <div className="max-h-72 space-y-2.5 overflow-y-auto pr-1">
@@ -648,5 +660,15 @@ export function PipelineCardModal({
         </div>
       </div>
     </div>
-  );
+
+    {/* Netizen Reaction Simulator Modal */}
+    <NetizenSimulatorModal
+      isOpen={showNetizenSimulator}
+      onClose={() => setShowNetizenSimulator(false)}
+      title={card.title}
+      platform={String(content?.platform || "TikTok / Reels")}
+      scriptContent={JSON.stringify(generatedScript || "")}
+    />
+  </>
+);
 }
