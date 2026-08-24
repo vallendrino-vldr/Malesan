@@ -4,36 +4,40 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mascot } from "@/components/Mascot";
 
-const PHASE_MESSAGES: Record<number, string> = {
+export const DEFAULT_PHASE_MESSAGES: Record<number, string> = {
   1: "Gue baca dulu ide lo...",
   2: "Lagi cari angle yang bikin orang berhenti scroll...",
-  3: "Oke, gue susun alurnya...",
+  3: "Oke, gue kurasi 3 ide terbaik...",
   4: "Hampir selesai. Tinggal gue rapihin...",
 };
 
 interface LivingProcessingCompanionProps {
   phase: number; // 1 to 4
   progress: number; // 0 to 100
+  messages?: Record<number, string>;
   isCompleted?: boolean;
 }
 
 export function LivingProcessingCompanion({
   phase,
   progress,
+  messages = DEFAULT_PHASE_MESSAGES,
   isCompleted = false,
 }: LivingProcessingCompanionProps) {
+  const activeMessages = messages || DEFAULT_PHASE_MESSAGES;
+
   // Determine speech bubble text based on stage and completion
   let text = "";
   if (isCompleted || progress >= 100) {
-    text = "Siap! Konten lo udah beres.";
+    text = activeMessages[5] || "Siap! Konten lo udah beres.";
   } else if (progress < 25) {
-    text = PHASE_MESSAGES[1];
+    text = activeMessages[1] || DEFAULT_PHASE_MESSAGES[1];
   } else if (progress < 55) {
-    text = PHASE_MESSAGES[2];
+    text = activeMessages[2] || DEFAULT_PHASE_MESSAGES[2];
   } else if (progress < 85) {
-    text = PHASE_MESSAGES[3];
+    text = activeMessages[3] || DEFAULT_PHASE_MESSAGES[3];
   } else {
-    text = PHASE_MESSAGES[4];
+    text = activeMessages[4] || DEFAULT_PHASE_MESSAGES[4];
   }
 
   // Determine mascot mood based on processing phase

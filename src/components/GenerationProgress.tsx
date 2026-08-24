@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   startStudioProcessing,
   updateStudioChars,
+  updateStudioStatus,
   completeStudioProcessing,
 } from "./studio/AIProcessingOverlay";
 
@@ -20,13 +21,25 @@ export function GenerationProgress({
   status?: string;
   compact?: boolean;
 }) {
+  const isStartedRef = useRef(false);
+
   useEffect(() => {
-    startStudioProcessing({ moduleKey, label, status });
+    if (!isStartedRef.current) {
+      isStartedRef.current = true;
+      startStudioProcessing({ moduleKey, label, status });
+    }
     return () => {
       // When parent generation completes and unmounts, trigger smooth 100% completion sequence!
       completeStudioProcessing();
     };
-  }, [moduleKey, label, status]);
+  }, [moduleKey]);
+
+  // Update dynamic status without re-triggering startStudioProcessing / reset
+  useEffect(() => {
+    if (status) {
+      updateStudioStatus(status);
+    }
+  }, [status]);
 
   useEffect(() => {
     if (chars > 0) {

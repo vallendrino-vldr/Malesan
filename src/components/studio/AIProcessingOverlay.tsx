@@ -3,7 +3,309 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LivingProcessingCompanion } from "./LivingProcessingCompanion";
-import { ProcessingTimeline } from "./ProcessingTimeline";
+import { ProcessingTimeline, TimelinePhase, DEFAULT_TIMELINE_PHASES } from "./ProcessingTimeline";
+
+export type ModuleTimelineConfig = {
+  headerTitleDesktop: string;
+  headerTitleMobile: string;
+  phases: TimelinePhase[];
+  messages: Record<number, string>;
+};
+
+export const MODULE_TIMELINE_CONFIGS: Record<string, ModuleTimelineConfig> = {
+  // 1. Ide Hari Ini / Brainstorm
+  ide: {
+    headerTitleDesktop: "LAGI NYARI IDE & POLA TERBAIK...",
+    headerTitleMobile: "LAGI MIKIRIN IDE...",
+    phases: [
+      {
+        id: 1,
+        title: "Membaca topik lo",
+        subtitle: "Nyari pola terbaik dari topik yang kamu kasih.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Riset sudut pandang",
+        subtitle: "Milih angle yang paling cocok buat audiens lo.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Kurasi 3 ide terbaik",
+        subtitle: "Nyiapin judul, format hook, dan inti konten.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Siap dipakai",
+        subtitle: "3 ide konten pertama lo sudah siap.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue baca dulu topik lo...",
+      2: "Lagi cari angle yang bikin orang berhenti scroll...",
+      3: "Oke, gue kurasi 3 ide paling potensial...",
+      4: "Hampir selesai. Tinggal gue rapihin...",
+      5: "Siap! 3 ide udah beres.",
+    },
+  },
+
+  // 2. Hook Lab / Bikin Hook
+  hook: {
+    headerTitleDesktop: "LAGI MERACIK HOOK 3 DETIK PERTAMA...",
+    headerTitleMobile: "LAGI BIKIN HOOK...",
+    phases: [
+      {
+        id: 1,
+        title: "Bedah inti cerita",
+        subtitle: "Identifikasi rasa penasaran & problem audiens.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Racik 3 detik pertama",
+        subtitle: "Bikin pola kalimat pembuka yang bikin stay.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Uji daya pikat retensi",
+        subtitle: "Kombinasi emosi, visual trigger, dan rasa kepo.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Hook siap dipilih",
+        subtitle: "Opsi hook terbaik siap lo pilih.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue bedah dulu poin paling nendang...",
+      2: "Lagi racik hook 3 detik pertama yang brutal...",
+      3: "Oke, gue uji formula retensinya...",
+      4: "Tinggal finishing variasi hook...",
+      5: "Siap! Hook terbaik udah jadi.",
+    },
+  },
+
+  // 3. Script Engine / Bikin Script
+  script: {
+    headerTitleDesktop: "LAGI MENYUSUN NASKAH LENGKAP...",
+    headerTitleMobile: "LAGI NULIS NASKAH...",
+    phases: [
+      {
+        id: 1,
+        title: "Analisis hook terpilih",
+        subtitle: "Kunci fondasi pembuka naskah.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Bangun alur retensi",
+        subtitle: "Struktur pacing, jembatan ide, dan isi daging.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Tulis VO & visual footage",
+        subtitle: "Pecah scene, arahan visual, dan teks layar.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Naskah lengkap siap",
+        subtitle: "Script siap untuk syuting dan voiceover.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue kunci hook yang lo pilih...",
+      2: "Lagi susun alur biar ga ada bagian yang ngebosenin...",
+      3: "Oke, gue tulis arahan visual dan voice over-nya...",
+      4: "Hampir beres. Tinggal poles CTA...",
+      5: "Siap! Naskah lengkap udah beres.",
+    },
+  },
+
+  // 4. Vibe Coding
+  vibe: {
+    headerTitleDesktop: "LAGI MERANCANG & MEMBANGUN APP...",
+    headerTitleMobile: "LAGI BIKIN KODE...",
+    phases: [
+      {
+        id: 1,
+        title: "Analisis instruksi",
+        subtitle: "Membaca spesifikasi fitur & interaksi.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Rancang arsitektur UI",
+        subtitle: "Struktur layout, state, dan alur komponen.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Generate kode & logic",
+        subtitle: "Build logic interaktif dan styling tailwind.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "App siap dicoba",
+        subtitle: "Aplikasi langsung bisa lo preview.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue pelajari kebutuhan fiturnya...",
+      2: "Lagi rancang struktur komponen dan state-nya...",
+      3: "Oke, gue susun kode interaktifnya...",
+      4: "Hampir selesai. Tinggal testing preview...",
+      5: "Siap! App udah bisa dicoba.",
+    },
+  },
+
+  // 5. Repurpose
+  repurpose: {
+    headerTitleDesktop: "LAGI MERACIK ULANG KONTEN MULTI-PLATFORM...",
+    headerTitleMobile: "LAGI REPURPOSE...",
+    phases: [
+      {
+        id: 1,
+        title: "Membaca transkrip",
+        subtitle: "Ekstraksi wawasan utama dari konten asal.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Format ulang media",
+        subtitle: "Sesuaikan pola konsumsi tiap platform target.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Optimasi tone & CTA",
+        subtitle: "Poles gaya penyampaian dan call-to-action.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Konten siap sebar",
+        subtitle: "Versi multi-platform sudah siap diposting.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue baca dan petakan inti konten lo...",
+      2: "Lagi sesuaikan format buat tiap medsos...",
+      3: "Oke, gue poles tone dan hook per platform...",
+      4: "Tinggal rapikan hasil akhirnya...",
+      5: "Siap! Konten multi-platform selesai.",
+    },
+  },
+
+  // 6. Clip Engine
+  clip: {
+    headerTitleDesktop: "LAGI MEMBEDAH POTONGAN KLIP VIRAL...",
+    headerTitleMobile: "LAGI CARI KLIP...",
+    phases: [
+      {
+        id: 1,
+        title: "Pindai transkrip video",
+        subtitle: "Cari momen paling padat wawasan & emosi.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Tentukan timestamp",
+        subtitle: "Kunci durasi optimal 30-60 detik.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Racik judul & framing",
+        subtitle: "Bikin headline pembuka yang mengundang klik.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Klip siap dipotong",
+        subtitle: "Daftar timestamp & naskah klip sudah siap.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue dengerin dan scan transkrip videonya...",
+      2: "Lagi tandai golden moment 30-60 detik...",
+      3: "Oke, gue racik headline dan framing visualnya...",
+      4: "Tinggal verifikasi timing tiap klip...",
+      5: "Siap! Daftar klip viral udah jadi.",
+    },
+  },
+};
+
+function resolveConfig(moduleKey?: string): ModuleTimelineConfig {
+  if (!moduleKey) return MODULE_TIMELINE_CONFIGS.ide;
+  const key = moduleKey.toLowerCase();
+  if (key.includes("hook")) return MODULE_TIMELINE_CONFIGS.hook;
+  if (key.includes("script")) return MODULE_TIMELINE_CONFIGS.script;
+  if (key.includes("vibe") || key.includes("app")) return MODULE_TIMELINE_CONFIGS.vibe;
+  if (key.includes("repurpose") || key.includes("recycle")) return MODULE_TIMELINE_CONFIGS.repurpose;
+  if (key.includes("clip")) return MODULE_TIMELINE_CONFIGS.clip;
+  return MODULE_TIMELINE_CONFIGS.ide;
+}
 
 type OverlayData = {
   isOpen: boolean;
@@ -42,6 +344,12 @@ export function startStudioProcessing(opts: {
     status: opts.status,
     chars: 0,
   };
+  emit();
+}
+
+export function updateStudioStatus(status?: string) {
+  if (!currentData.isOpen) return;
+  currentData.status = status;
   emit();
 }
 
@@ -179,6 +487,7 @@ export function GlobalStudioProcessingOverlay() {
     };
   }, [data.isOpen, data.isCompleted, data.chars]);
 
+  const config = resolveConfig(data.moduleKey);
   const isCompleted = visualCompleted || progress >= 100;
   const currentPhase = isCompleted
     ? 4
@@ -277,8 +586,8 @@ export function GlobalStudioProcessingOverlay() {
                     data.status.toUpperCase()
                   ) : (
                     <>
-                      <span className="hidden sm:inline">LAGI NYARI JAWABAN TERBAIK...</span>
-                      <span className="sm:hidden">LAGI MIKIR...</span>
+                      <span className="hidden sm:inline">{config.headerTitleDesktop}</span>
+                      <span className="sm:hidden">{config.headerTitleMobile}</span>
                     </>
                   )}
                 </span>
@@ -292,20 +601,22 @@ export function GlobalStudioProcessingOverlay() {
               </div>
             </div>
 
-            {/* Center: Living Mascot Companion */}
+            {/* Center: Living Mascot Companion with Contextual Speech */}
             <div className="relative z-10 my-auto py-1 sm:py-2">
               <LivingProcessingCompanion
                 phase={currentPhase}
                 progress={progress}
+                messages={config.messages}
                 isCompleted={isCompleted}
               />
             </div>
 
-            {/* Bottom: Neural Progress Bar & Step Timeline */}
+            {/* Bottom: Neural Progress Bar & Contextual Step Timeline */}
             <div className="relative z-10 mt-auto rounded-2xl border border-white/[0.06] bg-black/40 p-3 sm:p-4">
               <ProcessingTimeline
                 currentPhase={currentPhase}
                 progress={progress}
+                phases={config.phases}
                 isCompleted={isCompleted}
               />
             </div>

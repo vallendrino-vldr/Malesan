@@ -35,38 +35,64 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Studio Immersive AI Processing State Upgrade (§9z.15).
-**Newest work is §9z.15 — Studio Immersive AI Processing State Upgrade: (1) Fixed HUD header timer ([ 04s ]) with tabular numbers, zero-shift alignment, and dynamic uppercase status; (2) Added Cinematic Neural Progress Bar (0%, 25%, 55%, 85%) with glowing ember particle dot following leading edge; (3) Single source of truth `progress` driving neural bar, step timeline, and vertical progressive line fills; (4) Added dynamic phase-driven companion thought bubble messages ("Gue baca dulu ide lo...", "Lagi cari angle yang bikin orang berhenti scroll...", "Oke, gue susun alurnya...", "Hampir selesai. Tinggal gue rapihin...", "Siap! Konten lo udah beres."); (5) Floating workspace window (520px desktop min-h 560px, w-[calc(100%-32px)] mobile, rounded-28px, #111111 background, ambient ember glow); (6) Verified via `next build` (41 routes), `npm test` (11 tests pass), and DevTools live generation capture across 1920x1080, 1366x768, 390x844, and 375x812.** Read §9z.15, then §9z.14.
+Last updated: **2026-08-24**, after Pipeline Polish, Context-Aware Timeline Alur & Interactive Scene Studio Editor (§9z.16).
+**Newest work is §9z.16 — Pipeline Polish, Context-Aware Loading Timeline Alur & Interactive Scene Studio Editor: (1) Rebuilt Pipeline "Bikin hook · 2 kredit" and stage mover navigation buttons (`Draft →`, `← Ide`) with vibrant solid ember style (`bg-ember text-obsidian`) and crisp active borders; (2) Added module-specific contextual timeline alur registry `MODULE_TIMELINE_CONFIGS` for Ide Hari Ini, Hook Lab, Script Engine, Vibe Coding, Repurpose, and Clip Engine; (3) Fixed 95% stream completion hang by triggering immediate `completeStudioProcessing()` on `msg.done` and decoupling status updates from unmount cleanup; (4) Upgraded Tab "Siap" in `ScriptView.tsx` to an interactive Scene Studio Editor with inline text editing, custom creator footage notes, and `✨ AI Sesuaikan Footage` server action (`adaptSceneFootage`); (5) Verified via `next build` (41 routes), `npm test` (11 tests pass), and DevTools live generation capture.** Read §9z.16, then §9z.15.
 
 ---
 
-## §9z.15 — Studio Immersive AI Processing State Upgrade (2026-08-24)
+## §9z.16 — Pipeline Polish, Context-Aware Timeline Alur & Interactive Scene Studio Editor (2026-08-24)
 
-**Code checkpoint:** Verified via `next build` (41 routes compiled), `tsc --noEmit` (0 errors), `npm test` (11 invariant + video tests passed), and visual inspection with DevTools MCP across desktop 1920x1080, 1366x768, mobile 390x844, and 375x812.
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop.
 
 ### Summary of Changes:
-1. **Fixed HUD Header Timer (`AIProcessingOverlay.tsx`):**
-   - Left: Pulsing orange beacon dot + dynamic uppercase phase title (e.g. `● MEMBACA IDE LO`, `● NYARING KEMUNGKINAN`).
-   - Right: Fixed-width HUD timer box `[ 04s ]` with tabular numbers (`tabular-nums font-mono`) and centered alignment. Never shifts during seconds transition.
-   - Background Dim Mode: `backdrop-blur-md bg-black/65` with $0 \to 12\text{px}$ blur transition.
+1. **Pipeline Action & Navigation Buttons (`PipelineBoard.tsx`):**
+   - "Bikin hook · 2 kredit" upgraded to solid brand ember `bg-ember text-obsidian font-bold shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo active:scale-[0.98]`.
+   - `StageMover` navigation buttons (`Draft →`, `← Ide`) upgraded to solid border pill buttons with hover ember glow.
+2. **Context-Aware Loading Timeline Registry (`AIProcessingOverlay.tsx`):**
+   - Added `MODULE_TIMELINE_CONFIGS` mapping each module (Ide, Hook, Script, Vibe, Repurpose, Clip) to custom 4-phase timeline steps and companion dialogue.
+3. **95% Stream Completion Fix (`PipelineBoard.tsx`, `GenerationProgress.tsx`):**
+   - Dispatched `completeStudioProcessing()` directly upon `msg.done`.
+   - Decoupled `GenerationProgress` `status` updates into `updateStudioStatus(status)` to prevent unmount/reset cycles mid-stream.
+4. **Interactive Scene Studio Editor & AI Footage Helper (`ScriptView.tsx`, `src/app/actions/pipeline.ts`):**
+   - Inline editable textareas for Voiceover, On-screen text, and Footage.
+   - Creator custom footage note input (*"Punya rekaman sendiri? Masukkan di sini..."*).
+   - `✨ AI Sesuaikan Footage` button invoking `adaptSceneFootage` server action to intelligently rewrite scene footage.
+   - Live script persistence via `onSaveScript` to Supabase `updateCardContentAndStatus`.
 
-2. **Cinematic Neural Progress Bar & Ember Particle Head (`ProcessingTimeline.tsx`):**
-   - Synchronized single source of truth `progress` ($0 \to 100$).
-   - Horizontal neural track with stage markers at $0\%$, $25\%$, $55\%$, and $85\%$.
-   - Moving ember particle dot (`●`) with `shadow-[0_0_10px_#ff8a3d]` at the leading edge.
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `tsc --noEmit` (0 errors), `npm test` (11 invariant + video tests passed), and visual inspection with DevTools MCP across mobile 375x812, 390x844, 412x915, and desktop 1366x768, 1920x1080.
+
+### Summary of Changes:
+1. **Fixed Flex Wrapper & Mobile Centering (`AIProcessingOverlay.tsx`):**
+   - Modal wrapper with `position: fixed, inset: 0, zIndex: 50, display: flex, alignItems: center, justifyContent: center` ensuring 100% centered modal without crop or jump on all mobile viewports.
+   - Responsive header title: `"LAGI NYARI JAWABAN TERBAIK..."` on desktop, `"LAGI MIKIR..."` on mobile.
+   - Fixed-width HUD timer box `[ 04s ]` with tabular numbers (`tabular-nums font-mono`). Never shifts position.
+
+2. **Cinematic Neural Progress Bar & 5 Stage Markers (`ProcessingTimeline.tsx`):**
+   - Restored and locked all 5 percentage markers (`0%`, `25%`, `55%`, `85%`, `100%`) visible on all screens.
+   - Removed conflicting CSS `transition-all duration-300` on 60fps RAF-updated widths/heights, eliminating interpolation fighting, tearing, stutter, and visual lag ("efek patah-patah/hancur").
+   - Moving ember particle dot (`●`) following leading edge with zero lag.
 
 3. **Phase-Driven AI Thinking Companion Messages (`LivingProcessingCompanion.tsx`):**
    - Phase 1 ($0-25\%$): *"Gue baca dulu ide lo..."*
    - Phase 2 ($25-55\%$): *"Lagi cari angle yang bikin orang berhenti scroll..."*
    - Phase 3 ($55-85\%$): *"Oke, gue susun alurnya..."*
-   - Phase 4 ($85-100\%$): *"Hampir selesai. Tinggal gue rapihin..."* $\to$ *"Siap! Konten lo udah beres."*
-   - Smooth fade and slide transition ($400-500\text{ms}$).
+   - Phase 4 ($85-100\%$): *"Hampir selesai. Tinggal gue rapihin..."*
+   - Completion ($100\%$): *"Siap! Konten lo udah beres."* (Emerald celebration transition)
 
-4. **Progress-Linked Stepped Timeline (`ProcessingTimeline.tsx`):**
-   - Connected vertical lines progressively fill with ember gradient matching `progress`.
-   - Node states: Active (pulsing orange, `scale: 1.02`), Completed (`✓` emerald icon, `Selesai` badge), Pending (`Antre` badge).
+4. **Mathematically Locked Straight Timeline Alignment & Glitch Elimination (`ProcessingTimeline.tsx`):**
+   - Fixed 24px column (`w-6 flex flex-col items-center self-stretch`) that centers both the node circle and the vertical connecting line at exact `left-1/2 -translate-x-1/2` (12px X-axis dead center).
+   - Continuous connecting lines (`top-[24px] bottom-[-16px]`) seamlessly crossing row padding to touch the next circle with 0px gap and 0px offset.
+   - Node 4 never enters a temporary 50ms active pulsing state; it transitions directly from queued (`Antre`) to completed (`✓ Selesai`) at 100%, completely eliminating the 85% glitch/flicker.
+   - Clean horizontal progress bar percentages (`0%`, `25%`, `55%`, `85%`, `100%`) without misplaced dots.
 
-5. **Universal Studio Integration (`GenerationProgress.tsx`):**
+5. **Root-Mounted Architecture & Butter-Smooth 100% Transition (`AppShell.tsx` & `AIProcessingOverlay.tsx`):**
+   - Mounted `GlobalStudioProcessingOverlay` permanently inside `AppShell.tsx` (preventing premature unmounting when parent module turns `isGenerating = false`).
+   - Smooth `requestAnimationFrame` easeOutCubic tweening from current progress (e.g. 75%) to exact 100% upon API response return over 450ms.
+   - All 4 timeline nodes turn green `✓ Selesai`, header flashes `✨ SIAP DIPAKAI`, ambient radial glow shifts from ember to emerald.
+   - 900ms celebratory hold state followed by Framer Motion spring exit transition (`scale: 0.94, y: 20, opacity: 0` with `[0.16, 1, 0.3, 1]` curve).
+
+6. **Universal Studio Integration (`GenerationProgress.tsx`):**
    - Seamlessly integrated across all Studio modules (`IdeHariIni`, `ModuleRunner`, `IdeaEngine`, `ClipEngine`, `ThreadEngine`, `PipelineBoard`).
 
 ---

@@ -11,7 +11,7 @@ export type TimelinePhase = {
   label: string;
 };
 
-export const TIMELINE_PHASES: TimelinePhase[] = [
+export const DEFAULT_TIMELINE_PHASES: TimelinePhase[] = [
   {
     id: 1,
     title: "Membaca ide lo",
@@ -30,8 +30,8 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
   },
   {
     id: 3,
-    title: "Menyusun naskah",
-    subtitle: "Ngebangun hook 3 detik, isi daging, dan CTA.",
+    title: "Kurasi 3 ide terbaik",
+    subtitle: "Nyiapin judul, format, dan sudut pandang.",
     minProgress: 55,
     maxProgress: 85,
     label: "55%",
@@ -39,7 +39,7 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
   {
     id: 4,
     title: "Siap dipakai",
-    subtitle: "Konten pertama lo sudah siap.",
+    subtitle: "Ide konten pertama lo sudah siap.",
     minProgress: 85,
     maxProgress: 100,
     label: "85%",
@@ -49,16 +49,19 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
 interface ProcessingTimelineProps {
   currentPhase: number; // 1 to 4
   progress: number; // 0 to 100 (Single source of truth)
+  phases?: TimelinePhase[];
   isCompleted?: boolean;
 }
 
 export function ProcessingTimeline({
   progress,
+  phases = DEFAULT_TIMELINE_PHASES,
   isCompleted = false,
 }: ProcessingTimelineProps) {
   // Clamped display progress (0 to 100)
   const displayProgress = Math.min(100, Math.max(0, isCompleted ? 100 : progress));
   const completedOr100 = isCompleted || displayProgress >= 100;
+  const activePhases = phases.length === 4 ? phases : DEFAULT_TIMELINE_PHASES;
 
   return (
     <div className="relative w-full space-y-4 px-1 sm:px-2">
@@ -90,7 +93,7 @@ export function ProcessingTimeline({
 
         {/* 5 Stage Percent Labels on Track: 0%, 25%, 55%, 85%, 100% */}
         <div className="mt-1.5 flex items-center justify-between px-1 font-mono text-[9px] sm:text-[10px]">
-          {TIMELINE_PHASES.map((p) => {
+          {activePhases.map((p) => {
             const isPassed = completedOr100 || displayProgress >= p.minProgress;
             return (
               <span
@@ -123,8 +126,8 @@ export function ProcessingTimeline({
           2. 100% CONTINUOUS, LIQUID SMOOTH VERTICAL TIMELINE
          ===================================================================== */}
       <div className="flex flex-col">
-        {TIMELINE_PHASES.map((phase, idx) => {
-          const isLast = idx === TIMELINE_PHASES.length - 1;
+        {activePhases.map((phase, idx) => {
+          const isLast = idx === activePhases.length - 1;
 
           // Node Done state
           const isDone = completedOr100 || (!isLast && progress >= phase.maxProgress) || (isLast && progress >= 100);

@@ -16,6 +16,11 @@ import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE } from "@/lib/sse";
 import { ScriptView, type ScriptOutput } from "./ScriptView";
 import { GenerationProgress } from "./GenerationProgress";
+import {
+  startStudioProcessing,
+  updateStudioChars,
+  completeStudioProcessing,
+} from "./studio/AIProcessingOverlay";
 import { normalizeTodayPlatform, todayPlatformLabel } from "@/lib/content-options";
 
 /**
@@ -699,8 +704,13 @@ function PipelineCardItem({
     setIsGenerating(true);
     setGenerationModule(module);
     setGenerationChars(0);
-    setGenerationStatus("Lagi siapin kartu ini...");
+    setGenerationStatus(module === "hook" ? "Lagi meracik hook..." : "Lagi menyusun naskah...");
     setError("");
+
+    startStudioProcessing({
+      moduleKey: module,
+      label: module === "hook" ? "Lagi meracik hook..." : "Lagi menyusun naskah...",
+    });
 
     try {
       const res = await fetch("/api/generate", {
@@ -732,9 +742,11 @@ function PipelineCardItem({
         if (typeof msg.chunk === "string") {
           const chunk = msg.chunk;
           setGenerationChars((count) => count + chunk.length);
+          updateStudioChars(chunk.length);
         }
         if (msg.done) {
           finalResult = (msg.generation as { output?: unknown } | undefined)?.output ?? null;
+          completeStudioProcessing();
           return true;
         }
       });
@@ -766,7 +778,16 @@ function PipelineCardItem({
       setError(err instanceof Error ? err.message : "Ada yang error.");
     } finally {
       setIsGenerating(false);
+      completeStudioProcessing();
     }
+  };
+
+  const handleUpdateScript = async (updatedScript: ScriptOutput) => {
+    const newContent = {
+      ...content,
+      generated_script: updatedScript,
+    };
+    await updateCardContentAndStatus(card.id, newContent, status);
   };
 
   const handleRate = async (score: number) => {
@@ -870,10 +891,9 @@ function PipelineCardItem({
       {isGenerating && (
         <div className="mt-3">
           <GenerationProgress
-            compact
             moduleKey={generationModule}
             chars={generationChars}
-            label={generationModule === "hook" ? "Lagi bikin hook..." : "Lagi nulis hasilnya..."}
+            label={generationModule === "hook" ? "Lagi meracik hook..." : "Lagi menyusun naskah..."}
             status={generationStatus}
           />
         </div>
@@ -884,10 +904,10 @@ function PipelineCardItem({
           <button
             onClick={() => handleGenerate("hook")}
             disabled={isGenerating}
-            className={`w-full rounded-lg px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-60 ${
+            className={`w-full cursor-pointer rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-[var(--duration-standard)] ease-heat active:scale-[0.98] disabled:opacity-60 ${
               isGenerating
                 ? "glow-ember bg-surface text-ember"
-                : "bg-surface text-muted hover:bg-surface-raised hover:text-ink"
+                : "bg-ember text-obsidian shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo"
             }`}
           >
             {isGenerating ? "Lagi mikirin hook..." : "Bikin hook · 2 kredit"}
@@ -931,10 +951,10 @@ function PipelineCardItem({
           <button
             onClick={() => handleGenerate("script")}
             disabled={isGenerating}
-            className={`mt-1 w-full cursor-pointer rounded-lg px-3 py-2.5 text-xs font-bold transition-colors duration-[var(--duration-standard)] ease-heat disabled:opacity-60 ${
+            className={`mt-1 w-full cursor-pointer rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-[var(--duration-standard)] ease-heat active:scale-[0.98] disabled:opacity-60 ${
               isGenerating
                 ? "glow-ember bg-surface text-ember"
-                : "bg-ember text-obsidian hover:bg-ember-lo"
+                : "bg-ember text-obsidian shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo"
             }`}
           >
             {isGenerating ? "Lagi nulis script..." : "Bikin script dari hook ini · 4 kredit"}
@@ -944,14 +964,19 @@ function PipelineCardItem({
 
       {/* The script existed in the row the whole time and was never shown. */}
       {(status === "siap" || status === "posted") && content.generated_script && (
-        <ScriptView script={content.generated_script} title={card.title} platform={content.platform} />
+        <ScriptView
+          script={content.generated_script}
+          title={card.title}
+          platform={content.platform}
+          onSaveScript={handleUpdateScript}
+        />
       )}
 
       {status === "siap" && (
         <div className="mt-3 border-t border-hairline pt-3">
           <button
             onClick={() => onMove(card.id, "posted")}
-            className="w-full rounded-lg bg-surface px-3 py-2.5 text-xs font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised hover:text-ink"
+            className="w-full cursor-pointer rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"
           >
             Udah gue posting
           </button>
@@ -1049,9 +1074,9 @@ function StageMover({
   const next = i < ORDER.length - 1 ? ORDER[i + 1] : null;
 
   const arrow =
-    "flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink disabled:cursor-default disabled:opacity-30";
+    "flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-lg text-muted/80 transition-all duration-[var(--duration-standard)] ease-heat hover:bg-white/[0.08] hover:text-ink disabled:cursor-default disabled:opacity-20";
   const stage =
-    "min-h-11 cursor-pointer rounded-lg px-2.5 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink";
+    "min-h-9 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 text-micro font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/15 hover:text-ember active:scale-95";
 
   return (
     <div className="-mb-1 mt-3 flex items-center justify-between gap-1 border-t border-hairline pt-1">
@@ -1082,7 +1107,7 @@ function StageMover({
         </button>
       </div>
 
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-center gap-1">
         {back && (
           <button type="button" onClick={() => onMove(back)} className={stage}>
             ← {labelOf(back)}

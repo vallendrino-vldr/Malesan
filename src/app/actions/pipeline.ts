@@ -240,3 +240,42 @@ export async function ratePerformance(cardId: string, rating: number) {
   
   revalidatePath("/app");
 }
+
+/**
+ * Adapt or refine a scene's visual footage direction to match what the creator actually has.
+ */
+export async function adaptSceneFootage({
+  sceneSpoken,
+  sceneVisual,
+  creatorFootageNote,
+  title,
+}: {
+  sceneSpoken: string;
+  sceneVisual?: string;
+  creatorFootageNote: string;
+  title?: string;
+}): Promise<string> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const prompt = `Lo adalah video director untuk kreator konten media sosial (TikTok / Reels / Shorts).
+Konteks Judul Video: ${title || "Konten Edukasi/Storytelling"}
+Teks Voiceover Scene: "${sceneSpoken}"
+Arahan Visual Awal: "${sceneVisual || "-"}"
+Bahan / Footage yang Dimiliki Kreator: "${creatorFootageNote}"
+
+Tugas:
+Tuliskan 1 paragraf arahan visual/footage (maksimal 2-3 kalimat) yang praktis dan langsung mengeksekusi bahan yang dimiliki kreator agar selaras dengan voiceover.
+Gunakan Bahasa Indonesia kasual, praktis, to the point. Langsung berikan teks arahan visualnya saja tanpa salam pembuka atau tanda kutip dua.`;
+
+  const { runAI } = await import("@/lib/ai/engine");
+  const result = await runAI({
+    feature: "script",
+    prompt,
+    userId: user.id,
+  });
+
+  return result.text.trim();
+}
+
