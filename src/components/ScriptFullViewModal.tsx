@@ -202,42 +202,42 @@ export function ScriptFullViewModal({
       className="fixed inset-0 z-[99999] flex flex-col bg-[#0a0a0a] text-ink overflow-hidden animate-fade-in"
     >
       {/* 1. Top Header Bar */}
-      <header className="h-14 sm:h-16 px-4 sm:px-8 border-b border-hairline/80 bg-[#121212] flex items-center justify-between shrink-0 z-10">
-        <div className="flex items-center gap-3 min-w-0 pr-2">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-ember/15 text-ember text-base font-bold border border-ember/30 shrink-0">
+      <header className="h-14 sm:h-16 px-3.5 sm:px-8 border-b border-hairline/80 bg-[#121212] flex items-center justify-between shrink-0 z-10">
+        <div className="flex items-center gap-2.5 min-w-0 pr-2">
+          <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-ember/15 text-ember text-sm sm:text-base font-bold border border-ember/30 shrink-0">
             📖
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h2 id="script-fullview-title" className="text-sm sm:text-base font-bold text-ink truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <h2 id="script-fullview-title" className="text-xs sm:text-base font-bold text-ink truncate">
                 {title || "Naskah Video"}
               </h2>
-              <span className="hidden sm:inline-block rounded-full bg-surface border border-hairline px-2.5 py-0.5 text-[10px] font-semibold text-muted">
+              <span className="rounded-full bg-surface border border-hairline px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold text-muted shrink-0">
                 {platform}
               </span>
             </div>
-            <p className="text-[11px] text-muted truncate">
-              {scenes.length} Scene · Studio Reader & Teleprompter
+            <p className="text-[10px] sm:text-[11px] text-muted truncate">
+              {scenes.length} Scene · Studio Reader & Prompter
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {hasChanges && onSaveScript && (
             <button
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-3 text-xs font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all cursor-pointer flex items-center gap-1"
+              className="h-7 sm:h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-2.5 sm:px-3 text-[11px] sm:text-xs font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all cursor-pointer flex items-center gap-1"
             >
-              <span>{isSaving ? "Menyimpan..." : "Simpan ✓"}</span>
+              <span>{isSaving ? "Simpan..." : "Simpan ✓"}</span>
             </button>
           )}
 
           <button
             type="button"
             onClick={onClose}
-            className="h-8 px-3 rounded-xl bg-surface hover:bg-surface-raised text-muted hover:text-ink transition-colors cursor-pointer border border-hairline flex items-center gap-1 text-xs font-bold"
+            className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl bg-surface hover:bg-surface-raised text-muted hover:text-ink transition-colors cursor-pointer border border-hairline flex items-center gap-1 text-[11px] sm:text-xs font-bold"
             aria-label="Tutup Layar Penuh"
           >
             <span>✕</span>
@@ -246,24 +246,25 @@ export function ScriptFullViewModal({
         </div>
       </header>
 
-      {/* 2. Toolbar Strip: 3 Modes + Teleprompter Bar + Font Resizer */}
-      <div className="px-4 sm:px-8 py-2.5 border-b border-hairline/60 bg-[#161616] flex flex-wrap items-center justify-between gap-3 shrink-0">
-        {/* Segmented Control for 3 Modes */}
-        <div className="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-hairline/60 overflow-x-auto max-w-full">
+      {/* 2. Toolbar: Dedicated Responsive Grid Tabs + Secondary Controls */}
+      <div className="px-3.5 sm:px-8 py-2.5 border-b border-hairline/60 bg-[#161616] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-4 shrink-0">
+        {/* Equal 3-Column Grid Tabs (Never overflows or causes scrollbars) */}
+        <div className="grid grid-cols-3 gap-1 bg-black/60 p-1 rounded-xl border border-hairline/60 w-full sm:w-auto sm:min-w-[420px]">
           <button
             type="button"
             onClick={() => {
               setActiveTab("teleprompter");
               setIsAutoScrolling(false);
             }}
-            className={`h-8 flex items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`h-7 sm:h-8 flex items-center justify-center gap-1 rounded-lg px-2 text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-center ${
               activeTab === "teleprompter"
                 ? "bg-ember text-obsidian shadow-sm font-black"
                 : "text-muted hover:text-ink hover:bg-white/[0.04]"
             }`}
           >
             <span>📜</span>
-            <span>Teleprompter (VO Saja)</span>
+            <span className="hidden sm:inline">Teleprompter (VO)</span>
+            <span className="sm:hidden">Prompter</span>
           </button>
 
           <button
@@ -272,14 +273,15 @@ export function ScriptFullViewModal({
               setActiveTab("baca");
               setIsAutoScrolling(false);
             }}
-            className={`h-8 flex items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`h-7 sm:h-8 flex items-center justify-center gap-1 rounded-lg px-2 text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-center ${
               activeTab === "baca"
                 ? "bg-ember text-obsidian shadow-sm font-black"
                 : "text-muted hover:text-ink hover:bg-white/[0.04]"
             }`}
           >
             <span>📖</span>
-            <span>Mode Baca (Format Kanban)</span>
+            <span className="hidden sm:inline">Mode Baca</span>
+            <span className="sm:hidden">Baca</span>
           </button>
 
           <button
@@ -288,32 +290,33 @@ export function ScriptFullViewModal({
               setActiveTab("scenes");
               setIsAutoScrolling(false);
             }}
-            className={`h-8 flex items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+            className={`h-7 sm:h-8 flex items-center justify-center gap-1 rounded-lg px-2 text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-center ${
               activeTab === "scenes"
                 ? "bg-ember text-obsidian shadow-sm font-black"
                 : "text-muted hover:text-ink hover:bg-white/[0.04]"
             }`}
           >
             <span>📑</span>
-            <span>Detail Scene & B-Roll</span>
+            <span className="hidden sm:inline">Detail Scene</span>
+            <span className="sm:hidden">Scene</span>
           </button>
         </div>
 
-        {/* Right Action Controls */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Teleprompter Controls (Only visible in Teleprompter mode) */}
-          {activeTab === "teleprompter" && (
-            <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-hairline/60">
+        {/* Right / Secondary Controls Strip */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+          {/* Teleprompter Auto-scroll Controls */}
+          {activeTab === "teleprompter" ? (
+            <div className="flex items-center gap-1 bg-black/40 p-0.5 sm:p-1 rounded-xl border border-hairline/60">
               <button
                 type="button"
                 onClick={() => setIsAutoScrolling((prev) => !prev)}
-                className={`h-7 flex items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition-all cursor-pointer ${
+                className={`h-6 sm:h-7 flex items-center gap-1 rounded-lg px-2 text-[10px] sm:text-xs font-bold transition-all cursor-pointer ${
                   isAutoScrolling
                     ? "bg-rose-500 text-white animate-pulse"
                     : "border border-ember/40 bg-ember/15 text-ember hover:bg-ember hover:text-obsidian"
                 }`}
               >
-                <span>{isAutoScrolling ? "⏸ Jeda" : "▶ Putar Auto-Scroll"}</span>
+                <span>{isAutoScrolling ? "⏸ Jeda" : "▶ Auto-Scroll"}</span>
               </button>
 
               <div className="flex items-center gap-0.5 bg-surface/50 rounded-md p-0.5 border border-hairline/40">
@@ -322,7 +325,7 @@ export function ScriptFullViewModal({
                     key={spd}
                     type="button"
                     onClick={() => setScrollSpeed(spd)}
-                    className={`h-6 px-1.5 rounded text-[10px] font-mono cursor-pointer transition-colors ${
+                    className={`h-5 sm:h-6 px-1.5 rounded text-[9px] sm:text-[10px] font-mono cursor-pointer transition-colors ${
                       scrollSpeed === spd
                         ? "bg-ember text-obsidian font-bold"
                         : "text-muted hover:text-ink"
@@ -333,17 +336,21 @@ export function ScriptFullViewModal({
                 ))}
               </div>
             </div>
+          ) : (
+            <div className="text-[10px] text-muted font-medium pl-1">
+              {activeTab === "baca" ? "Format naskah mengalir" : "Rincian shot per scene"}
+            </div>
           )}
 
           {/* Font Size Scaling */}
-          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-hairline/60">
-            <span className="text-[10px] text-muted pl-1.5 font-medium">Font:</span>
+          <div className="flex items-center gap-0.5 bg-black/40 p-0.5 sm:p-1 rounded-xl border border-hairline/60">
+            <span className="text-[9px] sm:text-[10px] text-muted pl-1 font-medium">Font:</span>
             {["A-", "Normal", "A+", "A++"].map((label, idx) => (
               <button
                 key={label}
                 type="button"
                 onClick={() => setFontSizeLevel(idx)}
-                className={`h-7 px-2.5 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                className={`h-5 sm:h-6 px-1.5 sm:px-2 rounded text-[9px] sm:text-[10px] font-bold transition-colors cursor-pointer ${
                   fontSizeLevel === idx
                     ? "bg-ember/20 text-ember border border-ember/40"
                     : "text-muted hover:text-ink hover:bg-white/[0.04]"
@@ -359,23 +366,23 @@ export function ScriptFullViewModal({
       {/* 3. Main Content Viewer Body */}
       <main
         ref={teleprompterRef}
-        className="flex-1 overflow-y-auto px-4 sm:px-8 py-6 custom-scrollbar bg-[#0d0d0d]"
+        className="flex-1 overflow-y-auto px-3.5 sm:px-8 py-5 sm:py-6 custom-scrollbar bg-[#0d0d0d]"
       >
         {activeTab === "teleprompter" ? (
           /* TAB 1: PURE FLOWING VOICEOVER TEXT (TELEPROMPTER) - NO SCENE CARDS, NO FOOTAGE DISTRACTIONS */
-          <div className="max-w-3xl mx-auto space-y-6 pb-16 pt-2">
-            <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-6 sm:p-10 shadow-xl">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline/40 pb-3 mb-6">
+          <div className="max-w-3xl mx-auto space-y-6 pb-16 pt-1 sm:pt-2">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-4 sm:p-10 shadow-xl">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-hairline/40 pb-3 mb-5">
                 <span className="text-xs font-bold uppercase tracking-wider text-ember flex items-center gap-1.5">
                   <span>📜</span>
-                  <span>Teks Voiceover Siap Baca (Teleprompter)</span>
+                  <span>Teks Voiceover Siap Baca</span>
                 </span>
-                <span className="text-[11px] text-muted">
-                  Fokus naskah lisan · Auto-scroll lancar
+                <span className="text-[10px] sm:text-[11px] text-muted">
+                  Fokus naskah lisan · Bebas distraksi
                 </span>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5 sm:space-y-6">
                 {scenes.map((sc, i) => (
                   <div key={i} className="group transition-opacity hover:opacity-100">
                     <p
@@ -387,7 +394,7 @@ export function ScriptFullViewModal({
                 ))}
 
                 {editableScript.cta?.text && (
-                  <div className="mt-8 border-t border-ember/30 pt-6">
+                  <div className="mt-6 sm:mt-8 border-t border-ember/30 pt-5 sm:pt-6">
                     <span className="text-micro font-bold uppercase tracking-wider text-ember block mb-2">
                       🔥 Call to Action (Penutup):
                     </span>
@@ -403,9 +410,9 @@ export function ScriptFullViewModal({
           </div>
         ) : activeTab === "baca" ? (
           /* TAB 2: CLEAN READ FORMAT (LIKE KANBAN) */
-          <div className="max-w-3xl mx-auto space-y-6 pb-16 pt-2">
-            <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-6 sm:p-10 shadow-xl">
-              <div className="flex items-center justify-between border-b border-hairline/40 pb-3 mb-5">
+          <div className="max-w-3xl mx-auto space-y-6 pb-16 pt-1 sm:pt-2">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#141414] p-4 sm:p-10 shadow-xl">
+              <div className="flex items-center justify-between border-b border-hairline/40 pb-3 mb-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                   <span>📖</span>
                   <span>Format Naskah Lengkap</span>
@@ -413,18 +420,18 @@ export function ScriptFullViewModal({
                 <button
                   type="button"
                   onClick={() => handleCopy("vo", kanbanReadThrough)}
-                  className="text-xs font-bold text-ember hover:underline cursor-pointer"
+                  className="text-[11px] sm:text-xs font-bold text-ember hover:underline cursor-pointer"
                 >
-                  {copiedType === "vo" ? "✓ Berhasil Disalin!" : "Salin Semua Teks Lisan"}
+                  {copiedType === "vo" ? "✓ Berhasil Disalin!" : "Salin Teks Lisan"}
                 </button>
               </div>
 
-              <pre className="whitespace-pre-wrap font-sans text-sm sm:text-base leading-relaxed text-ink/90">
+              <pre className="whitespace-pre-wrap font-sans text-xs sm:text-base leading-relaxed text-ink/90">
                 {kanbanReadThrough}
               </pre>
 
               {editableScript.caption && (
-                <div className="mt-6 border-t border-hairline/60 pt-4">
+                <div className="mt-5 sm:mt-6 border-t border-hairline/60 pt-4">
                   <span className="eyebrow text-muted block mb-1">Caption Medsos:</span>
                   <p className="text-xs sm:text-sm text-ink/80 leading-relaxed bg-black/50 rounded-xl p-3 border border-hairline/40">
                     {editableScript.caption}
@@ -441,18 +448,18 @@ export function ScriptFullViewModal({
           </div>
         ) : (
           /* TAB 3: DETAILED SCENES & B-ROLL GRID VIEW */
-          <div className="max-w-3xl mx-auto space-y-4 pb-16 pt-2">
+          <div className="max-w-3xl mx-auto space-y-3.5 sm:space-y-4 pb-16 pt-1 sm:pt-2">
             {scenes.map((sc, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-white/[0.08] bg-[#141414] p-5 sm:p-6 shadow-xl space-y-3.5"
+                className="rounded-2xl border border-white/[0.08] bg-[#141414] p-3.5 sm:p-6 shadow-xl space-y-3"
               >
-                <div className="flex items-center justify-between border-b border-hairline/40 pb-2.5">
+                <div className="flex items-center justify-between border-b border-hairline/40 pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex size-6 items-center justify-center rounded-full bg-ember/15 text-xs font-bold text-ember">
+                    <span className="flex size-5 sm:size-6 items-center justify-center rounded-full bg-ember/15 text-[11px] sm:text-xs font-bold text-ember">
                       {i + 1}
                     </span>
-                    <span className="font-display text-sm font-bold text-ink">
+                    <span className="font-display text-xs sm:text-sm font-bold text-ink">
                       Scene #{i + 1}
                     </span>
                   </div>
@@ -462,33 +469,33 @@ export function ScriptFullViewModal({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="block text-[11px] font-bold text-ember uppercase tracking-wider">
+                  <label className="block text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider">
                     Voiceover / Diucapkan:
                   </label>
                   <textarea
                     rows={3}
                     value={sc.spoken || ""}
                     onChange={(e) => handleUpdateSceneSpoken(i, e.target.value)}
-                    className="w-full rounded-xl border border-hairline bg-obsidian p-3 text-xs sm:text-sm leading-relaxed text-ink focus:border-ember focus:outline-none"
+                    className="w-full rounded-xl border border-hairline bg-obsidian p-2.5 sm:p-3 text-xs sm:text-sm leading-relaxed text-ink focus:border-ember focus:outline-none"
                   />
                 </div>
 
                 {!textMode && (
                   <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-muted uppercase tracking-wider">
+                    <label className="block text-[10px] sm:text-[11px] font-bold text-muted uppercase tracking-wider">
                       Arahan Visual / B-Roll:
                     </label>
                     <textarea
                       rows={2}
                       value={sc.visual || ""}
                       onChange={(e) => handleUpdateSceneVisual(i, e.target.value)}
-                      className="w-full rounded-xl border border-hairline bg-obsidian p-2.5 text-xs leading-relaxed text-muted focus:border-ember focus:text-ink focus:outline-none"
+                      className="w-full rounded-xl border border-hairline bg-obsidian p-2 sm:p-2.5 text-xs leading-relaxed text-muted focus:border-ember focus:text-ink focus:outline-none"
                     />
                   </div>
                 )}
 
                 {sc.on_screen_text && (
-                  <div className="rounded-lg bg-black/40 border border-hairline/60 p-2.5 text-xs">
+                  <div className="rounded-lg bg-black/40 border border-hairline/60 p-2 text-xs">
                     <span className="text-[10px] font-semibold text-muted">Teks di Layar:</span>
                     <p className="font-mono text-ember text-[11px] font-bold mt-0.5">{sc.on_screen_text}</p>
                   </div>
@@ -500,45 +507,45 @@ export function ScriptFullViewModal({
       </main>
 
       {/* 4. Bottom Player & Action Strip */}
-      <footer className="border-t border-hairline/80 bg-[#121212] px-4 sm:px-8 py-3 shrink-0 space-y-3 z-10">
+      <footer className="border-t border-hairline/80 bg-[#121212] px-3.5 sm:px-8 py-2.5 sm:py-3 shrink-0 space-y-2.5 sm:space-y-3 z-10">
         {/* 🎙️ 100% Native Indonesian AI Voice Preview Player */}
         <VoicePreview text={pureVoiceoverText} title={title} />
 
-        {/* Action Buttons Strip */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-hairline/40">
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => handleCopy("vo", pureVoiceoverText)}
-              className="h-8 rounded-xl border border-hairline bg-surface px-3 text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <span>📋</span>
-              <span>{copiedType === "vo" ? "✓ Voiceover Disalin!" : "Salin Voiceover"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleCopy("all", markdownContent)}
-              className="h-8 rounded-xl border border-hairline bg-surface px-3 text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <span>📋</span>
-              <span>{copiedType === "all" ? "✓ Naskah Disalin!" : "Salin Format Lengkap"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleDownloadMd}
-              className="h-8 rounded-xl border border-hairline bg-surface px-3 text-xs font-semibold text-muted hover:text-ink active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <span>📥</span>
-              <span>Unduh .md</span>
-            </button>
-          </div>
+        {/* Action Buttons: Responsive Grid on Mobile, Flex on Desktop */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center sm:justify-between gap-1.5 sm:gap-2 pt-1 border-t border-hairline/40">
+          <button
+            type="button"
+            onClick={() => handleCopy("vo", pureVoiceoverText)}
+            className="h-7 sm:h-8 rounded-xl border border-hairline bg-surface px-2 sm:px-3 text-[11px] sm:text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1 truncate"
+          >
+            <span>📋</span>
+            <span>{copiedType === "vo" ? "Disalin!" : "Salin VO"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleCopy("all", markdownContent)}
+            className="h-7 sm:h-8 rounded-xl border border-hairline bg-surface px-2 sm:px-3 text-[11px] sm:text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1 truncate"
+          >
+            <span>📋</span>
+            <span>{copiedType === "all" ? "Disalin!" : "Salin Lengkap"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadMd}
+            className="h-7 sm:h-8 rounded-xl border border-hairline bg-surface px-2 sm:px-3 text-[11px] sm:text-xs font-semibold text-muted hover:text-ink active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1 truncate"
+          >
+            <span>📥</span>
+            <span>Unduh .md</span>
+          </button>
 
           <button
             type="button"
             onClick={onClose}
-            className="h-8 rounded-xl bg-ember px-5 text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center gap-1"
+            className="h-7 sm:h-8 rounded-xl bg-ember px-3 sm:px-5 text-[11px] sm:text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1"
           >
-            ✕ Tutup Layar Penuh
+            ✕ Tutup
           </button>
         </div>
       </footer>

@@ -208,26 +208,28 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
         </div>
 
         {/* Speed Controls */}
-        <div className="flex items-center gap-1.5 bg-black/40 rounded-xl p-1 border border-hairline/60">
-          <span className="text-[10px] text-muted pl-1 font-medium">Tempo:</span>
-          {[
-            { label: "0.95x Santai", speed: 0.95 },
-            { label: "1.1x Kreator", speed: 1.1 },
-            { label: "1.25x Cepat", speed: 1.25 },
-          ].map((sp) => (
-            <button
-              key={sp.speed}
-              type="button"
-              onClick={() => handleChangeSpeed(sp.speed)}
-              className={`rounded-lg px-2 py-1 text-[10px] font-semibold transition-all cursor-pointer ${
-                playbackRate === sp.speed
-                  ? "bg-ember text-obsidian font-bold shadow-xs"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              {sp.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-1 bg-black/40 rounded-xl p-1 border border-hairline/60 w-full sm:w-auto">
+          <span className="text-[10px] text-muted pl-1 font-medium shrink-0">Tempo:</span>
+          <div className="flex items-center gap-1 flex-1 sm:flex-none justify-end">
+            {[
+              { label: "0.95x Santai", speed: 0.95 },
+              { label: "1.1x Kreator", speed: 1.1 },
+              { label: "1.25x Cepat", speed: 1.25 },
+            ].map((sp) => (
+              <button
+                key={sp.speed}
+                type="button"
+                onClick={() => handleChangeSpeed(sp.speed)}
+                className={`rounded-lg px-2 py-1 text-[10px] font-semibold transition-all cursor-pointer flex-1 sm:flex-none text-center ${
+                  playbackRate === sp.speed
+                    ? "bg-ember text-obsidian font-bold shadow-xs"
+                    : "text-muted hover:text-ink"
+                }`}
+              >
+                {sp.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
