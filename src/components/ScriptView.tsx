@@ -18,6 +18,38 @@ export type ScriptOutput = {
   hashtags?: string[];
 };
 
+function FilmIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M7 3v18" />
+      <path d="M3 7.5h4" />
+      <path d="M3 12h18" />
+      <path d="M3 16.5h4" />
+      <path d="M17 3v18" />
+      <path d="M17 7.5h4" />
+      <path d="M17 16.5h4" />
+    </svg>
+  );
+}
+
+function SparkleIcon({ className = "size-3" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M12 2L14.4 8.6L21 11L14.4 13.4L12 20L9.6 13.4L3 11L9.6 8.6L12 2Z" />
+    </svg>
+  );
+}
+
 function isTextPlatform(platform?: string) {
   return ["x", "threads", "facebook", "linkedin"].includes((platform ?? "").toLowerCase());
 }
@@ -271,7 +303,7 @@ export function ScriptView({
                     type="text"
                     value={sc.on_screen_text || ""}
                     onChange={(e) => handleUpdateScene(i, "on_screen_text", e.target.value)}
-                    placeholder="Contoh: ⚠️ BAHAYA CUCI CVT PAKAI BENSIN"
+                    placeholder="Contoh: Bahaya cuci CVT pakai bensin"
                     className="w-full rounded-lg border border-white/[0.06] bg-obsidian/70 px-2.5 py-1.5 text-micro text-ink placeholder:text-muted/40 focus:border-ember/50 focus:outline-none transition-colors"
                   />
                 </div>
@@ -280,8 +312,8 @@ export function ScriptView({
                 {!textMode && (
                   <div className="mt-2.5 rounded-xl border border-white/[0.08] bg-black/40 p-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
-                      <label className="text-[10px] font-bold text-ember uppercase tracking-wider flex items-center gap-1.5">
-                        <span>🎬</span>
+                      <label className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-ember uppercase">
+                        <FilmIcon className="size-3.5 text-ember" />
                         <span>Arahan Footage & Visual</span>
                       </label>
 
@@ -290,7 +322,7 @@ export function ScriptView({
                         type="button"
                         onClick={() => handleAIFootageSuggest(i)}
                         disabled={adaptingSceneIdx === i}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-ember/15 border border-ember/40 px-2.5 py-1 text-[10px] font-bold text-ember hover:bg-ember/25 transition-all disabled:opacity-50"
+                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-ember/30 bg-ember/10 px-2.5 py-1 text-micro font-bold text-ember transition-all hover:bg-ember/20 disabled:opacity-50"
                       >
                         {adaptingSceneIdx === i ? (
                           <>
@@ -299,7 +331,8 @@ export function ScriptView({
                           </>
                         ) : (
                           <>
-                            <span>✨ AI Sesuaikan Footage</span>
+                            <SparkleIcon className="size-2.5 text-ember" />
+                            <span>Sesuaikan dengan AI</span>
                           </>
                         )}
                       </button>
@@ -318,9 +351,9 @@ export function ScriptView({
                     {openFootageNoteIdx === i || sc.user_footage_note ? (
                       <div className="mt-2.5 rounded-xl border border-ember/30 bg-[#161310] p-3 shadow-inner">
                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <label className="flex items-center gap-1 text-[10px] font-bold text-ember uppercase tracking-wider">
-                            <span>📹</span>
-                            <span>Bahan Rekaman yang Lo Punya</span>
+                          <label className="flex items-center gap-1.5 text-micro font-bold tracking-wider text-ember uppercase">
+                            <FilmIcon className="size-3 text-ember" />
+                            <span>Bahan Rekaman Pribadi</span>
                           </label>
                           <button
                             type="button"
@@ -328,16 +361,16 @@ export function ScriptView({
                               setOpenFootageNoteIdx(null);
                               if (!sc.user_footage_note) handleUpdateScene(i, "user_footage_note", "");
                             }}
-                            className="cursor-pointer text-[10px] font-semibold text-muted hover:text-ink transition-colors px-2 py-0.5 rounded bg-white/[0.06]"
+                            className="cursor-pointer rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 text-micro font-medium text-muted transition-colors hover:border-white/20 hover:text-ink"
                           >
-                            ✕ Tutup
+                            Tutup
                           </button>
                         </div>
                         <input
                           type="text"
                           value={sc.user_footage_note || ""}
                           onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
-                          placeholder="Contoh: Gue punya rekaman pas lagi bongkar CVT di bengkel..."
+                          placeholder="Deskripsikan bahan rekaman yang kamu punya untuk scene ini..."
                           className="w-full rounded-lg border border-white/[0.1] bg-obsidian p-2 text-xs text-ink placeholder:text-muted/40 focus:border-ember focus:outline-none"
                         />
                         <div className="mt-2.5 flex items-center justify-between gap-2">
@@ -348,16 +381,17 @@ export function ScriptView({
                             type="button"
                             onClick={() => handleAIFootageSuggest(i)}
                             disabled={adaptingSceneIdx === i || !sc.user_footage_note?.trim()}
-                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-ember px-3 py-1.5 text-xs font-bold text-obsidian shadow-[0_0_14px_rgba(255,138,61,0.3)] hover:bg-ember-lo transition-all disabled:opacity-40"
+                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-ember px-3 py-1.5 text-xs font-bold text-obsidian shadow-[0_0_14px_rgba(255,138,61,0.25)] transition-all hover:bg-ember-lo disabled:opacity-40"
                           >
                             {adaptingSceneIdx === i ? (
                               <>
                                 <span className="size-2 rounded-full bg-obsidian animate-ping" />
-                                <span>AI Menyesuaikan...</span>
+                                <span>Menyesuaikan...</span>
                               </>
                             ) : (
                               <>
-                                <span>✨ Sesuaikan Visual Scene</span>
+                                <SparkleIcon className="size-3 fill-current" />
+                                <span>Sesuaikan Arahan Visual</span>
                               </>
                             )}
                           </button>
@@ -367,10 +401,10 @@ export function ScriptView({
                       <button
                         type="button"
                         onClick={() => setOpenFootageNoteIdx(i)}
-                        className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/[0.03] py-2 px-3 text-xs font-semibold text-[#E0E0E0] shadow-sm transition-all hover:border-ember/60 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"
+                        className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] py-2 px-3 text-xs font-semibold text-ink/80 transition-all hover:border-ember/50 hover:bg-ember/[0.06] hover:text-ember active:scale-[0.98]"
                       >
-                        <span className="text-sm">📹</span>
-                        <span>+ Punya rekaman / footage sendiri untuk scene ini?</span>
+                        <FilmIcon className="size-3.5 opacity-70" />
+                        <span>+ Tambah rekaman atau footage sendiri</span>
                       </button>
                     )}
                   </div>
