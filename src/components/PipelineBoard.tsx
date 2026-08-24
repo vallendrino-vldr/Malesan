@@ -22,6 +22,7 @@ import {
   completeStudioProcessing,
 } from "./studio/AIProcessingOverlay";
 import { normalizeTodayPlatform, todayPlatformLabel } from "@/lib/content-options";
+import { PipelineCalendarView } from "./PipelineCalendarView";
 
 /**
  * Pipeline.
@@ -169,6 +170,59 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
   const [boardError, setBoardError] = useState("");
   const [dragging, setDragging] = useState(false);
   const [scheduling, setScheduling] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<"kanban" | "calendar">("kanban");
+  const [isGeneratingStrategy, setIsGeneratingStrategy] = useState(false);
+  const [strategyStatus, setStrategyStatus] = useState<string>("");
+  const [strategySuccess, setStrategySuccess] = useState<string>("");
+  const router = useRouter();
+
+  const handleGenerate7DayStrategy = async () => {
+    setIsGeneratingStrategy(true);
+    setBoardError("");
+    setStrategySuccess("");
+    setStrategyStatus("Menganalisis Creator DNA dan 3 kemungkinan angle...");
+
+    const timer1 = setTimeout(() => {
+      setStrategyStatus("Mengecek relevansi dengan target audiens lo...");
+    }, 1800);
+
+    const timer2 = setTimeout(() => {
+      setStrategyStatus("Menyusun kalender strategi 7 hari...");
+    }, 3800);
+
+    try {
+      const res = await fetch("/api/pipeline/strategy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+
+      if (!res.ok) {
+        throw new Error(await readErrorBody(res, "Gagal merancang strategi 7 hari."));
+      }
+
+      const json = (await res.json()) as {
+        cards?: PipelineCard[];
+        overview?: string;
+      };
+
+      if (json.cards && Array.isArray(json.cards)) {
+        setCards((prev) => [...json.cards!, ...prev]);
+        setStrategySuccess(
+          json.overview || "Strategi 7 hari berhasil dirancang dan masuk ke kalender!",
+        );
+        setViewMode("calendar");
+        router.refresh();
+      }
+    } catch (e) {
+      setBoardError(e instanceof Error ? e.message : "Gagal membuat strategi 7 hari.");
+    } finally {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      setIsGeneratingStrategy(false);
+      setStrategyStatus("");
+    }
+  };
 
   if (initialCards !== prevInitialCards) {
     setPrevInitialCards(initialCards);
@@ -407,10 +461,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           drop is noise. */}
       <LiveRefresh tables={LIVE_TABLES} silent />
 
-      {/* ---------- Creator Workflow Roadmap Strip ---------- */}
-      <div className="surface-card rounded-2xl border border-hairline/80 p-4 sm:p-4.5 shadow-xs">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
+      {/* ---------- Creator Workflow & AI Companion Header Strip ---------- */}
+      <div className="surface-card rounded-2xl border border-hairline/80 p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col gap-4">
+          {/* Top row: Title, Total badge, and View Switcher */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
@@ -424,160 +479,219 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 {total} konten aktif
               </span>
             </div>
-            <p className="mt-1 text-xs text-muted">
-              Pantau progres ide dari konsep awal sampai tayang di media sosial.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto text-micro font-medium text-muted">
-            <span className="flex items-center gap-1 text-ink font-semibold rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
-              <span className="size-1.5 rounded-full bg-ember" /> 1. Ide
-            </span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-muted shrink-0">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
-              2. Draft
-            </span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-muted shrink-0">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
-              3. Siap
-            </span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-muted shrink-0">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-            <span className="flex items-center gap-1 rounded-md bg-surface-raised px-2.5 py-1 border border-hairline">
-              4. Tayang
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ---------- phones: stage switcher, one stage at a time ---------- */}
-      <div className="md:hidden">
-        <div
-          role="tablist"
-          aria-label="Tahap pipeline"
-          className="flex gap-1 rounded-xl border border-hairline bg-surface/60 p-1"
-        >
-          {COLUMNS.map((col) => {
-            const on = col.id === mobileStage;
-            return (
-              <button
-                key={col.id}
-                role="tab"
-                aria-selected={on}
-                onClick={() => setMobileStage(col.id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
-                  on ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
-                }`}
-              >
-                {col.label}
-                <span
-                  // `text-muted` measured 3.7:1 here: the badge sits on
-                  // surface-raised which itself sits on a surface/60 strip, and
-                  // the stack came out lighter than either layer alone.
-                  className={`grid size-5 place-items-center rounded-full text-micro leading-none ${
-                    on ? "bg-ember/25 text-ink" : "bg-surface-raised text-ink"
+            {/* View Mode Toggle & Rancang 7 Hari Action */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center rounded-xl border border-hairline bg-surface/70 p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("kanban")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    viewMode === "kanban"
+                      ? "bg-surface-raised text-ink shadow-xs"
+                      : "text-muted hover:text-ink"
                   }`}
                 >
-                  {listOf(col.id).length}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {COLUMNS.filter((c) => c.id === mobileStage).map((col) => {
-          const list = listOf(col.id);
-          return (
-            <div key={col.id} className="mt-3 space-y-3">
-              <p className="text-xs leading-relaxed text-muted">{col.blurb}</p>
-              {list.length === 0 ? (
-                <EmptyStage text={col.empty} />
-              ) : (
-                list.map((card, i) => (
-                  <PipelineCardItem
-                    key={card.id}
-                    card={card}
-                    index={i}
-                    count={list.length}
-                    onMove={move}
-                    onReorder={reorder}
-                    onDelete={remove}
-                    onSchedule={tagSchedule}
-                    isScheduling={scheduling.includes(card.id)}
-                    draggable={false}
-                  />
-                ))
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ---------- md and up: the full board ----------
-          `flex-1` with a `min-w` floor, not a fixed width. Fixed 272px columns
-          inside a 1152px container meant a 1920px screen showed cramped cards
-          *and* empty gutters at the same time — the board could not use the
-          room it had. Columns now grow to fill the width (~380px each on a
-          desktop) and only fall back to horizontal scrolling when the viewport
-          genuinely cannot fit four at the 290px floor. */}
-      <div className="hidden gap-3 overflow-x-auto pb-2 md:flex">
-        {COLUMNS.map((col) => {
-          const list = listOf(col.id);
-          return (
-            <div
-              key={col.id}
-              ref={(el) => {
-                colRefs.current[col.id] = el;
-              }}
-              className="flex max-h-[76vh] min-w-[290px] flex-1 flex-col rounded-xl border border-hairline bg-surface/50 p-3.5"
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <h3 className="font-display font-semibold text-ink">{col.label}</h3>
-                <span className="grid size-5 place-items-center rounded-full bg-surface-raised text-micro text-ink">
-                  {list.length}
-                </span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                    <path d="M9 3v18" />
+                    <path d="M15 3v18" />
+                  </svg>
+                  <span>Papan Kanban</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("calendar")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                    viewMode === "calendar"
+                      ? "bg-surface-raised text-ink shadow-xs"
+                      : "text-muted hover:text-ink"
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                    <rect width="18" height="18" x="3" y="4" rx="2" />
+                    <path d="M16 2v4" />
+                    <path d="M8 2v4" />
+                    <path d="M3 10h18" />
+                  </svg>
+                  <span>Kalender</span>
+                </button>
               </div>
-              <p className="mb-3 text-micro leading-snug text-muted">{col.blurb}</p>
 
-              {/* A scroll container clips its children, so a card dragged out of
-                  a tall column was cut in half mid-gesture. Unclip while a drag
-                  is in flight — the column scrolls back to the top when it does,
-                  which is a fair trade for a card you can actually see. */}
-              <div
-                className={`flex min-h-0 flex-1 flex-col gap-3 ${
-                  dragging ? "overflow-visible" : "overflow-y-auto"
-                }`}
+              <button
+                type="button"
+                onClick={handleGenerate7DayStrategy}
+                disabled={isGeneratingStrategy}
+                className="flex items-center gap-1.5 rounded-xl border border-ember/40 bg-ember/10 px-3.5 py-1.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50"
               >
-                {list.length === 0 ? (
-                  <EmptyStage text={col.empty} />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                </svg>
+                <span>{isGeneratingStrategy ? "Menyusun 7 Hari..." : "Rancang 7 Hari"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* AI Dynamic Greeting & Status Banner */}
+          <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 px-3.5 py-2.5">
+            <div className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex size-2 rounded-full bg-ember animate-pulse shrink-0" />
+              <div className="flex-1 text-xs leading-relaxed text-muted">
+                {isGeneratingStrategy ? (
+                  <span className="font-semibold text-ember">{strategyStatus}</span>
                 ) : (
-                  list.map((card, i) => (
-                    <PipelineCardItem
-                      key={card.id}
-                      card={card}
-                      index={i}
-                      count={list.length}
-                      onMove={move}
-                      onReorder={reorder}
-                      onDelete={remove}
-                      onSchedule={tagSchedule}
-                      isScheduling={scheduling.includes(card.id)}
-                      draggable
-                      onDragStart={() => setDragging(true)}
-                      onDragEnd={(event, info) => handleDragEnd(card.id, event, info)}
-                    />
-                  ))
+                  <>
+                    <strong className="text-ink font-medium">AI Content Brain:</strong>{" "}
+                    {listOf("siap").length > 0 ? (
+                      <>Lo punya <span className="font-semibold text-ink">{listOf("siap").length} konten siap produksi</span>. {cards.filter((c) => c.scheduled_date).length} konten sudah terjadwal di kalender mingguan.</>
+                    ) : listOf("ide").length > 0 ? (
+                      <>Ada <span className="font-semibold text-ink">{listOf("ide").length} ide aktif</span>. Bikin hook atau rancang kalender 7 hari untuk eksekusi terstruktur.</>
+                    ) : (
+                      <>Alur kerja lo masih kosong. Klik tombol <span className="font-semibold text-ember">Rancang 7 Hari</span> di atas biar AI siapkan strategi seimbang buat lo!</>
+                    )}
+                  </>
                 )}
               </div>
             </div>
-          );
-        })}
+          </div>
+        </div>
       </div>
+
+      {/* Success Notification */}
+      {strategySuccess && (
+        <div className="flex items-center justify-between rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-xs text-success">
+          <p className="font-medium">{strategySuccess}</p>
+          <button
+            type="button"
+            onClick={() => setStrategySuccess("")}
+            className="text-xs font-bold hover:underline"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
+
+      {/* View Conditional: Calendar vs Kanban */}
+      {viewMode === "calendar" ? (
+        <PipelineCalendarView
+          cards={cards}
+          onGenerateStrategy={handleGenerate7DayStrategy}
+          isGeneratingStrategy={isGeneratingStrategy}
+        />
+      ) : (
+        <>
+          {/* ---------- phones: stage switcher, one stage at a time ---------- */}
+          <div className="md:hidden">
+            <div
+              role="tablist"
+              aria-label="Tahap pipeline"
+              className="flex gap-1 rounded-xl border border-hairline bg-surface/60 p-1"
+            >
+              {COLUMNS.map((col) => {
+                const on = col.id === mobileStage;
+                return (
+                  <button
+                    key={col.id}
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setMobileStage(col.id)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                      on ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    {col.label}
+                    <span
+                      className={`grid size-5 place-items-center rounded-full text-micro leading-none ${
+                        on ? "bg-ember/25 text-ink" : "bg-surface-raised text-ink"
+                      }`}
+                    >
+                      {listOf(col.id).length}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {COLUMNS.filter((c) => c.id === mobileStage).map((col) => {
+              const list = listOf(col.id);
+              return (
+                <div key={col.id} className="mt-3 space-y-3">
+                  <p className="text-xs leading-relaxed text-muted">{col.blurb}</p>
+                  {list.length === 0 ? (
+                    <EmptyStage text={col.empty} />
+                  ) : (
+                    list.map((card, i) => (
+                      <PipelineCardItem
+                        key={card.id}
+                        card={card}
+                        index={i}
+                        count={list.length}
+                        onMove={move}
+                        onReorder={reorder}
+                        onDelete={remove}
+                        onSchedule={tagSchedule}
+                        isScheduling={scheduling.includes(card.id)}
+                        draggable={false}
+                      />
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ---------- md and up: the full board ---------- */}
+          <div className="hidden gap-3 overflow-x-auto pb-2 md:flex">
+            {COLUMNS.map((col) => {
+              const list = listOf(col.id);
+              return (
+                <div
+                  key={col.id}
+                  ref={(el) => {
+                    colRefs.current[col.id] = el;
+                  }}
+                  className="flex max-h-[76vh] min-w-[290px] flex-1 flex-col rounded-xl border border-hairline bg-surface/50 p-3.5"
+                >
+                  <div className="mb-1 flex items-center justify-between">
+                    <h3 className="font-display font-semibold text-ink">{col.label}</h3>
+                    <span className="grid size-5 place-items-center rounded-full bg-surface-raised text-micro text-ink">
+                      {list.length}
+                    </span>
+                  </div>
+                  <p className="mb-3 text-micro leading-snug text-muted">{col.blurb}</p>
+
+                  <div
+                    className={`flex min-h-0 flex-1 flex-col gap-3 ${
+                      dragging ? "overflow-visible" : "overflow-y-auto"
+                    }`}
+                  >
+                    {list.length === 0 ? (
+                      <EmptyStage text={col.empty} />
+                    ) : (
+                      list.map((card, i) => (
+                        <PipelineCardItem
+                          key={card.id}
+                          card={card}
+                          index={i}
+                          count={list.length}
+                          onMove={move}
+                          onReorder={reorder}
+                          onDelete={remove}
+                          onSchedule={tagSchedule}
+                          isScheduling={scheduling.includes(card.id)}
+                          draggable
+                          onDragStart={() => setDragging(true)}
+                          onDragEnd={(event, info) => handleDragEnd(card.id, event, info)}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* ---------- undo ----------
           z-40 is the ambient tier in globals.css: above the chrome, below any
@@ -673,6 +787,23 @@ function PipelineCardItem({
   const dragControls = useDragControls();
 
   const status = card.status as Column;
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const aiScore =
+    card.ai_score ??
+    ((content as unknown as Record<string, unknown>)?.ai_score as number | undefined);
+  const breakdown = (content as unknown as Record<string, unknown>)?.score_breakdown as
+    | {
+        pattern?: number;
+        curiosity?: number;
+        pain?: number;
+        specificity?: number;
+        emotion?: number;
+      }
+    | undefined;
+  const scoreReason = (content as unknown as Record<string, unknown>)?.score_reason as
+    | string
+    | undefined;
+
   // Hook Lab returns ten. Unranked and unbounded that is a wall of buttons on a
   // phone, so lead with the model's own scoring and let the rest scroll.
   const hookList = (content?.generated_hook?.hooks ?? [])
@@ -855,6 +986,28 @@ function PipelineCardItem({
             {todayPlatformLabel(normalizeTodayPlatform(content.platform))}
           </span>
         )}
+        {aiScore && (
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/10 px-2 py-0.5 font-mono text-[10px] font-bold text-ember"
+            title="Skor Potensi Konten AI"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-2.5 text-ember">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
+            </svg>
+            Potensi {aiScore}
+          </span>
+        )}
+        {card.scheduled_date && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-hairline bg-surface-raised px-2 py-0.5 text-[10px] text-muted">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5">
+              <rect width="18" height="18" x="3" y="4" rx="2" />
+              <path d="M16 2v4" />
+              <path d="M8 2v4" />
+              <path d="M3 10h18" />
+            </svg>
+            {card.scheduled_date}
+          </span>
+        )}
         {/* The posting slot the model picked. Neutral on purpose — ember is for
             action and heat, and this is information. */}
         {card.schedule_label && (
@@ -872,6 +1025,50 @@ function PipelineCardItem({
           <span className="text-micro text-muted">Lagi nyariin jam tayang...</span>
         )}
       </div>
+
+      {breakdown && (
+        <div className="mt-2.5 rounded-lg border border-hairline bg-surface/70 p-2.5">
+          <button
+            type="button"
+            onClick={() => setShowAnalysis((v) => !v)}
+            className="flex w-full items-center justify-between text-micro font-semibold text-ink/80 transition-colors hover:text-ember"
+          >
+            <span className="flex items-center gap-1.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+              </svg>
+              Analisis Potensi AI
+            </span>
+            <span className="text-[10px] text-muted">{showAnalysis ? "Tutup" : "Lihat Rincian"}</span>
+          </button>
+
+          {showAnalysis && (
+            <div className="mt-2 space-y-1.5 border-t border-hairline/60 pt-2 text-[11px]">
+              {scoreReason && (
+                <p className="mb-2 text-micro leading-relaxed text-muted italic">"{scoreReason}"</p>
+              )}
+              <div className="grid grid-cols-2 gap-1.5 text-[10px] text-muted">
+                <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
+                  <span>Daya Henti:</span>
+                  <span className="font-mono font-bold text-ink">{breakdown.pattern ?? "-"}/25</span>
+                </div>
+                <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
+                  <span>Penasaran:</span>
+                  <span className="font-mono font-bold text-ink">{breakdown.curiosity ?? "-"}/20</span>
+                </div>
+                <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
+                  <span>Masalah Audiens:</span>
+                  <span className="font-mono font-bold text-ink">{breakdown.pain ?? "-"}/20</span>
+                </div>
+                <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
+                  <span>Spesifik:</span>
+                  <span className="font-mono font-bold text-ink">{breakdown.specificity ?? "-"}/20</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {card.schedule_label && card.schedule_reason && (
         <p className="mt-1.5 text-micro leading-relaxed text-muted">{card.schedule_reason}</p>

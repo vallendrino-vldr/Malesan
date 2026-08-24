@@ -639,6 +639,8 @@ export type Database = {
           schedule_reason: string | null;
           sort_order: number;
           updated_at: string;
+          scheduled_date: string | null;
+          ai_score: number | null;
         };
         Insert: {
           id?: string;
@@ -652,6 +654,8 @@ export type Database = {
           schedule_reason?: string | null;
           sort_order?: number;
           updated_at?: string;
+          scheduled_date?: string | null;
+          ai_score?: number | null;
         };
         Update: {
           id?: string;
@@ -665,6 +669,8 @@ export type Database = {
           schedule_reason?: string | null;
           sort_order?: number;
           updated_at?: string;
+          scheduled_date?: string | null;
+          ai_score?: number | null;
         };
         Relationships: [
           {

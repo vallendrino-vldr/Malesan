@@ -151,6 +151,16 @@ export async function getVideoNoWatermarkCost(): Promise<number> {
 }
 
 /**
+ * Credits charged for generating a 7-day AI content strategy.
+ * Defaults to 5 credits.
+ */
+export async function getCostContentStrategy(): Promise<number> {
+  const rows = await load();
+  const v = rows["cost_content_strategy"];
+  return typeof v === "number" && v >= 0 ? Math.round(v) : 5;
+}
+
+/**
  * Credits for the instant Groq reactions on a draft — the netizen-comment
  * simulator and the script roast. Cheap on purpose (a Groq call is fast and
  * costs the owner little), and `>= 0` so the owner can set either to 0 to make it

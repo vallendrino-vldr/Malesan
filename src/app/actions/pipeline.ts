@@ -279,3 +279,27 @@ Gunakan Bahasa Indonesia kasual, praktis, to the point. Langsung berikan teks ar
   return result.text.trim();
 }
 
+/**
+ * Update the scheduled date for a pipeline card (used by Calendar View drag/reassign).
+ */
+export async function updateCardScheduleDate(cardId: string, scheduledDate: string | null) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data, error } = await supabase
+    .from("pipeline_cards")
+    .update({ scheduled_date: scheduledDate })
+    .eq("id", cardId)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  revalidatePath("/app");
+  return data;
+}
+
+

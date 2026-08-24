@@ -35,8 +35,106 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Pipeline Polish, Context-Aware Timeline Alur & Interactive Scene Studio Editor (§9z.16).
-**Newest work is §9z.16 — Pipeline Polish, Context-Aware Loading Timeline Alur & Interactive Scene Studio Editor: (1) Rebuilt Pipeline "Bikin hook · 2 kredit" and stage mover navigation buttons (`Draft →`, `← Ide`) with vibrant solid ember style (`bg-ember text-obsidian`) and crisp active borders; (2) Added module-specific contextual timeline alur registry `MODULE_TIMELINE_CONFIGS` for Ide Hari Ini, Hook Lab, Script Engine, Vibe Coding, Repurpose, and Clip Engine; (3) Fixed 95% stream completion hang by triggering immediate `completeStudioProcessing()` on `msg.done` and decoupling status updates from unmount cleanup; (4) Upgraded Tab "Siap" in `ScriptView.tsx` to an interactive Scene Studio Editor with inline text editing, custom creator footage notes, and `✨ AI Sesuaikan Footage` server action (`adaptSceneFootage`); (5) Verified via `next build` (41 routes), `npm test` (11 tests pass), and DevTools live generation capture.** Read §9z.16, then §9z.15.
+Last updated: **2026-08-24**, after AI Content Brain & Pipeline Intelligence Layer Phase 1 (§9z.22).
+**Newest work is §9z.22 — Malesan AI Content Brain Phase 1 (Additive & Non-Breaking): (1) Applied additive database migration `00026_content_brain_phase1.sql` adding `scheduled_date` (date, nullable), `ai_score` (int, nullable), and `cost_content_strategy` (5 credits); (2) Created AI Content Brain structured prompt engine (`src/lib/prompts/brain.ts`) and endpoint `/api/pipeline/strategy` for generating balanced 7-day content plans (40% education, 30% storytelling, 20% engagement, 10% soft selling) with atomic credit deduction and fallback refunds; (3) Added `PipelineCalendarView.tsx` with responsive Desktop 7-day grid and Mobile thumb-friendly vertical Agenda List; (4) Added dynamic companion greeting banner, `[ Papan Kanban | Kalender ]` view switcher, and `[ ✨ Rancang 7 Hari ]` action with smart micro-copy loading states; (5) Enhanced `PipelineCardItem` with AI score flame badge and collapsible 5-rubric analysis drawer; (6) Verified via `next build` (42 routes compiled), `npm test` (11 invariant tests pass), and live DevTools MCP browser inspection across desktop (1440x900) and mobile (390x844).** Read §9z.22, then §9z.21.
+
+---
+
+## §9z.22 — Malesan AI Content Brain & Pipeline Intelligence Layer Phase 1 (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Additive Database Migration (`00026_content_brain_phase1.sql`):**
+   - Added `scheduled_date (date, null)` and `ai_score (int, null)` to `pipeline_cards`.
+   - Added index `idx_pipeline_cards_user_scheduled`.
+   - Seeded `cost_content_strategy = '5'::jsonb` in `app_config`.
+   - Synced TypeScript interfaces in `src/lib/supabase/database.types.ts`.
+2. **AI Content Brain Engine (`src/lib/prompts/brain.ts` & `/api/pipeline/strategy`):**
+   - Implemented 3-candidate reasoning and 7-day content strategy generator with balanced pillars.
+   - Atomic server-side credit deduction via `spendCredits` with auto-refund on error.
+3. **Pipeline Calendar View (`src/components/PipelineCalendarView.tsx`):**
+   - Built dual-mode calendar: Desktop 7-day grid (Monday to Sunday) + Mobile thumb-friendly vertical Agenda List.
+   - Includes unscheduled cards drawer with 1-click day assignment.
+4. **Pipeline Board UX Evolution (`src/components/PipelineBoard.tsx`):**
+   - Added AI Companion greeting banner with dynamic card metrics.
+   - Added segmented view toggle `[ Papan Kanban | Kalender ]` and `[ ✨ Rancang 7 Hari ]` button with progressive status micro-copy.
+   - Enhanced `PipelineCardItem` with AI potential score badge and expandable rubric analysis.
+5. **Server Actions (`src/app/actions/pipeline.ts`):**
+   - Added `updateCardScheduleDate(cardId, dateStr)` for drag/reassign operations.
+
+---
+
+### Summary of Changes:
+1. **Single-Line Filter Rail (`FeedbackList.tsx`):**
+   - Replaced wrapping `flex-wrap` layout with single-line horizontal scrollable rail (`overflow-x-auto` + hidden scrollbar).
+2. **Category Vector Icons (`FeedbackList.tsx`):**
+   - Replaced emojis in `CATEGORY_LABELS` (`🚨`, `💡`, `❓`, `💬`) with custom SVG icons.
+3. **Fluid Action Bar & Admin Notes:**
+   - Improved status action buttons and admin notes input in feedback items to flex cleanly on small mobile viewports.
+4. **Quick Questions & Header Quick Links:**
+   - Swapped multi-row question chips in `/admin/asisten` and `/admin` header quick links for horizontal scrollable rails on mobile.
+5. **Mobile Header Height Alignment:**
+   - Matched `RefreshButton` (`variant="icon"`) and `[ < App ]` button to identical `h-9` (36px) height and padding.
+
+---
+
+## §9z.20 — Admin Dashboard Hardening & Zero-Emoji International Upgrade (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across desktop 1440x900 and mobile 390x844.
+
+### Summary of Changes:
+1. **Zero-Emoji Purge & Monochrome Vector Icons:**
+   - Replaced all unicode emojis across summary dashboard, Error Center, and Config editor with crisp SVG icons.
+2. **Enterprise Control Brand & Navigation:**
+   - High-contrast glowing `[ ADMIN ]` badge, improved bottom sidebar navigation spacing without element collisions.
+3. **Graceful User Avatar Fallbacks:**
+   - Robust `onError` fallback on `Avatar` component returning initials when avatar URLs are missing or broken.
+4. **Assistant Shimmer Card:**
+   - High-end shimmer loading card with live analyzing status indicator instead of raw pulse boxes.
+
+---
+
+## §9z.19 — Global Command Omnibar, Form A11y & Offline Local Cache (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across desktop 1440x900 and mobile 390x844.
+
+### Summary of Changes:
+1. **Command Omnibar (`CommandOmnibar.tsx` & `AppShell.tsx`):**
+   - Implemented Raycast/Linear-grade dark glass modal palette triggered via `Cmd+K` / `Ctrl+K` or header button.
+   - Categorized commands across Studio tools, Pipeline stages, and Quick Nav actions with keyboard arrow/enter navigation.
+2. **Form Accessibility & Semantic IDs:**
+   - Added complete `id`, `name`, `htmlFor`, and `aria-label` attributes across all textareas and inputs, eliminating all 25+ browser console accessibility issues.
+3. **Offline-Resilient Local Autosave (`offline-draft-cache.ts`):**
+   - Automatic local storage mirroring of in-progress script/scene edits with timestamp tracking, preventing data loss during network drops.
+
+---
+
+## §9z.18 — Compact Kanban Layout & Zero-Overflow Scene Footage UI (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across desktop 1440x900 and mobile 390x844.
+
+### Summary of Changes:
+1. **Desktop 4-Column Kanban Fluid Adaptability (`ScriptView.tsx`):**
+   - Added `min-w-0` to the unified input bar container and `<input>` element to eliminate flex child minimum width overflow.
+   - Streamlined headers to single-line labels (`ARAHAN VISUAL`, `REKAMAN SENDIRI`) and action button to `[ AI ]` with tooltip.
+   - Added `overflow-x-hidden w-full` to eliminate horizontal scrollbars on desktop kanban columns.
+
+---
+
+## §9z.17 — Progress Bar Curve Pacing Fix & Clean Emoji-Free Scene Footage UI (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop.
+
+### Summary of Changes:
+1. **Progress Bar Continuous Pacing (`AIProcessingOverlay.tsx`):**
+   - Removed aggressive `Math.max(nextProgress, 70 + data.chars/30)` which previously catapulted the progress bar to 88-90% on the very first SSE chunk.
+   - Paced progress curve across 4 distinct phases based on real duration with smooth asymptotic easing, preserving full phase traversal ($0 \to 25 \to 55 \to 85 \to 100\%$).
+2. **Clean Emoji-Free Scene Footage UI (`ScriptView.tsx`):**
+   - Removed all unicode emojis (`📹`, `🎬`, `✨`).
+   - Added sleek, monochrome 14px vector line icons (`FilmIcon`, `SparkleIcon`).
+   - Trigger button: `+ Tambah rekaman atau footage sendiri` with dashed border and smooth hover glow.
+   - Expanded card: `BAHAN REKAMAN PRIBADI`, clean placeholder, and solid CTA `Sesuaikan Arahan Visual`.
 
 ---
 
