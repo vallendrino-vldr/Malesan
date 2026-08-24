@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { adaptSceneFootage } from "@/app/actions/pipeline";
 import { saveOfflineScriptCache, markOfflineScriptSynced } from "@/lib/offline-draft-cache";
 import { VoicePreview } from "./VoicePreview";
+import { ScriptFullViewModal } from "./ScriptFullViewModal";
 
 export type ScriptScene = {
   timestamp?: string;
@@ -125,6 +126,7 @@ export function ScriptView({
   const [copied, setCopied] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showFullView, setShowFullView] = useState(false);
   const [adaptingSceneIdx, setAdaptingSceneIdx] = useState<number | null>(null);
   const [openFootageNoteIdx, setOpenFootageNoteIdx] = useState<number | null>(null);
 
@@ -259,6 +261,17 @@ export function ScriptView({
             {isSaving ? "Simpan..." : "Simpan ✓"}
           </button>
         )}
+
+        {/* Full View Studio Modal Trigger */}
+        <button
+          type="button"
+          onClick={() => setShowFullView(true)}
+          title="Buka tampilan naskah layar penuh & teleprompter"
+          className="ml-1.5 inline-flex items-center gap-1 cursor-pointer shrink-0 rounded-lg border border-ember/40 bg-ember/15 px-2 py-1 text-micro font-bold text-ember hover:bg-ember/25 transition-all active:scale-95"
+        >
+          <span>⛶</span>
+          <span>Layar Penuh</span>
+        </button>
       </div>
 
       <div className="max-h-80 w-full overflow-y-auto overflow-x-hidden p-2.5 space-y-2.5 overscroll-contain">
@@ -502,6 +515,16 @@ export function ScriptView({
           Browser-nya nolak akses clipboard. Pakai Unduh aja.
         </p>
       )}
+
+      {/* Full View Studio Modal */}
+      <ScriptFullViewModal
+        isOpen={showFullView}
+        onClose={() => setShowFullView(false)}
+        title={title}
+        platform={platform}
+        script={currentScript}
+        onSaveScript={onSaveScript ? handleSave : undefined}
+      />
     </div>
   );
 }

@@ -10,6 +10,7 @@ import {
 import { todayPlatformLabel, normalizeTodayPlatform } from "@/lib/content-options";
 import { completeStudioProcessing } from "./studio/AIProcessingOverlay";
 import { NetizenSimulatorModal } from "./NetizenSimulatorModal";
+import { ScriptFullViewModal } from "./ScriptFullViewModal";
 
 type Column = "ide" | "draft" | "siap" | "posted";
 
@@ -55,6 +56,7 @@ export function PipelineCardModal({
   const [activeTab, setActiveTab] = useState<"detail" | "rubric">("detail");
   const [pickedHookIndex, setPickedHookIndex] = useState<number>(0);
   const [showNetizenSimulator, setShowNetizenSimulator] = useState(false);
+  const [showFullViewScript, setShowFullViewScript] = useState(false);
 
   if (!isOpen || !card) return null;
 
@@ -533,8 +535,17 @@ export function PipelineCardModal({
                     <span className="eyebrow text-success">Naskah Video Siap Syuting:</span>
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setShowNetizenSimulator(true)}
+                        type="button"
+                        onClick={() => setShowFullViewScript(true)}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-2.5 py-1 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 cursor-pointer active:scale-95"
+                      >
+                        <span>⛶</span>
+                        <span>Layar Penuh</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowNetizenSimulator(true)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-ink transition-colors hover:bg-white/10 cursor-pointer active:scale-95"
                       >
                         <span>💬</span>
                         <span>Simulasi Netizen</span>
@@ -669,6 +680,17 @@ export function PipelineCardModal({
       platform={String(content?.platform || "TikTok / Reels")}
       scriptContent={JSON.stringify(generatedScript || "")}
     />
+
+    {/* Full View Studio Reader & Teleprompter Modal */}
+    {generatedScript && (
+      <ScriptFullViewModal
+        isOpen={showFullViewScript}
+        onClose={() => setShowFullViewScript(false)}
+        title={card.title}
+        platform={String(content?.platform || "TikTok / Reels")}
+        script={generatedScript}
+      />
+    )}
   </>
 );
 }

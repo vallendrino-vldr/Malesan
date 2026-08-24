@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 export function cleanScriptForSpeech(raw: string): string {
   if (!raw) return "";
@@ -17,32 +17,128 @@ export function cleanScriptForSpeech(raw: string): string {
     .trim();
 }
 
+/**
+ * Normalises text for natural Indonesian spoken delivery.
+ * Replaces abbreviations and internet slang with natural phonetic words
+ * and injects micro-pauses for natural cadence and breathing.
+ */
+export function normalizeIndonesianSpeech(raw: string): string {
+  if (!raw) return "";
+  let s = cleanScriptForSpeech(raw);
+
+  const slangMap: [RegExp, string][] = [
+    [/\byg\b/gi, "yang"],
+    [/\bbgt\b/gi, "banget"],
+    [/\bgak\b/gi, "nggak"],
+    [/\bga\b/gi, "nggak"],
+    [/\budh\b/gi, "udah"],
+    [/\bsdh\b/gi, "sudah"],
+    [/\btp\b/gi, "tapi"],
+    [/\bdgn\b/gi, "dengan"],
+    [/\bblm\b/gi, "belum"],
+    [/\bskrg\b/gi, "sekarang"],
+    [/\bdr\b/gi, "dari"],
+    [/\bkrn\b/gi, "karena"],
+    [/\bjg\b/gi, "juga"],
+    [/\bbs\b/gi, "bisa"],
+    [/\bkmrn\b/gi, "kemarin"],
+    [/\bbbrp\b/gi, "beberapa"],
+    [/\bdan lain-lain\b/gi, "dan lain-lain"],
+    [/\bdll\b/gi, "dan lain-lain"],
+    [/\btsb\b/gi, "tersebut"],
+    [/\bttg\b/gi, "tentang"],
+    [/\butk\b/gi, "untuk"],
+    [/\bhrs\b/gi, "harus"],
+    [/\bbnr\b/gi, "bener"],
+    [/\bbener2\b/gi, "bener-bener"],
+    [/\bcta\b/gi, "call to action"],
+    [/\bvt\b/gi, "video tiktok"],
+    [/\bfyp\b/gi, "f y p"],
+    [/\bwa\b/gi, "whatsapp"],
+    [/\bdm\b/gi, "direct message"],
+    [/\bcod\b/gi, "c o d"],
+    [/\bklik link\b/gi, "klik tautan"],
+    [/\bgue\b/gi, "gue"],
+    [/\blo\b/gi, "lo"],
+    [/\bngerasa\b/gi, "ngerasa"],
+  ];
+
+  for (const [regex, replacement] of slangMap) {
+    s = s.replace(regex, replacement);
+  }
+
+  // Add micro-pause breathing points at punctuation
+  s = s
+    .replace(/([.!?])\s+/g, "$1... ")
+    .replace(/([,;:])\s+/g, "$1, ");
+
+  return s;
+}
+
+export type VoiceStylePreset = "kreator" | "story" | "edukasi";
+
 interface VoicePreviewProps {
   text: string;
   title?: string;
   className?: string;
+  autoPlay?: boolean;
 }
 
-export function VoicePreview({ text, title = "Naskah Video", className = "" }: VoicePreviewProps) {
+export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [rate, setRate] = useState<number>(1.0);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [stylePreset, setStylePreset] = useState<VoiceStylePreset>("kreator");
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>("");
   const [supported] = useState(() => typeof window !== "undefined" && "speechSynthesis" in window);
 
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // Split text into natural conversational chunks
+  const speechChunks = useMemo(() => {
+    const clean = normalizeIndonesianSpeech(text);
+    if (!clean) return [];
+    // Split on sentence boundaries (dots, exclamation, question marks)
+    return clean
+      .split(/(?<=[.!?…])\s+/)
+      .map((c) => c.trim())
+      .filter(Boolean);
+  }, [text]);
 
+  const currentChunkIndexRef = useRef(0);
+  const isCancelledRef = useRef(false);
+
+  // Load and sort best quality natural voices
   useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      return;
-    }
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     const loadVoices = () => {
-      const available = window.speechSynthesis.getVoices();
-      if (available.length > 0) {
-        // Prioritize Indonesian voice (id-ID)
-        const indoVoice = available.find((v) => v.lang.includes("id") || v.lang.includes("ID"));
-        setSelectedVoice(indoVoice || available[0]);
+      const all = window.speechSynthesis.getVoices();
+      if (!all.length) return;
+
+      // Filter Indonesian voices first
+      const indoVoices = all.filter(
+        (v) =>
+          v.lang.toLowerCase().includes("id") ||
+          v.lang.toLowerCase().includes("in") ||
+          v.name.toLowerCase().includes("indonesia") ||
+          v.name.toLowerCase().includes("gadis") ||
+          v.name.toLowerCase().includes("ardi") ||
+          v.name.toLowerCase().includes("damayanti"),
+      );
+
+      // Prioritize natural/neural voices
+      indoVoices.sort((a, b) => {
+        const aNat = a.name.toLowerCase().includes("natural") || a.name.toLowerCase().includes("online") || a.name.toLowerCase().includes("google");
+        const bNat = b.name.toLowerCase().includes("natural") || b.name.toLowerCase().includes("online") || b.name.toLowerCase().includes("google");
+        if (aNat && !bNat) return -1;
+        if (!aNat && bNat) return 1;
+        return 0;
+      });
+
+      const list = indoVoices.length ? indoVoices : all;
+      setAvailableVoices(list);
+
+      if (!selectedVoiceURI && list.length > 0) {
+        setSelectedVoiceURI(list[0].voiceURI);
       }
     };
 
@@ -54,15 +150,88 @@ export function VoicePreview({ text, title = "Naskah Video", className = "" }: V
         window.speechSynthesis.cancel();
       }
     };
-  }, []);
+  }, [selectedVoiceURI]);
 
-  const handleStop = useCallback(() => {
+  // Handle Preset Parameters
+  const { rate, pitch } = useMemo(() => {
+    switch (stylePreset) {
+      case "kreator":
+        return { rate: 1.12, pitch: 1.04 }; // Enerjik, cepat, cocok untuk TikTok
+      case "story":
+        return { rate: 0.98, pitch: 0.98 }; // Bertutur santai & hangat
+      case "edukasi":
+      default:
+        return { rate: 1.05, pitch: 1.0 }; // Jelas, tegas, artikulatif
+    }
+  }, [stylePreset]);
+
+  const selectedVoice = useMemo(() => {
+    return availableVoices.find((v) => v.voiceURI === selectedVoiceURI) || availableVoices[0] || null;
+  }, [availableVoices, selectedVoiceURI]);
+
+  const stopPlayback = useCallback(() => {
+    isCancelledRef.current = true;
+    currentChunkIndexRef.current = 0;
     if (typeof window !== "undefined" && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
     setIsPlaying(false);
     setIsPaused(false);
   }, []);
+
+  const playChunkRef = useRef<(index: number) => void>(() => {});
+
+  const playChunk = useCallback(
+    (index: number) => {
+      if (isCancelledRef.current || index >= speechChunks.length) {
+        setIsPlaying(false);
+        setIsPaused(false);
+        currentChunkIndexRef.current = 0;
+        return;
+      }
+
+      currentChunkIndexRef.current = index;
+      const chunkText = speechChunks[index];
+      if (!chunkText) {
+        playChunkRef.current(index + 1);
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(chunkText);
+      utterance.rate = rate;
+      utterance.pitch = pitch;
+      utterance.lang = "id-ID";
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+
+      utterance.onend = () => {
+        if (!isCancelledRef.current) {
+          // Play next chunk with micro breathing delay (40ms)
+          setTimeout(() => {
+            playChunkRef.current(index + 1);
+          }, 40);
+        }
+      };
+
+      utterance.onerror = (e) => {
+        // If canceled explicitly, ignore
+        if (isCancelledRef.current || e.error === "canceled") {
+          return;
+        }
+        setIsPlaying(false);
+        setIsPaused(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    },
+    [speechChunks, rate, pitch, selectedVoice],
+  );
+
+  useEffect(() => {
+    playChunkRef.current = playChunk;
+  }, [playChunk]);
 
   const handlePlay = useCallback(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -75,33 +244,14 @@ export function VoicePreview({ text, title = "Naskah Video", className = "" }: V
     }
 
     window.speechSynthesis.cancel();
+    isCancelledRef.current = false;
 
-    const cleanText = cleanScriptForSpeech(text);
-    if (!cleanText) return;
+    if (!speechChunks.length) return;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.rate = rate;
-    utterance.lang = "id-ID";
-
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
-    }
-
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-    };
-
-    utterance.onerror = () => {
-      setIsPlaying(false);
-      setIsPaused(false);
-    };
-
-    utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
     setIsPlaying(true);
     setIsPaused(false);
-  }, [isPaused, text, rate, selectedVoice]);
+    playChunk(0);
+  }, [isPaused, speechChunks, playChunk]);
 
   const handlePause = useCallback(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -114,119 +264,117 @@ export function VoicePreview({ text, title = "Naskah Video", className = "" }: V
 
   return (
     <div
-      className={`rounded-2xl border border-ember/30 bg-gradient-to-r from-surface to-surface-raised p-3 sm:p-4 shadow-xs ${className}`}
+      className={`rounded-2xl border border-ember/30 bg-gradient-to-r from-surface via-[#141414] to-surface-raised p-3 sm:p-4 shadow-sm ${className}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <div
-            className={`flex size-9 shrink-0 items-center justify-center rounded-xl border transition-colors ${
+        {/* Play/Pause Button & Pulse Indicator */}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={isPlaying ? handlePause : handlePlay}
+            disabled={!speechChunks.length}
+            aria-label={isPlaying ? "Jeda Voice Preview" : "Putar Natural AI Voice Preview"}
+            className={`flex size-10 items-center justify-center rounded-xl font-bold transition-all duration-200 active:scale-95 cursor-pointer ${
               isPlaying
-                ? "border-ember bg-ember text-obsidian shadow-sm animate-pulse"
-                : "border-ember/40 bg-ember/15 text-ember"
-            }`}
+                ? "bg-ember text-obsidian shadow-[0_0_15px_rgba(255,138,61,0.4)]"
+                : "border border-ember/40 bg-ember/15 text-ember hover:bg-ember hover:text-obsidian"
+            } disabled:opacity-40`}
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" y1="19" x2="12" y2="22" />
-            </svg>
-          </div>
+            {isPlaying ? (
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 ml-0.5">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            )}
+          </button>
+
+          {isPlaying && (
+            <button
+              type="button"
+              onClick={stopPlayback}
+              title="Berhenti"
+              className="flex size-7 items-center justify-center rounded-lg border border-hairline bg-surface text-muted hover:text-danger hover:border-danger/30 transition-colors cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3">
+                <rect x="4" y="4" width="16" height="16" rx="1" />
+              </svg>
+            </button>
+          )}
 
           <div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <span className="font-display text-xs font-bold text-ink">🎙️ AI Voice Preview</span>
-              {isPlaying && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-ember">
-                  <span className="size-1.5 rounded-full bg-ember animate-ping" />
-                  Sedang Membaca...
-                </span>
-              )}
+              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-semibold text-emerald-400">
+                Natural Indo
+              </span>
             </div>
-            <p className="text-[11px] text-muted">
-              {title ? `${title} · Pratinjau intonasi baca` : "Dengarkan intonasi naskah sebelum take rekaman"}
+            <p className="text-[10px] text-muted">
+              {isPlaying
+                ? "Sedang membaca dengan intonasi natural..."
+                : isPaused
+                  ? "Dijeda — klik putar untuk lanjut"
+                  : "Uji artikulasi & ritme naskah lisan"}
             </p>
           </div>
         </div>
 
-        {/* Speed Controls */}
-        <div className="flex items-center gap-1 rounded-lg border border-hairline bg-obsidian/80 p-0.5">
-          {[
-            { val: 0.85, label: "0.85x" },
-            { val: 1.0, label: "1.0x" },
-            { val: 1.2, label: "1.2x" },
-          ].map((s) => (
+        {/* Voice Style Presets */}
+        <div className="flex items-center gap-1 bg-black/40 rounded-xl p-1 border border-hairline/60">
+          {(
+            [
+              { id: "kreator", label: "⚡ Kreator", title: "Cepat & Enerjik (TikTok/Reels)" },
+              { id: "story", label: "🎙️ Story", title: "Santai & Bertutur (Podcast/Story)" },
+              { id: "edukasi", label: "🎯 Edukasi", title: "Tegas & Artikulatif (Tutorial)" },
+            ] as const
+          ).map((preset) => (
             <button
-              key={s.val}
+              key={preset.id}
               type="button"
               onClick={() => {
-                setRate(s.val);
+                setStylePreset(preset.id);
                 if (isPlaying) {
-                  // restart with new speed
-                  handleStop();
+                  stopPlayback();
                 }
               }}
-              className={`rounded-md px-2 py-0.5 text-[10px] font-mono transition-colors ${
-                rate === s.val
-                  ? "bg-ember/25 text-ember font-bold"
+              title={preset.title}
+              className={`rounded-lg px-2 py-1 text-[10px] font-semibold transition-all cursor-pointer ${
+                stylePreset === preset.id
+                  ? "bg-ember text-obsidian font-bold shadow-xs"
                   : "text-muted hover:text-ink"
               }`}
             >
-              {s.label}
+              {preset.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Control Buttons */}
-      <div className="mt-3 flex items-center gap-2 pt-2.5 border-t border-white/[0.04]">
-        {!isPlaying ? (
-          <button
-            type="button"
-            onClick={handlePlay}
-            className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-ember/40 bg-ember/20 px-3.5 py-1.5 text-xs font-bold text-ember transition-all hover:bg-ember hover:text-obsidian active:scale-95"
+      {/* Available Voices Dropdown (If device has multiple Indonesian/Neural voices) */}
+      {availableVoices.length > 1 && (
+        <div className="mt-2.5 flex items-center justify-between border-t border-hairline/40 pt-2 text-[10px] text-muted">
+          <span className="flex items-center gap-1">
+            <span>🗣️ Karakter Suara:</span>
+          </span>
+          <select
+            value={selectedVoiceURI}
+            onChange={(e) => {
+              setSelectedVoiceURI(e.target.value);
+              if (isPlaying) stopPlayback();
+            }}
+            className="rounded-md border border-hairline bg-surface px-2 py-0.5 text-[10px] text-ink focus:border-ember focus:outline-none max-w-[220px] truncate cursor-pointer"
           >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-            <span>{isPaused ? "Lanjut Putar" : "Putar Suara Naskah"}</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handlePause}
-            className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-3.5 py-1.5 text-xs font-bold text-ink transition-colors hover:border-ember/40"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
-              <rect x="6" y="4" width="4" height="16" />
-              <rect x="14" y="4" width="4" height="16" />
-            </svg>
-            <span>Jeda</span>
-          </button>
-        )}
-
-        {(isPlaying || isPaused) && (
-          <button
-            type="button"
-            onClick={handleStop}
-            className="cursor-pointer inline-flex items-center gap-1 rounded-xl border border-white/[0.06] bg-surface px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:text-danger"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3">
-              <rect x="4" y="4" width="16" height="16" />
-            </svg>
-            <span>Stop</span>
-          </button>
-        )}
-
-        {/* Visual Equalizer Wave */}
-        {isPlaying && (
-          <div className="ml-auto flex items-end gap-0.5 h-4">
-            <span className="w-1 bg-ember rounded-full animate-bounce [animation-delay:-0.3s] h-3" />
-            <span className="w-1 bg-ember rounded-full animate-bounce [animation-delay:-0.1s] h-4" />
-            <span className="w-1 bg-ember rounded-full animate-bounce [animation-delay:-0.2s] h-2" />
-            <span className="w-1 bg-ember rounded-full animate-bounce [animation-delay:-0.4s] h-3.5" />
-          </div>
-        )}
-      </div>
+            {availableVoices.map((v) => (
+              <option key={v.voiceURI} value={v.voiceURI}>
+                {v.name.replace(/Microsoft|Google|Desktop/gi, "").trim()} ({v.lang})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
