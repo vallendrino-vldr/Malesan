@@ -72,10 +72,55 @@ export function CreatorJourney() {
   const current = JOURNEY_STEPS[activeIdx];
 
   return (
-    <section id="journey" className="relative scroll-mt-16 pt-8 pb-12 sm:pt-14 sm:pb-18">
+    <section id="journey" className="relative scroll-mt-16 pt-4 pb-12 sm:pt-6 sm:pb-18">
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
-        {/* Clean Editorial Section Header — Natural Flow, No Gimmick Arrow */}
+        {/* =========================================================================
+            LIVING KINETIC NODE: Laser Wire with Downward Photon + Orbital Core Puck
+           ========================================================================= */}
+        <div className="mx-auto mb-6 flex flex-col items-center select-none">
+          {/* Laser Guide Wire with Flowing Photon Pulse */}
+          <div className="relative h-12 w-6 flex justify-center overflow-hidden">
+            {/* Ambient Background Track */}
+            <div className="h-full w-[1.5px] rounded-full bg-gradient-to-b from-transparent via-white/10 to-ember/40" />
+            
+            {/* Flowing Kinetic Photon Bullet */}
+            <div
+              className="absolute top-0 w-[2px] h-5 rounded-full bg-gradient-to-b from-transparent via-ember to-ember-lo"
+              style={{
+                animation: "stream-down 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              }}
+            />
+          </div>
+
+          {/* Micro Orbital Node Puck */}
+          <div className="relative flex items-center justify-center size-7 rounded-full border border-white/[0.12] bg-surface/90 shadow-sm backdrop-blur-md">
+            {/* Rotating Micro Orbital Dash Ring */}
+            <svg
+              viewBox="0 0 28 28"
+              fill="none"
+              className="absolute inset-0 size-full animate-[spin_8s_linear_infinite]"
+            >
+              <circle
+                cx="14"
+                cy="14"
+                r="11"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeDasharray="4 6"
+                className="text-ember/60"
+              />
+            </svg>
+
+            {/* Living Breathing Ember Jewel Core */}
+            <div className="size-2 rounded-full bg-ember animate-pulse shadow-xs" />
+          </div>
+
+          {/* Subtle Bottom Ground Lead */}
+          <div className="h-4 w-[1.5px] bg-gradient-to-b from-ember/40 to-transparent" />
+        </div>
+
+        {/* Section Header */}
         <div className="text-center max-w-xl mx-auto">
           <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-4 py-1.5 text-xs font-semibold text-ember">
             <span className="size-1.5 rounded-full bg-ember animate-pulse" />

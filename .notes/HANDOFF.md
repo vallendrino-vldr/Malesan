@@ -35,8 +35,19 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Removal of Gimmick Arrow & Clean Editorial Flow (§9z.36).
-**Newest work is §9z.36 — Removal of Gimmick Arrow & Clean Editorial Flow: (1) In `src/components/landing/CreatorJourney.tsx`, completely removed the artificial arrow / beacon / connector widget to establish a natural, high-end editorial transition between Hero and Creator Journey; (2) Centered the section header with clean vertical breathing room (`pt-8 sm:pt-14`), eliminating visual distraction; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.36, then §9z.35.
+Last updated: **2026-08-24**, after Living Kinetic Node Deployment (§9z.37).
+**Newest work is §9z.37 — Living Kinetic Node Deployment: (1) In `src/components/landing/CreatorJourney.tsx`, built and deployed a bespoke Living Kinetic Node comprising a vertical laser wire with continuous downward photon surge, a micro orbital glass puck with a 60 FPS rotating dashed ring (`animate-[spin_8s_linear_infinite]`), and a breathing ember jewel core (`animate-pulse`); (2) Zero unicode arrows, zero text widgets — 100% pure engineered kinetic aesthetics; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.37, then §9z.36.
+
+---
+
+## §9z.37 — Living Kinetic Node Deployment (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Kinetic Photon Wire & Orbital Ring:**
+   - Downward streaming photon pulse on laser track.
+   - Smooth rotating outer orbital ring (8s cycle) around an inner breathing ember core.
 
 ---
 
