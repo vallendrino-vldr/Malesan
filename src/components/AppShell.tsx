@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
 import { RefreshButton } from "./RefreshButton";
 import { TutorialSheet } from "./TutorialSheet";
+import { CommandOmnibar } from "./CommandOmnibar";
 import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 
 /**
@@ -117,6 +118,19 @@ export function AppShell({
   children?: ReactNode;
 }) {
   const [current, setCurrent] = useState<TabKey>(active);
+  const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
+
+  // Global shortcut for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsOmnibarOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // A module sub-view (?m=hook) owns the whole content area, so tab state does
   // not apply — fall back to server-driven navigation for those.
@@ -141,13 +155,6 @@ export function AppShell({
       <AmbientField />
 
       {/* ---------- header ---------- */}
-      {/* `backdrop-blur-xl` used to sit here and on the tab bar. Nothing ever
-          renders behind either of them — `main` is a sibling with its own
-          scroll box, so content scrolls *inside* main, never under the chrome.
-          The filter was blurring the solid page background: a full-width
-          compositing layer repainted on every scroll frame for no visible
-          effect. `/85` over the same colour was likewise indistinguishable from
-          solid. Both are gone; the bars look identical. */}
       <header className="area-header relative z-20 border-b border-hairline/70 bg-obsidian">
         <div className="mx-auto flex h-16 lg:h-[76px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo & Brand Identity */}
@@ -158,6 +165,23 @@ export function AppShell({
           >
             <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
           </Link>
+
+          {/* Center/Right Omnibar search trigger */}
+          <button
+            type="button"
+            onClick={() => setIsOmnibarOpen(true)}
+            aria-label="Buka Command Omnibar (Cmd+K)"
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" x2="16.65" y1="21" y2="16.65" />
+            </svg>
+            <span className="font-medium">Cari alat & perintah...</span>
+            <kbd className="rounded border border-white/10 bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-muted">
+              ⌘K
+            </kbd>
+          </button>
 
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
@@ -325,6 +349,14 @@ export function AppShell({
           })}
         </div>
       </nav>
+
+      {/* Command Omnibar Palette (Cmd+K / Ctrl+K) */}
+      <CommandOmnibar
+        isOpen={isOmnibarOpen}
+        onClose={() => setIsOmnibarOpen(false)}
+        onSelectTab={(tab) => go(tab)}
+        isAdmin={isAdmin}
+      />
 
       {/* Global Studio AI Processing Overlay (Always mounted, butter-smooth exit) */}
       <GlobalStudioProcessingOverlay />

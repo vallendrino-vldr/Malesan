@@ -100,7 +100,13 @@ export function IdeaEngine() {
         </p>
 
         <div className="mt-6">
+          <label htmlFor="idea-engine-input" className="sr-only">
+            Ide kasar konten
+          </label>
           <textarea
+            id="idea-engine-input"
+            name="idea_input"
+            aria-label="Ide kasar konten"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isGenerating}

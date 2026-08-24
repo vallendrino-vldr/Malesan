@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { adaptSceneFootage } from "@/app/actions/pipeline";
+import { saveOfflineScriptCache, markOfflineScriptSynced } from "@/lib/offline-draft-cache";
 
 export type ScriptScene = {
   timestamp?: string;
@@ -173,6 +174,8 @@ export function ScriptView({
     };
     setCurrentScript(updated);
     setHasChanges(true);
+    // Instant offline resilient local caching
+    saveOfflineScriptCache(title, updated);
   };
 
   const handleSave = async () => {
@@ -181,6 +184,7 @@ export function ScriptView({
     try {
       await onSaveScript(currentScript);
       setHasChanges(false);
+      markOfflineScriptSynced(title);
     } catch (err) {
       console.error("Gagal simpan script:", err);
     } finally {
@@ -282,10 +286,16 @@ export function ScriptView({
 
                 {/* Spoken Voiceover Textarea */}
                 <div className="mt-2">
-                  <label className="block text-[10px] font-semibold text-muted/70 uppercase tracking-wider mb-1">
+                  <label
+                    htmlFor={`scene-${i}-spoken`}
+                    className="block text-[10px] font-semibold text-muted/70 uppercase tracking-wider mb-1"
+                  >
                     {textMode ? "Teks Kalimat" : "Voiceover (Diucapkan)"}
                   </label>
                   <textarea
+                    id={`scene-${i}-spoken`}
+                    name={`scene_${i}_spoken`}
+                    aria-label={`Voiceover scene ${i + 1}`}
                     rows={2}
                     value={sc.spoken || ""}
                     onChange={(e) => handleUpdateScene(i, "spoken", e.target.value)}
@@ -296,10 +306,16 @@ export function ScriptView({
 
                 {/* On-Screen Text Input */}
                 <div className="mt-2">
-                  <label className="block text-[10px] font-semibold text-muted/70 uppercase tracking-wider mb-1">
+                  <label
+                    htmlFor={`scene-${i}-overlay`}
+                    className="block text-[10px] font-semibold text-muted/70 uppercase tracking-wider mb-1"
+                  >
                     {textMode ? "Fungsi / Judul Bagian" : "Teks di Layar (Overlay)"}
                   </label>
                   <input
+                    id={`scene-${i}-overlay`}
+                    name={`scene_${i}_overlay`}
+                    aria-label={`Teks di layar scene ${i + 1}`}
                     type="text"
                     value={sc.on_screen_text || ""}
                     onChange={(e) => handleUpdateScene(i, "on_screen_text", e.target.value)}
@@ -312,7 +328,10 @@ export function ScriptView({
                 {!textMode && (
                   <div className="mt-2 rounded-xl border border-white/[0.08] bg-black/40 p-2.5 w-full min-w-0">
                     <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                      <label className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate">
+                      <label
+                        htmlFor={`scene-${i}-visual`}
+                        className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate"
+                      >
                         <FilmIcon className="size-3 text-ember shrink-0" />
                         <span className="truncate">Arahan Visual</span>
                       </label>
@@ -341,6 +360,9 @@ export function ScriptView({
 
                     {/* Footage Description Textarea */}
                     <textarea
+                      id={`scene-${i}-visual`}
+                      name={`scene_${i}_visual`}
+                      aria-label={`Arahan visual scene ${i + 1}`}
                       rows={2}
                       value={sc.visual || ""}
                       onChange={(e) => handleUpdateScene(i, "visual", e.target.value)}
@@ -352,7 +374,10 @@ export function ScriptView({
                     {openFootageNoteIdx === i || sc.user_footage_note ? (
                       <div className="mt-2 rounded-lg border border-ember/25 bg-[#141210] p-2 shadow-sm w-full min-w-0">
                         <div className="flex items-center justify-between gap-1 mb-1.5">
-                          <label className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate">
+                          <label
+                            htmlFor={`scene-${i}-footage-note`}
+                            className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate"
+                          >
                             <FilmIcon className="size-2.5 text-ember shrink-0" />
                             <span className="truncate">Rekaman Sendiri</span>
                           </label>
@@ -371,6 +396,9 @@ export function ScriptView({
                         {/* Unified Slim Input Bar with Embedded CTA Button */}
                         <div className="relative flex w-full min-w-0 items-center gap-1 rounded-md border border-white/10 bg-obsidian p-1 focus-within:border-ember/60 transition-colors">
                           <input
+                            id={`scene-${i}-footage-note`}
+                            name={`scene_${i}_footage_note`}
+                            aria-label={`Bahan rekaman sendiri scene ${i + 1}`}
                             type="text"
                             value={sc.user_footage_note || ""}
                             onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
@@ -422,13 +450,20 @@ export function ScriptView({
 
         {currentScript.caption && (
           <div className="mt-3 border-t border-hairline pt-3">
-            <p className="eyebrow text-muted">{textMode ? "Penutup" : "Caption"}</p>
+            <label htmlFor="script-caption-input" className="eyebrow text-muted block">
+              {textMode ? "Penutup" : "Caption"}
+            </label>
             <textarea
+              id="script-caption-input"
+              name="script_caption"
+              aria-label="Caption naskah"
               rows={2}
               value={currentScript.caption || ""}
               onChange={(e) => {
-                setCurrentScript({ ...currentScript, caption: e.target.value });
+                const updated = { ...currentScript, caption: e.target.value };
+                setCurrentScript(updated);
                 setHasChanges(true);
+                saveOfflineScriptCache(title, updated);
               }}
               className="mt-1 w-full rounded-lg border border-white/[0.06] bg-obsidian p-2 text-xs leading-relaxed text-ink/80 focus:border-ember/50 focus:outline-none"
             />

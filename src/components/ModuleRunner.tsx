@@ -312,11 +312,14 @@ export function GenerationExtras({
         </summary>
 
         <div className="border-t border-hairline px-3.5 pb-3.5 pt-3">
-          <p className="text-micro leading-relaxed text-muted">
+          <label htmlFor="module-reference-input" className="text-micro leading-relaxed text-muted block">
             Punya artikel, data, atau catatan yang harus dipakai? Tempel di sini.
             Kalau gak ada, lewatin aja — Malesan tetap mikir dari profil lo.
-          </p>
+          </label>
           <textarea
+            id="module-reference-input"
+            name="module_reference"
+            aria-label="Catatan atau referensi konten"
             rows={6}
             value={extras.reference}
             onChange={(e) => extras.setReference(e.target.value)}
@@ -487,9 +490,14 @@ export function ModuleRunner({
               </div>
             ) : (
               <div key={f.name}>
-                <label className="block text-sm font-semibold text-ink">{f.label}</label>
+                <label htmlFor={`module-field-${f.name}`} className="block text-sm font-semibold text-ink">
+                  {f.label}
+                </label>
                 {f.hint && <p className="mt-0.5 text-micro text-muted">{f.hint}</p>}
                 <textarea
+                  id={`module-field-${f.name}`}
+                  name={`field_${f.name}`}
+                  aria-label={f.label}
                   rows={f.rows ?? 3}
                   value={values[f.name] ?? ""}
                   onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}

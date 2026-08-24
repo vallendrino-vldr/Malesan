@@ -302,6 +302,8 @@ export function DraftEditor({
         </label>
         <input
           id="draft-title"
+          name="draft_title"
+          aria-label="Judul draf"
           value={title}
           onChange={(e) => edit({ title: e.target.value })}
           onBlur={() => void save()}
@@ -332,6 +334,8 @@ export function DraftEditor({
           </div>
           <textarea
             id="draft-body"
+            name="draft_body"
+            aria-label="Isi draft naskah"
             ref={taRef}
             value={content}
             onChange={(e) => {
