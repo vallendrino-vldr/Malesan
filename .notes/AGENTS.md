@@ -89,6 +89,7 @@ Violating any of these is a critical defect.
    `prefers-reduced-motion` respected, all interactive elements reachable by keyboard.
 10. **If a spec instruction conflicts with reality** (an API changed, a library is deprecated),
     stop, write the conflict in `HANDOFF.md` under BLOCKERS, and ask. Do not guess and proceed.
+11. **Continuous Kinetic Motion & Reduced-Motion Safety:** Whenever authoring any ambient, living, or continuous kinetic UI motion in the app (nodes, tickers, spinners, mascots, circuits), NEVER let the global `@media (prefers-reduced-motion: reduce)` block freeze it dead into a static broken element (`0.01ms`). The element MUST be explicitly exempted in `globals.css` (via `:not(.your-class)`) and given an active fallback animation so it never freezes on users with OS accessibility toggles.
 
 ---
 
