@@ -108,22 +108,22 @@ export function GlobalStudioProcessingOverlay() {
         const secs = (now - startTimeRef.current) / 1000;
         setElapsed(secs);
 
-        // Smooth asymptotic progress curve (0 to 84%)
+        // Smooth continuous progress curve (0 to 90%)
         let nextProgress = 0;
         if (secs < 3) {
-          nextProgress = (secs / 3) * 25; // 0-25%
+          nextProgress = (secs / 3) * 30; // 0-30%
         } else if (secs < 7) {
-          nextProgress = 25 + ((secs - 3) / 4) * 30; // 25-55%
+          nextProgress = 30 + ((secs - 3) / 4) * 35; // 30-65%
         } else {
           const remainingTime = secs - 7;
-          nextProgress = 55 + (1 - Math.exp(-remainingTime / 6)) * 29; // 55-84%
+          nextProgress = 65 + (1 - Math.exp(-remainingTime / 6)) * 25; // 65-90%
         }
 
         if (data.chars > 0) {
-          nextProgress = Math.max(nextProgress, 60 + Math.min(23, data.chars / 30));
+          nextProgress = Math.max(nextProgress, 65 + Math.min(23, data.chars / 30));
         }
 
-        const clamped = Math.min(84, Math.max(progressRef.current, nextProgress));
+        const clamped = Math.min(90, Math.max(progressRef.current, nextProgress));
         setProgress(clamped);
         animationRef.current = requestAnimationFrame(loop);
       };
@@ -139,7 +139,7 @@ export function GlobalStudioProcessingOverlay() {
 
       const startProgress = progressRef.current;
       const targetProgress = 100;
-      const durationMs = 450; // Smooth glide from current progress to 100%
+      const durationMs = 500; // Smooth continuous glide to 100%
       const startTweenTime = Date.now();
 
       const tweenLoop = () => {
@@ -180,13 +180,11 @@ export function GlobalStudioProcessingOverlay() {
   const isCompleted = visualCompleted || progress >= 100;
   const currentPhase = isCompleted
     ? 4
-    : progress < 25
+    : progress < 30
     ? 1
-    : progress < 55
+    : progress < 65
     ? 2
-    : progress < 85
-    ? 3
-    : 4;
+    : 3;
 
   const timerFormatted = `${String(Math.floor(elapsed)).padStart(2, "0")}s`;
 

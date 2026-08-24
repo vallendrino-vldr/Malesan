@@ -7,7 +7,6 @@ const PHASE_MESSAGES: Record<number, string> = {
   1: "Gue baca dulu ide lo...",
   2: "Lagi cari angle yang bikin orang berhenti scroll...",
   3: "Oke, gue susun alurnya...",
-  4: "Hampir selesai. Tinggal gue rapihin...",
 };
 
 interface LivingProcessingCompanionProps {
@@ -24,50 +23,65 @@ export function LivingProcessingCompanion({
   const [displayedText, setDisplayedText] = useState(PHASE_MESSAGES[1]);
   const [fade, setFade] = useState(true);
 
-  // Transition message smoothly on phase change
+  // Smooth crossfade on message change without flickering
   useEffect(() => {
-    const targetText = isCompleted
-      ? "Siap! Konten lo udah beres."
-      : PHASE_MESSAGES[phase] || PHASE_MESSAGES[1];
+    let targetText = "";
+    if (isCompleted || progress >= 100) {
+      targetText = "Siap! Konten lo udah beres.";
+    } else if (progress < 30) {
+      targetText = PHASE_MESSAGES[1];
+    } else if (progress < 65) {
+      targetText = PHASE_MESSAGES[2];
+    } else {
+      targetText = PHASE_MESSAGES[3];
+    }
 
-    if (targetText !== displayedText) {
+    if (targetText && targetText !== displayedText) {
       setFade(false);
       const timeout = setTimeout(() => {
         setDisplayedText(targetText);
         setFade(true);
-      }, 300);
+      }, 250);
       return () => clearTimeout(timeout);
     }
-  }, [phase, isCompleted, displayedText]);
+  }, [progress, isCompleted, displayedText]);
 
   // Determine mascot mood based on processing phase
-  const mascotMood = isCompleted
+  const mascotMood = isCompleted || progress >= 100
     ? "ready"
-    : phase === 1
+    : progress < 30
     ? "thinking"
-    : phase === 2
+    : progress < 65
     ? "ideas"
-    : phase === 3
-    ? "script"
-    : "ready";
+    : "script";
 
   return (
     <div className="relative flex flex-col items-center justify-center py-1 sm:py-2">
       {/* Floating AI Speech Thought Bubble with Beak */}
       <div
-        className={`relative z-20 mb-3 min-h-[42px] max-w-[280px] sm:max-w-xs flex items-center justify-center rounded-2xl border border-ember/30 bg-[#161616]/95 px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-500 ${
+        className={`relative z-20 mb-3 min-h-[42px] max-w-[280px] sm:max-w-xs flex items-center justify-center rounded-2xl border px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-300 ${
+          isCompleted || progress >= 100
+            ? "border-emerald-500/40 bg-[#121a15]/95 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+            : "border-ember/30 bg-[#161616]/95"
+        } ${
           fade
             ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 -translate-y-2 scale-95"
+            : "opacity-0 -translate-y-1.5 scale-95"
         }`}
       >
-        <p className="text-center font-display text-xs sm:text-sm font-medium text-[#F5F5F5] leading-snug">
-          {isCompleted ? `✨ ${displayedText}` : `“${displayedText}”`}
+        <p
+          className={`text-center font-display text-xs sm:text-sm font-medium leading-snug transition-colors duration-300 ${
+            isCompleted || progress >= 100 ? "text-emerald-300 font-semibold" : "text-[#F5F5F5]"
+          }`}
+        >
+          {isCompleted || progress >= 100 ? `✨ ${displayedText}` : `“${displayedText}”`}
         </p>
         {/* Beak pointer to mascot */}
         <div
           aria-hidden="true"
-          className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-[#161616]"
+          className={`absolute -bottom-1.5 left-1/2 -translate-x-1/2 size-0 border-x-[6px] border-x-transparent border-t-[6px] transition-colors duration-300 ${
+            isCompleted || progress >= 100 ? "border-t-[#121a15]" : "border-t-[#161616]"
+          }`}
         />
       </div>
 
@@ -93,7 +107,11 @@ export function LivingProcessingCompanion({
         {/* Glowing Pedestal Base */}
         <div
           aria-hidden="true"
-          className="absolute -bottom-1 h-2 w-20 sm:w-24 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,138,61,0.85)_0%,transparent_75%)] blur-[2px]"
+          className={`absolute -bottom-1 h-2 w-20 sm:w-24 rounded-full blur-[2px] transition-all duration-500 ${
+            isCompleted || progress >= 100
+              ? "bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.9)_0%,transparent_75%)]"
+              : "bg-[radial-gradient(ellipse_at_center,rgba(255,138,61,0.85)_0%,transparent_75%)]"
+          }`}
         />
       </div>
     </div>
