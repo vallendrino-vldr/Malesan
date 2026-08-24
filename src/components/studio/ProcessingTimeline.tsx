@@ -8,6 +8,7 @@ export type TimelinePhase = {
   subtitle: string;
   minProgress: number;
   maxProgress: number;
+  label: string;
 };
 
 export const TIMELINE_PHASES: TimelinePhase[] = [
@@ -17,6 +18,7 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
     subtitle: "Nyari pola terbaik dari topik yang kamu kasih.",
     minProgress: 0,
     maxProgress: 25,
+    label: "0%",
   },
   {
     id: 2,
@@ -24,6 +26,7 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
     subtitle: "Milih angle yang paling cocok buat audiens lo.",
     minProgress: 25,
     maxProgress: 55,
+    label: "25%",
   },
   {
     id: 3,
@@ -31,6 +34,7 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
     subtitle: "Ngebangun hook 3 detik, isi daging, dan CTA.",
     minProgress: 55,
     maxProgress: 85,
+    label: "55%",
   },
   {
     id: 4,
@@ -38,6 +42,7 @@ export const TIMELINE_PHASES: TimelinePhase[] = [
     subtitle: "Konten pertama lo sudah siap.",
     minProgress: 85,
     maxProgress: 100,
+    label: "85%",
   },
 ];
 
@@ -48,11 +53,10 @@ interface ProcessingTimelineProps {
 }
 
 export function ProcessingTimeline({
-  currentPhase,
   progress,
   isCompleted = false,
 }: ProcessingTimelineProps) {
-  // Clamped display progress
+  // Clamped display progress (0 to 100)
   const displayProgress = Math.min(100, Math.max(0, isCompleted ? 100 : progress));
 
   return (
@@ -60,7 +64,7 @@ export function ProcessingTimeline({
       {/* =====================================================================
           1. CINEMATIC NEURAL PROGRESS BAR WITH EMBER PARTICLE HEAD
          ===================================================================== */}
-      <div className="relative mb-4 w-full">
+      <div className="relative mb-3.5 w-full">
         {/* Track Background */}
         <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/[0.06] border border-white/[0.04]">
           {/* Active Gradient Fill Bar */}
@@ -79,14 +83,14 @@ export function ProcessingTimeline({
           />
         )}
 
-        {/* 4 Stage Node Markers on the Track (●━━━━●━━━━○━━━━○) */}
-        <div className="mt-1.5 flex items-center justify-between px-0.5">
+        {/* 5 Stage Node Markers on Track: 0%, 25%, 55%, 85%, 100% (Visible on All Screen Sizes) */}
+        <div className="mt-1.5 flex items-center justify-between px-0.5 font-mono text-[9px] sm:text-[10px]">
           {TIMELINE_PHASES.map((p) => {
             const isPassed = displayProgress >= p.minProgress;
             return (
               <span
                 key={p.id}
-                className={`flex items-center gap-1 font-mono text-[10px] transition-colors duration-300 ${
+                className={`flex items-center gap-0.5 sm:gap-1 transition-colors duration-300 ${
                   isPassed
                     ? "text-ember font-semibold drop-shadow-[0_0_6px_rgba(255,138,61,0.4)]"
                     : "text-muted/40"
@@ -97,26 +101,41 @@ export function ProcessingTimeline({
                     isPassed ? "bg-ember shadow-[0_0_6px_#ff8a3d]" : "bg-white/20"
                   }`}
                 />
-                <span className="hidden xs:inline sm:inline">
-                  {p.id === 1 ? "0%" : p.id === 2 ? "25%" : p.id === 3 ? "55%" : "85%"}
-                </span>
+                <span>{p.label}</span>
               </span>
             );
           })}
+
+          {/* 100% End Marker */}
+          <span
+            className={`flex items-center gap-0.5 sm:gap-1 transition-colors duration-300 ${
+              displayProgress >= 100
+                ? "text-emerald-400 font-semibold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]"
+                : "text-muted/40"
+            }`}
+          >
+            <span
+              className={`size-1.5 rounded-full ${
+                displayProgress >= 100
+                  ? "bg-emerald-400 shadow-[0_0_6px_#34d399]"
+                  : "bg-white/20"
+              }`}
+            />
+            <span>100%</span>
+          </span>
         </div>
       </div>
 
       {/* =====================================================================
           2. CONNECTED TIMELINE STEPS
          ===================================================================== */}
-      <div className="space-y-3">
+      <div className="space-y-2.5 sm:space-y-3">
         {TIMELINE_PHASES.map((phase, idx) => {
           const isDone = isCompleted || progress >= phase.maxProgress;
           const isActive = !isCompleted && progress >= phase.minProgress && progress < phase.maxProgress;
-          const isPending = !isCompleted && progress < phase.minProgress;
           const isLast = idx === TIMELINE_PHASES.length - 1;
 
-          // Compute individual connection line fill percentage (0 to 100%)
+          // Compute individual vertical connection line fill percentage (0 to 100%)
           let lineFill = 0;
           if (isDone) {
             lineFill = 100;
@@ -128,7 +147,7 @@ export function ProcessingTimeline({
           return (
             <div
               key={phase.id}
-              className={`relative flex items-start gap-3.5 transition-all duration-300 ${
+              className={`relative flex items-start gap-3 transition-all duration-300 ${
                 isActive
                   ? "opacity-100 scale-[1.01]"
                   : isDone
@@ -195,7 +214,7 @@ export function ProcessingTimeline({
 
                   {/* Right Status Badge */}
                   <span
-                    className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold transition-all duration-300 ${
+                    className={`rounded-full px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-semibold transition-all duration-300 ${
                       isDone
                         ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
                         : isActive
