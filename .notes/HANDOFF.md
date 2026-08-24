@@ -35,8 +35,25 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Mobile Clutter Clean-up & Duplicate Button Elimination (§9z.26).
-**Newest work is §9z.26 — Mobile Clutter Clean-up & Duplicate Button Elimination: (1) Removed duplicate action buttons (`[ 🗑 Bersihkan ]` and `[ ✨ Rancang 7 Hari ]`) from inside `PipelineCalendarView` to eliminate visual clutter and redundant button stacking on mobile screens; (2) Streamlined Calendar toolbar to pure week navigation (`[ ‹ ] [ Minggu Ini ] [ › ]`) with date range; (3) Refactored "Ide Belum Terjadwal" on mobile into a clean vertical stack (Title + count badge on row 1, guidance subtext on row 2, and clean 7-day pill grid in popover); (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing across both desktop (1440x900) and mobile (390x844).** Read §9z.26, then §9z.25.
+Last updated: **2026-08-24**, after Living AI Companion Landing Page Overhaul (§9z.27).
+**Newest work is §9z.27 — Living AI Companion Landing Page Overhaul: (1) Transformed hero section into an interactive living companion stage with dynamic mouse gaze tracking and spring physics in `LivingStudioCanvas.tsx`; (2) Built interactive Topic Magic Bar (`CompanionHero.tsx`) allowing instant exploration across 4 Indonesian creator topics (Modus Bengkel, Klien Remote, Kopi Senja, Fashion Thrift); (3) Refactored `CreatorJourney.tsx` with 4-chapter narrative from empty screen (0%) to script & auto-sync subtitles (100%); (4) Upgraded `CreatorActivityTicker.tsx` with live studio tags; (5) Streamlined mobile vertical hierarchy; (6) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.27, then §9z.26.
+
+---
+
+## §9z.27 — Living AI Companion Landing Page Overhaul (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Interactive Living Mascot Reactor (`LivingStudioCanvas.tsx`):**
+   - Added real-time gaze tracking and spring physics response to mouse coordinates.
+   - Connected topic simulation presets (`TOPIC_PRESETS`) to display tailored angles, hooks, and script breakdowns.
+2. **Interactive Topic Magic Bar (`CompanionHero.tsx`):**
+   - 4 instant creator topic pills in the hero allowing visitors to test Malesan's intelligence before logging in.
+3. **Storytelling Narrative Polish (`CreatorJourney.tsx`):**
+   - 4-step transformation with high-contrast preview cards and clear role definitions.
+4. **Mobile Polish & 60 FPS Performance:**
+   - Perfected mobile hierarchy and reduced heavy blur layers for high frame rates on low-end devices.
 
 ---
 

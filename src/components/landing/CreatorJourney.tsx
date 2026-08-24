@@ -16,59 +16,59 @@ const JOURNEY_STEPS: JourneyStep[] = [
   {
     percent: "0%",
     badge: "LAYAR KOSONG",
-    title: "Layar Kosong",
-    story: "Mau bikin konten tapi bengong depan layar kosong gak tau mulai dari mana.",
-    malesanRole: "Lo ga perlu mikir prompt rumit. Cukup buka Malesan, langsung nemu ruang kerja siap pakai.",
-    outputTag: "Mulai Awal",
+    title: "Buntu di Depan Layar",
+    story: "Niat bikin konten membara, tapi pas buka kamera langsung overthinking gak tau harus mulai dari mana.",
+    malesanRole: "Lo ga perlu mikir rumus prompt rumit. Cukup sebut 1 kata kunci atau biarkan Malesan yang nyari topik sesuai DNA lo.",
+    outputTag: "Mulai Tanpa Beban",
     outputPreview: [
-      "Bukan mulai dari nol",
-      "Tanpa template kaku",
-      "Otomatis membaca gaya & niche lo",
+      "Bukan mulai dari nol dengan kertas kosong",
+      "Tanpa template kaku yang kedengeran robot",
+      "Otomatis membaca persona & gaya bicara lo",
     ],
   },
   {
     percent: "33%",
     badge: "ANALISIS TREN",
-    title: "AI Berpikir",
-    story: "Menyaring ratusan tren lokal dan pola video viral di Indonesia hari ini.",
-    malesanRole: "Malesan menyaring insight relevan dan mencocokkannya dengan target penonton lo.",
-    outputTag: "Riset Tren",
+    title: "AI Membedah Pola Viral",
+    story: "Menyaring ratusan tren video TikTok, Reels, dan X di Indonesia hari ini yang relevan dengan audiens lo.",
+    malesanRole: "Malesan menyaring insight lokal dan menyusun hook 3 detik penahan jempol yang bikin penonton berhenti scroll.",
+    outputTag: "Riset Tren Lokal",
     outputPreview: [
-      "Filter 100+ pola konten viral",
-      "Audit hook 3 detik pertama",
-      "Penyesuaian bahasa sehari-hari",
+      "Filter 100+ pola video viral Indonesia 2026",
+      "Audit hook pembakar rasa penasaran di 3 detik pertama",
+      "Penyesuaian tone bahasa sehari-hari yang natural",
     ],
   },
   {
     percent: "66%",
     badge: "IDE MATANG",
-    title: "Ide Terbentuk",
-    story: "Bukan satu prompt acak, melainkan 3 pilihan sudut pandang matang.",
-    malesanRole: "Lo tinggal pilih angle yang paling lo suka: edukatif, studi kasus, atau opini tajam.",
+    title: "3 Pilihan Sudut Pandang",
+    story: "Bukan cuma satu prompt acak, melainkan 3 pilihan sudut pandang matang dengan potensi viral tinggi.",
+    malesanRole: "Lo tinggal pilih angle yang paling pas: edukasi taktis, cerita di balik layar, atau kontroversi sehat.",
     outputTag: "3 Pilihan Angle",
     outputPreview: [
-      "Angle 1: Trik dapet klien remote tanpa portofolio",
-      "Angle 2: Kesalahan fatal kreator di 30 hari pertama",
-      "Angle 3: 1 Jam bikin stok konten seminggu",
+      "Angle 1: Bongkar trik tersembunyi yang jarang dibahas",
+      "Angle 2: Kesalahan fatal pemula yang bikin rugi jutaan",
+      "Angle 3: Step-by-step 1 jam beres stok seminggu",
     ],
   },
   {
     percent: "100%",
     badge: "SIAP TAYANG",
-    title: "Konten Siap",
-    story: "Naskah terstruktur lengkap dengan timestamp, visual cues, dan subtitle sinkron kata.",
-    malesanRole: "Tinggal rekam depan kamera. Auto-CC membakar subtitle otomatis langsung di browser.",
+    title: "Naskah + Subtitle Sinkron Kata",
+    story: "Naskah video 45-60 detik lengkap dengan timestamp, teleprompter viewer, dan Auto-CC subtitle sinkron kata.",
+    malesanRole: "Tinggal rekam depan kamera. Subtitle terbakar otomatis langsung di browser tanpa watermark.",
     outputTag: "Siap Upload",
     outputPreview: [
-      "[00:00] Hook: Stop bilang ga ada waktu bikin konten...",
-      "Video 9:16: Subtitle terbakar per kata siap export",
-      "Threads / X: Utas 5 postingan ringkas siap share",
+      "[00:00] Hook: Stop bayar mahal sebelum cek 3 hal ini...",
+      "Video 9:16: Subtitle sinkron kata siap export client-side",
+      "Threads & X: Utas 5 postingan ringkas siap share",
     ],
   },
 ];
 
 export function CreatorJourney() {
-  const [activeIdx, setActiveIdx] = useState(2); // Start at "66% Ide Terbentuk"
+  const [activeIdx, setActiveIdx] = useState(2); // Default to "66% 3 Sudut Pandang"
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -109,26 +109,30 @@ export function CreatorJourney() {
             transform: isVisible ? "translateY(0)" : "translateY(24px)",
           }}
         >
-          <p className="font-mono text-micro font-bold tracking-wider text-ember uppercase">
-            Alur Perjalanan Kreator
-          </p>
-          <h2 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3 py-0.5 text-micro font-bold tracking-wider text-ember uppercase">
+            <span>Alur Perjalanan Kreator</span>
+          </div>
+          <h2 className="mt-2.5 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
             Dari layar kosong, jadi konten siap tayang.
           </h2>
+          <p className="mt-2 text-xs sm:text-sm text-muted">
+            Lihat bagaimana Malesan menemani setiap detik proses kreatif lo.
+          </p>
         </div>
 
-        {/* 4 Step Buttons */}
+        {/* 4 Step Clickable Buttons */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {JOURNEY_STEPS.map((step, idx) => {
             const isActive = activeIdx === idx;
             return (
               <button
                 key={idx}
+                type="button"
                 onClick={() => setActiveIdx(idx)}
                 className={`flex flex-col items-start rounded-2xl border p-3.5 sm:p-4 text-left transition-all duration-300 cursor-pointer ${
                   isActive
-                    ? "border-ember bg-surface-raised shadow-[0_0_20px_rgba(255,138,61,0.2)] scale-[1.02]"
-                    : "border-hairline/60 bg-surface/40 hover:border-ember/30 hover:bg-surface"
+                    ? "border-ember bg-surface-raised shadow-[0_0_24px_rgba(255,138,61,0.25)] scale-[1.02]"
+                    : "border-hairline/70 bg-surface/40 hover:border-ember/30 hover:bg-surface-raised/60"
                 }`}
                 style={{
                   opacity: isVisible ? 1 : 0,
@@ -142,7 +146,7 @@ export function CreatorJourney() {
                   </span>
                   <span
                     className={`size-2 rounded-full transition-all duration-300 ${
-                      isActive ? "bg-ember animate-pulse" : "bg-muted/30"
+                      isActive ? "bg-ember animate-pulse shadow-[0_0_8px_rgba(255,138,61,0.8)]" : "bg-muted/30"
                     }`}
                   />
                 </div>
@@ -163,14 +167,14 @@ export function CreatorJourney() {
           style={{
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? "translateY(0)" : "translateY(24px)",
-            transitionDelay: "0.5s",
+            transitionDelay: "0.4s",
           }}
         >
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8 items-center">
             
             {/* Left Narrative (5 Cols) */}
             <div className="lg:col-span-5 flex flex-col items-start">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-ember">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-ember uppercase">
                 Tahap {activeIdx + 1} · {current.badge}
               </span>
 
@@ -179,12 +183,12 @@ export function CreatorJourney() {
               </h3>
               
               <div className="mt-3 space-y-2 text-xs sm:text-sm w-full">
-                <div className="rounded-lg border border-hairline/60 bg-surface/40 p-2.5">
+                <div className="rounded-xl border border-hairline/60 bg-surface/40 p-3">
                   <p className="text-muted leading-relaxed">
                     {current.story}
                   </p>
                 </div>
-                <div className="rounded-lg border border-ember/20 bg-ember/5 p-2.5">
+                <div className="rounded-xl border border-ember/25 bg-ember/10 p-3">
                   <p className="text-ink font-medium leading-relaxed">
                     {current.malesanRole}
                   </p>
@@ -194,7 +198,7 @@ export function CreatorJourney() {
 
             {/* Right Live Output Preview (7 Cols) */}
             <div className="lg:col-span-7">
-              <div className="rounded-xl border border-hairline/80 bg-surface/90 p-4 sm:p-5 shadow-sm">
+              <div className="rounded-2xl border border-hairline/80 bg-surface/90 p-4 sm:p-5 shadow-sm">
                 <div className="flex items-center justify-between border-b border-hairline/60 pb-2.5">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-ember animate-pulse" />
@@ -202,12 +206,12 @@ export function CreatorJourney() {
                       Hasil Nyata Malesan
                     </span>
                   </div>
-                  <span className="rounded-md border border-hairline bg-surface-raised px-2 py-0.5 font-mono text-[9px] text-muted">
+                  <span className="rounded-md border border-hairline bg-surface-raised px-2 py-0.5 font-mono text-[9px] text-muted font-semibold">
                     {current.outputTag}
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-1.5 font-mono text-xs text-ink/90">
+                <div className="mt-3.5 space-y-2 font-mono text-xs text-ink/90">
                   {current.outputPreview.map((line, idx) => (
                     <div key={idx} className="flex items-start gap-2 leading-relaxed">
                       <span className="text-ember select-none font-bold">›</span>
