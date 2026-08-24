@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeIndonesianSpeech } from "@/components/VoicePreview";
+import { normalizeIndonesianSpeech } from "@/lib/speech-cleaner";
 
 export const maxDuration = 30;
 

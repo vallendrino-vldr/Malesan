@@ -231,15 +231,18 @@ export function ScriptView({
   return (
     <div className="mt-3 w-full overflow-hidden rounded-xl border border-hairline bg-obsidian">
       {/* Top Tab Bar & Save Status */}
-      <div className="flex items-center justify-between border-b border-hairline p-1.5">
-        <div className="flex flex-1 items-center gap-1">
+      <div className="flex items-center justify-between gap-1.5 border-b border-hairline bg-surface/40 p-1.5">
+        <div className="flex flex-1 items-center gap-1 bg-black/40 p-0.5 rounded-lg border border-hairline/60">
           {(["scene", "baca"] as const).map((t) => (
             <button
               key={t}
+              type="button"
               onClick={() => setTab(t)}
               aria-pressed={tab === t}
-              className={`flex-1 cursor-pointer rounded-lg py-1.5 text-micro font-bold transition-all duration-[var(--duration-standard)] ease-heat ${
-                tab === t ? "bg-ember/15 text-ember shadow-sm" : "text-muted hover:text-ink"
+              className={`h-7 flex-1 cursor-pointer rounded-md text-micro font-bold transition-all duration-150 flex items-center justify-center ${
+                tab === t
+                  ? "bg-ember text-obsidian shadow-xs font-black"
+                  : "text-muted hover:text-ink hover:bg-white/[0.04]"
               }`}
             >
               {t === "baca"
@@ -254,9 +257,10 @@ export function ScriptView({
         {/* Save Button if user made changes */}
         {hasChanges && onSaveScript && (
           <button
+            type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="ml-1.5 cursor-pointer shrink-0 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2 py-1 text-micro font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all disabled:opacity-50"
+            className="h-7 cursor-pointer shrink-0 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 text-micro font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all disabled:opacity-50 flex items-center justify-center"
           >
             {isSaving ? "Simpan..." : "Simpan ✓"}
           </button>
@@ -267,9 +271,9 @@ export function ScriptView({
           type="button"
           onClick={() => setShowFullView(true)}
           title="Buka tampilan naskah layar penuh & teleprompter"
-          className="ml-1.5 inline-flex items-center gap-1 cursor-pointer shrink-0 rounded-lg border border-ember/40 bg-ember/15 px-2 py-1 text-micro font-bold text-ember hover:bg-ember/25 transition-all active:scale-95"
+          className="h-7 inline-flex items-center gap-1 cursor-pointer shrink-0 rounded-lg border border-ember/35 bg-ember/10 px-2.5 text-micro font-bold text-ember hover:bg-ember/20 transition-all active:scale-95"
         >
-          <span>⛶</span>
+          <span className="text-xs">⛶</span>
           <span>Layar Penuh</span>
         </button>
       </div>
