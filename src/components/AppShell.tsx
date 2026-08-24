@@ -7,6 +7,7 @@ import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
 import { RefreshButton } from "./RefreshButton";
 import { TutorialSheet } from "./TutorialSheet";
+import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 
 /**
  * Native-app shell.
@@ -324,6 +325,9 @@ export function AppShell({
           })}
         </div>
       </nav>
+
+      {/* Global Studio AI Processing Overlay (Always mounted, butter-smooth exit) */}
+      <GlobalStudioProcessingOverlay />
     </div>
   );
 }

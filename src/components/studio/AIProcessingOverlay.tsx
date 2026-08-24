@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { LivingProcessingCompanion } from "./LivingProcessingCompanion";
 import { ProcessingTimeline } from "./ProcessingTimeline";
@@ -16,15 +15,18 @@ type OverlayData = {
 };
 
 type Listener = (data: OverlayData) => void;
+
 let currentData: OverlayData = {
   isOpen: false,
   isCompleted: false,
   chars: 0,
 };
+
 const listeners = new Set<Listener>();
 
 function emit() {
-  listeners.forEach((l) => l({ ...currentData }));
+  const snapshot = { ...currentData };
+  listeners.forEach((l) => l(snapshot));
 }
 
 export function startStudioProcessing(opts: {
@@ -66,16 +68,17 @@ export function closeStudioProcessing() {
 
 export function GlobalStudioProcessingOverlay() {
   const [data, setData] = useState<OverlayData>(currentData);
-  const [mounted, setMounted] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [visualCompleted, setVisualCompleted] = useState(false);
+
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(Date.now());
-  const isClosingRef = useRef<boolean>(false);
+  const progressRef = useRef<number>(0);
+  const isCompletingRef = useRef<boolean>(false);
 
   // Subscribe to Global Store
   useEffect(() => {
-    setMounted(true);
     const listener: Listener = (nextData) => {
       setData(nextData);
     };
@@ -85,11 +88,20 @@ export function GlobalStudioProcessingOverlay() {
     };
   }, []);
 
-  // Animation & Progress Engine
+  // Sync progressRef with progress state
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
+
+  // Main Processing & Smooth Completion Animation Engine
   useEffect(() => {
     if (data.isOpen && !data.isCompleted) {
-      isClosingRef.current = false;
+      // RESET for new run
+      isCompletingRef.current = false;
+      setVisualCompleted(false);
       startTimeRef.current = Date.now();
+      setProgress(0);
+      setElapsed(0);
 
       const loop = () => {
         const now = Date.now();
@@ -111,28 +123,50 @@ export function GlobalStudioProcessingOverlay() {
           nextProgress = Math.max(nextProgress, 60 + Math.min(23, data.chars / 30));
         }
 
-        setProgress(Math.min(84, nextProgress));
+        const clamped = Math.min(84, Math.max(progressRef.current, nextProgress));
+        setProgress(clamped);
         animationRef.current = requestAnimationFrame(loop);
       };
 
       animationRef.current = requestAnimationFrame(loop);
-    } else if (data.isOpen && data.isCompleted && !isClosingRef.current) {
-      isClosingRef.current = true;
+    } else if (data.isOpen && data.isCompleted && !isCompletingRef.current) {
+      // SMOOTH 100% COMPLETION SEQUENCE
+      isCompletingRef.current = true;
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
 
-      // Smooth step to exact 100%
-      setProgress(100);
+      const startProgress = progressRef.current;
+      const targetProgress = 100;
+      const durationMs = 450; // Smooth glide from current progress to 100%
+      const startTweenTime = Date.now();
 
-      // Hold completion state for 850ms, then close cleanly
-      const timeout = setTimeout(() => {
-        closeStudioProcessing();
-        isClosingRef.current = false;
-      }, 850);
+      const tweenLoop = () => {
+        const elapsedMs = Date.now() - startTweenTime;
+        const t = Math.min(1, elapsedMs / durationMs);
+        // easeOutCubic
+        const ease = 1 - Math.pow(1 - t, 3);
+        const currentVal = startProgress + (targetProgress - startProgress) * ease;
+        setProgress(currentVal);
 
-      return () => clearTimeout(timeout);
+        if (t < 1) {
+          animationRef.current = requestAnimationFrame(tweenLoop);
+        } else {
+          setProgress(100);
+          setVisualCompleted(true);
+
+          // Hold the 100% celebratory completion state for 900ms, then smoothly exit
+          const exitTimer = setTimeout(() => {
+            closeStudioProcessing();
+            isCompletingRef.current = false;
+          }, 900);
+
+          return () => clearTimeout(exitTimer);
+        }
+      };
+
+      animationRef.current = requestAnimationFrame(tweenLoop);
     }
 
     return () => {
@@ -143,9 +177,7 @@ export function GlobalStudioProcessingOverlay() {
     };
   }, [data.isOpen, data.isCompleted, data.chars]);
 
-  if (!mounted) return null;
-
-  const isCompleted = data.isCompleted || progress >= 100;
+  const isCompleted = visualCompleted || progress >= 100;
   const currentPhase = isCompleted
     ? 4
     : progress < 25
@@ -158,7 +190,7 @@ export function GlobalStudioProcessingOverlay() {
 
   const timerFormatted = `${String(Math.floor(elapsed)).padStart(2, "0")}s`;
 
-  const modalContent = (
+  return (
     <AnimatePresence>
       {data.isOpen && (
         <div
@@ -172,35 +204,46 @@ export function GlobalStudioProcessingOverlay() {
             padding: "12px",
           }}
         >
-          {/* Background Dim Mode */}
+          {/* Background Dim Mode with Butter-Smooth Exit */}
           <motion.div
+            key="backdrop"
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
             animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
             className="fixed inset-0 bg-black/65 backdrop-blur-md"
             aria-hidden="true"
           />
 
-          {/* Floating AI Workspace Window */}
+          {/* Floating AI Workspace Window with Cinematic Spring Exit */}
           <motion.div
+            key="modal-window"
             role="dialog"
             aria-modal="true"
             aria-label="Malesan sedang memproses"
-            initial={{ opacity: 0, scale: 0.94, y: 32 }}
+            initial={{ opacity: 0, scale: 0.93, y: 28 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 16 }}
+            exit={{
+              opacity: 0,
+              scale: 0.94,
+              y: 20,
+              transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+            }}
             transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative z-10 w-full max-w-[520px] max-h-[92vh] flex flex-col justify-between rounded-[28px] border border-white/[0.08] bg-[#111111] p-4.5 sm:p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85),0_0_60px_rgba(255,138,61,0.22)] backdrop-blur-2xl transition-all duration-300 ${
+            className={`relative z-10 w-full max-w-[520px] max-h-[92vh] flex flex-col justify-between rounded-[28px] border border-white/[0.08] bg-[#111111] p-4.5 sm:p-7 shadow-[0_24px_80px_rgba(0,0,0,0.85),0_0_60px_rgba(255,138,61,0.22)] backdrop-blur-2xl transition-all duration-500 ${
               isCompleted
-                ? "ring-2 ring-emerald-500/40 shadow-[0_0_70px_rgba(16,185,129,0.3)]"
+                ? "ring-2 ring-emerald-500/50 shadow-[0_0_80px_rgba(16,185,129,0.35)]"
                 : ""
             }`}
           >
-            {/* Ambient Internal Radial Ember Glow */}
+            {/* Ambient Internal Radial Glow */}
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-80 rounded-full bg-[radial-gradient(circle,rgba(255,138,61,0.22)_0%,transparent_70%)] blur-2xl"
+              className={`pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-80 rounded-full blur-2xl transition-all duration-700 ${
+                isCompleted
+                  ? "bg-[radial-gradient(circle,rgba(16,185,129,0.25)_0%,transparent_70%)]"
+                  : "bg-[radial-gradient(circle,rgba(255,138,61,0.22)_0%,transparent_70%)]"
+              }`}
             />
 
             {/* HUD Header */}
@@ -221,9 +264,13 @@ export function GlobalStudioProcessingOverlay() {
                     }`}
                   />
                 </span>
-                <span className="truncate font-mono text-xs font-bold tracking-wider text-ember uppercase">
+                <span
+                  className={`truncate font-mono text-xs font-bold tracking-wider uppercase transition-colors duration-300 ${
+                    isCompleted ? "text-emerald-400" : "text-ember"
+                  }`}
+                >
                   {isCompleted ? (
-                    "SIAP DIPAKAI"
+                    "✨ SIAP DIPAKAI"
                   ) : data.status ? (
                     data.status.toUpperCase()
                   ) : (
@@ -263,9 +310,13 @@ export function GlobalStudioProcessingOverlay() {
 
             {/* Bottom-most Status Strip */}
             <div className="relative z-10 mt-2.5 sm:mt-3.5 text-center">
-              <p className="font-mono text-[10px] sm:text-micro text-muted/60">
+              <p
+                className={`font-mono text-[10px] sm:text-micro transition-colors duration-300 ${
+                  isCompleted ? "text-emerald-400 font-semibold" : "text-muted/60"
+                }`}
+              >
                 {isCompleted
-                  ? "Menyiapkan hasil di workspace lo..."
+                  ? "Konten siap di workspace lo!"
                   : "Tetap di halaman ini sampai hasilnya muncul."}
               </p>
             </div>
@@ -274,8 +325,6 @@ export function GlobalStudioProcessingOverlay() {
       )}
     </AnimatePresence>
   );
-
-  return createPortal(modalContent, document.body);
 }
 
 // Backward compatibility export

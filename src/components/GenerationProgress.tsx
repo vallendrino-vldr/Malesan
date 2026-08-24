@@ -5,7 +5,6 @@ import {
   startStudioProcessing,
   updateStudioChars,
   completeStudioProcessing,
-  GlobalStudioProcessingOverlay,
 } from "./studio/AIProcessingOverlay";
 
 export function GenerationProgress({
@@ -24,7 +23,7 @@ export function GenerationProgress({
   useEffect(() => {
     startStudioProcessing({ moduleKey, label, status });
     return () => {
-      // When parent generation completes and unmounts, trigger smooth 100% completion celebration!
+      // When parent generation completes and unmounts, trigger smooth 100% completion sequence!
       completeStudioProcessing();
     };
   }, [moduleKey, label, status]);
@@ -35,23 +34,20 @@ export function GenerationProgress({
     }
   }, [chars]);
 
-  return (
-    <>
-      {/* Portal Overlay into document.body */}
-      <GlobalStudioProcessingOverlay />
+  // If compact inline status indicator is requested
+  if (compact) {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="rounded-xl border border-ember/30 bg-ember/10 p-3 text-center"
+      >
+        <p className="font-display text-xs font-semibold text-ember animate-pulse">
+          ⚡ {status || label || "Malesan lagi mikir..."}
+        </p>
+      </div>
+    );
+  }
 
-      {/* Inline indicator when compact */}
-      {compact && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="rounded-xl border border-ember/30 bg-ember/10 p-3 text-center"
-        >
-          <p className="font-display text-xs font-semibold text-ember animate-pulse">
-            ⚡ {status || label || "Malesan lagi mikir..."}
-          </p>
-        </div>
-      )}
-    </>
-  );
+  return null;
 }
