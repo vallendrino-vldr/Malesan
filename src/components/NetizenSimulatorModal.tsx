@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export interface NetizenComment {
   id: string;
@@ -157,6 +162,20 @@ export function NetizenSimulatorModal({
     setTimeout(() => setCopiedPinned(false), 2000);
   }, [suggestedPinnedComment]);
 
+  const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   const handleToggleLike = (id: string) => {
     setLikedComments((prev) => ({
       ...prev,
@@ -168,10 +187,15 @@ export function NetizenSimulatorModal({
     setRerollSeed((prev) => prev + 1);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !isMounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+  const modalContent = (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="netizen-simulator-title"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+    >
       {/* Backdrop Click to Close */}
       <div className="absolute inset-0" onClick={onClose} />
 
@@ -185,7 +209,9 @@ export function NetizenSimulatorModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-ink">Simulasi Respon Netizen</h3>
+                <h3 id="netizen-simulator-title" className="text-sm font-bold text-ink">
+                  Simulasi Respon Netizen
+                </h3>
                 <span className="rounded-full bg-ember/15 border border-ember/30 px-2 py-0.2 text-[10px] font-semibold text-ember">
                   AI Preview
                 </span>
@@ -296,7 +322,7 @@ export function NetizenSimulatorModal({
         <div className="flex items-center justify-between border-t border-hairline/80 bg-surface/90 px-4 py-3 sm:px-5">
           <button
             onClick={handleReroll}
-            className="flex items-center gap-1.5 rounded-xl border border-hairline/80 bg-white/[0.04] px-3.5 py-2 text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-[0.98] transition-all cursor-pointer"
+            className="h-8 flex items-center gap-1.5 rounded-xl border border-hairline/80 bg-white/[0.04] px-3.5 text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-[0.98] transition-all cursor-pointer"
           >
             <span>🔄</span>
             <span>Acak Respon Baru</span>
@@ -304,7 +330,7 @@ export function NetizenSimulatorModal({
 
           <button
             onClick={onClose}
-            className="rounded-xl bg-ember px-4 py-2 text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer"
+            className="h-8 rounded-xl bg-ember px-4 text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center"
           >
             Tutup & Siap Posting
           </button>
@@ -312,4 +338,6 @@ export function NetizenSimulatorModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import type { PipelineCard } from "@/lib/supabase/database.types";
+
+const subscribe = () => () => {};
+const getSnapshot = () => true;
+const getServerSnapshot = () => false;
 import {
   updateCardStatus,
   updateCardContentAndStatus,
@@ -48,6 +53,7 @@ export function PipelineCardModal({
   onCardUpdated,
   onCardDeleted,
 }: PipelineCardModalProps) {
+  const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingLabel, setGeneratingLabel] = useState("");
   const [error, setError] = useState("");
@@ -58,7 +64,19 @@ export function PipelineCardModal({
   const [showNetizenSimulator, setShowNetizenSimulator] = useState(false);
   const [showFullViewScript, setShowFullViewScript] = useState(false);
 
-  if (!isOpen || !card) return null;
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !card || !isMounted) return null;
 
   const content = card.content as Record<string, unknown> | null;
   const status = card.status as Column;
@@ -229,19 +247,19 @@ export function PipelineCardModal({
     }
   };
 
-  return (
+  const modalContent = (
     <>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="card-modal-title"
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5"
+        className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-5 animate-fade-in"
       >
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        className="fixed inset-0 bg-obsidian/85 backdrop-blur-xs transition-opacity"
-      />
+        {/* Backdrop */}
+        <div
+          onClick={onClose}
+          className="fixed inset-0 bg-obsidian/85 backdrop-blur-xs transition-opacity"
+        />
 
       {/* Main Modal Card */}
       <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-hairline bg-surface shadow-2xl">
@@ -692,5 +710,7 @@ export function PipelineCardModal({
       />
     )}
   </>
-);
+  );
+
+  return createPortal(modalContent, document.body);
 }
