@@ -35,14 +35,30 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after AI Content Brain & Pipeline Intelligence Layer Phase 1 (§9z.22).
-**Newest work is §9z.22 — Malesan AI Content Brain Phase 1 (Additive & Non-Breaking): (1) Applied additive database migration `00026_content_brain_phase1.sql` adding `scheduled_date` (date, nullable), `ai_score` (int, nullable), and `cost_content_strategy` (5 credits); (2) Created AI Content Brain structured prompt engine (`src/lib/prompts/brain.ts`) and endpoint `/api/pipeline/strategy` for generating balanced 7-day content plans (40% education, 30% storytelling, 20% engagement, 10% soft selling) with atomic credit deduction and fallback refunds; (3) Added `PipelineCalendarView.tsx` with responsive Desktop 7-day grid and Mobile thumb-friendly vertical Agenda List; (4) Added dynamic companion greeting banner, `[ Papan Kanban | Kalender ]` view switcher, and `[ ✨ Rancang 7 Hari ]` action with smart micro-copy loading states; (5) Enhanced `PipelineCardItem` with AI score flame badge and collapsible 5-rubric analysis drawer; (6) Verified via `next build` (42 routes compiled), `npm test` (11 invariant tests pass), and live DevTools MCP browser inspection across desktop (1440x900) and mobile (390x844).** Read §9z.22, then §9z.21.
+Last updated: **2026-08-24**, after Credit Transparency & Timeout Hardening (§9z.23).
+**Newest work is §9z.23 — AI Strategy Credit Transparency, Feature Registration & Timeout Hardening: (1) Added explicit credit pricing badge `· 5 kredit` to all "Rancang 7 Hari" buttons across Kanban & Calendar views; (2) Registered `pipeline_strategy` in `AI_FEATURES` (`src/lib/ai/types.ts`) with `suggested: "fast"` for fast generation under 5-6s; (3) Added `content_strategy` to admin `/admin/config` (`ConfigEditor.tsx`) so owner can edit its price; (4) Hardened timeout with `signal: AbortSignal.timeout(54_000)`, `budgetMs: 54_000`, and mapped error handling with `userFacingError` (anti-raw-English-leak); (5) Tested live generation via DevTools MCP on real data: generated all 7 balanced cards in ~5s with 5 credits deducted accurately; (6) Verified via `next build` (42 routes) and `npm test` (11 invariants).** Read §9z.23, then §9z.22.
 
 ---
 
-## §9z.22 — Malesan AI Content Brain & Pipeline Intelligence Layer Phase 1 (2026-08-24)
+## §9z.23 — AI Strategy Credit Transparency, Feature Registration & Timeout Hardening (2026-08-24)
 
-**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and live generation via DevTools MCP producing 7 structured cards with 5 credits charged.
+
+### Summary of Changes:
+1. **Credit Transparency on UI:**
+   - Changed buttons in `PipelineBoard.tsx` and `PipelineCalendarView.tsx` from "Rancang 7 Hari" to **"Rancang 7 Hari · 5 kredit"**.
+2. **AI Feature Fleet Registration (`src/lib/ai/types.ts`):**
+   - Added `pipeline_strategy` to `AI_FEATURES` ensuring proper provider routing and telemetry.
+3. **Admin Config Support (`ConfigEditor.tsx`):**
+   - Added `content_strategy: "Strategi 7 Hari (AI Brain)"` to `MODULE_LABEL` and `COST_ORDER` so credit price is editable at `/admin/config`.
+4. **Timeout & Error Hardening (`/api/pipeline/strategy/route.ts`):**
+   - Added `signal: AbortSignal.timeout(54_000)` and `budgetMs: 54_000` to `runAI`.
+   - Used `userFacingError` mapping so users never see raw English timeout errors.
+   - Refined prompt token efficiency to complete in ~5 seconds.
+5. **Live Verification:**
+   - Generated 7 structured cards live via DevTools MCP on real data with 5 credits deducted.
+
+---
 
 ### Summary of Changes:
 1. **Additive Database Migration (`00026_content_brain_phase1.sql`):**

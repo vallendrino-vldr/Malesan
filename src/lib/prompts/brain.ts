@@ -133,10 +133,15 @@ Untuk setiap hari, evaluasi potensi konten dengan bobot:
 - Emotion (0-15): Memicu validasi, kejutan, atau optimisme
 Total skor = penjumlahan 5 kriteria (skala 75-99).
 
-ATURAN GAYA BAHASA (ANTI-SLOP):
+ATURAN GAYA BAHASA & STRUKTUR (ANTI-SLOP & CEPAT):
 - Jangan gunakan pembuka klise seperti "Di era digital ini", "Tahukah kamu", "Halo sobat creator", atau "Hai guys".
 - Gunakan bahasa Indonesia kasual, luwes, dan natural seperti obrolan kreator profesional.
 - Setiap judul dan hook harus berbobot dan siap dieksekusi.
+- Buat isi field padat dan to-the-point:
+  * angle: maksimal 2 kalimat ringkas
+  * why_now: 1 kalimat alasan kuat
+  * hook_seed: 1 kalimat kalimat pembuka yang menghentak
+  * score_reason: 1 kalimat evaluasi tajam
 ${shadowPrompt ? `\nPETUNJUK RUMAH:\n${shadowPrompt}` : ""}
 
 Hasilkan tepat 7 rencana harian dalam format JSON sesuai schema yang diminta.`;

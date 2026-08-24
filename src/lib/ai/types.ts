@@ -246,6 +246,13 @@ export const AI_FEATURES: FeatureSpec[] = [
     note: "Lima komentar pendek. Enaknya cepet, tapi masih guna walau agak lama — jadi gak dikunci ke model cepat.",
   },
   {
+    key: "pipeline_strategy",
+    label: "Rancang Strategi 7 Hari",
+    requires: ["text"],
+    suggested: "fast",
+    note: "Menyusun strategi konten mingguan 7 hari berimbang dengan self-scoring rubric.",
+  },
+  {
     key: "react_roast",
     label: "Roast draft",
     requires: ["text"],

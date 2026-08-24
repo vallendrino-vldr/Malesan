@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { runAI } from "@/lib/ai/engine";
 import { parseAIJson } from "@/lib/ai/json";
+import { userFacingError } from "@/lib/ai/errors";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { aiRateLimit } from "@/lib/rate-limit";
 import { getCostContentStrategy, getShadowPrompt } from "@/lib/config";
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       shadowPrompt,
     );
 
-    // 6. Run AI Reasoning
+    // 6. Run AI Reasoning with 54s deadline
     const aiResult = await runAI({
       feature: "pipeline_strategy",
       prompt,
@@ -103,6 +104,8 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       refId: spendRef,
       creditsCharged: cost,
+      signal: AbortSignal.timeout(54_000),
+      budgetMs: 54_000,
     });
 
     if (!aiResult.text) {
@@ -178,12 +181,10 @@ export async function POST(request: NextRequest) {
     if (spendRef) {
       await refundCredits(user.id, spendRef, "refund_strategy_error");
     }
+    const uf = userFacingError(error);
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Gagal merancang strategi konten. Kredit lo udah dibalikin.",
+        error: uf.message,
       },
       { status: 500 },
     );

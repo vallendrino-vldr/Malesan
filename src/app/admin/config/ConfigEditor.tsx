@@ -22,6 +22,7 @@ const MODULE_LABEL: Record<string, string> = {
   clip: "Clip Engine",
   thread: "Thread Engine",
   video: "Video Auto-CC",
+  content_strategy: "Strategi 7 Hari (AI Brain)",
 };
 
 // Drives three lists at once: the credit-price grid, the kill switches, and the
@@ -36,6 +37,7 @@ const COST_ORDER = [
   "clip",
   "thread",
   "video",
+  "content_strategy",
 ];
 
 export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
