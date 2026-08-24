@@ -63,11 +63,11 @@ const STREAM_ITEMS: StreamItem[] = [
 export function CreatorActivityTicker() {
   return (
     <section className="relative py-7 sm:py-10 overflow-hidden select-none">
-      {/* Centered Heading */}
+      {/* Centered Heading with generous padding */}
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 mb-4 flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-hairline/60 bg-surface/50 px-3.5 py-1 backdrop-blur-md shadow-xs">
-          <span className="size-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-          <span className="font-mono text-micro font-bold tracking-wider text-ink uppercase text-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-surface/50 px-4 py-1.5 backdrop-blur-md shadow-xs">
+          <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+          <span className="font-display text-xs font-semibold tracking-wider text-ink uppercase text-center">
             Aktivitas Live Kreator di Malesan
           </span>
         </div>
@@ -82,7 +82,7 @@ export function CreatorActivityTicker() {
           {[...STREAM_ITEMS, ...STREAM_ITEMS].map((item, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2.5 rounded-2xl border border-hairline/80 bg-surface/75 px-3.5 py-2 shadow-xs backdrop-blur-md shrink-0 transition-colors duration-200 hover:border-ember/40"
+              className="flex items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-surface/75 px-3.5 py-2 shadow-xs backdrop-blur-md shrink-0 transition-colors duration-200 hover:border-ember/40"
             >
               {/* Avatar circle with initial */}
               <div
@@ -101,10 +101,10 @@ export function CreatorActivityTicker() {
               </div>
 
               <div className="flex items-center gap-1.5 ml-1">
-                <span className="font-mono text-[9px] text-muted/70">
+                <span className="font-display text-[10px] text-muted/70 font-medium">
                   {item.timeAgo}
                 </span>
-                <span className="rounded-md border border-hairline bg-surface-raised px-1.5 py-0.5 font-mono text-[9px] text-ember font-semibold">
+                <span className="rounded-md border border-white/[0.08] bg-surface-raised px-2 py-0.5 font-display text-[10px] text-ember font-semibold">
                   {item.tag}
                 </span>
               </div>

@@ -107,7 +107,7 @@ export function CreatorJourney() {
           <div className="size-2 rounded-full bg-ember/60 shadow-[0_0_8px_rgba(255,138,61,0.6)]" />
         </div>
 
-        {/* Section Header */}
+        {/* Section Header with generous optical padding */}
         <div
           className="text-center max-w-xl mx-auto transition-all duration-700"
           style={{
@@ -115,10 +115,10 @@ export function CreatorJourney() {
             transform: isVisible ? "translateY(0)" : "translateY(20px)",
           }}
         >
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3 py-0.5 text-micro font-bold tracking-wider text-ember uppercase">
+          <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-4 py-1.5 text-xs font-semibold tracking-wider text-ember uppercase shadow-xs">
             <span>Alur Perjalanan Kreator</span>
           </div>
-          <h2 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
+          <h2 className="mt-3 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
             Dari layar kosong, jadi konten siap tayang.
           </h2>
           <p className="mt-2 text-xs sm:text-sm text-muted">
@@ -137,8 +137,8 @@ export function CreatorJourney() {
                 onClick={() => setActiveIdx(idx)}
                 className={`flex flex-col items-start rounded-2xl border p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "border-ember bg-surface-raised/90 shadow-[0_0_24px_rgba(255,138,61,0.25)] scale-[1.02]"
-                    : "border-hairline/70 bg-surface/40 hover:border-ember/30 hover:bg-surface-raised/60"
+                    ? "border-ember/60 bg-surface-raised/90 shadow-[0_0_24px_rgba(255,138,61,0.2)] scale-[1.01]"
+                    : "border-white/[0.08] bg-surface/40 hover:border-ember/30 hover:bg-surface-raised/60"
                 }`}
                 style={{
                   opacity: isVisible ? 1 : 0,
@@ -147,7 +147,7 @@ export function CreatorJourney() {
                 }}
               >
                 <div className="flex w-full items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-ember">
+                  <span className="font-display text-xs font-bold text-ember">
                     {step.percent}
                   </span>
                   <span
@@ -159,7 +159,7 @@ export function CreatorJourney() {
                 <p className="mt-2 font-display text-xs sm:text-sm font-bold text-ink truncate w-full">
                   {step.title}
                 </p>
-                <span className="mt-0.5 font-mono text-[9px] text-muted truncate w-full">
+                <span className="mt-0.5 font-display text-[10px] text-muted truncate w-full uppercase tracking-wider font-medium">
                   {step.badge}
                 </span>
               </button>
@@ -169,7 +169,7 @@ export function CreatorJourney() {
 
         {/* Live Transformation Stage Card */}
         <div
-          className="mt-5 rounded-3xl border border-hairline/80 bg-surface/50 p-5 sm:p-7 shadow-2xl backdrop-blur-xl transition-all duration-500"
+          className="mt-5 rounded-3xl border border-white/[0.08] bg-surface/50 p-5 sm:p-7 shadow-2xl backdrop-blur-xl transition-all duration-500"
           style={{
             opacity: isVisible ? 1 : 0,
             transform: isVisible ? "translateY(0)" : "translateY(20px)",
@@ -180,7 +180,7 @@ export function CreatorJourney() {
             
             {/* Left Narrative (5 Cols) */}
             <div className="lg:col-span-5 flex flex-col items-start">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-ember uppercase">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3 py-1 font-display text-[10px] font-bold text-ember uppercase">
                 Tahap {activeIdx + 1} · {current.badge}
               </span>
 
@@ -189,7 +189,7 @@ export function CreatorJourney() {
               </h3>
               
               <div className="mt-3 space-y-2 text-xs sm:text-sm w-full">
-                <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3">
+                <div className="rounded-xl border border-white/[0.06] bg-surface-raised/40 p-3">
                   <p className="text-muted leading-relaxed">
                     {current.story}
                   </p>
@@ -204,20 +204,20 @@ export function CreatorJourney() {
 
             {/* Right Live Output Preview (7 Cols) */}
             <div className="lg:col-span-7">
-              <div className="rounded-2xl border border-hairline/80 bg-obsidian/85 p-4 sm:p-5 shadow-sm">
-                <div className="flex items-center justify-between border-b border-hairline/60 pb-2.5">
+              <div className="rounded-2xl border border-white/[0.08] bg-obsidian/85 p-4 sm:p-5 shadow-sm">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-ember animate-pulse" />
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ember">
+                    <span className="font-display text-[10px] font-bold uppercase tracking-wider text-ember">
                       Hasil Nyata Malesan
                     </span>
                   </div>
-                  <span className="rounded-md border border-hairline bg-surface-raised px-2 py-0.5 font-mono text-[9px] text-muted font-semibold">
+                  <span className="rounded-md border border-white/[0.08] bg-surface-raised px-2.5 py-0.5 font-display text-[10px] text-muted font-semibold">
                     {current.outputTag}
                   </span>
                 </div>
 
-                <div className="mt-3.5 space-y-2 font-mono text-xs text-ink/90">
+                <div className="mt-3.5 space-y-2 text-xs text-ink/90">
                   {current.outputPreview.map((line, idx) => (
                     <div key={idx} className="flex items-start gap-2 leading-relaxed">
                       <span className="text-ember select-none font-bold">›</span>

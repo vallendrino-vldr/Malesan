@@ -35,8 +35,24 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Footer Tagline & Navigation Exact Row Alignment (§9z.30).
-**Newest work is §9z.30 — Footer Tagline & Navigation Exact Row Alignment: (1) In `src/app/page.tsx`, restructured desktop footer so that tagline (`AI Creative Companion untuk kreator konten Indonesia.`) and navigation links (`Cara Kerja`, `Mulai Gratis`, `Masuk`, `Privasi`, `Ketentuan`) share the EXACT same horizontal flex row (`flex-row items-center justify-between`), guaranteeing 100% horizontal baseline alignment; (2) In `src/components/Logo.tsx`, added `centered` prop support using `origin-center` to ensure true optical centering of the Malesan logo on mobile devices without rightward offset; (3) Cleaned up footer structure to render a single responsive Logo; (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.30, then §9z.29.
+Last updated: **2026-08-24**, after Impeccable Anti-Pattern Remediation & Security Shield (§9z.31).
+**Newest work is §9z.31 — Impeccable Anti-Pattern Remediation & Security Shield: (1) Systematically cleaned all 34 anti-patterns flagged by the Impeccable scanner: eliminated overused `font-mono` on badges, titles, and card bodies across all landing components (`LivingStudioCanvas.tsx`, `CompanionHero.tsx`, `CreatorJourney.tsx`, `CreatorActivityTicker.tsx`, `CompactCTA.tsx`, `page.tsx`), reserving mono strictly for genuine timestamp markers (`00:00`); (2) Removed generic looping bounce animations (`animate-bounce` / `bounce-gentle`) from mascot and speech bubbles, replacing them with serene micro-scale respiration and pointer gaze physics; (3) Removed destructive image scaling transforms from `src/components/Logo.tsx`; (4) Refined cramped badge padding to balanced optical padding (`px-4 py-1.5`); (5) Upgraded borders to subtle physical hairline layers (`border-white/[0.08]`); (6) Added `SECURITY_SHIELD_SCRIPT` to `src/lib/boot-scripts.ts` and `layout.tsx`; (7) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.31, then §9z.30.
+
+---
+
+## §9z.31 — Impeccable Anti-Pattern Remediation & Security Shield (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Typography & Font-Mono Discipline:**
+   - Switched badges, tags, and status labels from `font-mono` to `font-display` / `font-sans` with clean letter-tracking.
+2. **Animation Hygiene (No Cheap Looping Bounces):**
+   - Removed aggressive elastic swing and bounce loops from mascot.
+3. **Image Transform Fix (`Logo.tsx`):**
+   - Replaced hover image stretching with clean opacity transitions.
+4. **Console Security Guard (`boot-scripts.ts`):**
+   - Inlined `SECURITY_SHIELD_SCRIPT` warning in `<head>` to deter client-side tampering.
 
 ---
 

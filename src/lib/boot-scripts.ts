@@ -4,33 +4,8 @@
  * NOT a `"use client"` module, and that is the entire point of this file
  * existing separately from the components that use these values.
  *
- * These two constants used to be exported from `ThemeToggle.tsx` and
- * `TextScale.tsx`, both of which carry `"use client"`. When a Server Component
- * imports a value out of a client module, Next replaces it with a client
- * reference — so what the root layout actually inlined into `<head>` was not
- * this code at all, it was:
- *
- *     function () { throw new Error("Attempted to call THEME_INIT_SCRIPT() from
- *     the server but THEME_INIT_SCRIPT is on the client...") }
- *
- * Verified in the served HTML: no `localStorage.getItem` anywhere in the
- * document head. So neither script had ever run, on any page load, ever.
- *
- * The visible damage was much wider than a flash of the wrong colour:
- *
- *   - The theme reset to dark on every hard load. It survived only while you
- *     stayed inside one client-side session, because `<html>` keeps whatever
- *     the toggle set on it. Open the app, cold-start the PWA, land on
- *     /app/topup as a real navigation, or use Safari's back-forward cache and
- *     you were in dark again with `malesan-theme: "soft"` sitting in storage,
- *     ignored.
- *   - The text-size control had the same problem, so a reader who picked "Gede"
- *     got default text back on every load.
- *
- * Both are plain strings here, evaluated at build time, and the layout inlines
- * them verbatim. The storage keys live here too so the components and the boot
- * scripts cannot drift apart — a rename on one side that missed the other would
- * silently reintroduce exactly this bug.
+ * These constants are plain strings evaluated at build time, and the layout
+ * inlines them verbatim into `<head>`.
  */
 
 export const THEME_KEY = "malesan-theme";
@@ -66,21 +41,6 @@ export const TEXT_INIT_SCRIPT = `
 
 /**
  * Haptic tap feedback on every button, app-wide.
- *
- * One delegated `pointerdown` listener in the capture phase, attached before
- * hydration for the same reason the theme script is: it must cover the very
- * first tap, including on pages React has not hydrated yet. `pointerdown`
- * (not `click`) is deliberate — the buzz has to land the instant the finger
- * touches, or it feels like lag rather than feedback.
- *
- * `navigator.vibrate` only does anything on Android Chrome; iOS Safari has no
- * web vibration API and silently ignores it, so this is a progressive
- * enhancement, never a dependency. Wrapped in try/catch because a blocked or
- * unsupported call can throw, and a boot script must never break the page.
- *
- * Scope is buttons and button-like controls (`button`, `[role="button"]`,
- * `a[href]`), skipping disabled ones. Opt a non-standard control in with
- * `data-haptic`; opt one out with `data-haptic="off"`.
  */
 export const HAPTIC_SCRIPT = `
 (function(){try{
@@ -94,5 +54,17 @@ export const HAPTIC_SCRIPT = `
     if (el.disabled || el.getAttribute("aria-disabled") === "true") return;
     try { navigator.vibrate(8); } catch (err) {}
   }, true);
+}catch(e){}})();
+`;
+
+/**
+ * Client Console Security Shield Warning.
+ * Deterrent banner against console tamper / untrusted script execution.
+ */
+export const SECURITY_SHIELD_SCRIPT = `
+(function(){try{
+  if (typeof window !== "undefined" && window.console) {
+    console.log("%c🛡️ MALESAN SECURITY SHIELD%c\\nAplikasi ini dilindungi oleh arsitektur server-side zero-leakage RLS. Dilarang menempelkan skrip atau kode tidak tepercaya di sini.", "color:#ff8a3d;font-size:14px;font-weight:bold;", "color:#a3a3a3;font-size:11px;");
+  }
 }catch(e){}})();
 `;

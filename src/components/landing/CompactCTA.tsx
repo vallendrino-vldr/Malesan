@@ -39,8 +39,8 @@ export function CompactCTA() {
         }}
       >
         {/* Companion Mascot Speech Bubble with Reaction */}
-        <div className="inline-flex items-center gap-3 rounded-full border border-hairline/80 bg-surface/75 px-4 py-2 shadow-xs backdrop-blur-md transition-transform duration-300 hover:scale-[1.02]">
-          <div className="size-8 shrink-0 animate-[bounce-gentle_2.5s_ease-in-out_infinite]">
+        <div className="inline-flex items-center gap-3 rounded-full border border-white/[0.08] bg-surface/75 px-4 py-2 shadow-xs backdrop-blur-md transition-transform duration-300 hover:scale-[1.01]">
+          <div className="size-8 shrink-0">
             <Mascot mood="ready" className="size-full" />
           </div>
           <span className="text-xs sm:text-sm font-medium text-ink">
@@ -82,7 +82,7 @@ export function CompactCTA() {
           </TransitionButton>
         </div>
 
-        <p className="mt-3.5 text-micro text-muted/70">
+        <p className="mt-3.5 text-xs text-muted/70">
           Masuk dengan akun Google · Tanpa kartu kredit · Batal kapan saja
         </p>
       </div>

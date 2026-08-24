@@ -20,7 +20,7 @@ export function LogoMark({ className = "size-7" }: { className?: string }) {
 
 /**
  * The official Malesan Header Brand Logo.
- * Uses /branding/logo-header.png with scale compensation for PNG whitespace.
+ * Uses /branding/logo-header.png without destructive image scaling transforms.
  */
 export function Logo({
   className = "",
@@ -34,20 +34,16 @@ export function Logo({
   centered?: boolean;
 }) {
   return (
-    <span className={`inline-flex items-center justify-center overflow-visible select-none ${className}`}>
-      <div className="relative overflow-visible flex items-center justify-center py-1">
-        <Image
-          src="/branding/logo-header.png"
-          alt="Malesan — AI Creative Companion"
-          width={217}
-          height={72}
-          priority
-          unoptimized
-          className={`${markClass} w-auto object-contain scale-[1.22] ${
-            centered ? "origin-center" : "origin-left"
-          } transition-all duration-200 hover:drop-shadow-[0_0_20px_rgba(255,138,61,0.35)] hover:scale-[1.26]`}
-        />
-      </div>
+    <span className={`inline-flex items-center ${centered ? "justify-center" : "justify-start"} select-none transition-opacity duration-200 hover:opacity-90 ${className}`}>
+      <Image
+        src="/branding/logo-header.png"
+        alt="Malesan — AI Creative Companion"
+        width={217}
+        height={72}
+        priority
+        unoptimized
+        className={`${markClass} w-auto object-contain`}
+      />
     </span>
   );
 }

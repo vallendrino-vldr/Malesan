@@ -9,7 +9,7 @@ export function CompanionHero() {
   const [selectedTopicId, setSelectedTopicId] = useState("bengkel");
 
   return (
-    <section className="relative overflow-hidden pt-2 pb-8 sm:pt-6 sm:pb-14 lg:pt-10 lg:pb-18">
+    <section className="relative overflow-hidden pt-3 pb-8 sm:pt-6 sm:pb-14 lg:pt-10 lg:pb-18">
       {/* Purposeful Ambient Depth Background */}
       <ThreeCanvas />
 
@@ -20,13 +20,13 @@ export function CompanionHero() {
               LEFT COLUMN: Product Headline, 2x2 Symmetric Magic Bar, and CTAs (7 Cols)
              ========================================================================= */}
           <div className="flex flex-col items-start lg:col-span-7">
-            {/* Status Pill — reveals first */}
+            {/* Status Pill with comfortable optical padding (No cramped padding) */}
             <div
-              className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-3.5 py-1 shadow-xs backdrop-blur-md opacity-0"
+              className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-4 py-1.5 shadow-xs backdrop-blur-md opacity-0"
               style={{ animation: "fade-up 0.6s ease-out 0.1s forwards" }}
             >
               <span className="size-1.5 rounded-full bg-ember animate-pulse" />
-              <span className="font-mono text-micro font-bold tracking-wider text-ember uppercase">
+              <span className="font-display text-xs font-semibold tracking-wider text-ember uppercase">
                 Teman Kreatif AI
               </span>
             </div>
@@ -58,14 +58,14 @@ export function CompanionHero() {
 
             {/* Interactive Magic Topic Bar: 2x2 Symmetric Grid on Mobile, Flex on Desktop */}
             <div
-              className="mt-5 w-full flex flex-col gap-2.5 rounded-2xl border border-hairline/80 bg-surface/50 p-3.5 shadow-sm backdrop-blur-md opacity-0"
+              className="mt-5 w-full flex flex-col gap-2.5 rounded-2xl border border-white/[0.08] bg-surface/50 p-4 shadow-sm backdrop-blur-md opacity-0"
               style={{ animation: "fade-up 0.6s ease-out 0.9s forwards" }}
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[10px] font-bold text-ember uppercase tracking-wider">
+                <span className="font-display text-xs font-semibold text-ember uppercase tracking-wider">
                   Coba Pilih Ide Contoh:
                 </span>
-                <span className="font-mono text-[10px] text-muted/70">
+                <span className="font-display text-xs text-muted/70 font-medium">
                   Simulasi Live Studio
                 </span>
               </div>
@@ -77,13 +77,13 @@ export function CompanionHero() {
                       key={preset.id}
                       type="button"
                       onClick={() => setSelectedTopicId(preset.id)}
-                      className={`group flex items-center justify-center sm:justify-start gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                      className={`group flex items-center justify-center sm:justify-start gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 cursor-pointer ${
                         isSelected
-                          ? "border-ember bg-ember/15 text-ember shadow-xs scale-[1.01]"
-                          : "border-hairline bg-surface-raised/70 text-muted hover:border-ember/40 hover:text-ink hover:bg-surface-raised"
+                          ? "border-ember/60 bg-ember/15 text-ember shadow-xs scale-[1.01]"
+                          : "border-white/[0.08] bg-surface-raised/70 text-muted hover:border-ember/40 hover:text-ink hover:bg-surface-raised"
                       }`}
                     >
-                      <span className={`size-2 rounded-full shrink-0 transition-colors ${isSelected ? "bg-ember animate-pulse" : "bg-muted/40 group-hover:bg-ember/50"}`} />
+                      <span className={`size-2 rounded-full shrink-0 transition-colors ${isSelected ? "bg-ember" : "bg-muted/40 group-hover:bg-ember/50"}`} />
                       <span className="truncate">{preset.label}</span>
                     </button>
                   );
@@ -101,7 +101,7 @@ export function CompanionHero() {
               />
             </div>
 
-            {/* Clean Solid CTA Buttons — Polished SVG Vector Icons (No Crude Unicode) */}
+            {/* Clean Solid CTA Buttons — Polished SVG Vector Icons */}
             <div
               className="mt-2 sm:mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center opacity-0"
               style={{ animation: "fade-up 0.6s ease-out 1.1s forwards" }}
@@ -128,7 +128,7 @@ export function CompanionHero() {
 
               <a
                 href="#journey"
-                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-hairline/80 bg-surface/60 px-6 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember active:scale-[0.99]"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-surface/60 px-6 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember active:scale-[0.99]"
               >
                 <span>Lihat cara kerja</span>
                 <svg
@@ -148,18 +148,18 @@ export function CompanionHero() {
             {/* Trust Badges */}
             {/* Desktop Horizontal Badges */}
             <div
-              className="hidden sm:flex mt-7 items-center gap-3 border-t border-hairline/40 pt-4 text-xs text-muted opacity-0"
+              className="hidden sm:flex mt-7 items-center gap-3 border-t border-white/[0.06] pt-4 text-xs text-muted opacity-0"
               style={{ animation: "fade-up 0.5s ease-out 1.3s forwards" }}
             >
-              <div className="flex items-center gap-1.5 rounded-full border border-hairline/70 bg-surface/40 px-3 py-1 font-medium">
+              <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-surface/40 px-3.5 py-1.5 font-medium">
                 <span className="text-ember font-bold">✓</span>
                 <span><strong className="text-ink">10 kredit gratis</strong> tiap hari</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-full border border-hairline/70 bg-surface/40 px-3 py-1 font-medium">
+              <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-surface/40 px-3.5 py-1.5 font-medium">
                 <span className="text-ember font-bold">✓</span>
                 <span>Login Google tanpa ribet</span>
               </div>
-              <div className="flex items-center gap-1.5 rounded-full border border-hairline/70 bg-surface/40 px-3 py-1 font-medium">
+              <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-surface/40 px-3.5 py-1.5 font-medium">
                 <span className="text-ember font-bold">✓</span>
                 <span>Ide pertama &lt;30 detik</span>
               </div>
@@ -167,18 +167,18 @@ export function CompanionHero() {
 
             {/* Mobile 3 Compact Badges */}
             <div
-              className="grid sm:hidden grid-cols-3 gap-2 mt-4 w-full border-t border-hairline/40 pt-3 text-[11px] opacity-0"
+              className="grid sm:hidden grid-cols-3 gap-2 mt-4 w-full border-t border-white/[0.06] pt-3 text-[11px] opacity-0"
               style={{ animation: "fade-up 0.5s ease-out 1.2s forwards" }}
             >
-              <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-hairline/70 bg-surface/40 text-center">
+              <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">10 Kredit</span>
                 <span className="text-[10px] text-muted">Gratis Tiap Hari</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-hairline/70 bg-surface/40 text-center">
+              <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">Login Google</span>
                 <span className="text-[10px] text-muted">Tanpa Ribet</span>
               </div>
-              <div className="flex flex-col items-center justify-center p-2 rounded-xl border border-hairline/70 bg-surface/40 text-center">
+              <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">&lt;30 Detik</span>
                 <span className="text-[10px] text-muted">Ide Pertama</span>
               </div>
