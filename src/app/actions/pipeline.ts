@@ -302,4 +302,36 @@ export async function updateCardScheduleDate(cardId: string, scheduledDate: stri
   return data;
 }
 
+/**
+ * Batch delete cards from the pipeline.
+ *
+ * Supports deleting all cards, only cards scheduled within a specific date range (e.g. active week),
+ * or only unscheduled cards.
+ */
+export async function clearPipelineCards(options?: {
+  scope?: "all" | "week" | "unscheduled";
+  startDate?: string;
+  endDate?: string;
+}) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  let query = supabase.from("pipeline_cards").delete().eq("user_id", user.id);
+
+  if (options?.scope === "week" && options.startDate && options.endDate) {
+    query = query
+      .gte("scheduled_date", options.startDate)
+      .lte("scheduled_date", options.endDate);
+  } else if (options?.scope === "unscheduled") {
+    query = query.is("scheduled_date", null);
+  }
+
+  const { error } = await query;
+  if (error) throw error;
+  revalidatePath("/app");
+}
+
 

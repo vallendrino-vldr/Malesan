@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useDragControls, type PanInfo } from "framer-motion";
 import type { PipelineCard } from "@/lib/supabase/database.types";
 import {
@@ -23,6 +23,8 @@ import {
 } from "./studio/AIProcessingOverlay";
 import { normalizeTodayPlatform, todayPlatformLabel } from "@/lib/content-options";
 import { PipelineCalendarView } from "./PipelineCalendarView";
+import { PipelineCardModal } from "./PipelineCardModal";
+import { PipelineClearModal } from "./PipelineClearModal";
 
 /**
  * Pipeline.
@@ -174,7 +176,44 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
   const [isGeneratingStrategy, setIsGeneratingStrategy] = useState(false);
   const [strategyStatus, setStrategyStatus] = useState<string>("");
   const [strategySuccess, setStrategySuccess] = useState<string>("");
+  const [selectedCard, setSelectedCard] = useState<PipelineCard | null>(null);
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const router = useRouter();
+
+  const currentWeekInfo = useMemo(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    const format = (dt: Date) => {
+      const year = dt.getFullYear();
+      const month = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const startStr = format(monday);
+    const endStr = format(sunday);
+    const weekCards = cards.filter(
+      (c) => c.scheduled_date && c.scheduled_date >= startStr && c.scheduled_date <= endStr,
+    );
+    return {
+      startDate: startStr,
+      endDate: endStr,
+      weekCardsCount: weekCards.length,
+    };
+  }, [cards]);
+
+  const handleCardUpdated = (updated: PipelineCard) => {
+    setCards((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setSelectedCard(updated);
+  };
+
+  const handleCardDeleted = (cardId: string) => {
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
+    setSelectedCard(null);
+  };
 
   const handleGenerate7DayStrategy = async () => {
     setIsGeneratingStrategy(true);
@@ -518,6 +557,22 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 </button>
               </div>
 
+              {cards.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsClearModalOpen(true)}
+                  className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
+                  title="Kosongkan jadwal atau hapus kartu dari alur"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                    <path d="M3 6h18" />
+                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                  </svg>
+                  <span>Bersihkan</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleGenerate7DayStrategy}
@@ -575,7 +630,9 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       {viewMode === "calendar" ? (
         <PipelineCalendarView
           cards={cards}
+          onOpenCard={(card) => setSelectedCard(card)}
           onGenerateStrategy={handleGenerate7DayStrategy}
+          onClearSchedule={() => setIsClearModalOpen(true)}
           isGeneratingStrategy={isGeneratingStrategy}
         />
       ) : (
@@ -733,6 +790,29 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           {boardError}
         </p>
       )}
+
+      {/* Universal Card Detail Modal */}
+      <PipelineCardModal
+        card={selectedCard}
+        isOpen={Boolean(selectedCard)}
+        onClose={() => setSelectedCard(null)}
+        onCardUpdated={handleCardUpdated}
+        onCardDeleted={handleCardDeleted}
+      />
+
+      {/* Batch Clear Modal */}
+      <PipelineClearModal
+        isOpen={isClearModalOpen}
+        onClose={() => setIsClearModalOpen(false)}
+        totalCards={cards.length}
+        weekCardsCount={currentWeekInfo.weekCardsCount}
+        startDate={currentWeekInfo.startDate}
+        endDate={currentWeekInfo.endDate}
+        onCleared={() => {
+          setCards([]);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

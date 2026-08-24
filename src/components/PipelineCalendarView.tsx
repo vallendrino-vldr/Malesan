@@ -8,6 +8,7 @@ interface PipelineCalendarViewProps {
   cards: PipelineCard[];
   onOpenCard?: (card: PipelineCard) => void;
   onGenerateStrategy?: () => void;
+  onClearSchedule?: () => void;
   isGeneratingStrategy?: boolean;
 }
 
@@ -45,6 +46,7 @@ export function PipelineCalendarView({
   cards,
   onOpenCard,
   onGenerateStrategy,
+  onClearSchedule,
   isGeneratingStrategy,
 }: PipelineCalendarViewProps) {
   // Current active reference date (starts at today)
@@ -182,6 +184,22 @@ export function PipelineCalendarView({
               </svg>
             </button>
           </div>
+
+          {onClearSchedule && cards.length > 0 && (
+            <button
+              type="button"
+              onClick={onClearSchedule}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-micro font-medium text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
+              title="Kosongkan jadwal atau hapus kartu dari alur"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+              <span>Bersihkan</span>
+            </button>
+          )}
 
           {onGenerateStrategy && (
             <button
@@ -499,19 +517,22 @@ function CalendarCardItem({
           {card.schedule_label || "Rencana"}
         </span>
 
-        {onUnschedule && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onUnschedule();
-            }}
-            disabled={isUpdating}
-            className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-danger disabled:opacity-50"
-            title="Hapus dari jadwal tanggal ini"
-          >
-            Lepas
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-ember group-hover:underline">Buka Detail →</span>
+          {onUnschedule && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onUnschedule();
+              }}
+              disabled={isUpdating}
+              className="text-muted/60 transition-colors hover:text-danger disabled:opacity-50"
+              title="Hapus dari jadwal tanggal ini"
+            >
+              Lepas
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
