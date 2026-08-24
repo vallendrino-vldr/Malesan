@@ -322,17 +322,17 @@ export function ScriptView({
                         type="button"
                         onClick={() => handleAIFootageSuggest(i)}
                         disabled={adaptingSceneIdx === i}
-                        className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg border border-ember/30 bg-ember/10 px-2.5 py-1 text-micro font-bold text-ember transition-all hover:bg-ember/20 disabled:opacity-50"
+                        className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-lg border border-ember/30 bg-ember/10 px-2 py-1 text-micro font-bold text-ember transition-all hover:bg-ember/20 disabled:opacity-50"
                       >
                         {adaptingSceneIdx === i ? (
                           <>
                             <span className="size-2 rounded-full bg-ember animate-ping" />
-                            <span>AI Memproses...</span>
+                            <span>AI...</span>
                           </>
                         ) : (
                           <>
                             <SparkleIcon className="size-2.5 text-ember" />
-                            <span>Sesuaikan dengan AI</span>
+                            <span>Sesuaikan AI</span>
                           </>
                         )}
                       </button>
@@ -349,8 +349,8 @@ export function ScriptView({
 
                     {/* Creator Custom Footage Note Input */}
                     {openFootageNoteIdx === i || sc.user_footage_note ? (
-                      <div className="mt-2.5 rounded-xl border border-ember/30 bg-[#161310] p-3 shadow-inner">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="mt-2.5 rounded-lg border border-ember/25 bg-[#141210] p-2.5 shadow-sm">
+                        <div className="flex items-center justify-between gap-2 mb-2">
                           <label className="flex items-center gap-1.5 text-micro font-bold tracking-wider text-ember uppercase">
                             <FilmIcon className="size-3 text-ember" />
                             <span>Bahan Rekaman Pribadi</span>
@@ -366,32 +366,37 @@ export function ScriptView({
                             Tutup
                           </button>
                         </div>
-                        <input
-                          type="text"
-                          value={sc.user_footage_note || ""}
-                          onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
-                          placeholder="Deskripsikan bahan rekaman yang kamu punya untuk scene ini..."
-                          className="w-full rounded-lg border border-white/[0.1] bg-obsidian p-2 text-xs text-ink placeholder:text-muted/40 focus:border-ember focus:outline-none"
-                        />
-                        <div className="mt-2.5 flex items-center justify-between gap-2">
-                          <p className="text-[10px] text-muted/70">
-                            AI akan menyesuaikan arahan visual di atas:
-                          </p>
+
+                        {/* Unified Slim Input Bar with Embedded CTA Button */}
+                        <div className="relative flex items-center gap-1.5 rounded-lg border border-white/10 bg-obsidian p-1 focus-within:border-ember/60 transition-colors">
+                          <input
+                            type="text"
+                            value={sc.user_footage_note || ""}
+                            onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
+                            placeholder="Ketik rekaman yang kamu punya..."
+                            className="flex-1 bg-transparent px-2 py-1 text-xs text-ink placeholder:text-muted/40 outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && sc.user_footage_note?.trim()) {
+                                e.preventDefault();
+                                handleAIFootageSuggest(i);
+                              }
+                            }}
+                          />
                           <button
                             type="button"
                             onClick={() => handleAIFootageSuggest(i)}
                             disabled={adaptingSceneIdx === i || !sc.user_footage_note?.trim()}
-                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-ember px-3 py-1.5 text-xs font-bold text-obsidian shadow-[0_0_14px_rgba(255,138,61,0.25)] transition-all hover:bg-ember-lo disabled:opacity-40"
+                            className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-md bg-ember px-2.5 py-1 text-micro font-bold text-obsidian shadow-sm transition-all hover:bg-ember-lo disabled:opacity-30 active:scale-95"
                           >
                             {adaptingSceneIdx === i ? (
                               <>
                                 <span className="size-2 rounded-full bg-obsidian animate-ping" />
-                                <span>Menyesuaikan...</span>
+                                <span>Memproses...</span>
                               </>
                             ) : (
                               <>
-                                <SparkleIcon className="size-3 fill-current" />
-                                <span>Sesuaikan Arahan Visual</span>
+                                <SparkleIcon className="size-2.5 fill-current" />
+                                <span>Sesuaikan</span>
                               </>
                             )}
                           </button>

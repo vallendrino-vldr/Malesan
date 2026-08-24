@@ -1,25 +1,27 @@
-# Design Specification: Clean Minimalist Scene Footage Editor (No Emojis)
+# Design Specification: Clean Minimalist Scene Footage Editor (Option A: Unified Slim Input Bar)
 
 ## 1. Overview & Goals
-Remove unicode emojis (`📹`, `🎬`, `✨`, `⚡`, etc.) from the scene footage editing UI and pipeline controls in `ScriptView.tsx` and `PipelineBoard.tsx`. Replace them with clean, refined typography, subtle vector SVG icons (14px monochrome line art), and Linear-grade minimalist dark UI styling.
+Redesign the custom footage input box in `ScriptView.tsx` to be ultra-compact, slim, and space-efficient. Replace the bulky stacked layout with a unified input bar containing an inline end-adornment action button `Sesuaikan`, cutting vertical height by over 50% and preventing text wrapping on mobile screens.
 
-## 2. Design Details
+## 2. Design Details (Option A)
 
 ### 2.1 Trigger Button
 - **Style:** Border dashed `border-white/15 hover:border-ember/40 bg-white/[0.02] hover:bg-ember/[0.06] text-ink/80 hover:text-ember`.
-- **Icon:** Clean 14px vector film strip / video camera line icon SVG (`stroke-width="1.5"`).
+- **Icon:** 14px vector film strip SVG line art.
 - **Label:** `+ Tambah rekaman atau footage sendiri`
 
-### 2.2 Expanded Footage Box
-- **Header:** Monospace eyebrow `BAHAN REKAMAN PRIBADI` with a clean `Tutup` button.
-- **Input:** Sleek input field with placeholder: `"Deskripsikan bahan rekaman yang kamu punya untuk scene ini..."`
-- **Helper text:** `"AI akan menyesuaikan arahan visual di atas berdasarkan rekaman milikmu."`
-- **Action CTA:** Solid brand button `Sesuaikan Arahan Visual` with optional clean 12px spark/wand SVG icon or pure typography.
-
-### 2.3 Top Quick Action Button
-- In the `Arahan Footage & Visual` section header, replace `✨ AI Sesuaikan Footage` with `Sesuaikan dengan AI` accompanied by a 12px clean vector SVG.
+### 2.2 Expanded Footage Box (Ultra-Compact 2-Line Layout)
+- **Line 1 (Header):**
+  - Left: Monospace micro label with 12px film icon: `BAHAN REKAMAN PRIBADI`
+  - Right: Minimalist `Tutup` button.
+- **Line 2 (Unified Input Bar):**
+  - An input wrapper `relative flex items-center rounded-lg border border-white/10 bg-obsidian/90 p-1 focus-within:border-ember/60 transition-colors`.
+  - Text input: `flex-1 bg-transparent px-2.5 py-1 text-xs text-ink placeholder:text-muted/40 outline-none` with placeholder `"Ketik rekaman yang kamu punya..."`.
+  - Inline Action Button: `inline-flex shrink-0 items-center gap-1 rounded-md bg-ember px-2.5 py-1.5 text-micro font-bold text-obsidian shadow-sm hover:bg-ember-lo transition-all disabled:opacity-40 active:scale-95`.
+    - Label: `Sesuaikan` (or loading indicator when adapting).
+- **Result:** Compact 2-line footprint, zero redundant helper text, zero vertical waste.
 
 ## 3. Verification Plan
 - `npm run build` (0 errors across 41 routes)
 - `npm test` (11 tests pass)
-- Browser inspection in DevTools on `http://localhost:3001/app?tab=pipeline`
+- Visual capture via DevTools MCP on `http://localhost:3001/app?tab=pipeline` at mobile 390x844.
