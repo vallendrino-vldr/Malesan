@@ -75,10 +75,31 @@ export function CreatorJourney() {
     <section id="journey" className="relative scroll-mt-16 py-8 sm:py-14">
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
-        {/* Subtle Clean Vertical Node (Zero Glowing Shadow) */}
-        <div className="mx-auto mb-5 flex flex-col items-center">
-          <div className="h-5 w-px bg-white/10" />
-          <div className="size-1 rounded-full bg-white/30" />
+        {/* Magnetic Scroll Connector & Downward Flow Beam */}
+        <div className="mx-auto mb-6 flex flex-col items-center group">
+          {/* Vertical Light Stream Beam */}
+          <div className="relative h-12 sm:h-14 w-[1.5px] overflow-hidden rounded-full bg-white/[0.08]">
+            <div
+              className="absolute inset-x-0 h-1/2 w-full bg-gradient-to-b from-transparent via-ember to-transparent"
+              style={{
+                animation: "stream-down 2.2s ease-in-out infinite",
+              }}
+            />
+          </div>
+          {/* Tactical Magnetic Beacon Node */}
+          <div className="mt-1 flex items-center justify-center size-5 rounded-full border border-ember/40 bg-surface-raised p-1 shadow-xs transition-transform duration-300 group-hover:scale-110">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-3 text-ember animate-pulse"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
         </div>
 
         {/* Section Header */}

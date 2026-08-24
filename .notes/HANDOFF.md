@@ -35,8 +35,20 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Eradication of Tiny Text & Glowing Shadows (§9z.33).
-**Newest work is §9z.33 — Eradication of Tiny Text & Glowing Shadows: (1) Systematically upgraded all sub-12px text across components (`LivingStudioCanvas.tsx`, `CompanionHero.tsx`, `CreatorJourney.tsx`, `CreatorActivityTicker.tsx`, `page.tsx`) to standard accessible `text-xs` (12px), eliminating `tiny body text` accessibility flags; (2) Removed all neon box-shadow glows (`shadow-[0_0_8px...]`, `hover:shadow-[0_4px_28px...]`) on nodes, dots, badges, and buttons, replacing them with clean solid surfaces; (3) Balanced typographic contrast between Archivo (`font-display`) and Jakarta Sans (`font-sans`); (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.33, then §9z.32.
+Last updated: **2026-08-24**, after Magnetic Vertical Scroll Stream & Beacon Node (§9z.34).
+**Newest work is §9z.34 — Magnetic Vertical Scroll Stream & Beacon Node: (1) In `src/components/landing/CreatorJourney.tsx`, engineered a bespoke magnetic scroll stream connector featuring a 14px vertical guide rail with an animated flowing light trail (`@keyframes stream-down` in `globals.css`) and a tactical beacon node with a pulsing directional chevron; (2) Provides a continuous, psychological visual pull that naturally guides user attention from the Hero into the 4-step Creator Journey without looking like generic AI glow; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.34, then §9z.33.
+
+---
+
+## §9z.34 — Magnetic Vertical Scroll Stream & Beacon Node (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Magnetic Downward Flow Stream:**
+   - Added animated vertical light rail beam (`stream-down 2.2s`) and tactical chevron beacon node.
+2. **Scroll Psychology:**
+   - Seamlessly anchors the transition between Hero and Journey.
 
 ---
 
