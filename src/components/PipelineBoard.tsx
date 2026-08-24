@@ -634,9 +634,6 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         <PipelineCalendarView
           cards={cards}
           onOpenCard={(card) => setSelectedCard(card)}
-          onGenerateStrategy={handleGenerate7DayStrategy}
-          onClearSchedule={() => setIsClearModalOpen(true)}
-          isGeneratingStrategy={isGeneratingStrategy}
         />
       ) : (
         <>

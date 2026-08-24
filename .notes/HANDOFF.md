@@ -35,8 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Calendar Precision Layout & Zero-Collision Redesign (§9z.25).
-**Newest work is §9z.25 — Calendar Precision Layout & Zero-Collision Redesign: (1) Fixed card footer collisions in 7-column desktop grid by removing awkward inline text links and establishing a clean 2-element footer (Duration on left, Lepas on right) with full card clickability; (2) Hardened toolbar button alignment with `shrink-0` and `whitespace-nowrap` across segmented controls `[ ‹ ] [ Minggu Ini ] [ › ]`, `[ 🗑 Bersihkan ]`, and `[ ✨ Rancang 7 Hari · 5 kredit ]`; (3) Perfected mobile responsive layout with balanced 50/50 segmented controls, 44px+ touch targets, and clean day headers; (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing on both desktop (1440x900) and mobile (390x844).** Read §9z.25, then §9z.24.
+Last updated: **2026-08-24**, after Mobile Clutter Clean-up & Duplicate Button Elimination (§9z.26).
+**Newest work is §9z.26 — Mobile Clutter Clean-up & Duplicate Button Elimination: (1) Removed duplicate action buttons (`[ 🗑 Bersihkan ]` and `[ ✨ Rancang 7 Hari ]`) from inside `PipelineCalendarView` to eliminate visual clutter and redundant button stacking on mobile screens; (2) Streamlined Calendar toolbar to pure week navigation (`[ ‹ ] [ Minggu Ini ] [ › ]`) with date range; (3) Refactored "Ide Belum Terjadwal" on mobile into a clean vertical stack (Title + count badge on row 1, guidance subtext on row 2, and clean 7-day pill grid in popover); (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing across both desktop (1440x900) and mobile (390x844).** Read §9z.26, then §9z.25.
+
+---
+
+## §9z.26 — Mobile Clutter Clean-up & Duplicate Button Elimination (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Eliminated Button Duplication (`PipelineCalendarView.tsx` & `PipelineBoard.tsx`):**
+   - Kept primary actions (`Papan Kanban / Kalender`, `Bersihkan`, `Rancang 7 Hari`) unified in the top header control strip.
+   - Simplified calendar header strictly to date range + week navigation controls.
+2. **"Ide Belum Terjadwal" Mobile Polish:**
+   - Stacked title and subtext vertically on mobile to prevent squished two-column wrapping.
+   - Refactored day-picker popover into an easy-to-tap 7-day pill grid.
 
 ---
 

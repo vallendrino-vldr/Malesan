@@ -3,13 +3,11 @@
 import { useState, useMemo } from "react";
 import type { PipelineCard } from "@/lib/supabase/database.types";
 import { updateCardScheduleDate } from "@/app/actions/pipeline";
+import { todayPlatformLabel, normalizeTodayPlatform } from "@/lib/content-options";
 
 interface PipelineCalendarViewProps {
   cards: PipelineCard[];
   onOpenCard?: (card: PipelineCard) => void;
-  onGenerateStrategy?: () => void;
-  onClearSchedule?: () => void;
-  isGeneratingStrategy?: boolean;
 }
 
 const INDO_DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -38,9 +36,6 @@ function toDateString(d: Date): string {
 export function PipelineCalendarView({
   cards,
   onOpenCard,
-  onGenerateStrategy,
-  onClearSchedule,
-  isGeneratingStrategy,
 }: PipelineCalendarViewProps) {
   // Current active reference date (starts at today)
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
@@ -143,7 +138,7 @@ export function PipelineCalendarView({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Calendar Top Navigation Bar */}
+      {/* Calendar Top Navigation Bar: Pure & Uncluttered */}
       <div className="flex flex-col gap-3 rounded-2xl border border-hairline/80 bg-surface-raised/50 p-3.5 sm:p-4 shadow-xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2.5">
@@ -161,70 +156,35 @@ export function PipelineCalendarView({
             </div>
           </div>
 
-          {/* Action Row */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Week Navigation Segment */}
-            <div className="flex h-9 items-center rounded-xl border border-hairline bg-surface p-0.5 shrink-0">
-              <button
-                type="button"
-                onClick={handlePrevWeek}
-                aria-label="Minggu Sebelumnya"
-                className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                  <path d="m15 18-6-6 6-6" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={handleResetToday}
-                className="px-2.5 text-xs font-semibold text-ink transition-colors hover:text-ember whitespace-nowrap"
-              >
-                Minggu Ini
-              </button>
-              <button
-                type="button"
-                onClick={handleNextWeek}
-                aria-label="Minggu Berikutnya"
-                className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                  <path d="m9 18 6-6-6-6" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Clear Button */}
-            {onClearSchedule && cards.length > 0 && (
-              <button
-                type="button"
-                onClick={onClearSchedule}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-hairline bg-surface px-3 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap shrink-0"
-                title="Kosongkan jadwal atau hapus kartu dari alur"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                </svg>
-                <span>Bersihkan</span>
-              </button>
-            )}
-
-            {/* Generate Strategy Button */}
-            {onGenerateStrategy && (
-              <button
-                type="button"
-                onClick={onGenerateStrategy}
-                disabled={isGeneratingStrategy}
-                className="flex h-9 items-center gap-1.5 rounded-xl border border-ember/40 bg-ember/15 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/25 disabled:opacity-50 whitespace-nowrap shrink-0"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-                </svg>
-                <span>{isGeneratingStrategy ? "Menyusun 7 Hari..." : "Rancang 7 Hari · 5 kredit"}</span>
-              </button>
-            )}
+          {/* Week Navigation Segmented Control */}
+          <div className="flex h-9 items-center rounded-xl border border-hairline bg-surface p-0.5 self-start sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={handlePrevWeek}
+              aria-label="Minggu Sebelumnya"
+              className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={handleResetToday}
+              className="px-3 text-xs font-semibold text-ink transition-colors hover:text-ember whitespace-nowrap"
+            >
+              Minggu Ini
+            </button>
+            <button
+              type="button"
+              onClick={handleNextWeek}
+              aria-label="Minggu Berikutnya"
+              className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -353,19 +313,25 @@ export function PipelineCalendarView({
         })}
       </div>
 
-      {/* ---------- UNSCHEDULED CARDS SECTION ---------- */}
+      {/* ---------- UNSCHEDULED CARDS SECTION: Clean & Responsive ---------- */}
       {unscheduledCards.length > 0 && (
         <div className="mt-2 rounded-2xl border border-hairline bg-surface/40 p-4">
-          <div className="mb-3 flex items-center justify-between">
+          {/* Header Stacked Vertically on Mobile */}
+          <div className="mb-3.5 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-muted">
-                <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
-                <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
-                <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
-              </svg>
-              <h4 className="font-display text-xs font-semibold text-ink">
-                Ide Belum Terjadwal ({unscheduledCards.length})
+              <div className="flex size-7 items-center justify-center rounded-lg border border-hairline bg-surface text-muted">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+                  <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+                  <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+                </svg>
+              </div>
+              <h4 className="font-display text-xs font-bold text-ink">
+                Ide Belum Terjadwal
               </h4>
+              <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-micro font-semibold text-muted border border-hairline">
+                {unscheduledCards.length}
+              </span>
             </div>
             <p className="text-micro text-muted">
               Pilih tanggal tayang agar rapi di kalender mingguan
@@ -373,83 +339,104 @@ export function PipelineCalendarView({
           </div>
 
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {unscheduledCards.map((card) => (
-              <div
-                key={card.id}
-                className="flex flex-col justify-between gap-2.5 rounded-xl border border-hairline bg-surface-raised p-3.5"
-              >
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-muted uppercase">
-                      {card.status}
-                    </span>
-                    {card.ai_score && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-ember">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
-                          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
-                        </svg>
-                        {card.ai_score}
-                      </span>
-                    )}
+            {unscheduledCards.map((card) => {
+              const cardContent = card.content as Record<string, unknown> | null;
+              return (
+                <div
+                  key={card.id}
+                  className="flex flex-col justify-between gap-3 rounded-xl border border-hairline bg-surface-raised p-3.5 transition-all hover:border-ink/20 shadow-xs"
+                >
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="rounded bg-surface px-1.5 py-0.5 text-[9px] font-bold text-muted border border-hairline uppercase tracking-wider">
+                          {card.status}
+                        </span>
+                        {cardContent?.platform ? (
+                          <span className="truncate rounded border border-hairline bg-surface px-1.5 py-0.5 text-[9px] text-muted">
+                            {todayPlatformLabel(normalizeTodayPlatform(String(cardContent.platform)))}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {card.ai_score && (
+                        <span className="shrink-0 flex items-center gap-0.5 font-mono text-[10px] font-bold text-ember">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5 text-ember">
+                            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
+                          </svg>
+                          {card.ai_score}
+                        </span>
+                      )}
+                    </div>
+
+                    <h5 className="font-display text-xs font-semibold text-ink leading-snug line-clamp-2">
+                      {card.title}
+                    </h5>
                   </div>
-                  <h5 className="font-display text-xs font-semibold text-ink line-clamp-2">
-                    {card.title}
-                  </h5>
-                </div>
 
-                <div className="flex items-center justify-between border-t border-hairline/40 pt-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedUnscheduledCard(
-                        selectedUnscheduledCard === card.id ? null : card.id,
-                      )
-                    }
-                    className="flex items-center gap-1 text-micro font-medium text-ember transition-colors hover:underline"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                      <rect width="18" height="18" x="3" y="4" rx="2" />
-                      <path d="M16 2v4" />
-                      <path d="M8 2v4" />
-                      <path d="M3 10h18" />
-                      <path d="M12 14v4" />
-                      <path d="M10 16h4" />
-                    </svg>
-                    <span>Jadwalkan</span>
-                  </button>
-
-                  {onOpenCard && (
+                  <div className="flex items-center justify-between border-t border-hairline/60 pt-2.5">
                     <button
                       type="button"
-                      onClick={() => onOpenCard(card)}
-                      className="text-micro text-muted transition-colors hover:text-ink font-medium"
+                      onClick={() =>
+                        setSelectedUnscheduledCard(
+                          selectedUnscheduledCard === card.id ? null : card.id,
+                        )
+                      }
+                      className="flex items-center gap-1.5 rounded-lg border border-ember/30 bg-ember/10 px-2.5 py-1 text-micro font-bold text-ember transition-colors hover:bg-ember/20"
                     >
-                      Buka Kartu
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                        <rect width="18" height="18" x="3" y="4" rx="2" />
+                        <path d="M16 2v4" />
+                        <path d="M8 2v4" />
+                        <path d="M3 10h18" />
+                      </svg>
+                      <span>Atur Jadwal</span>
                     </button>
+
+                    {onOpenCard && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenCard(card)}
+                        className="text-micro font-medium text-muted transition-colors hover:text-ink"
+                      >
+                        Buka Detail →
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Date Picker Popover Grid */}
+                  {selectedUnscheduledCard === card.id && (
+                    <div className="mt-1 flex flex-col gap-2 rounded-xl border border-hairline bg-surface p-2.5 shadow-md">
+                      <p className="text-[10px] font-semibold text-ink">
+                        Pilih Hari Minggu Ini:
+                      </p>
+                      <div className="grid grid-cols-4 gap-1 sm:grid-cols-7">
+                        {weekDays.map((d) => (
+                          <button
+                            key={d.dateStr}
+                            type="button"
+                            onClick={() => handleAssignDate(card.id, d.dateStr)}
+                            disabled={isUpdatingDate === card.id}
+                            className={`rounded-lg border px-1.5 py-1.5 text-center transition-colors disabled:opacity-50 ${
+                              d.isToday
+                                ? "border-ember/60 bg-ember/15 text-ember font-bold"
+                                : "border-hairline bg-surface-raised text-ink hover:border-ember/40 hover:text-ember"
+                            }`}
+                          >
+                            <p className="text-[9px] uppercase text-muted leading-none">
+                              {INDO_DAYS[d.date.getDay()].slice(0, 3)}
+                            </p>
+                            <p className="font-mono text-xs font-bold mt-0.5 leading-none">
+                              {d.date.getDate()}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {/* Quick Date Picker Popover */}
-                {selectedUnscheduledCard === card.id && (
-                  <div className="mt-1 flex flex-wrap gap-1 rounded-lg border border-hairline bg-surface p-2">
-                    <p className="w-full text-[10px] font-semibold text-muted">
-                      Pilih Hari Minggu Ini:
-                    </p>
-                    {weekDays.map((d) => (
-                      <button
-                        key={d.dateStr}
-                        type="button"
-                        onClick={() => handleAssignDate(card.id, d.dateStr)}
-                        disabled={isUpdatingDate === card.id}
-                        className="rounded border border-hairline bg-surface-raised px-2 py-1 text-[10px] font-medium text-ink transition-colors hover:border-ember hover:text-ember disabled:opacity-50"
-                      >
-                        {INDO_DAYS[d.date.getDay()].slice(0, 3)} ({d.date.getDate()})
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
