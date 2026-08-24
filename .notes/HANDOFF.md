@@ -35,8 +35,18 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Konsep A Energy Conduit & Sonar Beacon (§9z.35).
-**Newest work is §9z.35 — Konsep A Energy Conduit & Sonar Beacon: (1) In `src/components/landing/CreatorJourney.tsx`, completely implemented Konsep A featuring a vertical 80px energy conduit rail with a downward-traveling photon beam, a multi-ring sonar pulse beacon (`size-10` glass puck with staggered sonar waves), and an interactive click-to-scroll button; (2) Added clear interactive micro-label ("Telusuri Alur Kreator ↓") with smooth auto-scroll to `#journey-content`; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.35, then §9z.34.
+Last updated: **2026-08-24**, after Removal of Gimmick Arrow & Clean Editorial Flow (§9z.36).
+**Newest work is §9z.36 — Removal of Gimmick Arrow & Clean Editorial Flow: (1) In `src/components/landing/CreatorJourney.tsx`, completely removed the artificial arrow / beacon / connector widget to establish a natural, high-end editorial transition between Hero and Creator Journey; (2) Centered the section header with clean vertical breathing room (`pt-8 sm:pt-14`), eliminating visual distraction; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.36, then §9z.35.
+
+---
+
+## §9z.36 — Removal of Gimmick Arrow & Clean Editorial Flow (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Clean Section Flow:**
+   - Removed artificial arrow/beacon widgets in favor of clean editorial spacing and visual continuation.
 
 ---
 
