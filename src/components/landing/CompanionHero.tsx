@@ -17,55 +17,36 @@ export function CompanionHero() {
         <div className="flex flex-col lg:grid lg:grid-cols-12 lg:items-center lg:gap-12">
           
           {/* =========================================================================
-              LEFT COLUMN: Product Headline, 2x2 Symmetric Magic Bar, and CTAs (7 Cols)
+              LEFT COLUMN: Product Headline, 2x2 Magic Bar, and Fast CTAs (7 Cols)
              ========================================================================= */}
           <div className="flex flex-col items-start lg:col-span-7">
-            {/* Status Pill with comfortable optical padding (No cramped padding) */}
-            <div
-              className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-4 py-1.5 shadow-xs backdrop-blur-md opacity-0"
-              style={{ animation: "fade-up 0.6s ease-out 0.1s forwards" }}
-            >
+            {/* Status Pill with comfortable optical padding */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-4 py-1.5 shadow-xs backdrop-blur-md">
               <span className="size-1.5 rounded-full bg-ember animate-pulse" />
-              <span className="font-display text-xs font-semibold tracking-wider text-ember uppercase">
+              <span className="font-display text-xs font-semibold tracking-wider text-ember">
                 Teman Kreatif AI
               </span>
             </div>
 
-            {/* Main Headline — staggered word-by-word blur reveal */}
+            {/* Main Headline — Instant Render, No 1s Lag */}
             <h1 className="mt-3.5 font-display text-[clamp(2.2rem,6vw,4rem)] font-extrabold leading-[1.05] tracking-tight text-ink">
-              <span
-                className="inline-block opacity-0"
-                style={{ animation: "hero-word-reveal 0.5s ease-out 0.25s forwards" }}
-              >
-                Males mikirnya.
-              </span>
+              <span>Males mikirnya.</span>
               <br />
-              <span
-                className="inline-block text-gradient-ember opacity-0"
-                style={{ animation: "hero-word-reveal 0.5s ease-out 0.45s forwards" }}
-              >
-                Bukan bikinnya.
-              </span>
+              <span className="text-gradient-ember">Bukan bikinnya.</span>
             </h1>
 
             {/* Casual Brand Subtitle */}
-            <p
-              className="mt-3.5 max-w-lg text-sm sm:text-base lg:text-lg leading-relaxed text-muted opacity-0"
-              style={{ animation: "fade-up 0.6s ease-out 0.7s forwards" }}
-            >
+            <p className="mt-3.5 max-w-lg text-sm sm:text-base lg:text-lg leading-relaxed text-muted">
               Teman kreatif AI yang nemenin lo cari ide, bikin hook pembakar penasaran, tulis script, sampai video siap tayang.
             </p>
 
-            {/* Interactive Magic Topic Bar: 2x2 Symmetric Grid on Mobile, Flex on Desktop */}
-            <div
-              className="mt-5 w-full flex flex-col gap-2.5 rounded-2xl border border-white/[0.08] bg-surface/50 p-4 shadow-sm backdrop-blur-md opacity-0"
-              style={{ animation: "fade-up 0.6s ease-out 0.9s forwards" }}
-            >
+            {/* Interactive Magic Topic Bar: 2x2 Symmetric Grid on Mobile */}
+            <div className="mt-5 w-full flex flex-col gap-2.5 rounded-2xl border border-white/[0.08] bg-surface/50 p-4 shadow-sm backdrop-blur-md">
               <div className="flex items-center justify-between">
-                <span className="font-display text-xs font-semibold text-ember uppercase tracking-wider">
+                <span className="font-display text-xs font-semibold text-ember">
                   Coba Pilih Ide Contoh:
                 </span>
-                <span className="font-display text-xs text-muted/70 font-medium">
+                <span className="font-display text-xs text-muted font-medium">
                   Simulasi Live Studio
                 </span>
               </div>
@@ -91,9 +72,7 @@ export function CompanionHero() {
               </div>
             </div>
 
-            {/* =========================================================================
-                MOBILE ONLY: Living AI Scene directly under Magic Topic Bar
-               ========================================================================= */}
+            {/* MOBILE ONLY: Living AI Scene */}
             <div className="flex justify-center my-5 lg:hidden w-full">
               <LivingStudioCanvas
                 activePresetId={selectedTopicId}
@@ -101,11 +80,8 @@ export function CompanionHero() {
               />
             </div>
 
-            {/* Clean Solid CTA Buttons — Polished SVG Vector Icons */}
-            <div
-              className="mt-2 sm:mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center opacity-0"
-              style={{ animation: "fade-up 0.6s ease-out 1.1s forwards" }}
-            >
+            {/* Clean Solid CTA Buttons */}
+            <div className="mt-2 sm:mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
               <TransitionButton
                 href="/masuk"
                 variant="primary"
@@ -147,10 +123,7 @@ export function CompanionHero() {
 
             {/* Trust Badges */}
             {/* Desktop Horizontal Badges */}
-            <div
-              className="hidden sm:flex mt-7 items-center gap-3 border-t border-white/[0.06] pt-4 text-xs text-muted opacity-0"
-              style={{ animation: "fade-up 0.5s ease-out 1.3s forwards" }}
-            >
+            <div className="hidden sm:flex mt-7 items-center gap-3 border-t border-white/[0.06] pt-4 text-xs text-muted">
               <div className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-surface/40 px-3.5 py-1.5 font-medium">
                 <span className="text-ember font-bold">✓</span>
                 <span><strong className="text-ink">10 kredit gratis</strong> tiap hari</span>
@@ -166,10 +139,7 @@ export function CompanionHero() {
             </div>
 
             {/* Mobile 3 Compact Badges */}
-            <div
-              className="grid sm:hidden grid-cols-3 gap-2 mt-4 w-full border-t border-white/[0.06] pt-3 text-[11px] opacity-0"
-              style={{ animation: "fade-up 0.5s ease-out 1.2s forwards" }}
-            >
+            <div className="grid sm:hidden grid-cols-3 gap-2 mt-4 w-full border-t border-white/[0.06] pt-3 text-[11px]">
               <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">10 Kredit</span>
                 <span className="text-[10px] text-muted">Gratis Tiap Hari</span>
@@ -185,13 +155,8 @@ export function CompanionHero() {
             </div>
           </div>
 
-          {/* =========================================================================
-              DESKTOP ONLY: Living AI Studio Canvas (5 Cols)
-             ========================================================================= */}
-          <div
-            className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center opacity-0"
-            style={{ animation: "scale-in 0.7s ease-out 0.3s forwards" }}
-          >
+          {/* DESKTOP ONLY: Living AI Studio Canvas */}
+          <div className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center">
             <LivingStudioCanvas
               activePresetId={selectedTopicId}
               onSelectPreset={(id) => setSelectedTopicId(id)}

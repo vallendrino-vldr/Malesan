@@ -35,8 +35,24 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Impeccable Anti-Pattern Remediation & Security Shield (§9z.31).
-**Newest work is §9z.31 — Impeccable Anti-Pattern Remediation & Security Shield: (1) Systematically cleaned all 34 anti-patterns flagged by the Impeccable scanner: eliminated overused `font-mono` on badges, titles, and card bodies across all landing components (`LivingStudioCanvas.tsx`, `CompanionHero.tsx`, `CreatorJourney.tsx`, `CreatorActivityTicker.tsx`, `CompactCTA.tsx`, `page.tsx`), reserving mono strictly for genuine timestamp markers (`00:00`); (2) Removed generic looping bounce animations (`animate-bounce` / `bounce-gentle`) from mascot and speech bubbles, replacing them with serene micro-scale respiration and pointer gaze physics; (3) Removed destructive image scaling transforms from `src/components/Logo.tsx`; (4) Refined cramped badge padding to balanced optical padding (`px-4 py-1.5`); (5) Upgraded borders to subtle physical hairline layers (`border-white/[0.08]`); (6) Added `SECURITY_SHIELD_SCRIPT` to `src/lib/boot-scripts.ts` and `layout.tsx`; (7) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.31, then §9z.30.
+Last updated: **2026-08-24**, after Zero-Anti-Pattern Polish & Fixed Window Height Lock (§9z.32).
+**Newest work is §9z.32 — Zero-Anti-Pattern Polish & Fixed Window Height Lock: (1) In `src/components/landing/LivingStudioCanvas.tsx`, locked the bottom holographic workspace window to a fixed height (`h-[172px] sm:h-[180px]`) with smooth cross-fade transitions, eliminating layout jumping/scale jitter when switching between topics/steps; (2) In `src/components/landing/CompanionHero.tsx`, eliminated artificial 1.1s-1.3s animation delays, making the entire landing page load and render instantly (0s delay); (3) In `src/components/landing/CreatorJourney.tsx`, flattened the 3-layer nested card structure into a clean editorial layout (left story directly on surface, right single preview stage); (4) In `src/components/landing/CreatorActivityTicker.tsx`, replaced rainbow AI avatars with a cohesive warm brand palette (Amber, Charcoal, Sand, Bronze) and Title Case; (5) In `src/components/landing/ThreeCanvas.tsx`, added 60 FPS living breathing atmospheric glow cycles; (6) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.32, then §9z.31.
+
+---
+
+## §9z.32 — Zero-Anti-Pattern Polish & Fixed Window Height Lock (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Fixed Window Height Lock (`LivingStudioCanvas.tsx`):**
+   - Locked bottom workspace window to `h-[172px] sm:h-[180px]` with `overflow-hidden` and clean cross-fading.
+2. **Instant Render (`CompanionHero.tsx`):**
+   - Removed artificial CSS animation delays to make page load instantaneous.
+3. **Flattened Editorial Journey (`CreatorJourney.tsx`):**
+   - Eliminated Russian-doll nested cards.
+4. **Cohesive Palette (`CreatorActivityTicker.tsx`):**
+   - Replaced rainbow gradients with warm monochromatic brand tones.
 
 ---
 

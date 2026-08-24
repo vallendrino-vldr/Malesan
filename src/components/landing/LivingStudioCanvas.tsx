@@ -79,47 +79,47 @@ const TIMELINE_STATES: HeroTimelineState[] = [
   {
     id: "standby",
     stepNum: "01",
-    badge: "MENUNGGU TOPIK",
+    badge: "Menunggu Topik",
     headline: "Layar kosong lagi?",
-    subtext: "Pilih atau sebut topik konten pertama lo.",
+    subtext: "Pilih topik konten pertama lo di atas.",
     mood: "sleepy",
     borderColor: "border-white/[0.08]",
   },
   {
     id: "thinking",
     stepNum: "02",
-    badge: "MEMINDAI TREN LOKAL",
+    badge: "Memindai Tren Lokal",
     headline: "Menyaring Pola Viral Indonesia",
     subtext: "Mencocokkan gaya bahasa santai audiens lo.",
     mood: "thinking",
-    borderColor: "border-ember/35",
+    borderColor: "border-ember/30",
   },
   {
     id: "ideas",
     stepNum: "03",
-    badge: "3 SUDUT PANDANG MATANG",
+    badge: "3 Sudut Pandang Matang",
     headline: "3 Pilihan Sudut Pandang",
     subtext: "Pilih angle yang paling pas buat karakter lo.",
     mood: "ideas",
-    borderColor: "border-amber-500/35",
+    borderColor: "border-amber-500/30",
   },
   {
     id: "script",
     stepNum: "04",
-    badge: "NASKAH 45 DETIK SIAP",
+    badge: "Naskah 45 Detik Siap",
     headline: "Alur Video Siap Rekam",
-    subtext: "Lengkap dengan Hook, Masalah, Solusi & CTA.",
+    subtext: "Lengkap Hook, Masalah, Solusi & CTA.",
     mood: "script",
-    borderColor: "border-ember/40",
+    borderColor: "border-ember/35",
   },
   {
     id: "ready",
     stepNum: "05",
-    badge: "KONTEN SIAP TAYANG ✓",
+    badge: "Konten Siap Tayang ✓",
     headline: "Tinggal Rekam & Upload!",
     subtext: "Subtitle sinkron otomatis per kata.",
     mood: "ready",
-    borderColor: "border-emerald-500/35",
+    borderColor: "border-emerald-500/30",
   },
 ];
 
@@ -145,7 +145,7 @@ export function LivingStudioCanvas({
     setTimeout(() => {
       setActiveStep(idx);
       setIsTransitioning(false);
-    }, 180);
+    }, 150);
   }, []);
 
   // 16-Second State Machine Loop
@@ -160,13 +160,13 @@ export function LivingStudioCanvas({
       setTimeout(() => {
         setActiveStep((prev) => (prev + 1) % TIMELINE_STATES.length);
         setIsTransitioning(false);
-      }, 200);
+      }, 180);
     }, duration);
 
     return () => clearTimeout(timer);
   }, [activeStep, isPaused]);
 
-  // Desktop Mouse Gaze & Parallax Tracking
+  // Parallax Pointer Tracking
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -177,10 +177,10 @@ export function LivingStudioCanvas({
       const normY = (e.clientY - rect.top) / rect.height - 0.5;
 
       setMouseGaze({
-        x: normX * 14,
-        y: normY * 10,
-        angleX: -normY * 6,
-        angleY: normX * 8,
+        x: normX * 12,
+        y: normY * 8,
+        angleX: -normY * 5,
+        angleY: normX * 6,
       });
     };
 
@@ -198,19 +198,18 @@ export function LivingStudioCanvas({
   }, []);
 
   const current = TIMELINE_STATES[activeStep];
-  const isWorking = current.mood === "thinking" || current.mood === "script" || current.mood === "ideas";
 
   return (
     <div
       ref={containerRef}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      className={`relative flex w-full max-w-[480px] min-h-[350px] sm:min-h-[460px] flex-col items-center justify-between rounded-3xl border border-white/[0.08] bg-surface/50 p-4 sm:p-6 shadow-2xl backdrop-blur-xl transition-all duration-300 select-none ${className}`}
+      className={`relative flex w-full max-w-[480px] flex-col items-center justify-between rounded-3xl border border-white/[0.08] bg-surface/55 p-4 sm:p-6 backdrop-blur-xl transition-all duration-300 select-none ${className}`}
       style={{
-        transform: `perspective(1200px) rotateY(${mouseGaze.angleY * 0.3}deg) rotateX(${mouseGaze.angleX * 0.3}deg)`,
+        transform: `perspective(1000px) rotateY(${mouseGaze.angleY * 0.25}deg) rotateX(${mouseGaze.angleX * 0.25}deg)`,
       }}
     >
-      {/* Top Control Bar: Status Indicator & 5 Interactive Steps */}
+      {/* Top Control Bar: Status & Step Progress */}
       <div className="relative z-20 flex w-full items-center justify-between border-b border-white/[0.06] pb-2.5 sm:pb-3">
         <div className="flex items-center gap-2">
           <span
@@ -219,7 +218,7 @@ export function LivingStudioCanvas({
               backgroundColor: current.id === "ready" ? "#6fcf97" : "#ff8a3d",
             }}
           />
-          <span className="font-display text-[10px] sm:text-xs font-semibold text-ember uppercase tracking-wider transition-all duration-300">
+          <span className="font-display text-xs font-semibold text-ember transition-all duration-300">
             {current.badge}
           </span>
         </div>
@@ -237,92 +236,94 @@ export function LivingStudioCanvas({
                   ? "w-4 sm:w-5 bg-ember"
                   : activeStep > idx
                     ? "w-2 sm:w-2.5 bg-ember/50"
-                    : "w-1.5 bg-muted/30 hover:bg-ember/40"
+                    : "w-1.5 bg-white/10 hover:bg-ember/40"
               }`}
             />
           ))}
         </div>
       </div>
 
-      {/* Central Serene Living Mascot with Smooth Gaze (No Violent Elastic Bounce) */}
-      <div className="relative z-10 my-3 sm:my-5 flex flex-col items-center">
+      {/* Central Living Mascot with Gaze Tracking & Breathing Float */}
+      <div className="relative z-10 my-3 sm:my-4 flex flex-col items-center">
         <div
-          className="relative size-28 sm:size-36 transition-transform duration-300 ease-out"
+          className="relative size-28 sm:size-34 transition-transform duration-300 ease-out"
           style={{
-            transform: `translate(${mouseGaze.x * 0.35}px, ${mouseGaze.y * 0.25}px)`,
+            transform: `translate(${mouseGaze.x * 0.3}px, ${mouseGaze.y * 0.2}px)`,
           }}
         >
           <Mascot
             mood={current.mood}
-            className="size-full filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.6)]"
+            className="size-full filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]"
           />
         </div>
 
-        {/* Workspace Pedestal */}
-        <div className="mt-2 flex flex-col items-center">
-          <div className="w-24 sm:w-32 h-1 rounded-full bg-ember/30" />
-        </div>
+        {/* Mascot Ground Anchor */}
+        <div className="mt-1.5 w-20 sm:w-28 h-0.5 rounded-full bg-ember/25" />
       </div>
 
-      {/* Workspace Window with Active Topic Content */}
+      {/* =========================================================================
+          LOCKED FIXED-HEIGHT WORKSPACE WINDOW (NO JUMPING / NO SCALE SHIFT)
+         ========================================================================= */}
       <div
-        className={`relative z-20 w-full rounded-2xl border p-3.5 sm:p-4 backdrop-blur-md transition-all duration-300 ${current.borderColor} ${
-          current.id === "ready" ? "bg-emerald-500/10" : "bg-surface/60"
+        className={`relative z-20 w-full h-[172px] sm:h-[180px] rounded-2xl border p-3.5 sm:p-4 backdrop-blur-md transition-all duration-300 flex flex-col justify-between overflow-hidden ${current.borderColor} ${
+          current.id === "ready" ? "bg-emerald-500/[0.07]" : "bg-surface-raised/80"
         }`}
         style={{
-          transform: `translate(${-mouseGaze.x * 0.2}px, ${-mouseGaze.y * 0.2}px)`,
-          opacity: isTransitioning ? 0.3 : 1,
+          transform: `translate(${-mouseGaze.x * 0.15}px, ${-mouseGaze.y * 0.15}px)`,
         }}
       >
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5">
-          <span className="font-display text-[10px] font-semibold text-ember uppercase tracking-wider">
-            Tahap {current.stepNum} · Ruang Kerja Malesan
-          </span>
-          <span className="font-display text-[10px] text-muted font-medium">TERSINKRON</span>
+        {/* Header Row */}
+        <div>
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5">
+            <span className="font-display text-[10px] font-semibold text-ember">
+              Tahap {current.stepNum} · Ruang Kerja Malesan
+            </span>
+            <span className="font-display text-[10px] text-muted font-medium">Tersinkron</span>
+          </div>
+
+          <p className="mt-1.5 font-display text-sm font-bold text-ink truncate">
+            {current.headline}
+          </p>
+          <p className="text-xs text-muted truncate">
+            {current.subtext}
+          </p>
         </div>
 
-        <p className="mt-2 font-display text-sm font-bold text-ink">
-          {current.headline}
-        </p>
-        <p className="mt-0.5 text-xs text-muted">
-          {current.subtext}
-        </p>
-
-        {/* Hologram Body per State */}
+        {/* Content Body with Instant Cross-Fade */}
         <div
-          className="mt-2.5 transition-all duration-200"
+          className="mt-1.5 transition-all duration-150"
           style={{
             opacity: isTransitioning ? 0 : 1,
-            transform: isTransitioning ? "translateY(4px)" : "translateY(0)",
+            transform: isTransitioning ? "translateY(3px)" : "translateY(0)",
           }}
         >
           {/* 01: Standby */}
           {current.id === "standby" && (
-            <div className="rounded-xl border border-white/[0.06] bg-obsidian/70 px-3 py-2 text-xs text-muted flex items-center gap-2">
-              <span className="size-1.5 rounded-full bg-muted/40" />
+            <div className="rounded-xl border border-white/[0.06] bg-obsidian/75 px-3 py-2 text-xs text-muted flex items-center gap-2">
+              <span className="size-1.5 rounded-full bg-muted/40 shrink-0" />
               <span className="truncate">Topik aktif: &ldquo;{activeTopic.topicName}&rdquo;</span>
             </div>
           )}
 
           {/* 02: Thinking */}
           {current.id === "thinking" && (
-            <div className="space-y-1 rounded-xl border border-ember/25 bg-ember/10 p-2.5 text-xs text-ember">
+            <div className="space-y-1 rounded-xl border border-ember/20 bg-ember/10 p-2 text-xs text-ember">
               <div className="flex items-center justify-between font-medium">
-                <span>› Menganalisis angle viral: {activeTopic.label}</span>
-                <span className="size-1.5 rounded-full bg-ember animate-pulse shrink-0" />
+                <span className="truncate">› Menganalisis angle viral: {activeTopic.label}</span>
+                <span className="size-1.5 rounded-full bg-ember animate-pulse shrink-0 ml-1" />
               </div>
-              <p className="text-muted text-[11px]">
-                › Mengunci hook 3 detik & format video vertikal 9:16
+              <p className="text-muted text-[11px] truncate">
+                › Mengunci hook 3 detik & rasio video 9:16
               </p>
             </div>
           )}
 
           {/* 03: Ideas Found */}
           {current.id === "ideas" && (
-            <div className="space-y-1 rounded-xl border border-white/[0.06] bg-obsidian/85 p-2.5 text-xs">
-              {activeTopic.angles.map((angle, idx) => (
-                <div key={idx} className={`flex items-center gap-2 ${idx === 0 ? "text-ember-lo font-semibold" : "text-muted"}`}>
-                  <span className={idx === 0 ? "text-ember font-bold" : "text-muted/70"}>{idx + 1}.</span>
+            <div className="space-y-1 rounded-xl border border-white/[0.06] bg-obsidian/85 p-2 text-xs">
+              {activeTopic.angles.slice(0, 2).map((angle, idx) => (
+                <div key={idx} className={`flex items-center gap-2 truncate ${idx === 0 ? "text-ember font-semibold" : "text-muted"}`}>
+                  <span className="shrink-0">{idx + 1}.</span>
                   <span className="truncate">{angle}</span>
                 </div>
               ))}
@@ -331,43 +332,33 @@ export function LivingStudioCanvas({
 
           {/* 04: Script Breakdown */}
           {current.id === "script" && (
-            <div className="rounded-xl border border-ember/30 bg-obsidian/90 p-2.5 text-xs space-y-1">
-              <div className="flex items-center justify-between text-ember font-semibold text-[10px] border-b border-white/[0.06] pb-1">
-                <span>ALUR VIDEO 45 DETIK</span>
-                <span>SIAP SYUTING</span>
+            <div className="rounded-xl border border-ember/25 bg-obsidian/90 p-2 text-xs space-y-0.5">
+              <div className="flex items-center justify-between text-ember font-semibold text-[10px] border-b border-white/[0.06] pb-0.5">
+                <span>Alur Naskah 45 Detik</span>
+                <span>Siap Rekam</span>
               </div>
-              <div className="space-y-1 text-xs leading-tight pt-0.5">
-                <p className="text-ink/95 truncate">
-                  <span className="font-mono text-[11px] text-ember font-bold">00:00 HOOK:</span> &ldquo;{activeTopic.scriptHook}&rdquo;
-                </p>
-                <p className="text-muted truncate">
-                  <span className="font-mono text-[11px] text-muted/80 font-semibold">00:05 MASALAH:</span> Langsung to-the-point bongkar kendala utama
-                </p>
-                <p className="text-muted truncate">
-                  <span className="font-mono text-[11px] text-muted/80 font-semibold">00:20 SOLUSI:</span> 3 langkah taktis praktis tanpa teori bertele-tele
-                </p>
-                <p className="text-ember-lo truncate">
-                  <span className="font-mono text-[11px] text-ember font-semibold">00:40 CTA:</span> &ldquo;Simpan video ini biar ga lupa pas butuh!&rdquo;
-                </p>
-              </div>
+              <p className="text-ink truncate pt-0.5 text-xs">
+                <span className="font-mono text-[11px] text-ember font-semibold">00:00</span> &ldquo;{activeTopic.scriptHook}&rdquo;
+              </p>
+              <p className="text-muted truncate text-[11px]">
+                <span className="font-mono text-[11px] text-muted/70 font-semibold">00:05</span> Masalah utama & solusi taktis
+              </p>
             </div>
           )}
 
           {/* 05: Ready / Siap Tayang */}
           {current.id === "ready" && (
-            <div className="rounded-xl border border-emerald-500/25 bg-obsidian/90 p-2.5 text-xs space-y-1">
+            <div className="rounded-xl border border-emerald-500/25 bg-obsidian/90 p-2 text-xs space-y-0.5">
               <div className="flex items-center justify-between text-emerald-400 font-semibold text-[10px]">
-                <span>✓ KONTEN SELESAI DISIAPKAN</span>
-                <span>LANGSUNG TAYANG</span>
+                <span>✓ Konten Selesai Disiapkan</span>
+                <span>Langsung Tayang</span>
               </div>
-              <div className="space-y-1 pt-0.5 text-xs">
-                <p className="text-ink/90 truncate">
-                  <strong className="text-emerald-400 font-medium">TikTok & Reels:</strong> Video 9:16 + Subtitle Sinkron Kata
-                </p>
-                <p className="text-ember-lo truncate">
-                  <strong className="text-ember font-medium">Threads & X:</strong> Utas 5 Postingan Ringkas Siap Share
-                </p>
-              </div>
+              <p className="text-ink truncate pt-0.5 text-xs">
+                <strong className="text-emerald-400 font-medium">TikTok/Reels:</strong> Subtitle Sinkron Kata
+              </p>
+              <p className="text-muted truncate text-[11px]">
+                <strong className="text-ember font-medium">Threads/X:</strong> Utas 5 Postingan Ringkas
+              </p>
             </div>
           )}
         </div>
