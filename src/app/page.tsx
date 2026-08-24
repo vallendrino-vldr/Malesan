@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompanionHero } from "@/components/landing/CompanionHero";
 import { CreatorJourney } from "@/components/landing/CreatorJourney";
 import { CreatorActivityTicker } from "@/components/landing/CreatorActivityTicker";
@@ -15,9 +14,9 @@ export default function Home() {
         className="pointer-events-none absolute inset-x-0 top-0 h-[480px] bg-[radial-gradient(60%_100%_at_50%_0%,var(--ambient-glow-strong),transparent_70%)]"
       />
 
-      {/* Clean Global Header with Breathing Room */}
-      <header className="relative z-20 border-b border-hairline/60 bg-obsidian/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 lg:h-[72px] w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-8">
+      {/* Clean Global Header — Seamless Dark Cinematic Navbar */}
+      <header className="relative z-20 border-b border-hairline/50 bg-obsidian/60 backdrop-blur-md">
+        <div className="mx-auto flex h-16 lg:h-[72px] w-full max-w-6xl items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
           <Link
             href="/"
             aria-label="Malesan — AI Creative Companion"
@@ -35,11 +34,10 @@ export default function Home() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <ThemeToggle />
+          <div className="flex items-center gap-3">
             <Link
               href="/masuk"
-              className="flex h-10 items-center justify-center rounded-full border border-hairline/80 bg-surface/80 px-5 font-display text-xs sm:text-sm font-semibold text-ink shadow-xs transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember-lo"
+              className="flex h-10 items-center justify-center rounded-full border border-hairline/80 bg-surface/80 px-6 font-display text-xs sm:text-sm font-semibold text-ink shadow-xs transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember-lo"
             >
               Masuk
             </Link>
@@ -47,7 +45,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Living Companion Experience (Compact 1.5–2 Viewports Total) */}
+      {/* Main Living Companion Experience */}
       <main className="relative z-10 flex-1">
         {/* Section 1: Hero Experience (Living AI Studio Workspace + Headline + CTA) */}
         <CompanionHero />
@@ -63,17 +61,18 @@ export default function Home() {
       </main>
 
       {/* Spacious Minimal Footer */}
-      <footer className="relative z-10 border-t border-hairline/70 bg-obsidian py-8 sm:py-10">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-4 px-5 sm:flex-row sm:px-8">
-          <div className="flex flex-col sm:flex-row items-center gap-3 text-center sm:text-left">
-            <Logo markClass="h-7" />
-            <span className="text-hairline hidden sm:inline">|</span>
-            <p className="text-micro text-muted">
+      <footer className="relative z-10 border-t border-hairline/70 bg-obsidian py-10 sm:py-12">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-6 px-5 sm:flex-row sm:px-8">
+          {/* Brand & Tagline with comfortable spacing */}
+          <div className="flex flex-col items-center sm:items-start gap-2.5 text-center sm:text-left">
+            <Logo markClass="h-8" />
+            <p className="text-xs text-muted max-w-sm">
               AI Creative Companion untuk kreator konten Indonesia.
             </p>
           </div>
 
-          <div className="flex items-center gap-5 text-xs text-muted">
+          {/* Links & Copyright */}
+          <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6 text-xs text-muted">
             <Link href="/privasi" className="transition-colors hover:text-ink">
               Privasi
             </Link>

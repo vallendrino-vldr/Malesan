@@ -11,61 +11,67 @@ type HeroTimelineState = {
   badge: string;
   headline: string;
   subtext: string;
-  isWorking: boolean;
-  glowColor: string;
-  hologramColor: string;
+  mood: "sleepy" | "thinking" | "ideas" | "script" | "ready";
+  glowIntensity: number;
+  glowHue: string;
+  borderColor: string;
 };
 
 const TIMELINE_STATES: HeroTimelineState[] = [
   {
     id: "standby",
     stepNum: "01",
-    badge: "STANDBY",
+    badge: "MENUNGGU TOPIK",
     headline: "Layar kosong lagi?",
-    subtext: "Nunggu ide pertama lo.",
-    isWorking: false,
-    glowColor: "rgba(255, 138, 61, 0.15)",
-    hologramColor: "border-hairline/70 bg-surface/50",
+    subtext: "Sebut topik atau ide pertama lo.",
+    mood: "sleepy",
+    glowIntensity: 0.15,
+    glowHue: "rgba(255, 138, 61, 0.12)",
+    borderColor: "border-hairline/50",
   },
   {
     id: "thinking",
     stepNum: "02",
-    badge: "LAGI MIKIR...",
-    headline: "Lagi cari arah...",
-    subtext: "Nyaring tren yang cocok buat lo.",
-    isWorking: true,
-    glowColor: "rgba(255, 138, 61, 0.35)",
-    hologramColor: "border-ember/40 bg-ember/10",
+    badge: "LAGI MIKIRIN ARAH...",
+    headline: "Nyaring 100+ Tren Lokal",
+    subtext: "Mencari sudut pandang terbaik buat audiens lo.",
+    mood: "thinking",
+    glowIntensity: 0.55,
+    glowHue: "rgba(255, 138, 61, 0.45)",
+    borderColor: "border-ember/40",
   },
   {
     id: "ideas",
     stepNum: "03",
-    badge: "IDE DITEMUKAN",
-    headline: "3 Angle Konten Muncul",
-    subtext: "Bukan prompt mentah, tapi sudut pandang matang.",
-    isWorking: true,
-    glowColor: "rgba(255, 184, 108, 0.4)",
-    hologramColor: "border-amber-500/40 bg-amber-500/10",
+    badge: "IDE TERBENTUK",
+    headline: "3 Pilihan Sudut Pandang",
+    subtext: "Tinggal pilih angle yang paling lo suka.",
+    mood: "ideas",
+    glowIntensity: 0.7,
+    glowHue: "rgba(255, 184, 108, 0.5)",
+    borderColor: "border-amber-500/40",
   },
   {
     id: "script",
     stepNum: "04",
-    badge: "NASKAH SELESAI",
-    headline: "Script 45s Siap Syuting",
-    subtext: "Lengkap timestamp, visual cue & kalimat hook.",
-    isWorking: true,
-    glowColor: "rgba(255, 138, 61, 0.45)",
-    hologramColor: "border-ember/50 bg-obsidian/90",
+    badge: "NASKAH DISUSUN",
+    headline: "Alur Video 45 Detik",
+    subtext: "Hook, masalah, solusi & CTA siap rekam.",
+    mood: "script",
+    glowIntensity: 0.8,
+    glowHue: "rgba(255, 138, 61, 0.55)",
+    borderColor: "border-ember/50",
   },
   {
     id: "ready",
     stepNum: "05",
-    badge: "SIAP TAYANG",
-    headline: "Video & Subtitle Siap!",
-    subtext: "Auto-CC menyinkronkan subtitle per kata.",
-    isWorking: false,
-    glowColor: "rgba(111, 207, 151, 0.35)",
-    hologramColor: "border-emerald-500/40 bg-emerald-500/10",
+    badge: "SIAP TAYANG ✓",
+    headline: "Tinggal Rekam & Upload!",
+    subtext: "Subtitle sinkron otomatis per kata.",
+    mood: "ready",
+    glowIntensity: 0.65,
+    glowHue: "rgba(111, 207, 151, 0.45)",
+    borderColor: "border-emerald-500/40",
   },
 ];
 
@@ -78,13 +84,9 @@ export function LivingStudioCanvas({
   const [activeStep, setActiveStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [mouseParallax, setMouseParallax] = useState({ x: 0, y: 0 });
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // 18-Second State Machine Loop:
-  // State 1: 0 - 3s (3000ms) -> Standby
-  // State 2: 3 - 7s (4000ms) -> Thinking
-  // State 3: 7 - 11s (4000ms) -> Ideas Found
-  // State 4: 11 - 15s (4000ms) -> Script Ready
-  // State 5: 15 - 18s (3000ms) -> Ready
+  // 18-Second State Machine Loop
   useEffect(() => {
     if (isPaused) return;
 
@@ -92,13 +94,17 @@ export function LivingStudioCanvas({
     const duration = durations[activeStep] || 3500;
 
     const timer = setTimeout(() => {
-      setActiveStep((prev) => (prev + 1) % TIMELINE_STATES.length);
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActiveStep((prev) => (prev + 1) % TIMELINE_STATES.length);
+        setIsTransitioning(false);
+      }, 250);
     }, duration);
 
     return () => clearTimeout(timer);
   }, [activeStep, isPaused]);
 
-  // Desktop Mouse Parallax (subtle 3D perspective tracking)
+  // Desktop Mouse Parallax
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -124,6 +130,7 @@ export function LivingStudioCanvas({
   }, []);
 
   const current = TIMELINE_STATES[activeStep];
+  const isWorking = current.mood === "thinking" || current.mood === "script" || current.mood === "ideas";
 
   return (
     <div
@@ -135,22 +142,57 @@ export function LivingStudioCanvas({
         transform: `perspective(1200px) rotateY(${mouseParallax.x * 0.4}deg) rotateX(${-mouseParallax.y * 0.4}deg)`,
       }}
     >
-      {/* 3D Volumetric Stage Lighting Bloom */}
+      {/* 3D Volumetric Stage Lighting */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-80 h-96 blur-3xl rounded-full transition-all duration-700 opacity-75"
-        style={{ backgroundColor: current.glowColor }}
+        className="pointer-events-none absolute -bottom-16 left-1/2 -translate-x-1/2 w-96 h-[420px] blur-3xl rounded-full transition-all duration-700"
+        style={{
+          backgroundColor: current.glowHue,
+          opacity: current.glowIntensity,
+          transform: `scale(${0.8 + current.glowIntensity * 0.4})`,
+        }}
       />
 
-      {/* Holographic Concentric Orbit Rings */}
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-60 rounded-full border border-ember/25 shadow-[0_0_50px_rgba(255,138,61,0.2)]" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-80 rounded-full border border-dashed border-ember/15 animate-[spin_40s_linear_infinite]" />
+      {/* Top celebration glow for ready state */}
+      {current.id === "ready" && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 w-60 h-60 blur-3xl rounded-full bg-emerald-500/20 transition-opacity duration-700"
+        />
+      )}
 
-      {/* Top Holographic Sequence Controller */}
+      {/* Concentric Orbit Rings */}
+      <div
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-60 rounded-full border shadow-[0_0_50px_rgba(255,138,61,0.2)] transition-all duration-500"
+        style={{
+          borderColor: isWorking ? "rgba(255,138,61,0.35)" : "rgba(255,138,61,0.15)",
+          transform: `translate(-50%, -50%) scale(${isWorking ? 1.05 : 1})`,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-80 rounded-full border border-dashed transition-all duration-500"
+        style={{
+          borderColor: isWorking ? "rgba(255,138,61,0.2)" : "rgba(255,138,61,0.08)",
+          animation: isWorking ? "spin 20s linear infinite" : "spin 40s linear infinite",
+        }}
+      />
+
+      {/* Top Controller with Natural Indonesian Labels */}
       <div className="relative z-20 flex w-full items-center justify-between border-b border-hairline/60 pb-3">
         <div className="flex items-center gap-2">
-          <span className="size-2 rounded-full bg-ember animate-ping" />
-          <span className="font-mono text-[10px] font-bold text-ember uppercase tracking-wider">
+          <span
+            className="size-2 rounded-full transition-colors duration-300"
+            style={{
+              backgroundColor: current.id === "ready" ? "#6fcf97" : "#ff8a3d",
+              boxShadow: isWorking
+                ? "0 0 8px rgba(255,138,61,0.9)"
+                : current.id === "ready"
+                  ? "0 0 8px rgba(111,207,151,0.8)"
+                  : "0 0 4px rgba(255,138,61,0.4)",
+              animation: isWorking ? "pulse 1s ease-in-out infinite" : "none",
+            }}
+          />
+          <span className="font-mono text-[10px] font-bold text-ember uppercase tracking-wider transition-all duration-300">
             {current.badge}
           </span>
         </div>
@@ -162,50 +204,78 @@ export function LivingStudioCanvas({
               key={idx}
               onClick={() => setActiveStep(idx)}
               aria-label={`Pindah ke status ${idx + 1}`}
-              className={`h-1.5 rounded-full transition-all cursor-pointer ${
+              className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                 activeStep === idx
-                  ? "w-4 bg-ember shadow-[0_0_8px_rgba(255,138,61,0.8)]"
-                  : "w-1.5 bg-muted/30 hover:bg-ember/40"
+                  ? "w-5 bg-ember shadow-[0_0_10px_rgba(255,138,61,0.8)]"
+                  : activeStep > idx
+                    ? "w-2.5 bg-ember/50"
+                    : "w-1.5 bg-muted/30 hover:bg-ember/40"
               }`}
             />
           ))}
         </div>
       </div>
 
-      {/* Central Living Mascot with Holographic Desk Pedestal */}
+      {/* Central Living Mascot with Expressive Mood & Posture */}
       <div className="relative z-10 my-auto flex flex-col items-center">
-        {/* Active Mascot with Parallax and Breathing */}
         <div
-          className="relative size-28 sm:size-32 transition-transform duration-200 animate-[bounce-gentle_4s_ease-in-out_infinite]"
+          className={`relative size-36 sm:size-40 transition-transform duration-300 ${
+            current.mood === "ready"
+              ? "animate-[bounce-gentle_2s_ease-in-out_infinite]"
+              : "animate-[bounce-gentle_3.5s_ease-in-out_infinite]"
+          }`}
           style={{
-            transform: `translate(${mouseParallax.x * 0.5}px, ${mouseParallax.y * 0.4}px)`,
+            transform: `translate(${mouseParallax.x * 0.5}px, ${mouseParallax.y * 0.4}px) ${
+              current.mood === "thinking"
+                ? "rotate(1.5deg)"
+                : current.mood === "ideas"
+                  ? "rotate(-1.5deg) scale(1.02)"
+                  : "rotate(0deg)"
+            }`,
           }}
         >
           <Mascot
-            working={current.isWorking}
+            mood={current.mood}
             className="size-full filter drop-shadow-[0_12px_28px_rgba(0,0,0,0.65)]"
           />
         </div>
 
-        {/* Mini 3D Workspace Pedestal with Warm Glow */}
+        {/* Workspace Pedestal */}
         <div className="mt-2 flex flex-col items-center">
-          <div className="w-36 h-3 rounded-full bg-gradient-to-r from-transparent via-ember/40 to-transparent blur-[1px]" />
-          <div className="w-24 h-1.5 rounded-full bg-ember/60 shadow-[0_0_16px_rgba(255,138,61,0.8)]" />
+          <div
+            className="w-40 h-3 rounded-full bg-gradient-to-r from-transparent via-ember/40 to-transparent blur-[1px] transition-all duration-500"
+            style={{
+              opacity: 0.5 + current.glowIntensity * 0.5,
+              width: `${9 + current.glowIntensity * 2}rem`,
+            }}
+          />
+          <div
+            className="w-28 h-1.5 rounded-full transition-all duration-500"
+            style={{
+              backgroundColor: current.id === "ready" ? "rgba(111,207,151,0.6)" : "rgba(255,138,61,0.6)",
+              boxShadow: current.id === "ready"
+                ? "0 0 20px rgba(111,207,151,0.8)"
+                : `0 0 ${12 + current.glowIntensity * 12}px rgba(255,138,61,${0.5 + current.glowIntensity * 0.4})`,
+            }}
+          />
         </div>
       </div>
 
-      {/* Floating Holographic Output Window (Dynamically Morphs with the State) */}
+      {/* Floating Holographic Workspace Window */}
       <div
-        className={`relative z-20 w-full rounded-2xl border p-4 shadow-lg backdrop-blur-md transition-all duration-300 ${current.hologramColor}`}
+        className={`relative z-20 w-full rounded-2xl border p-4 shadow-lg backdrop-blur-md transition-all duration-500 ${current.borderColor} ${
+          current.id === "ready" ? "bg-emerald-500/10" : current.id === "standby" ? "bg-surface/50" : "bg-ember/10"
+        }`}
         style={{
           transform: `translate(${-mouseParallax.x * 0.3}px, ${-mouseParallax.y * 0.3}px)`,
+          opacity: isTransitioning ? 0.3 : 1,
         }}
       >
         <div className="flex items-center justify-between border-b border-hairline/60 pb-1.5">
           <span className="font-mono text-[9px] font-bold text-ember uppercase tracking-wider">
-            Tahap {current.stepNum} · Living AI Studio
+            Tahap {current.stepNum} · Ruang Kerja Malesan
           </span>
-          <span className="font-mono text-[9px] text-muted">Auto Sync</span>
+          <span className="font-mono text-[9px] text-muted">TERSINKRON</span>
         </div>
 
         <p className="mt-2 font-display text-sm font-bold text-ink">
@@ -215,66 +285,92 @@ export function LivingStudioCanvas({
           {current.subtext}
         </p>
 
-        {/* State-Specific Interactive Output Content */}
-        <div className="mt-2.5">
+        {/* State-Specific Rich Hologram Content */}
+        <div
+          className="mt-2.5 transition-all duration-300"
+          style={{
+            opacity: isTransitioning ? 0 : 1,
+            transform: isTransitioning ? "translateY(6px)" : "translateY(0)",
+          }}
+        >
+          {/* 01: Standby */}
           {current.id === "standby" && (
             <div className="rounded-lg border border-hairline/50 bg-obsidian/60 px-3 py-2 font-mono text-[11px] text-muted flex items-center gap-2">
               <span className="size-1.5 rounded-full bg-muted/40 animate-pulse" />
-              <span>Standby. Sebut niche atau topik konten lo.</span>
+              <span>Contoh: &ldquo;Trik dapet klien remote tanpa portofolio&rdquo;</span>
             </div>
           )}
 
+          {/* 02: Thinking */}
           {current.id === "thinking" && (
-            <div className="rounded-lg border border-ember/30 bg-ember/10 px-3 py-2 font-mono text-[11px] text-ember flex items-center justify-between">
-              <span className="truncate">Menyaring 100+ tren viral Indonesia...</span>
-              <span className="size-2 rounded-full bg-ember animate-ping shrink-0 ml-2" />
+            <div className="space-y-1 rounded-lg border border-ember/30 bg-ember/10 p-2.5 font-mono text-[10px] text-ember">
+              <div className="flex items-center justify-between">
+                <span>› Memindai pola konten viral Indonesia...</span>
+                <span className="size-2 rounded-full bg-ember animate-ping shrink-0" />
+              </div>
+              <p className="text-muted text-[9px]">
+                › Mencocokkan tone natural sehari-hari
+              </p>
             </div>
           )}
 
+          {/* 03: Ideas Found */}
           {current.id === "ideas" && (
-            <div className="space-y-1 rounded-lg border border-amber-500/30 bg-obsidian/80 p-2.5 font-mono text-[11px]">
+            <div className="space-y-1 rounded-lg border border-amber-500/30 bg-obsidian/80 p-2 font-mono text-[10px]">
               <div className="flex items-center gap-1.5 text-ember-lo font-semibold">
                 <span className="text-ember font-bold">1.</span>
                 <span className="truncate">Kesalahan fatal kreator pemula di 30 hari pertama</span>
               </div>
-              <div className="flex items-center gap-1.5 text-muted text-[10px]">
+              <div className="flex items-center gap-1.5 text-muted">
                 <span>2.</span>
-                <span className="truncate">Tren lokal remote work & side income 2026</span>
+                <span className="truncate">Trik dapet klien remote tanpa portofolio</span>
               </div>
-              <div className="flex items-center gap-1.5 text-muted text-[10px]">
+              <div className="flex items-center gap-1.5 text-muted">
                 <span>3.</span>
-                <span className="truncate">Storytelling 45s: 1 Jam bikin stok seminggu</span>
+                <span className="truncate">1 Jam bikin stok konten seminggu</span>
               </div>
             </div>
           )}
 
+          {/* 04: Script Timeline (FIX 4: 00:00 HOOK ↓ 00:05 MASALAH ↓ 00:20 SOLUSI ↓ 00:40 CTA) */}
           {current.id === "script" && (
-            <div className="space-y-1 rounded-lg border border-ember/40 bg-obsidian/90 p-2.5 font-mono text-[11px]">
-              <div className="flex items-center justify-between text-ember font-bold text-[10px]">
-                <span>NASKAH 45 DETIK</span>
-                <span>RITME NATURAL</span>
+            <div className="rounded-lg border border-ember/40 bg-obsidian/90 p-2 font-mono text-[10px] space-y-1">
+              <div className="flex items-center justify-between text-ember font-bold text-[9px] border-b border-hairline/40 pb-1">
+                <span>ALUR VIDEO 45 DETIK</span>
+                <span>SIAP SYUTING</span>
               </div>
-              <p className="text-ink/90 text-[10px] leading-snug">
-                [00:00] Hook: &ldquo;Stop bilang ga ada waktu bikin konten kalau masih scroll begini...&rdquo;
-              </p>
-              <p className="text-muted text-[10px]">
-                [00:15] Poin Inti: 3 Trik audit 1 halaman tanpa ribet
-              </p>
+              <div className="space-y-0.5 text-[9px] leading-tight pt-0.5">
+                <p className="text-ink/95">
+                  <strong className="text-ember">00:00 HOOK:</strong> &ldquo;Stop bilang ga ada waktu bikin konten...&rdquo;
+                </p>
+                <p className="text-muted">
+                  <strong className="text-muted/80">00:05 MASALAH:</strong> Kebanyakan overthinking di ide awal
+                </p>
+                <p className="text-muted">
+                  <strong className="text-muted/80">00:20 SOLUSI:</strong> Pakai 3 rumus angle terbukti ini
+                </p>
+                <p className="text-ember-lo">
+                  <strong className="text-ember">00:40 CTA:</strong> &ldquo;Mulai sekarang, sisanya biar Malesan.&rdquo;
+                </p>
+              </div>
             </div>
           )}
 
+          {/* 05: Ready / Siap Tayang */}
           {current.id === "ready" && (
-            <div className="rounded-lg border border-emerald-500/30 bg-obsidian/90 p-2.5 font-mono text-[11px] space-y-1">
-              <div className="flex items-center justify-between text-emerald-400 font-bold text-[10px]">
-                <span>✓ KONTEN SIAP TAYANG</span>
-                <span>5 PLATFORM</span>
+            <div className="rounded-lg border border-emerald-500/30 bg-obsidian/90 p-2.5 font-mono text-[10px] space-y-1">
+              <div className="flex items-center justify-between text-emerald-400 font-bold text-[9px]">
+                <span>✓ KONTEN SELESAI DISIAPKAN</span>
+                <span>LANGSUNG TAYANG</span>
               </div>
-              <p className="text-ink/90 text-[10px]">
-                TikTok & Reels: Video 9:16 + Word-level Captions
-              </p>
-              <p className="text-ember-lo text-[10px]">
-                Threads & X: Utas 5 postingan ringkas siap share
-              </p>
+              <div className="space-y-1 pt-0.5 text-[9px]">
+                <p className="text-ink/90">
+                  <strong className="text-emerald-400">TikTok & Reels:</strong> Video 9:16 + Subtitle Sinkron Kata
+                </p>
+                <p className="text-ember-lo">
+                  <strong className="text-ember">Threads & X:</strong> Utas 5 Postingan Ringkas Siap Share
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -6,7 +6,6 @@ import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
 import { RefreshButton } from "./RefreshButton";
-import { ThemeToggle } from "./ThemeToggle";
 import { TutorialSheet } from "./TutorialSheet";
 
 /**
@@ -163,7 +162,6 @@ export function AppShell({
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             <div className="hidden items-center gap-2 sm:flex">
               <RefreshButton variant="icon" />
-              <ThemeToggle />
               <TutorialSheet />
             </div>
 
@@ -226,7 +224,6 @@ export function AppShell({
 
       {/* Mobile utility strip */}
       <div className="area-nav relative z-20 flex items-center justify-between gap-2 border-b border-hairline/60 bg-obsidian px-4 py-2 sm:hidden">
-        <ThemeToggle variant="chip" />
         <TutorialSheet variant="chip" />
         <RefreshButton variant="chip" />
       </div>

@@ -37,47 +37,21 @@ export const THEME_KEY = "malesan-theme";
 export const THEME_SEEN_KEY = "malesan-theme-toggle-seen";
 export const TEXT_KEY = "malesan-text";
 
-/**
- * Browser-chrome colour per theme — the iOS status bar and the Android address
- * bar. Must stay equal to `--color-obsidian` for each theme in globals.css.
- */
-export const THEME_CHROME = { dark: "#0b0a09", soft: "#e8e0d8" } as const;
+export const THEME_CHROME = { dark: "#080808", soft: "#080808" } as const;
 
-/**
- * Attribute marking the one `<meta name="theme-color">` this product owns.
- *
- * It matters that it is *one*, and that it is ours. The `viewport` export in
- * layout.tsx declares a media-scoped pair of theme-color metas, and Next renders
- * those as part of the React tree — React holds fiber references to those exact
- * DOM nodes. Deleting them from JavaScript leaves React pointing at orphans, and
- * the next commit that unmounts one calls `parentNode.removeChild(node)` against
- * a `parentNode` that is now null. That is a hard runtime crash, and it is
- * exactly what a `querySelectorAll('meta[name="theme-color"]').forEach(m =>
- * m.remove())` in the toggle used to cause on /app.
- *
- * So nothing here ever removes a meta. We keep our own, update its `content` in
- * place, and insert it as the head's first child — the browser uses the first
- * theme-color whose `media` matches, and ours carries no `media`, so being first
- * is what lets an explicit choice beat the system preference.
- */
 export const THEME_META_MARK = "data-malesan-theme";
 
 /**
- * Applies the saved theme before React hydrates.
- *
- * Runs synchronously in `<head>` so the correct theme is painted on the first
- * frame. Anything later and the dark theme paints once before the light one
- * takes over, and that flash is worse than either theme on its own.
+ * Ensures dark theme is applied on the first frame.
  */
 export const THEME_INIT_SCRIPT = `
 (function(){try{
-  var t = localStorage.getItem(${JSON.stringify(THEME_KEY)});
-  var soft = t === "soft";
-  if (soft) document.documentElement.setAttribute("data-theme","soft");
+  document.documentElement.removeAttribute("data-theme");
+  document.documentElement.classList.add("dark");
   var m = document.createElement("meta");
   m.setAttribute("name","theme-color");
   m.setAttribute(${JSON.stringify(THEME_META_MARK)},"");
-  m.setAttribute("content", soft ? ${JSON.stringify(THEME_CHROME.soft)} : ${JSON.stringify(THEME_CHROME.dark)});
+  m.setAttribute("content", ${JSON.stringify(THEME_CHROME.dark)});
   document.head.insertBefore(m, document.head.firstChild);
 }catch(e){}})();
 `;

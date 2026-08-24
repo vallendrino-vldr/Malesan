@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type JourneyStep = {
   percent: string;
@@ -19,7 +19,7 @@ const JOURNEY_STEPS: JourneyStep[] = [
     title: "Layar Kosong",
     story: "Mau bikin konten tapi bengong depan layar kosong gak tau mulai dari mana.",
     malesanRole: "Lo ga perlu mikir prompt rumit. Cukup buka Malesan, langsung nemu ruang kerja siap pakai.",
-    outputTag: "Standby",
+    outputTag: "Mulai Awal",
     outputPreview: [
       "Bukan mulai dari nol",
       "Tanpa template kaku",
@@ -28,11 +28,11 @@ const JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     percent: "33%",
-    badge: "AI THINKING",
+    badge: "ANALISIS TREN",
     title: "AI Berpikir",
     story: "Menyaring ratusan tren lokal dan pola video viral di Indonesia hari ini.",
     malesanRole: "Malesan menyaring insight relevan dan mencocokkannya dengan target penonton lo.",
-    outputTag: "Analisis Tren",
+    outputTag: "Riset Tren",
     outputPreview: [
       "Filter 100+ pola konten viral",
       "Audit hook 3 detik pertama",
@@ -41,7 +41,7 @@ const JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     percent: "66%",
-    badge: "IDEA GENERATED",
+    badge: "IDE MATANG",
     title: "Ide Terbentuk",
     story: "Bukan satu prompt acak, melainkan 3 pilihan sudut pandang matang.",
     malesanRole: "Lo tinggal pilih angle yang paling lo suka: edukatif, studi kasus, atau opini tajam.",
@@ -54,7 +54,7 @@ const JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     percent: "100%",
-    badge: "CONTENT READY",
+    badge: "SIAP TAYANG",
     title: "Konten Siap",
     story: "Naskah terstruktur lengkap dengan timestamp, visual cues, dan subtitle sinkron kata.",
     malesanRole: "Tinggal rekam depan kamera. Auto-CC membakar subtitle otomatis langsung di browser.",
@@ -68,15 +68,47 @@ const JOURNEY_STEPS: JourneyStep[] = [
 ];
 
 export function CreatorJourney() {
-  const [activeIdx, setActiveIdx] = useState(2); // Start at "66% Idea Generated"
+  const [activeIdx, setActiveIdx] = useState(2); // Start at "66% Ide Terbentuk"
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  // IntersectionObserver for scroll-driven reveal
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const current = JOURNEY_STEPS[activeIdx];
 
   return (
-    <section id="journey" className="relative scroll-mt-16 border-t border-hairline/60 bg-surface/15 py-12 sm:py-16">
+    <section
+      id="journey"
+      ref={sectionRef}
+      className="relative scroll-mt-16 border-t border-hairline/60 bg-surface/15 py-12 sm:py-16"
+    >
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-xl mx-auto">
+        <div
+          className="text-center max-w-xl mx-auto transition-all duration-700"
+          style={{
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? "translateY(0)" : "translateY(24px)",
+          }}
+        >
           <p className="font-mono text-micro font-bold tracking-wider text-ember uppercase">
             Alur Perjalanan Kreator
           </p>
@@ -85,7 +117,7 @@ export function CreatorJourney() {
           </h2>
         </div>
 
-        {/* 4 Continuous Progression Step Buttons */}
+        {/* 4 Step Buttons */}
         <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {JOURNEY_STEPS.map((step, idx) => {
             const isActive = activeIdx === idx;
@@ -93,18 +125,23 @@ export function CreatorJourney() {
               <button
                 key={idx}
                 onClick={() => setActiveIdx(idx)}
-                className={`flex flex-col items-start rounded-2xl border p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer ${
+                className={`flex flex-col items-start rounded-2xl border p-3.5 sm:p-4 text-left transition-all duration-300 cursor-pointer ${
                   isActive
                     ? "border-ember bg-surface-raised shadow-[0_0_20px_rgba(255,138,61,0.2)] scale-[1.02]"
                     : "border-hairline/60 bg-surface/40 hover:border-ember/30 hover:bg-surface"
                 }`}
+                style={{
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? "translateY(0)" : "translateY(20px)",
+                  transition: `opacity 0.5s ease-out ${0.2 + idx * 0.1}s, transform 0.5s ease-out ${0.2 + idx * 0.1}s, border-color 0.3s, background-color 0.3s, box-shadow 0.3s`,
+                }}
               >
                 <div className="flex w-full items-center justify-between">
                   <span className="font-mono text-xs font-bold text-ember">
                     {step.percent}
                   </span>
                   <span
-                    className={`size-2 rounded-full ${
+                    className={`size-2 rounded-full transition-all duration-300 ${
                       isActive ? "bg-ember animate-pulse" : "bg-muted/30"
                     }`}
                   />
@@ -120,14 +157,21 @@ export function CreatorJourney() {
           })}
         </div>
 
-        {/* Live Transformation Interactive Stage */}
-        <div className="mt-6 rounded-2xl border border-hairline/80 bg-obsidian p-5 sm:p-7 shadow-xl">
+        {/* Live Transformation Stage */}
+        <div
+          className="mt-6 rounded-2xl border border-hairline/80 bg-obsidian p-5 sm:p-7 shadow-xl transition-all duration-700"
+          style={{
+            opacity: isVisible ? 1 : 0,
+            transform: isVisible ? "translateY(0)" : "translateY(24px)",
+            transitionDelay: "0.5s",
+          }}
+        >
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8 items-center">
             
             {/* Left Narrative (5 Cols) */}
             <div className="lg:col-span-5 flex flex-col items-start">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-ember">
-                Progress {current.percent} · {current.badge}
+                Tahap {activeIdx + 1} · {current.badge}
               </span>
 
               <h3 className="mt-2.5 font-display text-lg sm:text-xl font-bold text-ink">
@@ -148,7 +192,7 @@ export function CreatorJourney() {
               </div>
             </div>
 
-            {/* Right Live Artifact Output Preview (7 Cols) */}
+            {/* Right Live Output Preview (7 Cols) */}
             <div className="lg:col-span-7">
               <div className="rounded-xl border border-hairline/80 bg-surface/90 p-4 sm:p-5 shadow-sm">
                 <div className="flex items-center justify-between border-b border-hairline/60 pb-2.5">

@@ -7,33 +7,22 @@
    ============================================================ */
 
 @theme {
-  /* ---- color ----
-     The base black is warm-tinted, not blue-black. A cool black under an
-     amber accent reads as a clash. See DESIGN.md §2. */
-  --color-obsidian: #0b0a09;
-  --color-surface: #16130f;
-  --color-surface-raised: #1f1a14;
-  --color-hairline: #2a241d;
+  /* ---- color: Dark Cinematic AI Workspace ---- */
+  --color-obsidian: #080808;
+  --color-surface: #111111;
+  --color-surface-raised: #171717;
+  --color-hairline: rgba(255, 255, 255, 0.08);
 
-  /* Amber is for action and heat. Never for decoration, never on a
-     non-interactive element. If everything glows, nothing does. */
+  /* Primary Accent */
   --color-ember: #ff8a3d;
   --color-ember-lo: #ffb067;
-  /* Was #c2521a, which measured 3.71:1 on the page — under the line, and used
-     for the eyebrow labels on the landing page, so the first text a visitor
-     reads was the least legible text in the product. It is also the ::selection
-     background, where a too-dark fill hides the selected text. */
   --color-ember-deep: #df5e1e;
 
-  --color-ink: #f5f0ea;
-  /* Was #8a8178, which measured 4.52:1 on --color-surface-raised — over the
-     4.5:1 line by 0.02, and that line assumes ~16px text. Most of what is
-     actually painted in this colour is 12-13px helper text, where "technically
-     passing" and "readable on a phone in daylight" are not the same claim.
-     #99928a holds 5.62:1 on the lightest surface and 6.44:1 on the page. */
-  --color-muted: #99928a;
+  /* Typography Colors */
+  --color-ink: #f5f5f5;
+  --color-muted: #999999;
 
-  /* Confirmations and destructive actions only. Not part of the palette. */
+  /* Status Colors */
   --color-success: #6fcf97;
   --color-danger: #e5544b;
 
@@ -90,16 +79,8 @@
   }
 
   html {
-    /* Follows the theme rather than being pinned. Left at `dark` while the
-       light theme existed, Safari and Chrome kept painting native controls,
-       scrollbars and the caret for a dark page — dark-on-light select menus and
-       an invisible text cursor in the bright theme. */
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
-  }
-
-  :root[data-theme="soft"] {
-    color-scheme: light;
   }
 
   * {
@@ -275,9 +256,8 @@
    This is part of the quality floor, not an enhancement. DESIGN.md §4.
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  /* .reveal is exempt: it swaps to an opacity-only keyframe below rather than
-     being flattened, so the fade survives while the translate does not. */
-  *:not(.reveal),
+  /* .reveal, .animate-ticker-marquee, and mascot are exempt so the core product character and activity feed remain alive. */
+  *:not(.reveal):not(.animate-ticker-marquee):not(.animate-ticker-marquee *):not(.mascot-body):not(.mascot-scan):not(.mascot-led):not(.mascot-idle-body):not(.mascot-idle-eyes):not(.mascot-arm-a):not(.mascot-arm-b),
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
@@ -288,6 +268,10 @@
 
   .reveal {
     animation-name: reveal-fade;
+  }
+
+  .animate-ticker-marquee {
+    animation: marquee 32s linear infinite !important;
   }
 
   html {
@@ -493,28 +477,7 @@
   }
 }
 
-/* Light theme: the field is a warm *glow*, and a glow only works when the
-   accent is bright. In the soft theme `--color-ember` is a dark brown
-   (#833a0f), deepened for text contrast, so painting the blobs with it washed
-   mud across a cream page — the "aneh, maksa" look. Override to a light peach
-   that sits ABOVE the page in lightness, so warmth comes from added light the
-   way a neumorphic surface's depth does, at low alpha so it reads as a hint,
-   not a stain. Higher specificity than the base blob rules, so these win.
-   The dark theme is untouched. */
-@layer utilities {
-  :root[data-theme="soft"] .ambient-field__blob--a {
-    background: radial-gradient(circle, color-mix(in oklab, #ffb583 22%, transparent), transparent 70%);
-  }
-  :root[data-theme="soft"] .ambient-field__blob--b {
-    background: radial-gradient(circle, color-mix(in oklab, #ffc79a 17%, transparent), transparent 72%);
-  }
-  :root[data-theme="soft"] .ambient-field__blob--c {
-    background: radial-gradient(circle, color-mix(in oklab, #ffa869 15%, transparent), transparent 68%);
-  }
-  :root[data-theme="soft"] .ambient-field__orbit {
-    background: radial-gradient(circle at 32% 34%, color-mix(in oklab, #ffb583 11%, transparent), transparent 46%);
-  }
-}
+
 
 /* ---------------------------------------------------------------------------
    Liquid lava loader.
@@ -640,7 +603,42 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-4px);
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes hero-word-reveal {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+    transform: translateY(0px);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -655,11 +653,22 @@
 
 @keyframes marquee {
   0% {
-    transform: translateX(0%);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
+}
+
+.animate-ticker-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker-marquee:hover {
+  animation-play-state: paused;
 }
 
 /* ===========================================================================
@@ -777,221 +786,14 @@
   }
 }
 
-/* ===========================================================================
-   SOFT UI THEME  —  :root[data-theme="soft"]
-   ===========================================================================
 
-   A second skin, not a second codebase.
-
-   The whole product is drawn from eleven colour tokens and three surface
-   classes. Overriding those eleven values plus the shadows on those three
-   classes re-skins every screen at once — no component is touched, so nothing
-   can break in one theme and not the other.
-
-   Neumorphism's defining rule is that surfaces are the *same material* as the
-   background: the page, a card and a button are all one colour, and the only
-   thing separating them is light. So `--color-obsidian` and `--color-surface`
-   are deliberately identical here, and every boundary comes from a paired
-   shadow — light above-left, shade below-right, one consistent light source.
-
-   Two known weaknesses of the style, handled rather than inherited:
-
-   1. **Low contrast.** Soft UI usually fails WCAG because grey-on-grey is the
-      whole aesthetic. The text tokens here are near-black and the accent is
-      deepened well past the dark theme's ember, which would sit at roughly 2:1
-      on a light surface. Measured values are in the commit.
-   2. **Invisible affordances.** When everything is the same colour, nothing
-      looks pressable. Interactive surfaces keep a raised shadow at rest and
-      switch to an inset one when pressed, which is the one cue the style has.
-
-   `background-color` is set explicitly on the surface classes here. The dark
-   theme gets its fill from a gradient in `background-image`; if a future edit
-   replaces that image the colour underneath still holds, instead of the panel
-   going transparent.
---------------------------------------------------------------------------- */
-
-:root[data-theme="soft"] {
-  /* Warm, not cool — and this is the whole fix.
-     The first light palette used a blue-grey surface (#e4ebf3, hue 212°) under
-     the warm ember accent (hue 21°). That is a 169° hue gap: near-complementary,
-     at mismatched saturations, which is the technical description of colours
-     that fight. Every neumorphic reference that looks good keeps accent and
-     surface in one hue family — the blue-accent examples sit on blue-grey.
-     Ember is the brand, so the surface moves to meet it instead.
-     Hue gap is now ~8°, and the accent finally looks like it belongs. */
-  --color-obsidian: #e8e0d8;
-  --color-surface: #f2ece6;
-  --color-surface-raised: #faf5f0;
-  --color-hairline: #ded3c8;
-
-  /* Measured against the DARKEST surface, which is the correction.
-     The previous set was tuned against --color-surface (#f2ece6) and cleared
-     AA there — but `body` paints --color-obsidian (#e8e0d8), which is darker,
-     and any text sitting directly on the page rather than inside a card was
-     therefore measuring ~4.1:1. That is the faint text in bright mode: not a
-     perception problem, a token tuned against the wrong background.
-     Every value below now clears 5.0:1 on #e8e0d8, so it cannot matter which
-     of the three surfaces the text lands on:
-       ember 5.04 · ember-lo 5.03 · ink 9.09 · muted 5.01
-       success 5.01 · danger 5.02   (all higher on surface and raised) */
-  /* Deep enough to survive its own wash.
-     The product's selected-state pattern is `bg-ember/10 … text-ember` — accent
-     text on a tint of the same accent. That tint darkens the background the
-     text is measured against, so a token tuned bare at 5.04:1 lands at ~4.35:1
-     the moment it is used the way the design actually uses it, which is what
-     the selected credit pack and the active tab were doing. These clear 4.6:1
-     against the bare page *and* against 5/10/15/20% washes of themselves on
-     all three surfaces, so the pattern is safe wherever it appears. */
-  --color-ember: #833a0f;
-  --color-ember-lo: #84370a;
-  --color-ember-deep: #5e2909;
-
-  --color-ink: #3d3630;
-  /* Same reasoning as the ember tokens above: a selected card is
-     `bg-ember/10`, and its secondary text is muted, so muted has to hold up
-     over an accent wash and not just over the bare surface. */
-  --color-muted: #564e47;
-
-  --color-success: #1b5a3b;
-  --color-danger: #8d2e24;
-
-  /* Shadows warm too. A blue-grey shade under a warm surface was the second
-     half of the clash — it read as dirt rather than depth. */
-  --soft-light: #fffdfb;
-  --soft-shade: #c4b3a2;
-}
-
-/* ---- raised: cards, tiles, anything sitting on the page ---- */
-:root[data-theme="soft"] .surface-card,
-:root[data-theme="soft"] .skeu {
-  background-color: var(--color-surface);
-  background-image: none;
-  box-shadow:
-    -6px -6px 14px 0 var(--soft-light),
-    6px 6px 16px 0 color-mix(in oklab, var(--soft-shade) 70%, transparent);
-}
-
-/* ---- recessed: inputs and wells ---- */
-:root[data-theme="soft"] .skeu-inset {
-  background-color: var(--color-surface);
-  background-image: none;
-  box-shadow:
-    inset 3px 3px 7px 0 color-mix(in oklab, var(--soft-shade) 65%, transparent),
-    inset -3px -3px 7px 0 var(--soft-light);
-}
-
-/* ---- the primary action ----
-   Keeps a real accent fill with crisp white text. */
-:root[data-theme="soft"] .btn-ember {
-  color: #ffffff !important;
-  font-weight: 700;
-  background-color: var(--color-ember);
-  background-image: linear-gradient(
-    180deg,
-    color-mix(in oklab, #fff 18%, transparent) 0%,
-    transparent 55%
-  );
-  box-shadow:
-    inset 0 1px 0 0 color-mix(in oklab, #fff 45%, transparent),
-    -4px -4px 10px 0 var(--soft-light),
-    5px 5px 14px 0 color-mix(in oklab, var(--color-ember) 35%, transparent);
-}
-
-:root[data-theme="soft"] .btn-ember:hover {
-  background-color: color-mix(in oklab, var(--color-ember) 90%, #000);
-}
-
-:root[data-theme="soft"] .btn-ember:active,
-:root[data-theme="soft"] .skeu-press:active {
-  box-shadow:
-    inset 3px 3px 8px 0 color-mix(in oklab, var(--soft-shade) 70%, transparent),
-    inset -2px -2px 6px 0 var(--soft-light);
-}
-
-:root[data-theme="soft"] .surface-card-interactive:hover {
-  border-color: color-mix(in oklab, var(--color-ember) 60%, transparent);
-  background-color: var(--color-surface-raised);
-}
-
-:root[data-theme="soft"] button:disabled,
-:root[data-theme="soft"] .btn-ember:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  filter: grayscale(25%);
-  box-shadow: none;
-}
-
-/* ---- chrome bars ---- */
-:root[data-theme="soft"] .skeu-bar {
-  background-color: var(--color-surface);
-  box-shadow: 0 -4px 14px 0 color-mix(in oklab, var(--soft-shade) 45%, transparent);
-}
-
-/* The ambient lava mark is tuned for a dark page; soften it so it reads as a
-   warm glow rather than a hole burned in a light surface. */
-:root[data-theme="soft"] .lava::before,
-:root[data-theme="soft"] .lava::after {
-  filter: blur(6px);
-  opacity: 0.75;
-}
 
 /* ===========================================================================
-   AMBIENT GLOW — theme-aware
-   ===========================================================================
-   Three screens painted the hero's ambient orange glow as literal
-   `rgba(255,138,61,...)` — the dark theme's ember, hardcoded. It never read
-   the soft theme's deepened accent, so switching themes left a neon dark-mode
-   glow sitting on top of the pastel soft palette. That mismatch is a direct
-   cause of "warnanya gak selaras" in bright mode: nothing else on the page is
-   that saturated or that orange.
---------------------------------------------------------------------------- */
+   AMBIENT GLOW
+   =========================================================================== */
 :root {
-  --ambient-glow: color-mix(in oklab, var(--color-ember) 14%, transparent);
-  --ambient-glow-strong: color-mix(in oklab, var(--color-ember) 16%, transparent);
-}
-
-/* ===========================================================================
-   Z-INDEX SCALE
-   ===========================================================================
-   Undocumented z-50 on everything meant the PWA install banner and modal
-   dialogs (TutorialSheet, admin UserSheet) competed for the same stacking
-   layer. Whichever mounted later painted on top — the PWA banner sits fixed
-   near the bottom of the screen and, at equal z-index, drew over the bottom of
-   an open tutorial sheet, which is the collision in the "berantakan" screenshot.
-
-   Fixed scale, low to high:
-     20  chrome     — header, bottom tab bar (always visible, never covers content)
-     40  ambient    — toasts, install prompts, live-update pulses (dismissible, transient)
-     60  modal      — dialogs, bottom sheets (must sit above every ambient element)
---------------------------------------------------------------------------- */
-
-/* ===========================================================================
-   THEME TOGGLE — idle attention
-   ===========================================================================
-   A flat 32px icon in a row of near-identical icon buttons had zero chance of
-   being noticed as "the new interactive thing here". This is a slow breathing
-   glow behind the switch that runs only until the user's first toggle — after
-   that they know what it does, and a control that keeps animating forever
-   reads as broken/nagging rather than inviting.
---------------------------------------------------------------------------- */
-@keyframes theme-toggle-breathe {
-  0%, 100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-ember) 45%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-ember) 0%, transparent);
-  }
-}
-
-.theme-toggle-hint {
-  animation: theme-toggle-breathe 2.2s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-toggle-hint {
-    animation: none;
-    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ember) 30%, transparent);
-  }
+  --ambient-glow: rgba(255, 138, 61, 0.15);
+  --ambient-glow-strong: rgba(255, 138, 61, 0.25);
 }
 
 /* ===========================================================================
@@ -1399,13 +1201,6 @@ button:active .wordmark__slouch,
   --header-shadow:
     0 1px 2px 0 color-mix(in oklab, #000 28%, transparent),
     0 8px 24px -12px color-mix(in oklab, #000 45%, transparent);
-}
-
-:root[data-theme="soft"] {
-  --header-surface: var(--color-surface);
-  --header-shadow:
-    0 1px 2px 0 color-mix(in oklab, var(--soft-shade) 30%, transparent),
-    0 8px 24px -12px color-mix(in oklab, var(--soft-shade) 55%, transparent);
 }
 
 /* The controls that consume these tokens are `.hchip`, defined above with the

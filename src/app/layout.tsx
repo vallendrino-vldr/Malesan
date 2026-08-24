@@ -94,21 +94,10 @@ export const viewport: Viewport = {
    */
   viewportFit: "cover",
   /**
-   * Both themes declared. A single dark value painted the iOS status-bar area
-   * and the Android chrome dark while the light theme rendered a near-white
-   * page underneath it.
+   * Permanent dark theme declared for mobile chrome and status bar.
    */
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0b0a09" },
-    { media: "(prefers-color-scheme: light)", color: "#e8e0d8" },
-  ],
-  /**
-   * Not "dark". This tells the browser how to paint form controls, scrollbars
-   * and the default caret; pinned to dark, those stayed dark-on-light in the
-   * bright theme. The actual per-theme value is set on <html> by the theme
-   * script — this is the pair the browser is allowed to choose from.
-   */
-  colorScheme: "dark light",
+  themeColor: [{ color: "#080808" }],
+  colorScheme: "dark",
 };
 
 export default function RootLayout({
@@ -119,10 +108,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${archivo.variable} ${jakarta.variable} ${geistMono.variable} h-full antialiased`}
-      // The theme script mutates this element before React hydrates, which is
-      // the point — without it the dark theme paints for one frame before the
-      // light one takes over, and that flash is worse than either theme.
+      className={`dark ${archivo.variable} ${jakarta.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
