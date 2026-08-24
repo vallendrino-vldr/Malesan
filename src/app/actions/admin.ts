@@ -359,40 +359,84 @@ export async function deleteVoucher(code: string) {
   revalidatePath("/admin/vouchers");
 }
 
-export async function injectCredits(userId: string, amount: number, bucket: "free" | "paid", reason: string) {
+export async function adjustCredits(
+  userId: string,
+  mode: "add" | "deduct",
+  amount: number,
+  bucket: "free" | "paid",
+  reason: string,
+) {
   const adminId = await verifyAdmin();
   const serviceRole = createServiceRoleClient();
 
-  // Validate user exists
+  // Validate user exists & fetch current balance
   const { data: userProfile, error: profileErr } = await serviceRole
     .from("profiles")
-    .select("id")
+    .select("id, credits_free, credits_paid")
     .eq("id", userId)
     .single();
 
-  if (profileErr || !userProfile) throw new Error("User not found");
+  if (profileErr || !userProfile) throw new Error("User gak ketemu.");
 
-  // grant_credits validates p_amount > 0 — that check was restored after a
-  // enforced in SQL, so a deduction cannot go through this path.
   if (!Number.isInteger(amount) || amount <= 0) {
     throw new Error("Jumlah kredit harus bilangan bulat di atas 0.");
   }
 
-  // `.rpc()` resolves with {data, error}; it does not throw. Unchecked, a
-  // failed grant left an audit entry claiming credits were handed out and an
-  // admin who had no reason to doubt it.
-  const { error: grantErr } = await serviceRole.rpc("grant_credits", {
-    p_user: userId,
-    p_amount: amount,
-    p_bucket: bucket,
-    p_reason: `admin_injection_by_${adminId}_reason_${reason}`,
-  });
+  if (mode === "add") {
+    const { error: grantErr } = await serviceRole.rpc("grant_credits", {
+      p_user: userId,
+      p_amount: amount,
+      p_bucket: bucket,
+      p_reason: `admin_add_by_${adminId}: ${reason}`,
+    });
 
-  if (grantErr) throw new Error(`Kreditnya gagal ditambah: ${grantErr.message}`);
+    if (grantErr) throw new Error(`Kredit gagal ditambah: ${grantErr.message}`);
+    await audit(adminId, "credits.grant", userId, { amount, bucket, reason });
+  } else {
+    // Deduct credits
+    const currentBalance = bucket === "paid" ? userProfile.credits_paid : userProfile.credits_free;
+    if (currentBalance < amount) {
+      throw new Error(`Saldo ${bucket} user saat ini cuma ${currentBalance}. Tidak bisa dikurangi ${amount}.`);
+    }
 
-  await audit(adminId, "credits.grant", userId, { amount, bucket, reason });
+    const newFree = bucket === "free" ? userProfile.credits_free - amount : userProfile.credits_free;
+    const newPaid = bucket === "paid" ? userProfile.credits_paid - amount : userProfile.credits_paid;
+    const newTotal = newFree + newPaid;
+
+    const { error: updateErr } = await serviceRole
+      .from("profiles")
+      .update({
+        credits_free: newFree,
+        credits_paid: newPaid,
+      })
+      .eq("id", userId);
+
+    if (updateErr) throw new Error(`Kredit gagal dikurangi: ${updateErr.message}`);
+
+    // Insert negative entry to ledger for auditability
+    await serviceRole.from("credit_ledger").insert({
+      user_id: userId,
+      delta: -amount,
+      bucket,
+      reason: `admin_deduct_by_${adminId}: ${reason || "Penyesuaian saldo admin"}`,
+      balance_after: newTotal,
+    });
+
+    await audit(adminId, "credits.deduct", userId, {
+      amount,
+      bucket,
+      reason,
+      previous_balance: currentBalance,
+      balance_after: newTotal,
+    });
+  }
+
   revalidatePath("/admin/users");
   revalidatePath("/app");
+}
+
+export async function injectCredits(userId: string, amount: number, bucket: "free" | "paid", reason: string) {
+  return adjustCredits(userId, "add", amount, bucket, reason);
 }
 
 /**

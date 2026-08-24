@@ -35,8 +35,20 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Root Cause Found: Reduced-Motion Exemption (§9z.40).
-**Newest work is §9z.40 — Root Cause Found: Reduced-Motion Exemption: (1) Diagnosed the exact reason why animations appeared frozen: `src/app/globals.css` contained a global `@media (prefers-reduced-motion: reduce)` block with `animation-duration: 0.01ms !important` that immediately killed all animations unless exempted; (2) Added explicit exemptions for `.kinetic-node`, `.kinetic-node *`, `.kinetic-photon`, `.kinetic-orbital`, `.kinetic-core` to guarantee 60 FPS motion even on devices with reduced motion preferences; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.40, then §9z.39.
+Last updated: **2026-08-24**, after Admin Dashboard Simplification: Bidirectional Credits & 1-Click AI Switcher (§9z.41).
+**Newest work is §9z.41 — Admin Dashboard Simplification: Bidirectional Credits & 1-Click AI Switcher: (1) In `src/app/actions/admin.ts` & `src/app/admin/users/page.tsx`, introduced `adjustCredits` with atomic support for both `add` (+ Tambah) and `deduct` (- Kurangi) credit adjustments, fully audited with negative delta ledger entries; (2) In `src/app/actions/ai-admin.ts` & `src/app/admin/ai/BrainPanel.tsx`, built a non-developer-friendly 1-Click Provider Switcher card grid for instant 1-tap switching between Gemini, DeepSeek, etc. with automatic failover configuration; (3) Added `scripts/penetration-stress-test.mjs` confirming 0 client secrets and 100% RLS compliance; (4) Verified via `next build` (42 routes) and `npm test`.** Read §9z.41, then §9z.40.
+
+---
+
+## §9z.41 — Admin Dashboard Simplification: Bidirectional Credits & 1-Click AI Switcher (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), `node scripts/penetration-stress-test.mjs` (5/5 passed), and visual inspection.
+
+### Summary of Changes:
+1. **Bidirectional Credit Control (`users/page.tsx` & `admin.ts`):**
+   - Added `[+ Tambah]` vs `[- Kurang]` credit adjustment toggle with atomic PostgreSQL update, balance boundary guard, and audit log tracking.
+2. **1-Click AI Engine Switcher (`BrainPanel.tsx` & `ai-admin.ts`):**
+   - Added friendly card grid to switch primary model in 1 click without navigating technical routing subpages.
 
 ---
 

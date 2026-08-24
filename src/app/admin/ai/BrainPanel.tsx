@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { saveBrain, setAdminMode } from "@/app/actions/ai-admin";
+import { saveBrain, setAdminMode, quickSwitchPrimaryModel } from "@/app/actions/ai-admin";
 import type { BrainView, Health } from "@/lib/ai/brain";
 import type { Quota } from "@/lib/ai/analytics";
 import type { AdminMode } from "@/lib/config";
@@ -134,6 +134,114 @@ export function BrainPanel({
         </button>
       </header>
 
+      {/* ---------- 1-Click Quick AI Switcher (Non-Developer Friendly) ---------- */}
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-xs font-bold text-ink">
+            ⚡ Pilih Provider AI Utama (1-Tap Langsung Aktif)
+          </p>
+          <span className="text-micro text-muted">
+            Otomatis sinkron ke seluruh fitur Malesan
+          </span>
+        </div>
+
+        {err && (
+          <p className="rounded-lg border border-danger/20 bg-danger/10 p-3 text-xs text-danger">
+            {err}
+          </p>
+        )}
+
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {active.map((m) => {
+            const isPrimary = brain.primary?.modelId === m.id;
+            const p = providers.find((x) => x.id === m.provider_id);
+            const isGemini =
+              (m.label ?? m.model_id).toLowerCase().includes("gemini") ||
+              p?.slug.includes("gemini");
+            const isDeepSeek =
+              (m.label ?? m.model_id).toLowerCase().includes("deepseek") ||
+              p?.slug.includes("ipenk") ||
+              p?.slug.includes("deepseek");
+
+            return (
+              <div
+                key={m.id}
+                className={`relative flex flex-col justify-between rounded-2xl border p-4 transition-all ${
+                  isPrimary
+                    ? "border-ember/60 bg-surface-raised shadow-xs ring-1 ring-ember/30"
+                    : "border-white/[0.08] bg-surface/50 hover:border-ember/30"
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-obsidian px-2.5 py-0.5 font-display text-micro font-bold text-ink">
+                      {isGemini
+                        ? "⚡ Google Gemini"
+                        : isDeepSeek
+                          ? "🧠 DeepSeek"
+                          : p?.label ?? "AI Gateway"}
+                    </span>
+                    {isPrimary ? (
+                      <span className="inline-flex items-center gap-1.5 text-micro font-bold text-ember">
+                        <span className="size-2 rounded-full bg-ember animate-pulse" />
+                        Sedang Aktif
+                      </span>
+                    ) : (
+                      <span className="text-micro text-muted">Cadangan Siap Pakai</span>
+                    )}
+                  </div>
+
+                  <p className="mt-2.5 font-display text-sm font-bold text-ink">
+                    {m.label ?? m.model_id}
+                  </p>
+                  <p className="mt-1 text-micro text-muted leading-relaxed">
+                    {isGemini
+                      ? "Pilihan paling stabil, cepat, dan bahasa Indonesianya sangat luwes."
+                      : isDeepSeek
+                        ? "Pilihan super hemat biaya dengan kemampuan nalar analitis tinggi."
+                        : "Model alternatif berkecepatan tinggi untuk akselerasi performa."}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                  <div className="text-micro text-muted">
+                    {m.pricing_mode === "prepaid_package" ? (
+                      <span className="text-ember-lo font-medium">Paket Kuota Token</span>
+                    ) : (
+                      <span>Pay-as-you-go</span>
+                    )}
+                  </div>
+
+                  {!isPrimary ? (
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => {
+                        setErr(null);
+                        startTransition(async () => {
+                          try {
+                            await quickSwitchPrimaryModel(m.id);
+                          } catch (e) {
+                            setErr(e instanceof Error ? e.message : "Gagal ganti model.");
+                          }
+                        });
+                      }}
+                      className="cursor-pointer rounded-xl border border-ember/40 bg-ember/10 px-3.5 py-1.5 font-display text-xs font-bold text-ember transition-all hover:bg-ember hover:text-obsidian active:scale-95 disabled:opacity-50"
+                    >
+                      {busy ? "Mengganti..." : "Jadikan Otak Utama"}
+                    </button>
+                  ) : (
+                    <span className="rounded-xl border border-ember/30 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
+                      ✓ Otak Terpilih
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="surface-card space-y-3 rounded-xl p-4">
         <div className="flex items-center justify-between gap-3">
           <p
@@ -148,7 +256,7 @@ export function BrainPanel({
               onClick={() => setEditing(true)}
               className="shrink-0 rounded-full bg-ember px-4 py-1.5 text-micro font-bold text-obsidian"
             >
-              Ganti
+              Ganti Kustom
             </button>
           )}
         </div>

@@ -605,6 +605,25 @@ export async function saveBrain(
   revalidateAll();
 }
 
+export async function quickSwitchPrimaryModel(modelId: string): Promise<void> {
+  await verifyAdmin();
+  const { models } = await getFleet();
+
+  const targetModel = models.find((m) => m.id === modelId);
+  if (!targetModel) throw new Error("Model tidak ditemukan.");
+  if (!targetModel.is_active) {
+    throw new Error(`Model "${targetModel.label ?? targetModel.model_id}" sedang dinonaktifkan. Aktifkan dulu di pengaturan.`);
+  }
+
+  // Set all other active models as automatic failover fallbacks
+  const autoFallbacks = models
+    .filter((m) => m.is_active && m.id !== modelId)
+    .slice(0, 3)
+    .map((m) => m.id);
+
+  await saveBrain(modelId, autoFallbacks);
+}
+
 /** Everything the Simple-Mode home screen shows, in one round trip. */
 export async function brainStatus(): Promise<BrainView> {
   await verifyAdmin();

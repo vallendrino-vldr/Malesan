@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   banUser,
   unbanUser,
+  adjustCredits,
   injectCredits,
   setProStatus,
   setAdminRole,
@@ -245,6 +246,7 @@ function UserSheet({
 }) {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [creditMode, setCreditMode] = useState<"add" | "deduct">("add");
   const [amount, setAmount] = useState("");
   const [bucket, setBucket] = useState<"free" | "paid">("paid");
   const [reason, setReason] = useState("");
@@ -309,12 +311,38 @@ function UserSheet({
           </p>
         )}
 
-        {/* ---- credits ---- */}
-        <Section title="Tambah kredit">
-          <p className="mb-2 text-micro leading-relaxed text-muted">
-            Cuma bisa nambah, gak bisa ngurangin — biar ledger-nya tetap cocok.
-            Paid gak pernah hangus; free kereset tiap hari.
+        {/* ---- credits (tambah / kurang) ---- */}
+        <Section title="Atur Saldo Kredit">
+          <p className="mb-3 text-micro leading-relaxed text-muted">
+            Lo bisa nambah atau ngurangin kredit user. Setiap aksi tercatat otomatis di kas & audit log.
           </p>
+
+          {/* Mode Switcher: Tambah vs Kurangi */}
+          <div className="mb-3 flex rounded-xl border border-hairline bg-obsidian p-1">
+            <button
+              type="button"
+              onClick={() => setCreditMode("add")}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                creditMode === "add"
+                  ? "bg-success/20 text-success shadow-xs"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              + Tambah Kredit
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreditMode("deduct")}
+              className={`flex-1 rounded-lg py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                creditMode === "deduct"
+                  ? "bg-danger/20 text-danger shadow-xs"
+                  : "text-muted hover:text-ink"
+              }`}
+            >
+              − Kurangi Kredit
+            </button>
+          </div>
+
           <div className="flex gap-2">
             <input
               type="number"
@@ -324,7 +352,7 @@ function UserSheet({
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Jumlah"
               aria-label="Jumlah kredit"
-              className="w-24 rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink focus:border-ember focus:outline-none"
+              className="w-28 rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink focus:border-ember focus:outline-none"
             />
             <div className="flex overflow-hidden rounded-lg border border-hairline">
               {(["paid", "free"] as const).map((b) => (
@@ -335,7 +363,7 @@ function UserSheet({
                     bucket === b ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
                   }`}
                 >
-                  {b === "paid" ? "Paid" : "Free"}
+                  {b === "paid" ? `Paid (${user.credits_paid})` : `Free (${user.credits_free})`}
                 </button>
               ))}
             </div>
@@ -343,17 +371,21 @@ function UserSheet({
           <input
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder="Alasan (masuk audit log)"
+            placeholder={creditMode === "add" ? "Alasan penambahan..." : "Alasan pengurangan..."}
             aria-label="Alasan"
             className="mt-2 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none"
           />
           <Action
-            label={`Tambahin ${amount || "…"} kredit ${bucket}`}
-            busy={busy === "inject"}
+            label={
+              creditMode === "add"
+                ? `Tambahkan ${amount || "…"} kredit ${bucket}`
+                : `Kurangi ${amount || "…"} kredit ${bucket}`
+            }
+            busy={busy === "adjust_credit"}
             disabled={!amount || Number(amount) <= 0 || !reason.trim()}
             onClick={() =>
-              run("inject", () =>
-                injectCredits(user.id, Number(amount), bucket, reason.trim()),
+              run("adjust_credit", () =>
+                adjustCredits(user.id, creditMode, Number(amount), bucket, reason.trim()),
               )
             }
           />
