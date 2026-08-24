@@ -71,39 +71,87 @@ export function CreatorJourney() {
   const [activeIdx, setActiveIdx] = useState(2); // Default to "66% 3 Sudut Pandang"
   const current = JOURNEY_STEPS[activeIdx];
 
+  const handleScrollToJourney = () => {
+    const el = document.getElementById("journey-content");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
-    <section id="journey" className="relative scroll-mt-16 py-8 sm:py-14">
+    <section id="journey" className="relative scroll-mt-12 pt-4 pb-12 sm:pt-6 sm:pb-18">
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
-        {/* Magnetic Scroll Connector & Downward Flow Beam */}
-        <div className="mx-auto mb-6 flex flex-col items-center group">
-          {/* Vertical Light Stream Beam */}
-          <div className="relative h-12 sm:h-14 w-[1.5px] overflow-hidden rounded-full bg-white/[0.08]">
+        {/* =========================================================================
+            KONSEP A: THE ENERGY CONDUIT & SONAR BEACON (60 FPS INTERACTIVE SCROLL)
+           ========================================================================= */}
+        <div className="mx-auto mb-10 flex flex-col items-center">
+          {/* Vertical Energy Conduit Rail with Photon Stream */}
+          <div className="relative h-20 w-8 flex justify-center">
+            {/* Base Wire Track */}
+            <div className="h-full w-[2px] rounded-full bg-gradient-to-b from-transparent via-white/15 to-ember/50" />
+            
+            {/* Flowing Photon Bullet */}
             <div
-              className="absolute inset-x-0 h-1/2 w-full bg-gradient-to-b from-transparent via-ember to-transparent"
+              className="absolute top-0 w-1.5 h-6 rounded-full bg-gradient-to-b from-ember-lo via-ember to-transparent"
               style={{
-                animation: "stream-down 2.2s ease-in-out infinite",
+                animation: "stream-down 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
               }}
             />
           </div>
-          {/* Tactical Magnetic Beacon Node */}
-          <div className="mt-1 flex items-center justify-center size-5 rounded-full border border-ember/40 bg-surface-raised p-1 shadow-xs transition-transform duration-300 group-hover:scale-110">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-3 text-ember animate-pulse"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </div>
+
+          {/* Sonar Beacon Button with Multi-Ring Pulse */}
+          <button
+            type="button"
+            onClick={handleScrollToJourney}
+            aria-label="Jelajahi alur perjalanan kreator"
+            className="group relative flex items-center justify-center size-10 rounded-full border border-ember/50 bg-surface-raised shadow-md cursor-pointer transition-transform duration-300 hover:scale-110 active:scale-95"
+          >
+            {/* Outer Sonar Wave 1 */}
+            <span
+              className="absolute inset-0 rounded-full border border-ember/40 pointer-events-none"
+              style={{
+                animation: "ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite",
+              }}
+            />
+
+            {/* Outer Sonar Wave 2 (Staggered) */}
+            <span
+              className="absolute inset-0 rounded-full border border-ember/25 pointer-events-none"
+              style={{
+                animation: "ping 2.4s cubic-bezier(0, 0, 0.2, 1) 0.8s infinite",
+              }}
+            />
+
+            {/* Inner Glowing Core & Interactive Arrow */}
+            <div className="relative z-10 flex items-center justify-center size-8 rounded-full bg-obsidian border border-ember/60 transition-colors group-hover:bg-ember/20">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="size-4 text-ember transition-transform duration-300 group-hover:translate-y-0.5"
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+          </button>
+
+          {/* Interactive Micro Guide Label */}
+          <button
+            type="button"
+            onClick={handleScrollToJourney}
+            className="mt-3 inline-flex items-center gap-1.5 font-display text-xs font-semibold text-muted/80 transition-colors hover:text-ember cursor-pointer"
+          >
+            <span>Telusuri Alur Kreator</span>
+            <span className="text-ember font-bold">↓</span>
+          </button>
         </div>
 
         {/* Section Header */}
-        <div className="text-center max-w-xl mx-auto">
+        <div id="journey-content" className="text-center max-w-xl mx-auto scroll-mt-20">
           <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-4 py-1.5 text-xs font-semibold text-ember">
             <span>Alur Perjalanan Kreator</span>
           </div>

@@ -35,8 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Magnetic Vertical Scroll Stream & Beacon Node (§9z.34).
-**Newest work is §9z.34 — Magnetic Vertical Scroll Stream & Beacon Node: (1) In `src/components/landing/CreatorJourney.tsx`, engineered a bespoke magnetic scroll stream connector featuring a 14px vertical guide rail with an animated flowing light trail (`@keyframes stream-down` in `globals.css`) and a tactical beacon node with a pulsing directional chevron; (2) Provides a continuous, psychological visual pull that naturally guides user attention from the Hero into the 4-step Creator Journey without looking like generic AI glow; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.34, then §9z.33.
+Last updated: **2026-08-24**, after Konsep A Energy Conduit & Sonar Beacon (§9z.35).
+**Newest work is §9z.35 — Konsep A Energy Conduit & Sonar Beacon: (1) In `src/components/landing/CreatorJourney.tsx`, completely implemented Konsep A featuring a vertical 80px energy conduit rail with a downward-traveling photon beam, a multi-ring sonar pulse beacon (`size-10` glass puck with staggered sonar waves), and an interactive click-to-scroll button; (2) Added clear interactive micro-label ("Telusuri Alur Kreator ↓") with smooth auto-scroll to `#journey-content`; (3) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.35, then §9z.34.
+
+---
+
+## §9z.35 — Konsep A Energy Conduit & Sonar Beacon (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Vertical Energy Conduit & Photon Bullet:**
+   - 80px vertical track with moving photon stream.
+2. **Multi-Ring Sonar Pulse Beacon:**
+   - Staggered sonar wave rings and responsive hover/click physics.
+3. **Smooth Scroll Interaction:**
+   - Clickable beacon that glides directly to the 4-step Creator Journey.
 
 ---
 
