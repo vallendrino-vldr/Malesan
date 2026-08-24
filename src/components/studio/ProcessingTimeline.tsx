@@ -68,7 +68,7 @@ export function ProcessingTimeline({
       <div className="relative mb-3.5 w-full">
         {/* Track Background */}
         <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/[0.08] border border-white/[0.05]">
-          {/* Active Gradient Fill Bar (Direct RAF GPU transform without CSS lag/conflict) */}
+          {/* Active Gradient Fill Bar */}
           <div
             className={`h-full rounded-full ${
               completedOr100
@@ -126,19 +126,17 @@ export function ProcessingTimeline({
         {TIMELINE_PHASES.map((phase, idx) => {
           const isLast = idx === TIMELINE_PHASES.length - 1;
 
-          // Glitch-Free Phase Logic:
-          // Node 1, 2, 3 complete when progress passes their max.
-          // Node 4 completes when reaching 100% or isCompleted.
+          // Node Done state
           const isDone = completedOr100 || (!isLast && progress >= phase.maxProgress) || (isLast && progress >= 100);
           
-          // An individual node is active while progress is within its range
+          // Node Active state
           const isActive = !completedOr100 && !isDone && progress >= phase.minProgress;
 
-          // Compute individual vertical connection line fill percentage (0 to 100%)
+          // Progressive vertical line fill percentage (0 to 100%)
           let lineFill = 0;
-          if (isDone) {
+          if (progress >= phase.maxProgress || completedOr100) {
             lineFill = 100;
-          } else if (isActive) {
+          } else if (progress >= phase.minProgress) {
             const range = phase.maxProgress - phase.minProgress;
             lineFill = Math.min(100, Math.max(0, ((progress - phase.minProgress) / range) * 100));
           }
@@ -196,7 +194,7 @@ export function ProcessingTimeline({
                     aria-hidden="true"
                     className="absolute top-[24px] bottom-[-16px] left-1/2 -translate-x-1/2 w-[2px] bg-white/[0.1] pointer-events-none"
                   >
-                    {/* Progressively Filled Gradient Line (Instant RAF sync without CSS transition stutter) */}
+                    {/* Progressively Filled Gradient Line */}
                     <div
                       className="w-full bg-gradient-to-b from-ember to-ember/60"
                       style={{ height: `${lineFill}%`, willChange: "height" }}

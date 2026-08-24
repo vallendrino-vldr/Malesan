@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Mascot } from "@/components/Mascot";
 
 const PHASE_MESSAGES: Record<number, string> = {
@@ -21,36 +22,21 @@ export function LivingProcessingCompanion({
   progress,
   isCompleted = false,
 }: LivingProcessingCompanionProps) {
-  const [displayedText, setDisplayedText] = useState(PHASE_MESSAGES[1]);
-  const [fade, setFade] = useState(true);
-  const currentTextRef = useRef(PHASE_MESSAGES[1]);
+  // Determine speech bubble text based on stage and completion
+  let text = "";
+  if (isCompleted || progress >= 100) {
+    text = "Siap! Konten lo udah beres.";
+  } else if (progress < 25) {
+    text = PHASE_MESSAGES[1];
+  } else if (progress < 55) {
+    text = PHASE_MESSAGES[2];
+  } else if (progress < 85) {
+    text = PHASE_MESSAGES[3];
+  } else {
+    text = PHASE_MESSAGES[4];
+  }
 
-  useEffect(() => {
-    let targetText = "";
-    if (isCompleted || progress >= 100) {
-      targetText = "Siap! Konten lo udah beres.";
-    } else if (progress < 25) {
-      targetText = PHASE_MESSAGES[1];
-    } else if (progress < 55) {
-      targetText = PHASE_MESSAGES[2];
-    } else if (progress < 85) {
-      targetText = PHASE_MESSAGES[3];
-    } else {
-      targetText = PHASE_MESSAGES[4];
-    }
-
-    if (targetText && targetText !== currentTextRef.current) {
-      currentTextRef.current = targetText;
-      setFade(false);
-      const timer = setTimeout(() => {
-        setDisplayedText(targetText);
-        setFade(true);
-      }, 200);
-      return () => clearTimeout(timer);
-    }
-  }, [progress, isCompleted]);
-
-  // Determine mascot mood based on processing progress
+  // Determine mascot mood based on processing phase
   const mascotMood = isCompleted || progress >= 100
     ? "ready"
     : progress < 25
@@ -61,25 +47,29 @@ export function LivingProcessingCompanion({
 
   return (
     <div className="relative flex flex-col items-center justify-center py-1 sm:py-2">
-      {/* Floating AI Speech Thought Bubble with Beak */}
+      {/* Floating AI Speech Thought Bubble with Smooth Framer Motion AnimatePresence */}
       <div
-        className={`relative z-20 mb-3 min-h-[42px] max-w-[280px] sm:max-w-xs flex items-center justify-center rounded-2xl border px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-300 ${
+        className={`relative z-20 mb-3 min-h-[44px] max-w-[280px] sm:max-w-xs flex items-center justify-center rounded-2xl border px-4 py-2 shadow-[0_8px_24px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all duration-300 ${
           isCompleted || progress >= 100
-            ? "border-emerald-500/40 bg-[#121a15]/95 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+            ? "border-emerald-500/40 bg-[#121a15]/95 shadow-[0_0_20px_rgba(16,185,129,0.25)]"
             : "border-ember/30 bg-[#161616]/95"
-        } ${
-          fade
-            ? "opacity-100 translate-y-0 scale-100"
-            : "opacity-0 -translate-y-1 scale-95"
         }`}
       >
-        <p
-          className={`text-center font-display text-xs sm:text-sm font-medium leading-snug transition-colors duration-300 ${
-            isCompleted || progress >= 100 ? "text-emerald-300 font-semibold" : "text-[#F5F5F5]"
-          }`}
-        >
-          {isCompleted || progress >= 100 ? `✨ ${displayedText}` : `“${displayedText}”`}
-        </p>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={text}
+            initial={{ opacity: 0, y: 4, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.96 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className={`text-center font-display text-xs sm:text-sm font-medium leading-snug ${
+              isCompleted || progress >= 100 ? "text-emerald-300 font-semibold" : "text-[#F5F5F5]"
+            }`}
+          >
+            {isCompleted || progress >= 100 ? `✨ ${text}` : `“${text}”`}
+          </motion.p>
+        </AnimatePresence>
+
         {/* Beak pointer to mascot */}
         <div
           aria-hidden="true"
@@ -89,32 +79,52 @@ export function LivingProcessingCompanion({
         />
       </div>
 
-      {/* Living Mascot Stage with Concentric Orbit Rings & Glowing Pedestal */}
+      {/* Living Mascot Stage with Animated Concentric Orbit Rings & Glowing Pedestal */}
       <div className="relative flex size-28 sm:size-32 items-center justify-center">
-        {/* Outer Orbit Ring with very slow rotation */}
+        {/* Outer Orbit Ring with Continuous Smooth Rotation */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute size-28 sm:size-32 rounded-full border border-dashed border-ember/20 animate-[spin_40s_linear_infinite]"
+          className="pointer-events-none absolute size-28 sm:size-32 rounded-full border border-dashed border-ember/20 animate-[spin_30s_linear_infinite]"
         />
 
-        {/* Inner Orbit Ring */}
+        {/* Inner Orbit Ring with Counter-Rotation */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute size-20 sm:size-24 rounded-full border border-ember/25 animate-[spin_24s_linear_infinite_reverse]"
+          className="pointer-events-none absolute size-20 sm:size-24 rounded-full border border-ember/30 animate-[spin_18s_linear_infinite_reverse]"
         />
 
-        {/* Mascot Centerpiece with Continuous Breathing Motion */}
-        <div className="relative z-10 size-20 sm:size-24 animate-[bounce-gentle_3s_ease-in-out_infinite] drop-shadow-[0_8px_24px_rgba(255,138,61,0.3)]">
-          <Mascot mood={mascotMood as any} className="size-full" />
-        </div>
+        {/* Mascot Centerpiece with Dynamic Floating Bobbing Physics & Visor Motion */}
+        <motion.div
+          animate={{
+            y: [-4, 4, -4],
+            rotate: [-1, 1, -1],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          className="relative z-10 size-20 sm:size-24 drop-shadow-[0_8px_24px_rgba(255,138,61,0.35)]"
+        >
+          <Mascot working={!isCompleted} mood={mascotMood} className="size-full" />
+        </motion.div>
 
-        {/* Glowing Pedestal Base */}
-        <div
+        {/* Glowing Pedestal Base with Breathing Pulse */}
+        <motion.div
+          animate={{
+            scale: [0.95, 1.1, 0.95],
+            opacity: [0.75, 1, 0.75],
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
           aria-hidden="true"
-          className={`absolute -bottom-1 h-2 w-20 sm:w-24 rounded-full blur-[2px] transition-all duration-500 ${
+          className={`absolute -bottom-1 h-2.5 w-20 sm:w-24 rounded-full blur-[2px] transition-colors duration-500 ${
             isCompleted || progress >= 100
-              ? "bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.9)_0%,transparent_75%)]"
-              : "bg-[radial-gradient(ellipse_at_center,rgba(255,138,61,0.85)_0%,transparent_75%)]"
+              ? "bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.95)_0%,transparent_75%)]"
+              : "bg-[radial-gradient(ellipse_at_center,rgba(255,138,61,0.9)_0%,transparent_75%)]"
           }`}
         />
       </div>
