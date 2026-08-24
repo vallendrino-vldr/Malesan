@@ -49,16 +49,14 @@ have run it and seen it.
 
 ## Non-negotiables (summary — full list in `.notes/AGENTS.md`)
 
-- Credits are spent **server-side only**, through the `spend_credits` SQL function
-  (via `spendCredits` in `src/lib/credits.ts`). Never in client code.
+- **Autonomous Mega-Skill Dispatch:** Never wait for the user to prompt `/mikir`, `/mikir-ui`, `/mikir-code`, or `/mikir-audit`. Automatically apply deep architectural reasoning, mobile-first anti-slop design (360px responsive, no scrollbars, equal button heights), server-side credit security, and comprehensive verification on every turn.
+- **Predictive Intent Decoding ($A \to B \to C \to D$):** When receiving minimalist prompts, trace all connected components, modals, scripts, mobile layouts, and server actions before acting.
+- Credits are spent **server-side only**, through the `spend_credits` SQL function (via `spendCredits` in `src/lib/credits.ts`). Never in client code.
 - **RLS on every user table.** A user only ever reads/writes their own rows.
-- **No AI provider key reaches the browser.** Model ids come from env/`app_config`,
-  never hardcoded.
-- **`next build` is the real gate**, not `tsc`. Verify in a browser before saying
-  "done". `.notes/HANDOFF.md` §4 lists traps — read it before debugging anything.
+- **No AI provider key reaches the browser.** Model ids come from env/`app_config`, never hardcoded.
+- **`next build` is the real gate**, not `tsc`. Verify in a browser before saying "done". `.notes/HANDOFF.md` §4 lists traps — read it before debugging anything.
 - **Update `.notes/HANDOFF.md`** before ending any turn that changed a file.
-- Provider keys go in **Vercel env** (an agent cannot set those — hand the exact
-  variable names to the owner) and in local **`.env.local`** (gitignored).
+- Provider keys go in **Vercel env** (an agent cannot set those — hand the exact variable names to the owner) and in local **`.env.local`** (gitignored).
 
 <!-- BEGIN:nextjs-agent-rules -->
 
