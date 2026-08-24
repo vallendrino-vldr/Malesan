@@ -28,13 +28,6 @@ const INDO_MONTHS = [
   "Des",
 ];
 
-function formatIndoDate(d: Date): string {
-  const dayName = INDO_DAYS[d.getDay()];
-  const dateNum = d.getDate();
-  const monthName = INDO_MONTHS[d.getMonth()];
-  return `${dayName}, ${dateNum} ${monthName}`;
-}
-
 function toDateString(d: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -63,22 +56,31 @@ export function PipelineCalendarView({
   const [selectedUnscheduledCard, setSelectedUnscheduledCard] = useState<string | null>(null);
   const [isUpdatingDate, setIsUpdatingDate] = useState<string | null>(null);
 
-  // Generate 7 days for the current week (Monday to Sunday)
+  // Generate 7 days for the active week (Monday to Sunday)
   const weekDays = useMemo(() => {
-    const days: { date: Date; dateStr: string; label: string; isToday: boolean }[] = [];
-    const todayStr = toDateString(new Date());
+    const days: Array<{
+      date: Date;
+      dateStr: string;
+      isToday: boolean;
+      dayOfWeek: number;
+    }> = [];
+
+    const now = new Date();
+    const todayStr = toDateString(now);
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(currentWeekStart);
       d.setDate(currentWeekStart.getDate() + i);
       const dateStr = toDateString(d);
+
       days.push({
         date: d,
         dateStr,
-        label: formatIndoDate(d),
         isToday: dateStr === todayStr,
+        dayOfWeek: d.getDay(),
       });
     }
+
     return days;
   }, [currentWeekStart]);
 
@@ -87,7 +89,7 @@ export function PipelineCalendarView({
     const map = new Map<string, PipelineCard[]>();
     const unscheduled: PipelineCard[] = [];
 
-    for (const card of cards) {
+    cards.forEach((card) => {
       if (card.scheduled_date) {
         const existing = map.get(card.scheduled_date) || [];
         existing.push(card);
@@ -95,19 +97,20 @@ export function PipelineCalendarView({
       } else {
         unscheduled.push(card);
       }
-    }
+    });
+
     return { scheduledMap: map, unscheduledCards: unscheduled };
   }, [cards]);
 
   const handlePrevWeek = () => {
     const prev = new Date(currentWeekStart);
-    prev.setDate(prev.getDate() - 7);
+    prev.setDate(currentWeekStart.getDate() - 7);
     setCurrentWeekStart(prev);
   };
 
   const handleNextWeek = () => {
     const next = new Date(currentWeekStart);
-    next.setDate(next.getDate() + 7);
+    next.setDate(currentWeekStart.getDate() + 7);
     setCurrentWeekStart(next);
   };
 
@@ -120,13 +123,13 @@ export function PipelineCalendarView({
     setCurrentWeekStart(monday);
   };
 
-  const handleAssignDate = async (cardId: string, dateStr: string | null) => {
+  const handleAssignDate = async (cardId: string, targetDateStr: string | null) => {
     setIsUpdatingDate(cardId);
     try {
-      await updateCardScheduleDate(cardId, dateStr);
+      await updateCardScheduleDate(cardId, targetDateStr);
       setSelectedUnscheduledCard(null);
     } catch (e) {
-      console.error("Failed to update card schedule date", e);
+      console.error("Gagal mengupdate jadwal kartu:", e);
     } finally {
       setIsUpdatingDate(null);
     }
@@ -141,78 +144,88 @@ export function PipelineCalendarView({
   return (
     <div className="flex flex-col gap-4">
       {/* Calendar Top Navigation Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface/70 p-3 shadow-xs">
-        <div className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-lg border border-hairline bg-surface-raised text-ink">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-              <rect width="18" height="18" x="3" y="4" rx="2" />
-              <path d="M16 2v4" />
-              <path d="M8 2v4" />
-              <path d="M3 10h18" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="font-display text-sm font-semibold text-ink">Jadwal Rencana Tayang</h3>
-            <p className="text-micro text-muted">{weekRangeLabel}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleResetToday}
-            className="h-8 rounded-lg border border-hairline bg-surface-raised px-2.5 text-micro font-medium text-ink transition-colors hover:border-ink/20"
-          >
-            Minggu Ini
-          </button>
-          <div className="flex items-center rounded-lg border border-hairline bg-surface-raised p-0.5">
-            <button
-              onClick={handlePrevWeek}
-              aria-label="Minggu Sebelumnya"
-              className="flex size-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                <path d="m15 18-6-6 6-6" />
+      <div className="flex flex-col gap-3 rounded-2xl border border-hairline/80 bg-surface-raised/50 p-3.5 sm:p-4 shadow-xs">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex size-9 items-center justify-center rounded-xl border border-hairline bg-surface text-ink shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
+                <rect width="18" height="18" x="3" y="4" rx="2" />
+                <path d="M16 2v4" />
+                <path d="M8 2v4" />
+                <path d="M3 10h18" />
               </svg>
-            </button>
-            <button
-              onClick={handleNextWeek}
-              aria-label="Minggu Berikutnya"
-              className="flex size-7 items-center justify-center rounded-md text-muted transition-colors hover:bg-surface hover:text-ink"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </button>
+            </div>
+            <div>
+              <h3 className="font-display text-sm font-bold text-ink">Jadwal Rencana Tayang</h3>
+              <p className="text-micro text-muted">{weekRangeLabel}</p>
+            </div>
           </div>
 
-          {onClearSchedule && cards.length > 0 && (
-            <button
-              type="button"
-              onClick={onClearSchedule}
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-micro font-medium text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
-              title="Kosongkan jadwal atau hapus kartu dari alur"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-              </svg>
-              <span>Bersihkan</span>
-            </button>
-          )}
+          {/* Action Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Week Navigation Segment */}
+            <div className="flex h-9 items-center rounded-xl border border-hairline bg-surface p-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={handlePrevWeek}
+                aria-label="Minggu Sebelumnya"
+                className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <path d="m15 18-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={handleResetToday}
+                className="px-2.5 text-xs font-semibold text-ink transition-colors hover:text-ember whitespace-nowrap"
+              >
+                Minggu Ini
+              </button>
+              <button
+                type="button"
+                onClick={handleNextWeek}
+                aria-label="Minggu Berikutnya"
+                className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <path d="m9 18 6-6-6-6" />
+                </svg>
+              </button>
+            </div>
 
-          {onGenerateStrategy && (
-            <button
-              onClick={onGenerateStrategy}
-              disabled={isGeneratingStrategy}
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-ember/40 bg-ember/10 px-3 font-display text-micro font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-              </svg>
-              <span>{isGeneratingStrategy ? "Menyusun 7 Hari..." : "Rancang 7 Hari · 5 kredit"}</span>
-            </button>
-          )}
+            {/* Clear Button */}
+            {onClearSchedule && cards.length > 0 && (
+              <button
+                type="button"
+                onClick={onClearSchedule}
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-hairline bg-surface px-3 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap shrink-0"
+                title="Kosongkan jadwal atau hapus kartu dari alur"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
+                <span>Bersihkan</span>
+              </button>
+            )}
+
+            {/* Generate Strategy Button */}
+            {onGenerateStrategy && (
+              <button
+                type="button"
+                onClick={onGenerateStrategy}
+                disabled={isGeneratingStrategy}
+                className="flex h-9 items-center gap-1.5 rounded-xl border border-ember/40 bg-ember/15 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/25 disabled:opacity-50 whitespace-nowrap shrink-0"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
+                </svg>
+                <span>{isGeneratingStrategy ? "Menyusun 7 Hari..." : "Rancang 7 Hari · 5 kredit"}</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -230,7 +243,7 @@ export function PipelineCalendarView({
               }`}
             >
               {/* Day Header */}
-              <div className="mb-2 flex items-center justify-between border-b border-hairline/60 pb-2">
+              <div className="mb-2.5 flex items-center justify-between border-b border-hairline/60 pb-2">
                 <div>
                   <p className="font-display text-xs font-semibold text-ink">
                     {INDO_DAYS[day.date.getDay()]}
@@ -276,19 +289,19 @@ export function PipelineCalendarView({
           return (
             <div
               key={day.dateStr}
-              className={`rounded-xl border p-3.5 transition-colors ${
+              className={`rounded-2xl border p-3.5 transition-colors ${
                 day.isToday
                   ? "border-ember/40 bg-ember/[0.03]"
                   : "border-hairline bg-surface/60"
               }`}
             >
               {/* Mobile Day Header */}
-              <div className="mb-2.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
                   <div
-                    className={`flex size-7 items-center justify-center rounded-md font-display text-xs font-bold ${
+                    className={`flex size-8 items-center justify-center rounded-lg font-display text-xs font-bold ${
                       day.isToday
-                        ? "bg-ember text-surface"
+                        ? "bg-ember text-surface shadow-xs"
                         : "border border-hairline bg-surface-raised text-ink"
                     }`}
                   >
@@ -311,16 +324,16 @@ export function PipelineCalendarView({
                       Hari Ini
                     </span>
                   )}
-                  <span className="rounded-full bg-surface-raised px-2 py-0.5 text-micro text-muted">
+                  <span className="rounded-full bg-surface-raised px-2 py-0.5 text-micro text-muted border border-hairline">
                     {dayCards.length} konten
                   </span>
                 </div>
               </div>
 
               {/* Mobile Day Cards */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2.5">
                 {dayCards.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-hairline/60 py-3 text-center">
+                  <div className="rounded-xl border border-dashed border-hairline/60 py-3 text-center">
                     <p className="text-micro text-muted/70">Jadwal kosong untuk hari ini</p>
                   </div>
                 ) : (
@@ -342,7 +355,7 @@ export function PipelineCalendarView({
 
       {/* ---------- UNSCHEDULED CARDS SECTION ---------- */}
       {unscheduledCards.length > 0 && (
-        <div className="mt-2 rounded-xl border border-hairline bg-surface/40 p-4">
+        <div className="mt-2 rounded-2xl border border-hairline bg-surface/40 p-4">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-muted">
@@ -363,10 +376,10 @@ export function PipelineCalendarView({
             {unscheduledCards.map((card) => (
               <div
                 key={card.id}
-                className="flex flex-col justify-between gap-2.5 rounded-lg border border-hairline bg-surface-raised p-3"
+                className="flex flex-col justify-between gap-2.5 rounded-xl border border-hairline bg-surface-raised p-3.5"
               >
                 <div>
-                  <div className="mb-1 flex items-center justify-between">
+                  <div className="mb-1.5 flex items-center justify-between">
                     <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-semibold text-muted uppercase">
                       {card.status}
                     </span>
@@ -386,6 +399,7 @@ export function PipelineCalendarView({
 
                 <div className="flex items-center justify-between border-t border-hairline/40 pt-2">
                   <button
+                    type="button"
                     onClick={() =>
                       setSelectedUnscheduledCard(
                         selectedUnscheduledCard === card.id ? null : card.id,
@@ -406,8 +420,9 @@ export function PipelineCalendarView({
 
                   {onOpenCard && (
                     <button
+                      type="button"
                       onClick={() => onOpenCard(card)}
-                      className="text-micro text-muted transition-colors hover:text-ink"
+                      className="text-micro text-muted transition-colors hover:text-ink font-medium"
                     >
                       Buka Kartu
                     </button>
@@ -416,13 +431,14 @@ export function PipelineCalendarView({
 
                 {/* Quick Date Picker Popover */}
                 {selectedUnscheduledCard === card.id && (
-                  <div className="mt-1 flex flex-wrap gap-1 rounded-md border border-hairline bg-surface p-2">
+                  <div className="mt-1 flex flex-wrap gap-1 rounded-lg border border-hairline bg-surface p-2">
                     <p className="w-full text-[10px] font-semibold text-muted">
                       Pilih Hari Minggu Ini:
                     </p>
                     {weekDays.map((d) => (
                       <button
                         key={d.dateStr}
+                        type="button"
                         onClick={() => handleAssignDate(card.id, d.dateStr)}
                         disabled={isUpdatingDate === card.id}
                         className="rounded border border-hairline bg-surface-raised px-2 py-1 text-[10px] font-medium text-ink transition-colors hover:border-ember hover:text-ember disabled:opacity-50"
@@ -453,7 +469,7 @@ function CalendarCardItem({
   isUpdating?: boolean;
 }) {
   const content = card.content as Record<string, unknown> | null;
-  const pillar = content?.content_pillar as string | undefined;
+  const pillar = typeof content?.content_pillar === "string" ? content.content_pillar : undefined;
 
   const pillarLabel =
     pillar === "edukasi"
@@ -469,70 +485,66 @@ function CalendarCardItem({
   return (
     <div
       onClick={() => onOpenCard?.(card)}
-      className="group relative cursor-pointer rounded-lg border border-hairline bg-surface-raised p-2.5 transition-all hover:border-ink/20 hover:shadow-xs"
+      className="group relative flex flex-col justify-between cursor-pointer rounded-xl border border-hairline/80 bg-surface-raised p-2.5 transition-all duration-150 hover:border-ember/40 hover:bg-surface-raised/90 hover:shadow-xs active:scale-[0.99]"
     >
-      <div className="mb-1.5 flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${
-              card.status === "siap"
-                ? "bg-success/15 text-success"
-                : card.status === "draft"
-                  ? "bg-blue-500/15 text-blue-400"
-                  : card.status === "posted"
-                    ? "bg-purple-500/15 text-purple-400"
-                    : "bg-surface text-muted"
-            }`}
-          >
-            {card.status}
-          </span>
-          {pillarLabel && (
-            <span className="rounded bg-surface px-1 py-0.5 text-[9px] text-muted">
-              {pillarLabel}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between gap-1">
+          <div className="flex items-center gap-1 min-w-0">
+            <span
+              className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                card.status === "siap"
+                  ? "bg-success/15 text-success border border-success/30"
+                  : card.status === "draft"
+                    ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                    : card.status === "posted"
+                      ? "bg-purple-500/15 text-purple-400 border border-purple-500/30"
+                      : "bg-surface text-muted border border-hairline"
+              }`}
+            >
+              {card.status}
+            </span>
+            {pillarLabel && (
+              <span className="truncate rounded border border-hairline bg-surface px-1.5 py-0.5 text-[9px] font-medium text-ink/80">
+                {pillarLabel}
+              </span>
+            )}
+          </div>
+
+          {card.ai_score && (
+            <span className="shrink-0 flex items-center gap-0.5 font-mono text-[10px] font-bold text-ember">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5 text-ember">
+                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
+              </svg>
+              {card.ai_score}
             </span>
           )}
         </div>
 
-        {card.ai_score && (
-          <span className="flex items-center gap-0.5 font-mono text-[10px] font-bold text-ember">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5 text-ember">
-              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
-            </svg>
-            {card.ai_score}
-          </span>
-        )}
+        <h5 className="font-display text-xs font-semibold leading-snug text-ink line-clamp-2 group-hover:text-ember transition-colors">
+          {card.title}
+        </h5>
       </div>
 
-      <h5 className="font-display text-xs font-semibold text-ink line-clamp-2 group-hover:text-ember transition-colors">
-        {card.title}
-      </h5>
-
-      {/* Card Footer */}
-      <div className="mt-2 flex items-center justify-between border-t border-hairline/40 pt-1.5 text-[10px] text-muted">
-        <span className="flex items-center gap-1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5 text-muted">
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-          </svg>
-          {card.schedule_label || "Rencana"}
+      {/* Card Footer: Clean, zero text collision */}
+      <div className="mt-2.5 flex items-center justify-between border-t border-hairline/60 pt-1.5 text-[10px] text-muted">
+        <span className="truncate text-micro text-muted/70">
+          {content?.est_duration ? String(content.est_duration) : card.schedule_label || "Rencana"}
         </span>
 
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-ember group-hover:underline">Buka Detail →</span>
-          {onUnschedule && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onUnschedule();
-              }}
-              disabled={isUpdating}
-              className="text-muted/60 transition-colors hover:text-danger disabled:opacity-50"
-              title="Hapus dari jadwal tanggal ini"
-            >
-              Lepas
-            </button>
-          )}
-        </div>
+        {onUnschedule && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnschedule();
+            }}
+            disabled={isUpdating}
+            className="text-[10px] text-muted/60 transition-colors hover:text-danger disabled:opacity-50"
+            title="Hapus dari jadwal tanggal ini"
+          >
+            Lepas
+          </button>
+        )}
       </div>
     </div>
   );

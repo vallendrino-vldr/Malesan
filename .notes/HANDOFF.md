@@ -35,14 +35,26 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Universal Card Modal & Batch Clear Action (§9z.24).
-**Newest work is §9z.24 — Universal Card Detail Modal & Batch Clear Action: (1) Created `PipelineCardModal.tsx` supporting full card inspection, AI 5-rubric score breakdown (`Daya Henti`, `Penasaran`, `Masalah Audiens`, `Spesifik`, `Emosi`), strategic context (Angle, Why Now, Format, Est. Duration), in-modal Hook Generation (`2 kredit`), in-modal Script Generation (`3 kredit`), Scene viewer/teleprompter, schedule date modification, and individual delete; (2) Created `PipelineClearModal.tsx` and server action `clearPipelineCards` in `src/app/actions/pipeline.ts` with 3 safe scopes ("Jadwal Minggu Ini", "Semua Konten di Alur", "Ide Belum Terjadwal") and confirmation dialog; (3) Added "Bersihkan" action buttons in both Kanban & Calendar toolbars; (4) Added "Buka Detail →" visual cues to all calendar cards; (5) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop and mobile 390x844.** Read §9z.24, then §9z.23.
+Last updated: **2026-08-24**, after Calendar Precision Layout & Zero-Collision Redesign (§9z.25).
+**Newest work is §9z.25 — Calendar Precision Layout & Zero-Collision Redesign: (1) Fixed card footer collisions in 7-column desktop grid by removing awkward inline text links and establishing a clean 2-element footer (Duration on left, Lepas on right) with full card clickability; (2) Hardened toolbar button alignment with `shrink-0` and `whitespace-nowrap` across segmented controls `[ ‹ ] [ Minggu Ini ] [ › ]`, `[ 🗑 Bersihkan ]`, and `[ ✨ Rancang 7 Hari · 5 kredit ]`; (3) Perfected mobile responsive layout with balanced 50/50 segmented controls, 44px+ touch targets, and clean day headers; (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing on both desktop (1440x900) and mobile (390x844).** Read §9z.25, then §9z.24.
 
 ---
 
-## §9z.24 — Universal Card Detail Modal & Batch Clear Action (2026-08-24)
+## §9z.25 — Calendar Precision Layout & Zero-Collision Redesign (2026-08-24)
 
 **Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Zero-Collision Card Footer (`PipelineCalendarView.tsx`):**
+   - Eliminated text wrapping and collision in ~130px column grids.
+   - Clean footer layout with duration/metadata on left and subtle action on right.
+2. **Unified Toolbar Segmented Control:**
+   - Locked all button heights to `h-9` with `whitespace-nowrap` to prevent awkward 2-line wraps.
+3. **Mobile Layout Precision:**
+   - 2-row header on mobile with full-width segmented view switcher and touch-friendly buttons.
+   - Clean vertical agenda list with distinct date boxes and day status badges.
+
+---
 
 ### Summary of Changes:
 1. **Universal Card Detail Modal (`PipelineCardModal.tsx`):**

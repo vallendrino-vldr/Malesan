@@ -504,8 +504,8 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       <div className="surface-card rounded-2xl border border-hairline/80 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col gap-4">
           {/* Top row: Title, Total badge, and View Switcher */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-2.5">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
                   <path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z" />
@@ -514,18 +514,19 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 </svg>
                 <span>Alur Kerja Kreator</span>
               </div>
-              <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-micro text-muted border border-hairline">
+              <span className="rounded-full bg-surface-raised px-2.5 py-0.5 font-mono text-micro text-muted border border-hairline">
                 {total} konten aktif
               </span>
             </div>
 
             {/* View Mode Toggle & Rancang 7 Hari Action */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center rounded-xl border border-hairline bg-surface/70 p-0.5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {/* Segmented View Switcher */}
+              <div className="flex h-9 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode("kanban")}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  className={`flex h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "kanban"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
@@ -541,7 +542,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 <button
                   type="button"
                   onClick={() => setViewMode("calendar")}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
+                  className={`flex h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "calendar"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
@@ -557,33 +558,35 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 </button>
               </div>
 
-              {cards.length > 0 && (
+              <div className="flex items-center gap-2">
+                {cards.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsClearModalOpen(true)}
+                    className="flex h-9 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap shrink-0"
+                    title="Kosongkan jadwal atau hapus kartu dari alur"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
+                    <span>Bersihkan</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => setIsClearModalOpen(true)}
-                  className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 py-1.5 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger"
-                  title="Kosongkan jadwal atau hapus kartu dari alur"
+                  onClick={handleGenerate7DayStrategy}
+                  disabled={isGeneratingStrategy}
+                  className="flex h-9 flex-2 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/10 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                    <path d="M3 6h18" />
-                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
                   </svg>
-                  <span>Bersihkan</span>
+                  <span>{isGeneratingStrategy ? "Menyusun..." : "Rancang 7 Hari · 5 kredit"}</span>
                 </button>
-              )}
-
-              <button
-                type="button"
-                onClick={handleGenerate7DayStrategy}
-                disabled={isGeneratingStrategy}
-                className="flex items-center gap-1.5 rounded-xl border border-ember/40 bg-ember/10 px-3.5 py-1.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
-                </svg>
-                <span>{isGeneratingStrategy ? "Menyusun 7 Hari..." : "Rancang 7 Hari · 5 kredit"}</span>
-              </button>
+              </div>
             </div>
           </div>
 
