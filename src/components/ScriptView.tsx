@@ -220,7 +220,7 @@ export function ScriptView({
   const scenes = currentScript.script ?? [];
 
   return (
-    <div className="mt-3 rounded-xl border border-hairline bg-obsidian">
+    <div className="mt-3 w-full overflow-hidden rounded-xl border border-hairline bg-obsidian">
       {/* Top Tab Bar & Save Status */}
       <div className="flex items-center justify-between border-b border-hairline p-1.5">
         <div className="flex flex-1 items-center gap-1">
@@ -247,14 +247,14 @@ export function ScriptView({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="ml-2 cursor-pointer rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-1 text-micro font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all disabled:opacity-50"
+            className="ml-1.5 cursor-pointer shrink-0 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2 py-1 text-micro font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all disabled:opacity-50"
           >
-            {isSaving ? "Menyimpan..." : "Simpan ✓"}
+            {isSaving ? "Simpan..." : "Simpan ✓"}
           </button>
         )}
       </div>
 
-      <div className="max-h-80 overflow-y-auto overscroll-contain p-3 space-y-3">
+      <div className="max-h-80 w-full overflow-y-auto overflow-x-hidden p-2.5 space-y-2.5 overscroll-contain">
         {tab === "baca" ? (
           <div className="space-y-2">
             <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-ink/90">
@@ -262,16 +262,16 @@ export function ScriptView({
             </pre>
           </div>
         ) : (
-          <ol className="space-y-3">
+          <ol className="w-full space-y-2.5">
             {scenes.map((sc, i) => (
               <li
                 key={i}
-                className="group relative rounded-xl border border-white/[0.08] bg-surface/90 p-3 shadow-sm hover:border-ember/30 transition-all"
+                className="group relative w-full rounded-xl border border-white/[0.08] bg-surface/90 p-2.5 shadow-sm hover:border-ember/30 transition-all"
               >
                 {/* Scene Header */}
-                <div className="flex items-center justify-between gap-2 border-b border-white/[0.04] pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex size-5 items-center justify-center rounded-full bg-ember/15 text-[10px] font-bold text-ember">
+                <div className="flex items-center justify-between gap-2 border-b border-white/[0.04] pb-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="flex size-4.5 items-center justify-center rounded-full bg-ember/15 text-[10px] font-bold text-ember">
                       {i + 1}
                     </span>
                     <span className="font-mono text-micro font-semibold text-ember">
@@ -310,11 +310,11 @@ export function ScriptView({
 
                 {/* Visual Footage Director Box */}
                 {!textMode && (
-                  <div className="mt-2.5 rounded-xl border border-white/[0.08] bg-black/40 p-3">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <label className="flex items-center gap-1.5 text-[10px] font-bold tracking-wider text-ember uppercase">
-                        <FilmIcon className="size-3.5 text-ember" />
-                        <span>Arahan Footage & Visual</span>
+                  <div className="mt-2 rounded-xl border border-white/[0.08] bg-black/40 p-2.5 w-full min-w-0">
+                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                      <label className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate">
+                        <FilmIcon className="size-3 text-ember shrink-0" />
+                        <span className="truncate">Arahan Visual</span>
                       </label>
 
                       {/* Top quick helper button */}
@@ -322,17 +322,18 @@ export function ScriptView({
                         type="button"
                         onClick={() => handleAIFootageSuggest(i)}
                         disabled={adaptingSceneIdx === i}
-                        className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-lg border border-ember/30 bg-ember/10 px-2 py-1 text-micro font-bold text-ember transition-all hover:bg-ember/20 disabled:opacity-50"
+                        title="Sesuaikan arahan visual dengan AI"
+                        className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-md border border-ember/30 bg-ember/10 px-2 py-0.5 text-micro font-bold text-ember transition-all hover:bg-ember/20 disabled:opacity-50"
                       >
                         {adaptingSceneIdx === i ? (
                           <>
-                            <span className="size-2 rounded-full bg-ember animate-ping" />
+                            <span className="size-1.5 rounded-full bg-ember animate-ping" />
                             <span>AI...</span>
                           </>
                         ) : (
                           <>
-                            <SparkleIcon className="size-2.5 text-ember" />
-                            <span>Sesuaikan AI</span>
+                            <SparkleIcon className="size-2 text-ember" />
+                            <span>AI</span>
                           </>
                         )}
                       </button>
@@ -349,11 +350,11 @@ export function ScriptView({
 
                     {/* Creator Custom Footage Note Input */}
                     {openFootageNoteIdx === i || sc.user_footage_note ? (
-                      <div className="mt-2.5 rounded-lg border border-ember/25 bg-[#141210] p-2.5 shadow-sm">
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <label className="flex items-center gap-1.5 text-micro font-bold tracking-wider text-ember uppercase">
-                            <FilmIcon className="size-3 text-ember" />
-                            <span>Bahan Rekaman Pribadi</span>
+                      <div className="mt-2 rounded-lg border border-ember/25 bg-[#141210] p-2 shadow-sm w-full min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-1.5">
+                          <label className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate">
+                            <FilmIcon className="size-2.5 text-ember shrink-0" />
+                            <span className="truncate">Rekaman Sendiri</span>
                           </label>
                           <button
                             type="button"
@@ -361,20 +362,20 @@ export function ScriptView({
                               setOpenFootageNoteIdx(null);
                               if (!sc.user_footage_note) handleUpdateScene(i, "user_footage_note", "");
                             }}
-                            className="cursor-pointer rounded border border-white/10 bg-white/[0.04] px-2 py-0.5 text-micro font-medium text-muted transition-colors hover:border-white/20 hover:text-ink"
+                            className="cursor-pointer shrink-0 rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-medium text-muted transition-colors hover:border-white/20 hover:text-ink"
                           >
                             Tutup
                           </button>
                         </div>
 
                         {/* Unified Slim Input Bar with Embedded CTA Button */}
-                        <div className="relative flex items-center gap-1.5 rounded-lg border border-white/10 bg-obsidian p-1 focus-within:border-ember/60 transition-colors">
+                        <div className="relative flex w-full min-w-0 items-center gap-1 rounded-md border border-white/10 bg-obsidian p-1 focus-within:border-ember/60 transition-colors">
                           <input
                             type="text"
                             value={sc.user_footage_note || ""}
                             onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
-                            placeholder="Ketik rekaman yang kamu punya..."
-                            className="flex-1 bg-transparent px-2 py-1 text-xs text-ink placeholder:text-muted/40 outline-none"
+                            placeholder="Ketik rekamanmu..."
+                            className="min-w-0 flex-1 bg-transparent px-1.5 py-0.5 text-xs text-ink placeholder:text-muted/40 outline-none"
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && sc.user_footage_note?.trim()) {
                                 e.preventDefault();
@@ -386,16 +387,16 @@ export function ScriptView({
                             type="button"
                             onClick={() => handleAIFootageSuggest(i)}
                             disabled={adaptingSceneIdx === i || !sc.user_footage_note?.trim()}
-                            className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-md bg-ember px-2.5 py-1 text-micro font-bold text-obsidian shadow-sm transition-all hover:bg-ember-lo disabled:opacity-30 active:scale-95"
+                            className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded bg-ember px-2 py-1 text-micro font-bold text-obsidian whitespace-nowrap shadow-sm transition-all hover:bg-ember-lo disabled:opacity-30 active:scale-95"
                           >
                             {adaptingSceneIdx === i ? (
                               <>
-                                <span className="size-2 rounded-full bg-obsidian animate-ping" />
-                                <span>Memproses...</span>
+                                <span className="size-1.5 rounded-full bg-obsidian animate-ping" />
+                                <span>...</span>
                               </>
                             ) : (
                               <>
-                                <SparkleIcon className="size-2.5 fill-current" />
+                                <SparkleIcon className="size-2 fill-current" />
                                 <span>Sesuaikan</span>
                               </>
                             )}
@@ -406,10 +407,10 @@ export function ScriptView({
                       <button
                         type="button"
                         onClick={() => setOpenFootageNoteIdx(i)}
-                        className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/15 bg-white/[0.02] py-2 px-3 text-xs font-semibold text-ink/80 transition-all hover:border-ember/50 hover:bg-ember/[0.06] hover:text-ember active:scale-[0.98]"
+                        className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.02] py-1.5 px-2 text-micro font-semibold text-ink/80 transition-all hover:border-ember/50 hover:bg-ember/[0.06] hover:text-ember active:scale-[0.98]"
                       >
-                        <FilmIcon className="size-3.5 opacity-70" />
-                        <span>+ Tambah rekaman atau footage sendiri</span>
+                        <FilmIcon className="size-3 opacity-70" />
+                        <span>+ Tambah rekaman sendiri</span>
                       </button>
                     )}
                   </div>

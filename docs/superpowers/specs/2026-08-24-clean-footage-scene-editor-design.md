@@ -1,27 +1,29 @@
-# Design Specification: Clean Minimalist Scene Footage Editor (Option A: Unified Slim Input Bar)
+# Design Specification: Compact Kanban Layout for Scene Footage Editor (Option 1)
 
 ## 1. Overview & Goals
-Redesign the custom footage input box in `ScriptView.tsx` to be ultra-compact, slim, and space-efficient. Replace the bulky stacked layout with a unified input bar containing an inline end-adornment action button `Sesuaikan`, cutting vertical height by over 50% and preventing text wrapping on mobile screens.
+Fix desktop 4-column kanban layout overflow and offside button collision in `ScriptView.tsx`. In narrow ~240px desktop kanban cards, prevent flex child overflow with `min-w-0`, streamline headers to single-line labels (`ARAHAN VISUAL`, `REKAMAN SENDIRI`), and make action buttons compact (`[ AI ]`, `[ Sesuaikan ]`) so they never wrap into multiple awkward lines or overflow horizontally.
 
-## 2. Design Details (Option A)
+## 2. Design Details (Option 1)
 
-### 2.1 Trigger Button
-- **Style:** Border dashed `border-white/15 hover:border-ember/40 bg-white/[0.02] hover:bg-ember/[0.06] text-ink/80 hover:text-ember`.
-- **Icon:** 14px vector film strip SVG line art.
-- **Label:** `+ Tambah rekaman atau footage sendiri`
+### 2.1 Streamlined Headers
+- **Visual Section Header:**
+  - Label: `ARAHAN VISUAL` with 12px `FilmIcon`. (Fits in 1 single line on desktop & mobile).
+  - Quick Helper Button: `[ AI ]` with 10px `SparkleIcon` (fits in 44px width, single-line).
+- **Custom Footage Box Header:**
+  - Label: `REKAMAN SENDIRI` with 12px `FilmIcon`.
+  - Right: `Tutup` button.
 
-### 2.2 Expanded Footage Box (Ultra-Compact 2-Line Layout)
-- **Line 1 (Header):**
-  - Left: Monospace micro label with 12px film icon: `BAHAN REKAMAN PRIBADI`
-  - Right: Minimalist `Tutup` button.
-- **Line 2 (Unified Input Bar):**
-  - An input wrapper `relative flex items-center rounded-lg border border-white/10 bg-obsidian/90 p-1 focus-within:border-ember/60 transition-colors`.
-  - Text input: `flex-1 bg-transparent px-2.5 py-1 text-xs text-ink placeholder:text-muted/40 outline-none` with placeholder `"Ketik rekaman yang kamu punya..."`.
-  - Inline Action Button: `inline-flex shrink-0 items-center gap-1 rounded-md bg-ember px-2.5 py-1.5 text-micro font-bold text-obsidian shadow-sm hover:bg-ember-lo transition-all disabled:opacity-40 active:scale-95`.
-    - Label: `Sesuaikan` (or loading indicator when adapting).
-- **Result:** Compact 2-line footprint, zero redundant helper text, zero vertical waste.
+### 2.2 Fluid Flexbox Input Bar with `min-w-0`
+- **Container:** `w-full min-w-0 flex items-center gap-1.5 rounded-lg border border-white/10 bg-obsidian p-1 focus-within:border-ember/60 transition-colors`.
+- **Input:** `min-w-0 flex-1 bg-transparent px-2 py-1 text-xs text-ink placeholder:text-muted/40 outline-none` with placeholder `"Ketik rekaman yang kamu punya..."`.
+  - Adding `min-w-0` removes HTML input's default 180px intrinsic min-width floor, allowing it to flex naturally inside any card width.
+- **Action Button:** `shrink-0 inline-flex items-center gap-1 rounded-md bg-ember px-2 py-1 text-micro font-bold text-obsidian whitespace-nowrap shadow-sm hover:bg-ember-lo transition-all disabled:opacity-30 active:scale-95`.
+  - Label: `Sesuaikan` (with 10px `SparkleIcon`).
+
+### 2.3 Container Guardrail
+- `ScriptView` container: `overflow-x-hidden w-full` to strictly forbid horizontal scrolling in kanban columns.
 
 ## 3. Verification Plan
 - `npm run build` (0 errors across 41 routes)
 - `npm test` (11 tests pass)
-- Visual capture via DevTools MCP on `http://localhost:3001/app?tab=pipeline` at mobile 390x844.
+- Visual capture via DevTools MCP on `http://localhost:3001/app?tab=pipeline` at desktop 1440x900 and mobile 390x844.
