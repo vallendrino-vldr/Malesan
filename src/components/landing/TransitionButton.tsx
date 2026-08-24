@@ -1,9 +1,7 @@
-"use client";
+import React from "react";
+import Link from "next/link";
 
-import React, { useState } from "react";
-import { useCinematicTransition } from "./CinematicTransitionContext";
-
-interface TransitionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface TransitionButtonProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   href: string;
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "header" | "custom";
@@ -15,20 +13,8 @@ export function TransitionButton({
   children,
   variant = "primary",
   className = "",
-  onClick,
   ...props
 }: TransitionButtonProps) {
-  const { startTransitionTo } = useCinematicTransition();
-  const [clicked, setClicked] = useState(false);
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (onClick) onClick(e);
-    if (!e.defaultPrevented) {
-      setClicked(true);
-      startTransitionTo(href);
-    }
-  };
-
   let baseStyle = "";
   if (variant === "primary") {
     baseStyle =
@@ -42,19 +28,12 @@ export function TransitionButton({
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={`${baseStyle} ${clicked ? "scale-95 shadow-[0_0_40px_rgba(255,138,61,0.9)] ring-2 ring-ember" : ""} ${className}`}
+    <Link
+      href={href}
+      className={`${baseStyle} ${className}`}
       {...props}
     >
       {children}
-      {clicked && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 rounded-xl bg-ember/30 animate-ping pointer-events-none"
-        />
-      )}
-    </button>
+    </Link>
   );
 }

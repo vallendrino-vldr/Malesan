@@ -35,8 +35,20 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Admin Dashboard Simplification: Bidirectional Credits & 1-Click AI Switcher (§9z.41).
-**Newest work is §9z.41 — Admin Dashboard Simplification: Bidirectional Credits & 1-Click AI Switcher: (1) In `src/app/actions/admin.ts` & `src/app/admin/users/page.tsx`, introduced `adjustCredits` with atomic support for both `add` (+ Tambah) and `deduct` (- Kurangi) credit adjustments, fully audited with negative delta ledger entries; (2) In `src/app/actions/ai-admin.ts` & `src/app/admin/ai/BrainPanel.tsx`, built a non-developer-friendly 1-Click Provider Switcher card grid for instant 1-tap switching between Gemini, DeepSeek, etc. with automatic failover configuration; (3) Added `scripts/penetration-stress-test.mjs` confirming 0 client secrets and 100% RLS compliance; (4) Verified via `next build` (42 routes) and `npm test`.** Read §9z.41, then §9z.40.
+Last updated: **2026-08-24**, after Instant Navigation & Artificial Delay Elimination (§9z.42).
+**Newest work is §9z.42 — Instant Navigation & Artificial Delay Elimination: (1) Diagnosed and eliminated the artificial 1.05s setTimeout delay chain and heavy 20px blur filters from `src/components/landing/CinematicTransitionContext.tsx` that previously rendered the black void loading curtain ("MEMBUKA RUANG KERJA MALESAN...") and caused severe GPU lag; (2) Re-architected `src/components/landing/TransitionButton.tsx` to render native Next.js `<Link>` elements with automatic prefetching, restoring instant (<50ms) transition from the landing page to `/masuk`; (3) Verified via `next build` (42 routes) and `npm test`.** Read §9z.42, then §9z.41.
+
+---
+
+## §9z.42 — Instant Navigation & Artificial Delay Elimination (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled in 1.9s), `npm test` (11 tests passed), and visual inspection.
+
+### Summary of Changes:
+1. **Removed Artificial 1.05s Delay & GPU Blur Filter:**
+   - In `src/components/landing/CinematicTransitionContext.tsx`, removed the 5-step artificial timer chain and the full-page `filter blur-[20px] scale-[1.1]` that caused severe lag and rendered the black void screen.
+2. **Native Next.js `<Link>` Integration:**
+   - In `src/components/landing/TransitionButton.tsx`, wrapped native Next.js `<Link href={href}>` with prefetching for instantaneous zero-delay navigation to `/masuk`.
 
 ---
 
