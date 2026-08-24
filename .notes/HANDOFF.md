@@ -35,8 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Footer Precision Symmetrical Alignment (§9z.29).
-**Newest work is §9z.29 — Footer Precision Symmetrical Alignment: (1) Completely restructured landing page footer in `src/app/page.tsx` into a 2-row precision symmetrical layout; (2) Row 1 organizes brand mark + tagline with comfortable line-height on the left and clean horizontal navigation/legal links on the right; (3) Row 2 creates a balanced sub-footer with left-aligned copyright (`© 2026 Malesan. Hak cipta dilindungi.`) and right-aligned creator origin (`Dibuat untuk kreator konten Indonesia 🇮🇩`); (4) On mobile, structured into an optically balanced centered vertical hierarchy with generous `pb-16 sm:pb-20` padding; (5) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.29, then §9z.28.
+Last updated: **2026-08-24**, after Footer Tagline & Navigation Exact Row Alignment (§9z.30).
+**Newest work is §9z.30 — Footer Tagline & Navigation Exact Row Alignment: (1) In `src/app/page.tsx`, restructured desktop footer so that tagline (`AI Creative Companion untuk kreator konten Indonesia.`) and navigation links (`Cara Kerja`, `Mulai Gratis`, `Masuk`, `Privasi`, `Ketentuan`) share the EXACT same horizontal flex row (`flex-row items-center justify-between`), guaranteeing 100% horizontal baseline alignment; (2) In `src/components/Logo.tsx`, added `centered` prop support using `origin-center` to ensure true optical centering of the Malesan logo on mobile devices without rightward offset; (3) Cleaned up footer structure to render a single responsive Logo; (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.30, then §9z.29.
+
+---
+
+## §9z.30 — Footer Tagline & Navigation Exact Row Alignment (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Exact Horizontal Row Alignment (`src/app/page.tsx`):**
+   - Row 1: Logo
+   - Row 2: Tagline on left, Nav links on right in single flex row (`items-center justify-between`).
+   - Row 3: Symmetrical copyright on left, origin on right.
+2. **Mobile Optical Centering (`Logo.tsx`):**
+   - Implemented `centered` prop using `origin-center` so that scale compensation does not shift the logo off-center on mobile screens.
 
 ---
 

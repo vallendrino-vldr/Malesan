@@ -80,22 +80,23 @@ export default function Home() {
         </main>
 
         {/* =========================================================================
-            PRECISION SYMMETRICAL FOOTER
-            Optically balanced, perfectly aligned on desktop & mobile
+            PRECISION FOOTER (PERFECT HORIZONTAL BASELINE ALIGNMENT)
            ========================================================================= */}
         <footer className="relative z-10 bg-transparent pt-12 pb-16 sm:pt-16 sm:pb-20">
           <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
-            {/* Top Row: Brand & Navigation */}
-            <div className="flex flex-col items-center justify-between gap-6 sm:flex-row sm:items-center">
-              {/* Left Brand Identity */}
-              <div className="flex flex-col items-center sm:items-start gap-2 text-center sm:text-left">
-                <Logo markClass="h-8 sm:h-9" />
-                <p className="text-xs text-muted max-w-xs sm:max-w-sm leading-relaxed">
-                  AI Creative Companion untuk kreator konten Indonesia.
-                </p>
-              </div>
+            
+            {/* Row 1: Brand Logo (Left on desktop, true center on mobile) */}
+            <div className="flex justify-center sm:justify-start">
+              <Logo markClass="h-8 sm:h-9" centered />
+            </div>
 
-              {/* Right Navigation & Legal Links */}
+            {/* Row 2: Tagline (Left) perfectly sejajar with Nav Links (Right) on Desktop */}
+            <div className="mt-3.5 flex flex-col items-center justify-between gap-5 sm:flex-row sm:items-center">
+              <p className="text-xs text-muted text-center sm:text-left leading-normal">
+                AI Creative Companion untuk kreator konten Indonesia.
+              </p>
+
+              {/* Navigation & Legal Links */}
               <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-muted">
                 <a href="#journey" className="transition-colors hover:text-ink">
                   Cara Kerja
@@ -115,7 +116,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Bottom Row: Symmetrical Copyright & Origin */}
+            {/* Row 3: Symmetrical Copyright & Origin */}
             <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-hairline/30 pt-6 text-micro text-muted/70 sm:flex-row sm:text-xs">
               <p className="text-center sm:text-left">
                 © {new Date().getFullYear()} Malesan. Hak cipta dilindungi.
@@ -124,6 +125,7 @@ export default function Home() {
                 Dibuat untuk kreator konten Indonesia 🇮🇩
               </p>
             </div>
+
           </div>
         </footer>
       </div>
