@@ -79,28 +79,50 @@ export default function Home() {
           <CompactCTA />
         </main>
 
-        {/* Spacious Seamless Footer */}
-        <footer className="relative z-10 bg-transparent py-10 sm:py-12">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-6 px-5 sm:flex-row sm:px-8">
-            {/* Brand & Tagline with comfortable spacing */}
-            <div className="flex flex-col items-center sm:items-start gap-2.5 text-center sm:text-left">
-              <Logo markClass="h-8" />
-              <p className="text-xs text-muted max-w-sm">
-                AI Creative Companion untuk kreator konten Indonesia.
-              </p>
+        {/* =========================================================================
+            PRECISION SYMMETRICAL FOOTER
+            Optically balanced, perfectly aligned on desktop & mobile
+           ========================================================================= */}
+        <footer className="relative z-10 bg-transparent pt-12 pb-16 sm:pt-16 sm:pb-20">
+          <div className="mx-auto w-full max-w-6xl px-6 sm:px-8">
+            {/* Top Row: Brand & Navigation */}
+            <div className="flex flex-col items-center justify-between gap-6 sm:flex-row sm:items-center">
+              {/* Left Brand Identity */}
+              <div className="flex flex-col items-center sm:items-start gap-2 text-center sm:text-left">
+                <Logo markClass="h-8 sm:h-9" />
+                <p className="text-xs text-muted max-w-xs sm:max-w-sm leading-relaxed">
+                  AI Creative Companion untuk kreator konten Indonesia.
+                </p>
+              </div>
+
+              {/* Right Navigation & Legal Links */}
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-medium text-muted">
+                <a href="#journey" className="transition-colors hover:text-ink">
+                  Cara Kerja
+                </a>
+                <Link href="/masuk" className="transition-colors hover:text-ink">
+                  Mulai Gratis
+                </Link>
+                <Link href="/masuk" className="transition-colors hover:text-ink">
+                  Masuk
+                </Link>
+                <Link href="/privasi" className="transition-colors hover:text-ink">
+                  Privasi
+                </Link>
+                <Link href="/ketentuan" className="transition-colors hover:text-ink">
+                  Ketentuan
+                </Link>
+              </div>
             </div>
 
-            {/* Links & Copyright */}
-            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6 text-xs text-muted">
-              <Link href="/privasi" className="transition-colors hover:text-ink">
-                Privasi
-              </Link>
-              <Link href="/ketentuan" className="transition-colors hover:text-ink">
-                Ketentuan
-              </Link>
-              <span className="text-micro text-muted/60">
-                © {new Date().getFullYear()} Malesan.
-              </span>
+            {/* Bottom Row: Symmetrical Copyright & Origin */}
+            <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-hairline/30 pt-6 text-micro text-muted/70 sm:flex-row sm:text-xs">
+              <p className="text-center sm:text-left">
+                © {new Date().getFullYear()} Malesan. Hak cipta dilindungi.
+              </p>
+              <p className="text-center sm:text-right">
+                Dibuat untuk kreator konten Indonesia 🇮🇩
+              </p>
             </div>
           </div>
         </footer>

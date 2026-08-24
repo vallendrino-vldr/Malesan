@@ -35,8 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Full-Page Continuous Ambient Lighting & 2x2 Grid Polish (§9z.28).
-**Newest work is §9z.28 — Full-Page Continuous Ambient Lighting & 2x2 Grid Polish: (1) Replaced single top bloom with a full-page multi-layer volumetric lighting & grid mesh system spanning from top to bottom (Hero, Journey, Ticker, CTA, Footer); (2) Eliminated all harsh horizontal divider lines (`border-t`) to create an unbroken cinematic dark canvas; (3) Refactored Mobile Magic Bar into a clean, 100% symmetric 2x2 grid (`grid grid-cols-2 gap-2`) eliminating single dangling pills on mobile; (4) Replaced crude unicode arrows (`→`, `↓`) with sleek animated SVG vector micro-icons; (5) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.28, then §9z.27.
+Last updated: **2026-08-24**, after Footer Precision Symmetrical Alignment (§9z.29).
+**Newest work is §9z.29 — Footer Precision Symmetrical Alignment: (1) Completely restructured landing page footer in `src/app/page.tsx` into a 2-row precision symmetrical layout; (2) Row 1 organizes brand mark + tagline with comfortable line-height on the left and clean horizontal navigation/legal links on the right; (3) Row 2 creates a balanced sub-footer with left-aligned copyright (`© 2026 Malesan. Hak cipta dilindungi.`) and right-aligned creator origin (`Dibuat untuk kreator konten Indonesia 🇮🇩`); (4) On mobile, structured into an optically balanced centered vertical hierarchy with generous `pb-16 sm:pb-20` padding; (5) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.29, then §9z.28.
+
+---
+
+## §9z.29 — Footer Precision Symmetrical Alignment (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **2-Row Symmetrical Architecture (`src/app/page.tsx`):**
+   - Eliminated awkward middle vertical centering between multi-line brand tagline and nav links.
+   - Set clean top row (Brand + Links) and crisp bottom row (Copyright + Indonesian Creator Origin badge).
+2. **Mobile Optical Alignment:**
+   - Centered all footer elements with consistent vertical spacing (`space-y-4`) and equal margins.
+   - Added `pb-16 sm:pb-20` breathing space to avoid clipping at the bottom viewport boundary.
 
 ---
 
