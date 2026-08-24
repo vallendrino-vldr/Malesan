@@ -249,20 +249,20 @@ Nama Produk: "${productName}"
 Keunggulan / Detail Harga: "${sellingPoints}"
 Gaya Pendekatan Pilihan: "${style || "Campuran (Masalah, Demo Jujur, Flash Sale)"}"
 
-ATURAN PSIKOLOGI AFFILIATE INDONESIA:
-1. HOOK HARUS KUAT & ANTI-IKLAN:
-   - JANGAN buka dengan "Halo guys hari ini aku mau review...". Itu bikin penonton langsung scroll.
-   - Buka dengan masalah relate, kebiasaan salah, rahasia harga murah, atau unboxing heboh.
-2. POLA 3 VARIAN:
-   - Varian 1: "Masalah Keseharian -> Solusi Produk" (Storytelling relate).
-   - Varian 2: "Unboxing & Tes Jujur Tanpa Basa-basi" (Demonstrasi fitur dan perbandingan).
-   - Varian 3: "Racun Belanja / FOMO Diskon & Keranjang Kuning" (Spill harga diskon dan stok menipis).
-3. INSTRUKSI VISUAL & KERANJANG KUNING:
-   - Berikan visual cue yang jelas kapan harus tunjuk ke pojok kiri bawah (keranjang kuning) atau bio profile.
-4. CALL TO ACTION (CTA):
-   - Gunakan pemicu psikologis FOMO (harga promo, voucher gratis ongkir, promo tanggal kembar).
+ATURAN PSIKOLOGI KONVERSI & AFFILIATE INDONESIA:
+1. HOOK PATTERN INTERRUPT (DETIK 0-3):
+   - JANGAN buka dengan basa-basi "Halo guys hari ini aku mau review...". Itu trigger orang langsung swipe up.
+   - Buka dengan paradoks masalah harian, rahasia harga diskon gila, atau aksi visual heboh (misal: banting barang/uji ketahanan).
+2. ANATOMI 3 VARIAN KONVERSI TINGGI:
+   - Varian 1 (PAS - Problem Agitate Solution): Fokus ke rasa kesal penonton saat masalah terjadi -> produk ini solusinya.
+   - Varian 2 (Uji Ketahanan & Demo Jujur): Tunjukkan tes nyata (kualitas bahan, keaslian, kepraktisan) tanpa klaim berlebihan.
+   - Varian 3 (FOMO Flash Sale & Keranjang Kuning): Mainkan Loss Aversion (promo tinggal hari ini, gratis ongkir, stok rebutan).
+3. PACING 3 DETIK & VISUAL CUES:
+   - Setiap 3-5 detik wajib ganti shot kamera: unboxing, zoom tekstur barang, pemakaian nyata di badan/meja, hingga tunjuk keranjang kuning di kiri bawah.
+4. CALL TO ACTION (CTA) FOMO:
+   - Berikan alasan logis kenapa harus check out SEKARANG (voucher gratis ongkir klaim dulu, harga promo besok balik normal).
 5. BAHASA:
-   - Bahasa Indonesia gaul, luwes, natural seperti teman merekomendasikan barang bagus ke teman.
+   - Bahasa Indonesia lisan yang santai, luwes, dan meyakinkan seperti teman dekat yang lagi spill barang bagus.
 
 Format JSON Wajib:
 {
@@ -272,19 +272,19 @@ Format JSON Wajib:
     {
       "angle_name": "Solusi Masalah Keseharian",
       "hook_spoken": "Kalimat pembuka 3 detik pertama yang bikin orang berhenti scrolling",
-      "hook_visual": "Tindakan di layar saat hook diucapkan",
+      "hook_visual": "Tindakan di layar saat hook diucapkan (misal: pegang produk sambil pasang muka bingung)",
       "scenes": [
         {
           "scene": 1,
-          "duration": "00:00-00:05",
-          "spoken": "Kalimat yang diucapkan kreator",
+          "duration": "00:00-00:04",
+          "spoken": "Kalimat naskah yang diucapkan kreator",
           "visual": "Aksi visual di kamera (misal: tunjuk barang, zoom in)",
-          "on_screen_text": "Teks singkat di layar"
+          "on_screen_text": "Teks singkat pemikat di layar"
         }
       ],
-      "cta_fomo": "Kalimat penutup ajakan klik keranjang kuning",
-      "caption": "Caption menarik + pertanyaan interaksi",
-      "hashtags": ["#racuntiktok", "#affiliate", "#reviewjujur"]
+      "cta_fomo": "Kalimat penutup ajakan klik keranjang kuning kiri bawah",
+      "caption": "Caption menarik + pertanyaan pemancing komentar",
+      "hashtags": ["racuntiktok", "affiliate", "reviewjujur"]
     }
   ]
 }`;

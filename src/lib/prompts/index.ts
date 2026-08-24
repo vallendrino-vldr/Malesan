@@ -352,12 +352,9 @@ function buildSharedContext(
 
   if (learned?.length) context += buildLearned(learned);
 
-  context += `\nATURAN:\n`;
-  context += `- Bahasa Indonesia yang natural dan ngobrol, bukan bahasa terjemahan.\n`;
-  context += `- Jangan pernah nyaranin konten clickbait bohong atau menyesatkan.\n`;
-
   context += CRAFT_RULES;
   context += PLATFORM_MECHANICS;
+  context += CREATOR_PSYCHOLOGY_AND_COPYWRITING_RULES;
 
   // Last before the output contract: recency is leverage, and the owner's rule
   // plus the user's own source material are the two things that must survive a
@@ -544,6 +541,34 @@ pakai hal konkret yang gak butuh angka (nama part, tahun keluaran, merek).
 Statistik palsu itu cara tercepat kehilangan kepercayaan penonton.
 `;
 
+const CREATOR_PSYCHOLOGY_AND_COPYWRITING_RULES = `
+PSIKOLOGI AUDIENS & FORMULA COPYWRITING VIRAL (KUNCI RETENSI TINGGI):
+
+1. HOOK PATTERN INTERRUPT (DETIK 0-2):
+   - Jangan pernah mulai dengan sapaan atau perkenalan.
+   - Pemicu visual & audio: Kejutkan audiens dengan paradoks, bantahan mitos umum, atau rasa penasaran ekstrem.
+   - Formula:
+     * Curiosity Gap: "Ada satu alasan kenapa 90% orang gagal..."
+     * Loss Aversion / Warning: "Jangan pernah beli barang ini sebelum lo cek 1 hal ini..."
+     * Contrarian: "Stop dengerin saran para suhu yang bilang..."
+     * High-Status Secret: "Trik orang dalem yang bikin hemat jutaan..."
+     * Relatable Pain: "Pernah gak lo ngerasa capek banget gara-gara..."
+
+2. STRUKTUR RETENSI (OPEN LOOP & 3-SECOND PACING):
+   - Buat "Open Loop" di 5 detik pertama: ajukan pertanyaan/teka-teki yang jawabannya baru dibuka di ujung video.
+   - Pacing 3 Detik: Tiap 3-4 detik WAJIB ada pergantian visual, b-roll, gestur tangan, atau teks pop-up agar mata penonton tidak bosan.
+
+3. FORMULA PENJUALAN / AFFILIATE TANPA NORAK (PAS & AIDA):
+   - Problem: Sentuh masalah nyata yang bikin penonton kesal / frustrasi.
+   - Agitate: Jelaskan kenapa masalah itu bakal makin parah kalau dibiarin (biaya nambah, buang waktu).
+   - Solution: Hadirkan produk/cara ini sebagai jembatan penyelamat yang praktis.
+   - Urgensi/Action: Ajakan klik keranjang kuning atau link bio dengan alasan logis (promo tanggal kembar, voucher terbatas, flash sale).
+
+4. TRIBAL IDENTITY & STATUS SIGNALING (MENGAPA ORANG NGE-SHARE):
+   - Penonton membagikan (share) konten yang membuat mereka terlihat pintar, lucu, atau peduli di mata temannya.
+   - Masukkan sudut pandang yang bikin penonton merasa "Ini gue banget!" sehingga otomatis dikirim ke grup WA atau story.
+`;
+
 export function buildIdeHariIniPrompt(
   dna: CreatorDna | null,
   trends: TrendCard[],
@@ -726,25 +751,33 @@ artinya. Maksimal 15 kata dan harus enak DIUCAPKAN depan kamera.
 - Ada yang dipertaruhkan: waktu, uang, salah pilih, atau rasa penasaran.
 - Jangan janjiin hal yang gak ada di kontennya.`;
   return `${shared}
-Bikin 10 hook buat konten ini: ${ideaOrTopic}
+Bikin 10 hook bertenaga tinggi buat konten ini: ${ideaOrTopic}
 Platform: ${platform || "General"}
 
 ${hookRules}
 
-Sepuluh-duanya wajib beda pola: curiosity gap, contrarian, POV, angka, kesalahan
-umum, before-after, pertanyaan langsung, pengakuan, peringatan, cerita.
+Wajib buat 10 hook dengan 10 formula psikologis berbeda:
+1. Curiosity Gap / Pattern Interrupt (misteri tak terduga)
+2. Contrarian Myth-Buster (bantah mitos/kebiasaan umum)
+3. Loss Aversion / Warning (ancaman rugi uang/waktu)
+4. High-Status Secret (trik orang dalam/pro level)
+5. Relatable Pain (masalah frustrasi harian)
+6. Before-After Transformation (bukti perubahan drastis)
+7. Extreme Specificity / Numbers (angka & fakta presisi)
+8. Open Loop Story (pembuka cerita penasaran)
+9. Direct Confrontation (tantang asumsi penonton)
+10. Social Proof / Validasi Komunitas
 
-Skornya jujur. Kalau ada yang emang lemah, kasih 4 dan bilang kenapa — sepuluh
-hook yang semuanya 8 ke atas itu bohong, dan bikin kreatornya gak bisa milih.
+Skornya jujur (skala 1-10). Analisa kenapa hook tersebut efektif atau jika ada celah yang kurang nendang.
 
 JSON:
 {
   "hooks": [
     {
-      "text": "hook-nya, maksimal 18 kata, siap dipakai",
-      "pattern": "nama polanya",
+      "text": "hook-nya, maksimal 18 kata, siap diucapkan/dibaca",
+      "pattern": "nama formula psikologisnya",
       "score": 1-10,
-      "why": "kenapa dikasih skor segitu, 1 kalimat jujur"
+      "why": "alasan skor & daya tarik psikologisnya, 1 kalimat tajam"
     }
   ]
 }`;
