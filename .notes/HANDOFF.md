@@ -35,8 +35,70 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Malesan Design System Sync — Dark Mode Only (§9z.13).
-**Newest work is §9z.13 — Malesan Design System Sync — Dark Mode Only: (1) Completely removed light mode dependencies across the codebase (removed ThemeToggle from navbar, AppShell, and decommissioned toggle component to null export); (2) Synchronized global design tokens in globals.css to single dark cinematic palette (--color-obsidian: #080808, --color-surface: #111111, --color-surface-raised: #171717, --color-hairline: rgba(255,255,255,0.08), --color-ink: #f5f5f5, --color-muted: #999999, --color-ember: #ff8a3d); (3) Removed all :root[data-theme="soft"] CSS overrides; (4) Layout and boot-scripts now enforce permanent dark colorScheme and #080808 theme-color; (5) Verified across 1920x1080, 1366x768, and 375x812 with 0 errors.** Read §9z.13, then §9z.12.
+Last updated: **2026-08-24**, after Studio Immersive AI Processing State Upgrade (§9z.15).
+**Newest work is §9z.15 — Studio Immersive AI Processing State Upgrade: (1) Fixed HUD header timer ([ 04s ]) with tabular numbers, zero-shift alignment, and dynamic uppercase status; (2) Added Cinematic Neural Progress Bar (0%, 25%, 55%, 85%) with glowing ember particle dot following leading edge; (3) Single source of truth `progress` driving neural bar, step timeline, and vertical progressive line fills; (4) Added dynamic phase-driven companion thought bubble messages ("Gue baca dulu ide lo...", "Lagi cari angle yang bikin orang berhenti scroll...", "Oke, gue susun alurnya...", "Hampir selesai. Tinggal gue rapihin...", "Siap! Konten lo udah beres."); (5) Floating workspace window (520px desktop min-h 560px, w-[calc(100%-32px)] mobile, rounded-28px, #111111 background, ambient ember glow); (6) Verified via `next build` (41 routes), `npm test` (11 tests pass), and DevTools live generation capture across 1920x1080, 1366x768, 390x844, and 375x812.** Read §9z.15, then §9z.14.
+
+---
+
+## §9z.15 — Studio Immersive AI Processing State Upgrade (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `tsc --noEmit` (0 errors), `npm test` (11 invariant + video tests passed), and visual inspection with DevTools MCP across desktop 1920x1080, 1366x768, mobile 390x844, and 375x812.
+
+### Summary of Changes:
+1. **Fixed HUD Header Timer (`AIProcessingOverlay.tsx`):**
+   - Left: Pulsing orange beacon dot + dynamic uppercase phase title (e.g. `● MEMBACA IDE LO`, `● NYARING KEMUNGKINAN`).
+   - Right: Fixed-width HUD timer box `[ 04s ]` with tabular numbers (`tabular-nums font-mono`) and centered alignment. Never shifts during seconds transition.
+   - Background Dim Mode: `backdrop-blur-md bg-black/65` with $0 \to 12\text{px}$ blur transition.
+
+2. **Cinematic Neural Progress Bar & Ember Particle Head (`ProcessingTimeline.tsx`):**
+   - Synchronized single source of truth `progress` ($0 \to 100$).
+   - Horizontal neural track with stage markers at $0\%$, $25\%$, $55\%$, and $85\%$.
+   - Moving ember particle dot (`●`) with `shadow-[0_0_10px_#ff8a3d]` at the leading edge.
+
+3. **Phase-Driven AI Thinking Companion Messages (`LivingProcessingCompanion.tsx`):**
+   - Phase 1 ($0-25\%$): *"Gue baca dulu ide lo..."*
+   - Phase 2 ($25-55\%$): *"Lagi cari angle yang bikin orang berhenti scroll..."*
+   - Phase 3 ($55-85\%$): *"Oke, gue susun alurnya..."*
+   - Phase 4 ($85-100\%$): *"Hampir selesai. Tinggal gue rapihin..."* $\to$ *"Siap! Konten lo udah beres."*
+   - Smooth fade and slide transition ($400-500\text{ms}$).
+
+4. **Progress-Linked Stepped Timeline (`ProcessingTimeline.tsx`):**
+   - Connected vertical lines progressively fill with ember gradient matching `progress`.
+   - Node states: Active (pulsing orange, `scale: 1.02`), Completed (`✓` emerald icon, `Selesai` badge), Pending (`Antre` badge).
+
+5. **Universal Studio Integration (`GenerationProgress.tsx`):**
+   - Seamlessly integrated across all Studio modules (`IdeHariIni`, `ModuleRunner`, `IdeaEngine`, `ClipEngine`, `ThreadEngine`, `PipelineBoard`).
+
+---
+
+## §9z.14 — Cinematic Login Transition & Immersive Workspace Authentication (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (41 routes compiled), `tsc --noEmit` (0 errors), `npm test` (11 invariant + video tests passed), and visual inspection with DevTools MCP across 1920x1080, 1366x768, and 375x812.
+
+### Summary of Changes:
+1. **Landing to Login Cinematic Route Transition:**
+   - Implemented `CinematicTransitionContext` and `TransitionButton` in `src/components/landing/`.
+   - 0ms: CTA button enters active state with radial glow burst, page applies subtle blur.
+   - 300ms: Radial orange bloom sweeps outward from hero center.
+   - 600ms: Screen scales $1 \to 1.08$ with deep blur $0 \to 14\text{px}$.
+   - 900ms: Dark void curtain fades in with pulsing ember beacon.
+   - 1050ms: Route navigates smoothly to `/masuk`.
+
+2. **Total Rebuild of `/masuk` as Immersive AI Workspace (`MasukWorkspaceView.tsx` & `page.tsx`):**
+   - **Left Column (Living AI Companion Studio)**:
+     - Continuously animated Mascot with breathing oscillation ($3-5\text{px}$ translateY), pulsing visor LED glow every 3s, slow concentric orbit rings, and holographic glowing pedestal.
+     - Rotating AI Thought Bubble with triangular beak pointing to Mascot (cycles every 6s: *"Masih ada ide yang belum jadi konten?"*, *"Tenang, kita mulai dari satu ide dulu."*, *"Udah siap bikin sesuatu hari ini?"*, *"Sini masuk, gue temenin dari nol sampai siap tayang."*).
+     - Dynamic status footer: `🟢 STATUS COMPANION: Siap bantu bikin konten. ⚡ 10 Kredit Harian`.
+   - **Right Column (Login Panel)**:
+     - Badge: `✨ AI Creative Companion`
+     - Headline: `Masuk ke ruang kerja Malesan.`
+     - Subtitle: `Ambil lagi ide, script, dan workflow kreatif lo. Teman AI lo udah standby di dalam.`
+     - Custom Google OAuth Button: `"Masuk pakai Google"` with ember gradient, soft glow, 4px hover lift, and Google "G" chip.
+     - Trust Text: `✓ 10 kredit gratis langsung masuk tiap hari. Tanpa perlu kartu kredit.`
+
+3. **Responsive Mobile Flow:**
+   - Dedicated vertical stack: Top logo + "Beranda" back button $\to$ Mini animated living mascot scene $\to$ Destination headline $\to$ Full-width Google button $\to$ Trust text.
+   - Zero overflow on 375x812, 390x844, and 412x915.
 
 ---
 
