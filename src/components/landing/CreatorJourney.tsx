@@ -84,7 +84,7 @@ export function CreatorJourney() {
           observer.disconnect();
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.12 }
     );
 
     observer.observe(el);
@@ -97,22 +97,28 @@ export function CreatorJourney() {
     <section
       id="journey"
       ref={sectionRef}
-      className="relative scroll-mt-16 border-t border-hairline/60 bg-surface/15 py-12 sm:py-16"
+      className="relative scroll-mt-16 py-8 sm:py-14"
     >
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
+        {/* Subtle Vertical Connector Node */}
+        <div className="mx-auto mb-6 flex flex-col items-center">
+          <div className="h-6 w-[1px] bg-gradient-to-b from-transparent to-ember/40" />
+          <div className="size-2 rounded-full bg-ember/60 shadow-[0_0_8px_rgba(255,138,61,0.6)]" />
+        </div>
+
         {/* Section Header */}
         <div
           className="text-center max-w-xl mx-auto transition-all duration-700"
           style={{
             opacity: isVisible ? 1 : 0,
-            transform: isVisible ? "translateY(0)" : "translateY(24px)",
+            transform: isVisible ? "translateY(0)" : "translateY(20px)",
           }}
         >
           <div className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3 py-0.5 text-micro font-bold tracking-wider text-ember uppercase">
             <span>Alur Perjalanan Kreator</span>
           </div>
-          <h2 className="mt-2.5 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
+          <h2 className="mt-2 font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold text-ink tracking-tight">
             Dari layar kosong, jadi konten siap tayang.
           </h2>
           <p className="mt-2 text-xs sm:text-sm text-muted">
@@ -121,7 +127,7 @@ export function CreatorJourney() {
         </div>
 
         {/* 4 Step Clickable Buttons */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {JOURNEY_STEPS.map((step, idx) => {
             const isActive = activeIdx === idx;
             return (
@@ -129,15 +135,15 @@ export function CreatorJourney() {
                 key={idx}
                 type="button"
                 onClick={() => setActiveIdx(idx)}
-                className={`flex flex-col items-start rounded-2xl border p-3.5 sm:p-4 text-left transition-all duration-300 cursor-pointer ${
+                className={`flex flex-col items-start rounded-2xl border p-3.5 sm:p-4 text-left transition-all duration-200 cursor-pointer ${
                   isActive
-                    ? "border-ember bg-surface-raised shadow-[0_0_24px_rgba(255,138,61,0.25)] scale-[1.02]"
+                    ? "border-ember bg-surface-raised/90 shadow-[0_0_24px_rgba(255,138,61,0.25)] scale-[1.02]"
                     : "border-hairline/70 bg-surface/40 hover:border-ember/30 hover:bg-surface-raised/60"
                 }`}
                 style={{
                   opacity: isVisible ? 1 : 0,
-                  transform: isVisible ? "translateY(0)" : "translateY(20px)",
-                  transition: `opacity 0.5s ease-out ${0.2 + idx * 0.1}s, transform 0.5s ease-out ${0.2 + idx * 0.1}s, border-color 0.3s, background-color 0.3s, box-shadow 0.3s`,
+                  transform: isVisible ? "translateY(0)" : "translateY(16px)",
+                  transition: `opacity 0.5s ease-out ${0.15 + idx * 0.08}s, transform 0.5s ease-out ${0.15 + idx * 0.08}s, border-color 0.2s, background-color 0.2s, box-shadow 0.2s`,
                 }}
               >
                 <div className="flex w-full items-center justify-between">
@@ -161,13 +167,13 @@ export function CreatorJourney() {
           })}
         </div>
 
-        {/* Live Transformation Stage */}
+        {/* Live Transformation Stage Card */}
         <div
-          className="mt-6 rounded-2xl border border-hairline/80 bg-obsidian p-5 sm:p-7 shadow-xl transition-all duration-700"
+          className="mt-5 rounded-3xl border border-hairline/80 bg-surface/50 p-5 sm:p-7 shadow-2xl backdrop-blur-xl transition-all duration-500"
           style={{
             opacity: isVisible ? 1 : 0,
-            transform: isVisible ? "translateY(0)" : "translateY(24px)",
-            transitionDelay: "0.4s",
+            transform: isVisible ? "translateY(0)" : "translateY(20px)",
+            transitionDelay: "0.35s",
           }}
         >
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-8 items-center">
@@ -183,7 +189,7 @@ export function CreatorJourney() {
               </h3>
               
               <div className="mt-3 space-y-2 text-xs sm:text-sm w-full">
-                <div className="rounded-xl border border-hairline/60 bg-surface/40 p-3">
+                <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3">
                   <p className="text-muted leading-relaxed">
                     {current.story}
                   </p>
@@ -198,7 +204,7 @@ export function CreatorJourney() {
 
             {/* Right Live Output Preview (7 Cols) */}
             <div className="lg:col-span-7">
-              <div className="rounded-2xl border border-hairline/80 bg-surface/90 p-4 sm:p-5 shadow-sm">
+              <div className="rounded-2xl border border-hairline/80 bg-obsidian/85 p-4 sm:p-5 shadow-sm">
                 <div className="flex items-center justify-between border-b border-hairline/60 pb-2.5">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-ember animate-pulse" />

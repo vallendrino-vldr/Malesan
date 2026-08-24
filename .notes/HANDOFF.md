@@ -35,8 +35,24 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Living AI Companion Landing Page Overhaul (§9z.27).
-**Newest work is §9z.27 — Living AI Companion Landing Page Overhaul: (1) Transformed hero section into an interactive living companion stage with dynamic mouse gaze tracking and spring physics in `LivingStudioCanvas.tsx`; (2) Built interactive Topic Magic Bar (`CompanionHero.tsx`) allowing instant exploration across 4 Indonesian creator topics (Modus Bengkel, Klien Remote, Kopi Senja, Fashion Thrift); (3) Refactored `CreatorJourney.tsx` with 4-chapter narrative from empty screen (0%) to script & auto-sync subtitles (100%); (4) Upgraded `CreatorActivityTicker.tsx` with live studio tags; (5) Streamlined mobile vertical hierarchy; (6) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.27, then §9z.26.
+Last updated: **2026-08-24**, after Full-Page Continuous Ambient Lighting & 2x2 Grid Polish (§9z.28).
+**Newest work is §9z.28 — Full-Page Continuous Ambient Lighting & 2x2 Grid Polish: (1) Replaced single top bloom with a full-page multi-layer volumetric lighting & grid mesh system spanning from top to bottom (Hero, Journey, Ticker, CTA, Footer); (2) Eliminated all harsh horizontal divider lines (`border-t`) to create an unbroken cinematic dark canvas; (3) Refactored Mobile Magic Bar into a clean, 100% symmetric 2x2 grid (`grid grid-cols-2 gap-2`) eliminating single dangling pills on mobile; (4) Replaced crude unicode arrows (`→`, `↓`) with sleek animated SVG vector micro-icons; (5) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.28, then §9z.27.
+
+---
+
+## §9z.28 — Full-Page Continuous Ambient Lighting & 2x2 Grid Polish (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Full-Page Multi-Layer Ambient Lighting (`src/app/page.tsx`):**
+   - Added top bloom, mid-right atmospheric glow, mid-left secondary glow, bottom conversion glow, and subtle ambient grid mesh.
+2. **Zero-Divider Seamless Flow:**
+   - Removed all `border-t` divider lines across sections and footer for seamless visual immersion.
+3. **2x2 Symmetric Mobile Magic Bar (`CompanionHero.tsx`):**
+   - 4 creator topic pills arranged in a balanced 2x2 grid on mobile viewports.
+4. **Vector Micro-Icons on CTAs:**
+   - Replaced basic unicode arrows with animated Lucide/SVG vector chevrons.
 
 ---
 

@@ -62,10 +62,10 @@ const STREAM_ITEMS: StreamItem[] = [
 
 export function CreatorActivityTicker() {
   return (
-    <section className="relative border-t border-hairline/60 bg-surface/10 py-7 sm:py-9 overflow-hidden select-none">
+    <section className="relative py-7 sm:py-10 overflow-hidden select-none">
       {/* Centered Heading */}
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 mb-4 flex items-center justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-hairline/60 bg-surface/50 px-3 py-1">
+        <div className="inline-flex items-center gap-2 rounded-full border border-hairline/60 bg-surface/50 px-3.5 py-1 backdrop-blur-md shadow-xs">
           <span className="size-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
           <span className="font-mono text-micro font-bold tracking-wider text-ink uppercase text-center">
             Aktivitas Live Kreator di Malesan
@@ -82,7 +82,7 @@ export function CreatorActivityTicker() {
           {[...STREAM_ITEMS, ...STREAM_ITEMS].map((item, idx) => (
             <div
               key={idx}
-              className="flex items-center gap-2.5 rounded-2xl border border-hairline/80 bg-surface/80 px-3.5 py-2 shadow-xs backdrop-blur-md shrink-0 transition-colors duration-200 hover:border-ember/40"
+              className="flex items-center gap-2.5 rounded-2xl border border-hairline/80 bg-surface/75 px-3.5 py-2 shadow-xs backdrop-blur-md shrink-0 transition-colors duration-200 hover:border-ember/40"
             >
               {/* Avatar circle with initial */}
               <div

@@ -29,19 +29,13 @@ export function CompactCTA() {
   return (
     <section
       ref={sectionRef}
-      className="relative border-t border-hairline/60 bg-obsidian py-14 sm:py-20 overflow-hidden"
+      className="relative py-12 sm:py-18 overflow-hidden"
     >
-      {/* Subtle bottom ambient glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2 w-[520px] h-[200px] bg-[radial-gradient(circle_at_center,rgba(255,138,61,0.12)_0%,transparent_70%)] blur-2xl"
-      />
-
       <div
         className="relative z-10 mx-auto w-full max-w-3xl px-5 sm:px-8 text-center flex flex-col items-center transition-all duration-700"
         style={{
           opacity: isVisible ? 1 : 0,
-          transform: isVisible ? "translateY(0)" : "translateY(24px)",
+          transform: isVisible ? "translateY(0)" : "translateY(20px)",
         }}
       >
         {/* Companion Mascot Speech Bubble with Reaction */}
@@ -59,21 +53,29 @@ export function CompactCTA() {
           Siap bikin konten pertama lo?
         </h2>
         
-        <p className="mt-2.5 text-xs sm:text-base text-muted max-w-md leading-relaxed">
+        <p className="mt-2 text-xs sm:text-base text-muted max-w-md leading-relaxed">
           Ga perlu prompt ribet.
           <br className="hidden sm:inline" />
           {" "}Mulai aja, <strong className="text-ink font-medium">10 kredit gratis</strong> langsung masuk tiap hari.
         </p>
 
-        {/* Clean Solid CTA Button */}
+        {/* Clean Solid CTA Button with Vector Chevron */}
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
           <TransitionButton
             href="/masuk"
             variant="primary"
-            className="w-full sm:w-auto px-8 py-3.5 text-base font-bold shadow-lg"
+            className="group w-full sm:w-auto px-8 py-3.5 text-base font-bold shadow-lg"
           >
             <span>Mulai gratis sekarang</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4 transition-transform duration-200 group-hover:translate-x-1"
+            >
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
