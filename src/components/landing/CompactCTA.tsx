@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { Mascot } from "@/components/Mascot";
+import { TransitionButton } from "./TransitionButton";
 
 export function CompactCTA() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -67,16 +67,17 @@ export function CompactCTA() {
 
         {/* Clean Solid CTA Button */}
         <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
-          <Link
+          <TransitionButton
             href="/masuk"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-ember px-8 py-3.5 font-display text-base font-bold text-obsidian shadow-sm transition-all duration-200 hover:bg-ember-lo hover:shadow-[0_4px_20px_rgba(255,138,61,0.25)] hover:scale-[1.01] active:scale-[0.99]"
+            variant="primary"
+            className="w-full sm:w-auto px-8"
           >
             <span>Mulai gratis</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
               <line x1="5" y1="12" x2="19" y2="12" />
               <polyline points="12 5 19 12 12 19" />
             </svg>
-          </Link>
+          </TransitionButton>
         </div>
 
         <p className="mt-3 text-micro text-muted/70">

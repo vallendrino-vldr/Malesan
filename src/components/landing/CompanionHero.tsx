@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { TransitionButton } from "./TransitionButton";
 import { ThreeCanvas } from "./ThreeCanvas";
 import { LivingStudioCanvas } from "./LivingStudioCanvas";
 
@@ -65,16 +65,16 @@ export function CompanionHero() {
               className="mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center opacity-0"
               style={{ animation: "fade-up 0.6s ease-out 1.0s forwards" }}
             >
-              <Link
+              <TransitionButton
                 href="/masuk"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-ember px-7 py-3.5 font-display text-sm sm:text-base font-bold text-obsidian shadow-sm transition-all duration-200 hover:bg-ember-lo hover:shadow-[0_4px_20px_rgba(255,138,61,0.25)] hover:scale-[1.01] active:scale-[0.99]"
+                variant="primary"
               >
                 <span>Mulai bikin konten</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="12 5 19 12 12 19" />
                 </svg>
-              </Link>
+              </TransitionButton>
 
               <a
                 href="#journey"
