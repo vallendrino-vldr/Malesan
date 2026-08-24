@@ -256,8 +256,8 @@
    This is part of the quality floor, not an enhancement. DESIGN.md §4.
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-  /* .reveal, .animate-ticker-marquee, .kinetic-node, and mascot are exempt so the core product character and activity feed remain alive. */
-  *:not(.reveal):not(.animate-ticker-marquee):not(.animate-ticker-marquee *):not(.kinetic-node):not(.kinetic-node *):not(.mascot-body):not(.mascot-scan):not(.mascot-led):not(.mascot-idle-body):not(.mascot-idle-eyes):not(.mascot-arm-a):not(.mascot-arm-b),
+  /* .reveal, .animate-ticker-marquee, .kinetic-node, .animate-shimmer-sweep, and mascot are exempt so the core product character and activity feed remain alive. */
+  *:not(.reveal):not(.animate-ticker-marquee):not(.animate-ticker-marquee *):not(.kinetic-node):not(.kinetic-node *):not(.animate-shimmer-sweep):not(.animate-shimmer-sweep *):not(.mascot-body):not(.mascot-scan):not(.mascot-led):not(.mascot-idle-body):not(.mascot-idle-eyes):not(.mascot-arm-a):not(.mascot-arm-b),
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
@@ -731,6 +731,35 @@
   display: flex;
   width: max-content;
   animation: marquee 28s linear infinite;
+  will-change: transform;
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+.animate-shimmer-sweep {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shimmer-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-150%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  animation: shimmer-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform;
 }
 

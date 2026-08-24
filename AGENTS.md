@@ -51,6 +51,8 @@ have run it and seen it.
 
 - **Autonomous Mega-Skill Dispatch:** Never wait for the user to prompt `/mikir`, `/mikir-ui`, `/mikir-code`, or `/mikir-audit`. Automatically apply deep architectural reasoning, mobile-first anti-slop design (360px responsive, no scrollbars, equal button heights), server-side credit security, and comprehensive verification on every turn.
 - **Predictive Intent Decoding ($A \to B \to C \to D$):** When receiving minimalist prompts, trace all connected components, modals, scripts, mobile layouts, and server actions before acting.
+- **Zero Tacky Emojis in Professional UI:** Never use raw OS emojis in buttons, badges, headers, or action bars. Always use clean, crisp SVG stroke icons (Lucide style) with high-end obsidian/ember styling.
+- **Kinetic Luminous Loading Skeletons:** Loading states must never be static, dead, or freeze into plain dark boxes. Always use active continuous shimmer sweeps (`animate-shimmer-sweep`) and dynamic progressing step labels so the UI visibly lives.
 - Credits are spent **server-side only**, through the `spend_credits` SQL function (via `spendCredits` in `src/lib/credits.ts`). Never in client code.
 - **RLS on every user table.** A user only ever reads/writes their own rows.
 - **No AI provider key reaches the browser.** Model ids come from env/`app_config`, never hardcoded.

@@ -1283,7 +1283,18 @@ function PipelineCardItem({
             }}
             className="w-full flex items-center justify-center gap-2 rounded-xl border border-ember/30 bg-ember/10 px-4 py-2 text-xs font-bold text-ember transition-all duration-[var(--duration-standard)] ease-heat hover:bg-ember/20 active:scale-[0.98] cursor-pointer"
           >
-            <span>💬</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-3.5 shrink-0"
+              aria-hidden="true"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
             <span>Simulasi Respon Netizen</span>
           </button>
 

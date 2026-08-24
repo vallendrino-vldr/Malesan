@@ -10,6 +10,8 @@ Never wait for the user to prompt `/mikir`, `/mikir-ui`, `/mikir-code`, `/mikir-
 
 ### A. 🎨 UI, Frontend & Design System Domain
 *Auto-triggers: `mikir-ui` + `anti-ui-slop` + `high-end-visual-design` + `ui-ux-pro-max` + `web-design-guidelines`*
+- **Zero Tacky Emojis in Professional UI**: Never use raw OS emojis in buttons, badges, headers, or action bars. Always use clean, crisp SVG stroke icons (Lucide / Tailwind style) with high-end obsidian/ember styling.
+- **Kinetic Luminous Loading Skeletons**: Loading states must NEVER be static, dead, or freeze into plain dark boxes. Always use active continuous shimmer sweeps (`animate-shimmer-sweep`) and dynamic progressing step labels so the UI visibly lives.
 - **Mobile-First Responsive Guarantee**: Every interface must be designed for 360px viewport first (iPhone SE / Android), scaling seamlessly to tablet (768px), desktop (1024px+), and ultrawide (1440px+).
 - **Zero Native Scrollbars & Anti-Overflow**: Eliminate native grey browser scrollbars (`< [====] >`). Use CSS grid layouts (`grid grid-cols-N w-full`), flex-wrap, or hidden/styled custom scrollbars (`custom-scrollbar`).
 - **Pixel-Perfect Alignment & Symmetry**: All interactive elements (buttons, tabs, inputs) within the same row/group must have **identical heights** (`h-7`, `h-8`, `h-10`), matching border radiuses, and balanced padding.
