@@ -166,7 +166,7 @@ export function LivingStudioCanvas({
     return () => clearTimeout(timer);
   }, [activeStep, isPaused]);
 
-  // Parallax Pointer Tracking
+  // Pointer Gaze Tracking
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -243,7 +243,7 @@ export function LivingStudioCanvas({
         </div>
       </div>
 
-      {/* Central Living Mascot with Gaze Tracking & Breathing Float */}
+      {/* Central Living Mascot */}
       <div className="relative z-10 my-3 sm:my-4 flex flex-col items-center">
         <div
           className="relative size-28 sm:size-34 transition-transform duration-300 ease-out"
@@ -253,35 +253,35 @@ export function LivingStudioCanvas({
         >
           <Mascot
             mood={current.mood}
-            className="size-full filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]"
+            className="size-full"
           />
         </div>
 
         {/* Mascot Ground Anchor */}
-        <div className="mt-1.5 w-20 sm:w-28 h-0.5 rounded-full bg-ember/25" />
+        <div className="mt-1.5 w-20 sm:w-28 h-0.5 rounded-full bg-ember/20" />
       </div>
 
       {/* =========================================================================
-          LOCKED FIXED-HEIGHT WORKSPACE WINDOW (NO JUMPING / NO SCALE SHIFT)
+          LOCKED FIXED-HEIGHT WORKSPACE WINDOW (100% CLEAN OF TINY TEXT & GLOW SHADOWS)
          ========================================================================= */}
       <div
-        className={`relative z-20 w-full h-[172px] sm:h-[180px] rounded-2xl border p-3.5 sm:p-4 backdrop-blur-md transition-all duration-300 flex flex-col justify-between overflow-hidden ${current.borderColor} ${
+        className={`relative z-20 w-full h-[180px] sm:h-[188px] rounded-2xl border p-4 backdrop-blur-md transition-all duration-300 flex flex-col justify-between overflow-hidden ${current.borderColor} ${
           current.id === "ready" ? "bg-emerald-500/[0.07]" : "bg-surface-raised/80"
         }`}
         style={{
           transform: `translate(${-mouseGaze.x * 0.15}px, ${-mouseGaze.y * 0.15}px)`,
         }}
       >
-        {/* Header Row */}
+        {/* Header Row — Pure text-xs, zero text-[10px] */}
         <div>
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-1.5">
-            <span className="font-display text-[10px] font-semibold text-ember">
+          <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+            <span className="font-display text-xs font-semibold text-ember">
               Tahap {current.stepNum} · Ruang Kerja Malesan
             </span>
-            <span className="font-display text-[10px] text-muted font-medium">Tersinkron</span>
+            <span className="font-display text-xs text-muted font-medium">Tersinkron</span>
           </div>
 
-          <p className="mt-1.5 font-display text-sm font-bold text-ink truncate">
+          <p className="mt-2 font-display text-sm font-bold text-ink truncate">
             {current.headline}
           </p>
           <p className="text-xs text-muted truncate">
@@ -291,7 +291,7 @@ export function LivingStudioCanvas({
 
         {/* Content Body with Instant Cross-Fade */}
         <div
-          className="mt-1.5 transition-all duration-150"
+          className="mt-2 transition-all duration-150"
           style={{
             opacity: isTransitioning ? 0 : 1,
             transform: isTransitioning ? "translateY(3px)" : "translateY(0)",
@@ -307,12 +307,12 @@ export function LivingStudioCanvas({
 
           {/* 02: Thinking */}
           {current.id === "thinking" && (
-            <div className="space-y-1 rounded-xl border border-ember/20 bg-ember/10 p-2 text-xs text-ember">
+            <div className="space-y-1.5 rounded-xl border border-ember/20 bg-ember/10 p-2.5 text-xs text-ember">
               <div className="flex items-center justify-between font-medium">
                 <span className="truncate">› Menganalisis angle viral: {activeTopic.label}</span>
                 <span className="size-1.5 rounded-full bg-ember animate-pulse shrink-0 ml-1" />
               </div>
-              <p className="text-muted text-[11px] truncate">
+              <p className="text-muted text-xs truncate">
                 › Mengunci hook 3 detik & rasio video 9:16
               </p>
             </div>
@@ -320,7 +320,7 @@ export function LivingStudioCanvas({
 
           {/* 03: Ideas Found */}
           {current.id === "ideas" && (
-            <div className="space-y-1 rounded-xl border border-white/[0.06] bg-obsidian/85 p-2 text-xs">
+            <div className="space-y-1.5 rounded-xl border border-white/[0.06] bg-obsidian/85 p-2.5 text-xs">
               {activeTopic.angles.slice(0, 2).map((angle, idx) => (
                 <div key={idx} className={`flex items-center gap-2 truncate ${idx === 0 ? "text-ember font-semibold" : "text-muted"}`}>
                   <span className="shrink-0">{idx + 1}.</span>
@@ -332,31 +332,31 @@ export function LivingStudioCanvas({
 
           {/* 04: Script Breakdown */}
           {current.id === "script" && (
-            <div className="rounded-xl border border-ember/25 bg-obsidian/90 p-2 text-xs space-y-0.5">
-              <div className="flex items-center justify-between text-ember font-semibold text-[10px] border-b border-white/[0.06] pb-0.5">
+            <div className="rounded-xl border border-ember/25 bg-obsidian/90 p-2.5 text-xs space-y-1">
+              <div className="flex items-center justify-between text-ember font-semibold text-xs border-b border-white/[0.06] pb-1">
                 <span>Alur Naskah 45 Detik</span>
                 <span>Siap Rekam</span>
               </div>
               <p className="text-ink truncate pt-0.5 text-xs">
-                <span className="font-mono text-[11px] text-ember font-semibold">00:00</span> &ldquo;{activeTopic.scriptHook}&rdquo;
+                <span className="font-mono text-xs text-ember font-semibold">00:00</span> &ldquo;{activeTopic.scriptHook}&rdquo;
               </p>
-              <p className="text-muted truncate text-[11px]">
-                <span className="font-mono text-[11px] text-muted/70 font-semibold">00:05</span> Masalah utama & solusi taktis
+              <p className="text-muted truncate text-xs">
+                <span className="font-mono text-xs text-muted/70 font-semibold">00:05</span> Masalah utama & solusi taktis
               </p>
             </div>
           )}
 
           {/* 05: Ready / Siap Tayang */}
           {current.id === "ready" && (
-            <div className="rounded-xl border border-emerald-500/25 bg-obsidian/90 p-2 text-xs space-y-0.5">
-              <div className="flex items-center justify-between text-emerald-400 font-semibold text-[10px]">
+            <div className="rounded-xl border border-emerald-500/25 bg-obsidian/90 p-2.5 text-xs space-y-1">
+              <div className="flex items-center justify-between text-emerald-400 font-semibold text-xs">
                 <span>✓ Konten Selesai Disiapkan</span>
                 <span>Langsung Tayang</span>
               </div>
               <p className="text-ink truncate pt-0.5 text-xs">
                 <strong className="text-emerald-400 font-medium">TikTok/Reels:</strong> Subtitle Sinkron Kata
               </p>
-              <p className="text-muted truncate text-[11px]">
+              <p className="text-muted truncate text-xs">
                 <strong className="text-ember font-medium">Threads/X:</strong> Utas 5 Postingan Ringkas
               </p>
             </div>

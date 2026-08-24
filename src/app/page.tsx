@@ -117,7 +117,7 @@ export default function Home() {
             </div>
 
             {/* Row 3: Symmetrical Copyright & Origin */}
-            <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-hairline/30 pt-6 text-micro text-muted/70 sm:flex-row sm:text-xs">
+            <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-hairline/30 pt-6 text-xs text-muted/70 sm:flex-row">
               <p className="text-center sm:text-left">
                 © {new Date().getFullYear()} Malesan. Hak cipta dilindungi.
               </p>

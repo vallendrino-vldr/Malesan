@@ -75,10 +75,10 @@ export function CreatorJourney() {
     <section id="journey" className="relative scroll-mt-16 py-8 sm:py-14">
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
         
-        {/* Subtle Vertical Connector Node */}
+        {/* Subtle Clean Vertical Node (Zero Glowing Shadow) */}
         <div className="mx-auto mb-5 flex flex-col items-center">
-          <div className="h-6 w-[1px] bg-gradient-to-b from-transparent to-ember/40" />
-          <div className="size-1.5 rounded-full bg-ember/60 shadow-[0_0_8px_rgba(255,138,61,0.5)]" />
+          <div className="h-5 w-px bg-white/10" />
+          <div className="size-1 rounded-full bg-white/30" />
         </div>
 
         {/* Section Header */}
@@ -115,14 +115,14 @@ export function CreatorJourney() {
                   </span>
                   <span
                     className={`size-2 rounded-full transition-all duration-300 ${
-                      isActive ? "bg-ember animate-pulse shadow-[0_0_8px_rgba(255,138,61,0.8)]" : "bg-muted/30"
+                      isActive ? "bg-ember animate-pulse" : "bg-muted/30"
                     }`}
                   />
                 </div>
                 <p className="mt-2 font-display text-xs sm:text-sm font-bold text-ink truncate w-full">
                   {step.title}
                 </p>
-                <span className="mt-0.5 font-display text-[10px] text-muted truncate w-full font-medium">
+                <span className="mt-0.5 font-display text-xs text-muted truncate w-full font-medium">
                   {step.badge}
                 </span>
               </button>
@@ -130,15 +130,13 @@ export function CreatorJourney() {
           })}
         </div>
 
-        {/* =========================================================================
-            FLATTENED BESPOKE EDITORIAL STAGE (NO RUSSIAN DOLL NESTED CARDS)
-           ========================================================================= */}
+        {/* FLATTENED BESPOKE EDITORIAL STAGE */}
         <div className="mt-5 rounded-3xl border border-white/[0.08] bg-surface/50 p-5 sm:p-7 backdrop-blur-xl transition-all duration-300">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8 items-center">
             
             {/* Left Editorial Narrative (5 Cols) */}
             <div className="lg:col-span-5 flex flex-col items-start space-y-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3 py-1 font-display text-[10px] font-bold text-ember">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3 py-1 font-display text-xs font-bold text-ember">
                 Tahap {activeIdx + 1} · {current.badge}
               </span>
 
@@ -155,7 +153,7 @@ export function CreatorJourney() {
               </p>
             </div>
 
-            {/* Right Single-Surface Preview Stage (7 Cols - No Nested Boxes) */}
+            {/* Right Single-Surface Preview Stage (7 Cols) */}
             <div className="lg:col-span-7">
               <div className="rounded-2xl border border-white/[0.08] bg-obsidian/90 p-4 sm:p-5">
                 <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
@@ -165,7 +163,7 @@ export function CreatorJourney() {
                       Hasil Nyata Malesan
                     </span>
                   </div>
-                  <span className="rounded-md border border-white/[0.08] bg-surface-raised px-2.5 py-0.5 font-display text-[10px] text-muted font-semibold">
+                  <span className="rounded-md border border-white/[0.08] bg-surface-raised px-2.5 py-0.5 font-display text-xs text-muted font-semibold">
                     {current.outputTag}
                   </span>
                 </div>

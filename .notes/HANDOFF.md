@@ -35,8 +35,20 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-24**, after Zero-Anti-Pattern Polish & Fixed Window Height Lock (§9z.32).
-**Newest work is §9z.32 — Zero-Anti-Pattern Polish & Fixed Window Height Lock: (1) In `src/components/landing/LivingStudioCanvas.tsx`, locked the bottom holographic workspace window to a fixed height (`h-[172px] sm:h-[180px]`) with smooth cross-fade transitions, eliminating layout jumping/scale jitter when switching between topics/steps; (2) In `src/components/landing/CompanionHero.tsx`, eliminated artificial 1.1s-1.3s animation delays, making the entire landing page load and render instantly (0s delay); (3) In `src/components/landing/CreatorJourney.tsx`, flattened the 3-layer nested card structure into a clean editorial layout (left story directly on surface, right single preview stage); (4) In `src/components/landing/CreatorActivityTicker.tsx`, replaced rainbow AI avatars with a cohesive warm brand palette (Amber, Charcoal, Sand, Bronze) and Title Case; (5) In `src/components/landing/ThreeCanvas.tsx`, added 60 FPS living breathing atmospheric glow cycles; (6) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.32, then §9z.31.
+Last updated: **2026-08-24**, after Eradication of Tiny Text & Glowing Shadows (§9z.33).
+**Newest work is §9z.33 — Eradication of Tiny Text & Glowing Shadows: (1) Systematically upgraded all sub-12px text across components (`LivingStudioCanvas.tsx`, `CompanionHero.tsx`, `CreatorJourney.tsx`, `CreatorActivityTicker.tsx`, `page.tsx`) to standard accessible `text-xs` (12px), eliminating `tiny body text` accessibility flags; (2) Removed all neon box-shadow glows (`shadow-[0_0_8px...]`, `hover:shadow-[0_4px_28px...]`) on nodes, dots, badges, and buttons, replacing them with clean solid surfaces; (3) Balanced typographic contrast between Archivo (`font-display`) and Jakarta Sans (`font-sans`); (4) Verified via `next build` (42 routes) and live DevTools MCP browser testing across desktop (1440x900) and mobile (390x844).** Read §9z.33, then §9z.32.
+
+---
+
+## §9z.33 — Eradication of Tiny Text & Glowing Shadows (2026-08-24)
+
+**Code checkpoint:** Verified via `next build` (42 routes compiled), `npm test` (11 tests passed), and visual inspection with DevTools MCP across mobile 390x844 and desktop 1440x900.
+
+### Summary of Changes:
+1. **Typography Upgrade (WCAG Readable Text):**
+   - Upgraded all `text-[10px]` and `text-[11px]` to `text-xs` (12px).
+2. **Neon Glow Shadow Removal:**
+   - Removed all `box-shadow` neon glow effects on connector dots and buttons.
 
 ---
 

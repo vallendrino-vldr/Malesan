@@ -66,7 +66,7 @@ export function CreatorActivityTicker() {
       {/* Centered Heading */}
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 mb-4 flex items-center justify-center">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-surface/50 px-4 py-1.5 backdrop-blur-md shadow-xs">
-          <span className="size-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]" />
+          <span className="size-2 rounded-full bg-emerald-500" />
           <span className="font-display text-xs font-semibold text-ink text-center">
             Aktivitas Kreator di Malesan
           </span>
@@ -86,7 +86,7 @@ export function CreatorActivityTicker() {
             >
               {/* Avatar circle with cohesive brand tone */}
               <div
-                className={`size-6 rounded-full ${item.avatarBg} flex items-center justify-center font-display text-[10px] font-bold shadow-xs shrink-0`}
+                className={`size-6 rounded-full ${item.avatarBg} flex items-center justify-center font-display text-xs font-bold shadow-xs shrink-0`}
               >
                 {item.name.charAt(0)}
               </div>
@@ -101,10 +101,10 @@ export function CreatorActivityTicker() {
               </div>
 
               <div className="flex items-center gap-1.5 ml-1">
-                <span className="font-display text-[10px] text-muted/70 font-medium">
+                <span className="font-display text-xs text-muted/70 font-medium">
                   {item.timeAgo}
                 </span>
-                <span className="rounded-md border border-white/[0.08] bg-surface-raised px-2 py-0.5 font-display text-[10px] text-ember font-semibold">
+                <span className="rounded-md border border-white/[0.08] bg-surface-raised px-2 py-0.5 font-display text-xs text-ember font-semibold">
                   {item.tag}
                 </span>
               </div>

@@ -64,7 +64,7 @@ export function CompactCTA() {
           <TransitionButton
             href="/masuk"
             variant="primary"
-            className="group w-full sm:w-auto px-8 py-3.5 text-base font-bold shadow-lg"
+            className="group w-full sm:w-auto px-8 py-3.5 text-base font-bold shadow-xs"
           >
             <span>Mulai gratis sekarang</span>
             <svg

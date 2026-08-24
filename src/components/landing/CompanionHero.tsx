@@ -139,18 +139,18 @@ export function CompanionHero() {
             </div>
 
             {/* Mobile 3 Compact Badges */}
-            <div className="grid sm:hidden grid-cols-3 gap-2 mt-4 w-full border-t border-white/[0.06] pt-3 text-[11px]">
+            <div className="grid sm:hidden grid-cols-3 gap-2 mt-4 w-full border-t border-white/[0.06] pt-3 text-xs">
               <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">10 Kredit</span>
-                <span className="text-[10px] text-muted">Gratis Tiap Hari</span>
+                <span className="text-xs text-muted">Gratis Harian</span>
               </div>
               <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">Login Google</span>
-                <span className="text-[10px] text-muted">Tanpa Ribet</span>
+                <span className="text-xs text-muted">Tanpa Ribet</span>
               </div>
               <div className="flex flex-col items-center justify-center p-2.5 rounded-xl border border-white/[0.08] bg-surface/40 text-center">
                 <span className="font-bold text-ink">&lt;30 Detik</span>
-                <span className="text-[10px] text-muted">Ide Pertama</span>
+                <span className="text-xs text-muted">Ide Pertama</span>
               </div>
             </div>
           </div>
