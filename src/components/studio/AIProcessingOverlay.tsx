@@ -416,24 +416,26 @@ export function GlobalStudioProcessingOverlay() {
         const secs = (now - startTimeRef.current) / 1000;
         setElapsed(secs);
 
-        // Smooth continuous 4-phase progress curve (0 to 89%)
+        // Smooth continuous 4-phase progress curve (0 to 89.5%)
         let nextProgress = 0;
-        if (secs < 3) {
-          nextProgress = (secs / 3) * 25; // 0-25%
-        } else if (secs < 7) {
-          nextProgress = 25 + ((secs - 3) / 4) * 30; // 25-55%
-        } else if (secs < 13) {
-          nextProgress = 55 + ((secs - 7) / 6) * 30; // 55-85%
+        if (secs < 2.5) {
+          nextProgress = (secs / 2.5) * 25; // 0 - 25% (Phase 1)
+        } else if (secs < 6.0) {
+          nextProgress = 25 + ((secs - 2.5) / 3.5) * 30; // 25 - 55% (Phase 2)
+        } else if (secs < 11.0) {
+          nextProgress = 55 + ((secs - 6.0) / 5.0) * 30; // 55 - 85% (Phase 3)
         } else {
-          const remainingTime = secs - 13;
-          nextProgress = 85 + (1 - Math.exp(-remainingTime / 8)) * 4; // 85-89%
+          const remainingTime = secs - 11.0;
+          nextProgress = 85 + (1 - Math.exp(-remainingTime / 6)) * 4.5; // 85 - 89.5% (Phase 4)
         }
 
+        // Chars provide only a subtle organic pacing nudge (max +2%) without skipping phases
         if (data.chars > 0) {
-          nextProgress = Math.max(nextProgress, 70 + Math.min(18, data.chars / 30));
+          const charBonus = Math.min(2.5, data.chars / 400);
+          nextProgress = Math.min(89.5, nextProgress + charBonus);
         }
 
-        const clamped = Math.min(89, Math.max(progressRef.current, nextProgress));
+        const clamped = Math.min(89.5, Math.max(progressRef.current, nextProgress));
         setProgress(clamped);
         animationRef.current = requestAnimationFrame(loop);
       };

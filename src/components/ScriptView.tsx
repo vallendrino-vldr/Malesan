@@ -86,7 +86,7 @@ export function ScriptView({
   onSaveScript?: (updated: ScriptOutput) => Promise<void>;
 }) {
   const [currentScript, setCurrentScript] = useState<ScriptOutput>(script);
-  const [tab, setTab] = useState<"baca" | "scene">("scene");
+  const [tab, setTab] = useState<"scene" | "baca">("scene");
   const [copied, setCopied] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -162,7 +162,6 @@ export function ScriptView({
 
     const note = scene.user_footage_note?.trim() || "";
     if (!note) {
-      // If user hasn't typed a note, open the input box so they can specify what video they have
       setOpenFootageNoteIdx(index);
       return;
     }
@@ -279,18 +278,19 @@ export function ScriptView({
 
                 {/* Visual Footage Director Box */}
                 {!textMode && (
-                  <div className="mt-2.5 rounded-lg border border-white/[0.05] bg-black/30 p-2.5">
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <label className="text-[10px] font-semibold text-ember/90 uppercase tracking-wider">
-                        🎬 Arahan Footage & Visual
+                  <div className="mt-2.5 rounded-xl border border-white/[0.08] bg-black/40 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <label className="text-[10px] font-bold text-ember uppercase tracking-wider flex items-center gap-1.5">
+                        <span>🎬</span>
+                        <span>Arahan Footage & Visual</span>
                       </label>
 
-                      {/* AI Footage Assist Button */}
+                      {/* Top quick helper button */}
                       <button
                         type="button"
                         onClick={() => handleAIFootageSuggest(i)}
                         disabled={adaptingSceneIdx === i}
-                        className="cursor-pointer inline-flex items-center gap-1 rounded-md bg-ember/15 border border-ember/30 px-2 py-0.5 text-[10px] font-bold text-ember hover:bg-ember/25 transition-colors disabled:opacity-50"
+                        className="cursor-pointer inline-flex items-center gap-1 rounded-lg bg-ember/15 border border-ember/40 px-2.5 py-1 text-[10px] font-bold text-ember hover:bg-ember/25 transition-all disabled:opacity-50"
                       >
                         {adaptingSceneIdx === i ? (
                           <>
@@ -311,35 +311,66 @@ export function ScriptView({
                       value={sc.visual || ""}
                       onChange={(e) => handleUpdateScene(i, "visual", e.target.value)}
                       placeholder="Contoh: Close-in gearbox terbuka, zoom ke sil kruk as..."
-                      className="w-full rounded-lg border border-white/[0.06] bg-obsidian/70 p-2 text-micro leading-relaxed text-ink/90 placeholder:text-muted/40 focus:border-ember/50 focus:outline-none transition-colors resize-y"
+                      className="w-full rounded-lg border border-white/[0.08] bg-obsidian p-2 text-xs leading-relaxed text-ink/90 placeholder:text-muted/40 focus:border-ember/60 focus:outline-none transition-colors resize-y"
                     />
 
                     {/* Creator Custom Footage Note Input */}
-                    {(openFootageNoteIdx === i || sc.user_footage_note) && (
-                      <div className="mt-2 rounded-md border border-dashed border-ember/30 bg-ember/[0.04] p-2">
-                        <label className="block text-[9px] font-semibold text-ember uppercase tracking-wider mb-1">
-                          📹 Bahan / Rekaman yang Lo Punya:
-                        </label>
+                    {openFootageNoteIdx === i || sc.user_footage_note ? (
+                      <div className="mt-2.5 rounded-xl border border-ember/30 bg-[#161310] p-3 shadow-inner">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <label className="flex items-center gap-1 text-[10px] font-bold text-ember uppercase tracking-wider">
+                            <span>📹</span>
+                            <span>Bahan Rekaman yang Lo Punya</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpenFootageNoteIdx(null);
+                              if (!sc.user_footage_note) handleUpdateScene(i, "user_footage_note", "");
+                            }}
+                            className="cursor-pointer text-[10px] font-semibold text-muted hover:text-ink transition-colors px-2 py-0.5 rounded bg-white/[0.06]"
+                          >
+                            ✕ Tutup
+                          </button>
+                        </div>
                         <input
                           type="text"
                           value={sc.user_footage_note || ""}
                           onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
-                          placeholder="Misal: Gue ada rekaman pas lagi bongkar mesin motor..."
-                          className="w-full rounded border border-ember/20 bg-obsidian/90 px-2 py-1 text-micro text-ink placeholder:text-muted/40 focus:border-ember focus:outline-none"
+                          placeholder="Contoh: Gue punya rekaman pas lagi bongkar CVT di bengkel..."
+                          className="w-full rounded-lg border border-white/[0.1] bg-obsidian p-2 text-xs text-ink placeholder:text-muted/40 focus:border-ember focus:outline-none"
                         />
-                        <p className="mt-1 text-[9px] text-muted/60">
-                          Ketik bahan yang lo punya, lalu klik tombol <b>✨ AI Sesuaikan Footage</b> di atas agar AI menyesuaikan arahan visualnya!
-                        </p>
+                        <div className="mt-2.5 flex items-center justify-between gap-2">
+                          <p className="text-[10px] text-muted/70">
+                            AI akan menyesuaikan arahan visual di atas:
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => handleAIFootageSuggest(i)}
+                            disabled={adaptingSceneIdx === i || !sc.user_footage_note?.trim()}
+                            className="cursor-pointer inline-flex items-center gap-1.5 rounded-lg bg-ember px-3 py-1.5 text-xs font-bold text-obsidian shadow-[0_0_14px_rgba(255,138,61,0.3)] hover:bg-ember-lo transition-all disabled:opacity-40"
+                          >
+                            {adaptingSceneIdx === i ? (
+                              <>
+                                <span className="size-2 rounded-full bg-obsidian animate-ping" />
+                                <span>AI Menyesuaikan...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>✨ Sesuaikan Visual Scene</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
-                    )}
-
-                    {openFootageNoteIdx !== i && !sc.user_footage_note && (
+                    ) : (
                       <button
                         type="button"
                         onClick={() => setOpenFootageNoteIdx(i)}
-                        className="mt-1.5 text-[10px] font-semibold text-muted hover:text-ember transition-colors cursor-pointer"
+                        className="mt-2.5 flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-white/20 bg-white/[0.03] py-2 px-3 text-xs font-semibold text-[#E0E0E0] shadow-sm transition-all hover:border-ember/60 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"
                       >
-                        + Punya rekaman sendiri untuk scene ini?
+                        <span className="text-sm">📹</span>
+                        <span>+ Punya rekaman / footage sendiri untuk scene ini?</span>
                       </button>
                     )}
                   </div>
