@@ -134,7 +134,7 @@ export function RefreshButton({
           disabled={spinning}
           aria-label="Muat ulang"
           title="Muat ulang"
-          className="flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink disabled:opacity-50"
+          className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink disabled:opacity-50"
         >
           {spinner}
           <span className="hidden xl:inline">{note || "Refresh"}</span>

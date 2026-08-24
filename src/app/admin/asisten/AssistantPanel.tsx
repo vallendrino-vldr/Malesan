@@ -90,13 +90,13 @@ export function AssistantPanel() {
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
         {QUICK.map((q) => (
           <button
             key={q}
             onClick={() => ask(q)}
             disabled={loading}
-            className="min-h-11 cursor-pointer rounded-full border border-hairline bg-surface px-3.5 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember disabled:opacity-50"
+            className="shrink-0 whitespace-nowrap min-h-9 sm:min-h-11 cursor-pointer rounded-full border border-hairline bg-surface px-3 sm:px-3.5 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember disabled:opacity-50"
           >
             {q}
           </button>

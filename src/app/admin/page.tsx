@@ -260,10 +260,10 @@ export default async function AdminDashboardPage() {
           <h1 className="font-display text-xl font-bold text-ink sm:text-2xl">Pusat Kendali Owner</h1>
           <p className="text-xs text-muted sm:text-sm">Pantau performa bisnis, aktivitas creator, dan kesehatan sistem Malesan.</p>
         </div>
-        <div className="flex items-center gap-2 pt-1 sm:pt-0">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pb-0 sm:flex-wrap pt-1 sm:pt-0">
           <Link
             href="/admin/feedback"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
+            className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
           >
             <MessageSquareIcon className="size-3.5 text-muted" />
             <span>Feedback</span>
@@ -271,14 +271,14 @@ export default async function AdminDashboardPage() {
           </Link>
           <Link
             href="/admin/stats"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
+            className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
           >
             <BarChartIcon className="size-3.5 text-muted" />
             <span>Grafik Lengkap</span>
           </Link>
           <Link
             href="/admin/ai"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
+            className="shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-2.5 sm:px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
           >
             <CpuIcon className="size-3.5 text-ember" />
             <span>Otak AI</span>

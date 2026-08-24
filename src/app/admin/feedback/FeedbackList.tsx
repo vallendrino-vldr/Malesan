@@ -22,11 +22,45 @@ const STATUS_BADGES: Record<FeedbackStatus, { label: string; bg: string; text: s
   selesai: { label: "Selesai", bg: "bg-success/10", text: "text-success", border: "border-success/30" },
 };
 
-const CATEGORY_LABELS: Record<string, { label: string; icon: string }> = {
-  kendala: { label: "Kendala", icon: "🚨" },
-  saran: { label: "Saran", icon: "💡" },
-  pertanyaan: { label: "Tanya", icon: "❓" },
-  lainnya: { label: "Lainnya", icon: "💬" },
+const CATEGORY_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
+  kendala: {
+    label: "Kendala",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-danger">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    ),
+  },
+  saran: {
+    label: "Saran",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-amber-400">
+        <path d="M9 18h6" />
+        <path d="M10 22h4" />
+        <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z" />
+      </svg>
+    ),
+  },
+  pertanyaan: {
+    label: "Tanya",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-sky-400">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+        <line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    ),
+  },
+  lainnya: {
+    label: "Lainnya",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-muted">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
 };
 
 export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] }) {
@@ -81,8 +115,8 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
 
   return (
     <div className="space-y-4">
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2">
+      {/* Filter Tabs — Single-line horizontally scrollable rail on mobile */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap">
         {(["all", "baru", "ditinjau", "diproses", "selesai"] as const).map((tabKey) => {
           const label = tabKey === "all" ? "Semua" : STATUS_BADGES[tabKey]?.label;
           const count = counts[tabKey];
@@ -92,7 +126,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
               key={tabKey}
               type="button"
               onClick={() => setFilter(tabKey)}
-              className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all ${
+              className={`shrink-0 whitespace-nowrap flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition-all ${
                 active
                   ? "border-ember bg-ember/15 text-ember-lo shadow-sm"
                   : "border-hairline bg-surface text-muted hover:border-hairline/90 hover:text-ink"
@@ -158,8 +192,8 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
                 </div>
 
                 {/* Status action buttons */}
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-hairline">
-                  <div className="flex items-center gap-1.5">
+                <div className="mt-4 flex flex-col gap-3 pt-2 border-t border-hairline sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-micro font-semibold text-muted mr-1">Ubah Status:</span>
                     {(["baru", "ditinjau", "diproses", "selesai"] as FeedbackStatus[]).map((st) => (
                       <button
@@ -179,7 +213,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
                   </div>
 
                   {/* Admin notes input */}
-                  <div className="flex items-center gap-2 min-w-[240px]">
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:min-w-[240px]">
                     <input
                       type="text"
                       placeholder="Catatan admin (opsional)..."
@@ -193,7 +227,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
                       type="button"
                       disabled={isUpdating}
                       onClick={() => handleSaveNote(item.id)}
-                      className="rounded-lg border border-hairline bg-surface-raised px-2.5 py-1 text-[11px] font-semibold text-ink hover:border-ember/40"
+                      className="shrink-0 rounded-lg border border-hairline bg-surface-raised px-2.5 py-1 text-[11px] font-semibold text-ink hover:border-ember/40"
                     >
                       Simpan
                     </button>
