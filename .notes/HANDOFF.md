@@ -62,6 +62,8 @@ Last updated: **2026-08-24**, after AI Content Brain & Pipeline Intelligence Lay
    - Enhanced `PipelineCardItem` with AI potential score badge and expandable rubric analysis.
 5. **Server Actions (`src/app/actions/pipeline.ts`):**
    - Added `updateCardScheduleDate(cardId, dateStr)` for drag/reassign operations.
+6. **Timezone Alignment Fix:**
+   - Replaced UTC `.toISOString()` with local date component extraction in `toDateString` (`PipelineCalendarView.tsx`) and `Asia/Jakarta` formatting in `/api/pipeline/strategy`, ensuring "Hari Ini" and week day boundaries match real-time Indonesian WIB time accurately.
 
 ---
 

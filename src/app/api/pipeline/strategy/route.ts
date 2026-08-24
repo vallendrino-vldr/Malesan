@@ -118,12 +118,19 @@ export async function POST(request: NextRequest) {
       throw new Error("Format strategi dari AI gak kebaca.");
     }
 
-    // 7. Calculate target dates (Day 0 = Today, Day 1 = Tomorrow, ...)
+    // 7. Calculate target dates (Day 0 = Today, Day 1 = Tomorrow, ...) in Asia/Jakarta (WIB)
     const now = new Date();
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+
     const rowsToInsert = parsed.plans.map((plan, index) => {
       const targetDate = new Date(now);
       targetDate.setDate(now.getDate() + (plan.day_offset ?? index));
-      const dateStr = targetDate.toISOString().split("T")[0]; // YYYY-MM-DD
+      const dateStr = formatter.format(targetDate); // YYYY-MM-DD in Asia/Jakarta
 
       return {
         user_id: user.id,
