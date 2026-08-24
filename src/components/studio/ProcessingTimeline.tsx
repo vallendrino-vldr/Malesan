@@ -60,13 +60,13 @@ export function ProcessingTimeline({
   const displayProgress = Math.min(100, Math.max(0, isCompleted ? 100 : progress));
 
   return (
-    <div className="relative w-full space-y-3.5 px-1 sm:px-2">
+    <div className="relative w-full space-y-4 px-1 sm:px-2">
       {/* =====================================================================
           1. CINEMATIC NEURAL PROGRESS BAR WITH EMBER PARTICLE HEAD
          ===================================================================== */}
       <div className="relative mb-3.5 w-full">
         {/* Track Background */}
-        <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/[0.06] border border-white/[0.04]">
+        <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/[0.08] border border-white/[0.05]">
           {/* Active Gradient Fill Bar */}
           <div
             className="h-full rounded-full bg-gradient-to-r from-ember via-[#ff9b4e] to-ember shadow-[0_0_12px_rgba(255,138,61,0.6)] transition-all duration-300 ease-out"
@@ -135,14 +135,14 @@ export function ProcessingTimeline({
           return (
             <div
               key={phase.id}
-              className={`relative flex items-start gap-3 pb-3.5 last:pb-0 transition-opacity duration-300 ${
+              className={`relative flex items-stretch gap-3.5 pb-4 last:pb-0 transition-opacity duration-300 ${
                 isActive ? "opacity-100" : isDone ? "opacity-95" : "opacity-35"
               }`}
             >
-              {/* FIXED 24px COLUMN: Centers BOTH the vertical line AND the node with 0px offset */}
-              <div className="relative flex w-6 shrink-0 flex-col items-center">
+              {/* FIXED 24px SELF-STRETCH COLUMN: Spans full row height so line touches next circle */}
+              <div className="relative flex w-6 shrink-0 self-stretch flex-col items-center">
                 {/* Node Circle */}
-                <div className="relative z-10 flex size-6 items-center justify-center">
+                <div className="relative z-10 flex size-6 shrink-0 items-center justify-center">
                   {isDone ? (
                     <span className="flex size-6 items-center justify-center rounded-full bg-ember text-obsidian shadow-[0_0_12px_rgba(255,138,61,0.5)] transition-all duration-300">
                       <svg
@@ -169,13 +169,13 @@ export function ProcessingTimeline({
                   )}
                 </div>
 
-                {/* Continuous Connecting Line to Next Node */}
+                {/* Continuous Connecting Line to Next Node (from bottom of circle to top of next circle) */}
                 {!isLast && (
                   <div
                     aria-hidden="true"
-                    className="absolute top-6 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-white/[0.08] pointer-events-none"
+                    className="absolute top-[24px] bottom-[-16px] left-1/2 -translate-x-1/2 w-[2px] bg-white/[0.1] pointer-events-none"
                   >
-                    {/* Progressively Filled Portion */}
+                    {/* Progressively Filled Gradient Line */}
                     <div
                       className="w-full bg-gradient-to-b from-ember to-ember/60 transition-all duration-300 ease-out"
                       style={{ height: `${lineFill}%` }}

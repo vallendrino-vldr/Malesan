@@ -1,7 +1,12 @@
 "use client";
 
-import React from "react";
-import { AIProcessingOverlay } from "./studio/AIProcessingOverlay";
+import React, { useEffect } from "react";
+import {
+  startStudioProcessing,
+  updateStudioChars,
+  completeStudioProcessing,
+  GlobalStudioProcessingOverlay,
+} from "./studio/AIProcessingOverlay";
 
 export function GenerationProgress({
   moduleKey,
@@ -11,25 +16,29 @@ export function GenerationProgress({
   compact = false,
 }: {
   moduleKey: string;
-  /** Characters received so far. Stays 0 with models that flush in one burst. */
   chars: number;
-  /** Module-specific verb, e.g. "Lagi nulis script". */
   label?: string;
-  /** A real phase emitted by the server at the point that phase begins. */
   status?: string;
-  /** Lean version for a Pipeline card that is already inside a surface. */
   compact?: boolean;
 }) {
+  useEffect(() => {
+    startStudioProcessing({ moduleKey, label, status });
+    return () => {
+      // When parent generation completes and unmounts, trigger smooth 100% completion celebration!
+      completeStudioProcessing();
+    };
+  }, [moduleKey, label, status]);
+
+  useEffect(() => {
+    if (chars > 0) {
+      updateStudioChars(chars);
+    }
+  }, [chars]);
+
   return (
     <>
-      {/* Immersive Floating AI Workspace Processing Overlay */}
-      <AIProcessingOverlay
-        busy={true}
-        moduleKey={moduleKey}
-        chars={chars}
-        label={label}
-        status={status}
-      />
+      {/* Portal Overlay into document.body */}
+      <GlobalStudioProcessingOverlay />
 
       {/* Inline indicator when compact */}
       {compact && (
