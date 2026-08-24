@@ -60,7 +60,7 @@ export function ProcessingTimeline({
   const displayProgress = Math.min(100, Math.max(0, isCompleted ? 100 : progress));
 
   return (
-    <div className="relative w-full space-y-4 px-1 sm:px-2">
+    <div className="relative w-full space-y-3.5 px-1 sm:px-2">
       {/* =====================================================================
           1. CINEMATIC NEURAL PROGRESS BAR WITH EMBER PARTICLE HEAD
          ===================================================================== */}
@@ -83,53 +83,41 @@ export function ProcessingTimeline({
           />
         )}
 
-        {/* 5 Stage Node Markers on Track: 0%, 25%, 55%, 85%, 100% (Visible on All Screen Sizes) */}
-        <div className="mt-1.5 flex items-center justify-between px-0.5 font-mono text-[9px] sm:text-[10px]">
+        {/* 5 Stage Percent Labels on Track (0%, 25%, 55%, 85%, 100%) */}
+        <div className="mt-1.5 flex items-center justify-between px-1 font-mono text-[9px] sm:text-[10px]">
           {TIMELINE_PHASES.map((p) => {
             const isPassed = displayProgress >= p.minProgress;
             return (
               <span
                 key={p.id}
-                className={`flex items-center gap-0.5 sm:gap-1 transition-colors duration-300 ${
+                className={`transition-colors duration-300 ${
                   isPassed
                     ? "text-ember font-semibold drop-shadow-[0_0_6px_rgba(255,138,61,0.4)]"
                     : "text-muted/40"
                 }`}
               >
-                <span
-                  className={`size-1.5 rounded-full ${
-                    isPassed ? "bg-ember shadow-[0_0_6px_#ff8a3d]" : "bg-white/20"
-                  }`}
-                />
-                <span>{p.label}</span>
+                {p.label}
               </span>
             );
           })}
 
           {/* 100% End Marker */}
           <span
-            className={`flex items-center gap-0.5 sm:gap-1 transition-colors duration-300 ${
+            className={`transition-colors duration-300 ${
               displayProgress >= 100
                 ? "text-emerald-400 font-semibold drop-shadow-[0_0_6px_rgba(52,211,153,0.4)]"
                 : "text-muted/40"
             }`}
           >
-            <span
-              className={`size-1.5 rounded-full ${
-                displayProgress >= 100
-                  ? "bg-emerald-400 shadow-[0_0_6px_#34d399]"
-                  : "bg-white/20"
-              }`}
-            />
-            <span>100%</span>
+            100%
           </span>
         </div>
       </div>
 
       {/* =====================================================================
-          2. CONNECTED TIMELINE STEPS
+          2. 100% CONTINUOUS & MATHEMATICALLY LOCKED VERTICAL TIMELINE
          ===================================================================== */}
-      <div className="space-y-2.5 sm:space-y-3">
+      <div className="flex flex-col">
         {TIMELINE_PHASES.map((phase, idx) => {
           const isDone = isCompleted || progress >= phase.maxProgress;
           const isActive = !isCompleted && progress >= phase.minProgress && progress < phase.maxProgress;
@@ -147,53 +135,52 @@ export function ProcessingTimeline({
           return (
             <div
               key={phase.id}
-              className={`relative flex items-start gap-3 transition-all duration-300 ${
-                isActive
-                  ? "opacity-100 scale-[1.01]"
-                  : isDone
-                  ? "opacity-95"
-                  : "opacity-35"
+              className={`relative flex items-start gap-3 pb-3.5 last:pb-0 transition-opacity duration-300 ${
+                isActive ? "opacity-100" : isDone ? "opacity-95" : "opacity-35"
               }`}
             >
-              {/* Vertical Track Line connecting to next node */}
-              {!isLast && (
-                <div
-                  aria-hidden="true"
-                  className="absolute left-[13px] top-[26px] bottom-[-14px] w-[2px] bg-white/[0.08]"
-                >
-                  {/* Progressively filled portion of vertical line */}
-                  <div
-                    className="w-full bg-gradient-to-b from-ember to-ember/60 transition-all duration-300 ease-out"
-                    style={{ height: `${lineFill}%` }}
-                  />
-                </div>
-              )}
-
-              {/* Stepped Node Circle */}
-              <div className="relative z-10 flex size-7 shrink-0 items-center justify-center">
-                {isDone ? (
-                  <span className="flex size-6 items-center justify-center rounded-full bg-ember text-obsidian shadow-[0_0_12px_rgba(255,138,61,0.5)] transition-all duration-300">
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      className="size-3.5"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  </span>
-                ) : isActive ? (
-                  <span className="relative flex size-6 items-center justify-center">
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-ember opacity-60" />
-                    <span className="relative flex size-6 items-center justify-center rounded-full border-2 border-ember bg-[#1a130c] shadow-[0_0_14px_rgba(255,138,61,0.7)]">
-                      <span className="size-2 rounded-full bg-ember" />
+              {/* FIXED 24px COLUMN: Centers BOTH the vertical line AND the node with 0px offset */}
+              <div className="relative flex w-6 shrink-0 flex-col items-center">
+                {/* Node Circle */}
+                <div className="relative z-10 flex size-6 items-center justify-center">
+                  {isDone ? (
+                    <span className="flex size-6 items-center justify-center rounded-full bg-ember text-obsidian shadow-[0_0_12px_rgba(255,138,61,0.5)] transition-all duration-300">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="size-3.5"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
                     </span>
-                  </span>
-                ) : (
-                  <span className="flex size-6 items-center justify-center rounded-full border border-white/20 bg-surface/50">
-                    <span className="size-1.5 rounded-full bg-muted/40" />
-                  </span>
+                  ) : isActive ? (
+                    <span className="relative flex size-6 items-center justify-center">
+                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-ember opacity-50" />
+                      <span className="relative flex size-6 items-center justify-center rounded-full border-2 border-ember bg-[#1a130c] shadow-[0_0_14px_rgba(255,138,61,0.7)]">
+                        <span className="size-2 rounded-full bg-ember" />
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="flex size-6 items-center justify-center rounded-full border border-white/20 bg-surface/50">
+                      <span className="size-1.5 rounded-full bg-muted/40" />
+                    </span>
+                  )}
+                </div>
+
+                {/* Continuous Connecting Line to Next Node */}
+                {!isLast && (
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-6 bottom-0 left-1/2 -translate-x-1/2 w-[2px] bg-white/[0.08] pointer-events-none"
+                  >
+                    {/* Progressively Filled Portion */}
+                    <div
+                      className="w-full bg-gradient-to-b from-ember to-ember/60 transition-all duration-300 ease-out"
+                      style={{ height: `${lineFill}%` }}
+                    />
+                  </div>
                 )}
               </div>
 
