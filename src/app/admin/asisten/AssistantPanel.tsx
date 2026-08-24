@@ -127,9 +127,16 @@ export function AssistantPanel() {
       </form>
 
       {loading && (
-        <div className="space-y-2" aria-busy="true">
-          <div className="h-20 animate-pulse rounded-xl border border-hairline bg-surface/60" />
-          <div className="h-16 animate-pulse rounded-xl border border-hairline bg-surface/60" />
+        <div className="surface-card rounded-2xl border border-ember/25 bg-surface/90 p-5 space-y-3 shadow-sm" aria-busy="true">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-ember animate-ping" />
+            <span className="eyebrow text-ember">Menganalisis data platform...</span>
+          </div>
+          <div className="space-y-2 pt-1">
+            <div className="h-4 w-3/4 animate-pulse rounded-md bg-white/[0.08]" />
+            <div className="h-3.5 w-full animate-pulse rounded-md bg-white/[0.05]" />
+            <div className="h-3.5 w-5/6 animate-pulse rounded-md bg-white/[0.05]" />
+          </div>
         </div>
       )}
 

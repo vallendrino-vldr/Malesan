@@ -103,7 +103,17 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
               className="flex items-center justify-between gap-3 rounded-lg bg-surface px-3 py-2"
             >
               <span className="text-mini text-ink">{tier}</span>
-              <span className="text-micro text-ember-lo">🧠 Mengikuti Otak AI</span>
+              <span className="inline-flex items-center gap-1.5 text-micro text-ember-lo font-medium">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+                  <rect x="4" y="4" width="16" height="16" rx="2" />
+                  <rect x="9" y="9" width="6" height="6" />
+                  <line x1="9" y1="1" x2="9" y2="4" />
+                  <line x1="15" y1="1" x2="15" y2="4" />
+                  <line x1="9" y1="20" x2="9" y2="23" />
+                  <line x1="15" y1="20" x2="15" y2="23" />
+                </svg>
+                <span>Mengikuti Otak AI</span>
+              </span>
             </div>
           ))}
         </div>

@@ -191,14 +191,22 @@ export default function AdminUsersPage() {
 }
 
 function Avatar({ user }: { user: Profile }) {
+  const [imgError, setImgError] = useState(false);
+  const initial = (user.display_name || user.email || "?").charAt(0).toUpperCase();
+
   return (
-    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-hairline bg-surface-raised">
-      {user.avatar_url ? (
+    <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-hairline/80 bg-surface-raised shadow-xs">
+      {user.avatar_url && !imgError ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={user.avatar_url} alt="" className="size-full object-cover" />
+        <img
+          src={user.avatar_url}
+          alt=""
+          className="size-full object-cover"
+          onError={() => setImgError(true)}
+        />
       ) : (
         <span className="font-display text-xs font-bold text-muted">
-          {(user.display_name || user.email).charAt(0).toUpperCase()}
+          {initial}
         </span>
       )}
     </span>

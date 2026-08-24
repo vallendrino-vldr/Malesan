@@ -134,7 +134,12 @@ export default async function AdminErrorsPage() {
 
       {grouped.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-hairline px-4 py-12 text-center bg-surface">
-          <span className="text-3xl">✨</span>
+          <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/15 border border-success/30 text-success">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-6">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
           <p className="mt-3 font-display text-base font-bold text-success">
             Tidak Ada Error Tercatat
           </p>
@@ -163,8 +168,20 @@ export default async function AdminErrorsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-base">
-                        {g.info.severity === "high" ? "🚨" : "⚠️"}
+                      <span className="flex size-6 items-center justify-center rounded-md border border-current/30 text-xs">
+                        {g.info.severity === "high" ? (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-danger">
+                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-amber-400">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                          </svg>
+                        )}
                       </span>
                       <h2 className="font-display text-base font-bold text-ink">
                         {g.info.masalah}
@@ -189,7 +206,14 @@ export default async function AdminErrorsPage() {
                 <div className="grid gap-2.5 sm:grid-cols-3">
                   <div className="rounded-xl border border-hairline bg-surface p-3.5 flex flex-col justify-between">
                     <div>
-                      <span className="eyebrow text-muted">💥 Dampak ke User</span>
+                      <div className="flex items-center gap-1.5 text-muted">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-danger">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="15" y1="9" x2="9" y2="15" />
+                          <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        <span className="eyebrow text-muted">Dampak ke User</span>
+                      </div>
                       <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
                         {g.info.dampak}
                       </p>
@@ -198,7 +222,16 @@ export default async function AdminErrorsPage() {
 
                   <div className="rounded-xl border border-hairline bg-surface p-3.5 flex flex-col justify-between">
                     <div>
-                      <span className="eyebrow text-muted">🤖 Aksi Otomatis Sistem</span>
+                      <div className="flex items-center gap-1.5 text-muted">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+                          <rect x="3" y="11" width="18" height="10" rx="2" />
+                          <circle cx="12" cy="5" r="2" />
+                          <path d="M12 7v4" />
+                          <line x1="8" y1="16" x2="8" y2="16" />
+                          <line x1="16" y1="16" x2="16" y2="16" />
+                        </svg>
+                        <span className="eyebrow text-muted">Aksi Otomatis Sistem</span>
+                      </div>
                       <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
                         {g.info.sistemAction}
                       </p>
@@ -207,7 +240,12 @@ export default async function AdminErrorsPage() {
 
                   <div className="rounded-xl border border-ember/30 bg-ember/10 p-3.5 flex flex-col justify-between">
                     <div>
-                      <span className="eyebrow text-ember font-bold">🛠️ Tindakan Founder</span>
+                      <div className="flex items-center gap-1.5 text-ember">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                        </svg>
+                        <span className="eyebrow text-ember font-bold">Tindakan Founder</span>
+                      </div>
                       <p className="mt-1.5 text-xs leading-relaxed text-ember-lo font-medium">
                         {g.info.founderAction}
                       </p>
@@ -218,7 +256,11 @@ export default async function AdminErrorsPage() {
                 {/* Technical details (collapsible) */}
                 <details className="group border-t border-hairline/60 pt-2.5">
                   <summary className="cursor-pointer text-micro font-semibold text-muted hover:text-ink select-none flex items-center gap-1.5">
-                    <span>🔍 Lihat Log Teknis Asli</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                      <polyline points="4 17 10 11 4 5" />
+                      <line x1="12" y1="19" x2="20" y2="19" />
+                    </svg>
+                    <span>Lihat Log Teknis Asli</span>
                   </summary>
                   <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-hairline bg-obsidian p-3 font-mono text-micro leading-relaxed text-muted">
                     {latest.message}

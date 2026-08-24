@@ -170,20 +170,27 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <LiveRefresh tables={["topups"]} label="Ada topup baru masuk" />
       {/* ---------- sidebar (md+) ---------- */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-hairline bg-obsidian md:flex">
-        <div className="flex items-center gap-2 px-5 py-5">
+        <div className="flex items-center justify-between px-5 py-5 border-b border-hairline/50">
           <Logo markClass="h-6 sm:h-7" />
-          <span className="eyebrow text-ember-lo">admin</span>
+          <span className="rounded-full bg-ember/15 border border-ember/30 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-ember">
+            Admin
+          </span>
         </div>
-        <nav className="flex-1 space-y-1 px-3">
+        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
           {LINKS.map((l) => {
             const badge = l.counted ? waiting : 0;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className="flex items-center justify-between gap-2 rounded-lg px-4 py-2 text-sm text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface hover:text-ink"
+                className="flex items-center justify-between gap-2 rounded-xl px-3.5 py-2.5 text-xs font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-surface-raised/80 hover:text-ink"
               >
-                <span>{l.label}</span>
+                <div className="flex items-center gap-2.5">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 shrink-0 fill-current opacity-75">
+                    {l.icon}
+                  </svg>
+                  <span>{l.label}</span>
+                </div>
                 {badge > 0 && (
                   <span className="grid min-w-5 place-items-center rounded-full bg-ember px-1.5 py-0.5 font-mono text-micro font-bold text-obsidian">
                     {badge}
@@ -193,13 +200,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             );
           })}
         </nav>
-        <div className="space-y-2 border-t border-hairline p-4">
+        <div className="space-y-2 border-t border-hairline/60 p-4 bg-surface/20">
           <RefreshButton />
           <Link
             href="/app"
-            className="block text-sm text-muted transition-colors hover:text-ink"
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-surface hover:text-ink"
           >
-            &larr; Balik ke app
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            <span>Kembali ke App Kreator</span>
           </Link>
         </div>
       </aside>
@@ -207,17 +217,22 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* ---------- mobile header ---------- */}
       <header className="shrink-0 border-b border-hairline/70 bg-obsidian/85 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Logo markClass="h-6" />
-            <span className="eyebrow text-ember-lo">admin</span>
+            <span className="rounded-full bg-ember/15 border border-ember/30 px-1.5 py-0.2 font-mono text-[9px] font-bold uppercase tracking-wider text-ember">
+              Admin
+            </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <RefreshButton variant="icon" />
             <Link
               href="/app"
-              className="eyebrow flex min-h-11 items-center rounded-full border border-hairline px-3 text-muted"
+              className="flex min-h-9 items-center gap-1 rounded-full border border-hairline bg-surface px-3 text-micro font-semibold text-muted hover:text-ink"
             >
-              Balik
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              <span>App</span>
             </Link>
           </div>
         </div>

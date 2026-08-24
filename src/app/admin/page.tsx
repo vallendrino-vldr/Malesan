@@ -78,6 +78,60 @@ function maskEmail(email: string) {
   return `${maskedName}@${domain}`;
 }
 
+function TrendingUpIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </svg>
+  );
+}
+
+function MessageSquareIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function BarChartIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <line x1="18" y1="20" x2="18" y2="10" />
+      <line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
+function CpuIcon({ className = "size-3.5" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <rect x="4" y="4" width="16" height="16" rx="2" />
+      <rect x="9" y="9" width="6" height="6" />
+      <line x1="9" y1="1" x2="9" y2="4" />
+      <line x1="15" y1="1" x2="15" y2="4" />
+      <line x1="9" y1="20" x2="9" y2="23" />
+      <line x1="15" y1="20" x2="15" y2="23" />
+      <line x1="20" y1="9" x2="23" y2="9" />
+      <line x1="20" y1="14" x2="23" y2="14" />
+      <line x1="1" y1="9" x2="4" y2="9" />
+      <line x1="1" y1="14" x2="4" y2="14" />
+    </svg>
+  );
+}
+
+function AlertTriangleIcon({ className = "size-4" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
 export const dynamic = "force-dynamic";
 
 function get24HoursAgoIso(): string {
@@ -209,21 +263,25 @@ export default async function AdminDashboardPage() {
         <div className="flex items-center gap-2 pt-1 sm:pt-0">
           <Link
             href="/admin/feedback"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
           >
-            💬 Feedback {pendingFeedbacks > 0 && <span className="rounded-full bg-ember px-1.5 py-0.2 text-[10px] text-obsidian font-bold">{pendingFeedbacks}</span>}
+            <MessageSquareIcon className="size-3.5 text-muted" />
+            <span>Feedback</span>
+            {pendingFeedbacks > 0 && <span className="rounded-full bg-ember px-1.5 py-0.2 text-[10px] text-obsidian font-bold">{pendingFeedbacks}</span>}
           </Link>
           <Link
             href="/admin/stats"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
           >
-            📊 Grafik Lengkap
+            <BarChartIcon className="size-3.5 text-muted" />
+            <span>Grafik Lengkap</span>
           </Link>
           <Link
             href="/admin/ai"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface px-3 py-1.5 text-xs font-semibold text-ink hover:bg-surface-raised transition-colors"
           >
-            ⚙️ Otak AI
+            <CpuIcon className="size-3.5 text-ember" />
+            <span>Otak AI</span>
           </Link>
         </div>
       </header>
@@ -231,7 +289,10 @@ export default async function AdminDashboardPage() {
       {/* 1. KOTAK FINANSIAL HARI INI (Highlight Utama Founder) */}
       <section className="rounded-2xl border border-ember/30 bg-surface/90 p-4 sm:p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="eyebrow text-ember">💰 Finansial Hari Ini (WIB)</h2>
+          <div className="flex items-center gap-2">
+            <TrendingUpIcon className="size-4 text-ember" />
+            <h2 className="eyebrow text-ember">Finansial Hari Ini (WIB)</h2>
+          </div>
           <span className="text-micro text-muted">Reset jam 00:00 WIB</span>
         </div>
 
@@ -283,14 +344,14 @@ export default async function AdminDashboardPage() {
           label="Topup Menunggu"
           value={pendingTopups}
           alert={pendingTopups > 0}
-          note={pendingTopups > 0 ? "⚠️ Butuh review transferan" : "Semua beres"}
+          note={pendingTopups > 0 ? "Butuh review transferan" : "Semua beres"}
           href="/admin/topups"
         />
         <StatCard
           label="Feedback Baru"
           value={pendingFeedbacks}
           alert={pendingFeedbacks > 0}
-          note={pendingFeedbacks > 0 ? "💡 Masukan baru kreator" : "0 feedback baru"}
+          note={pendingFeedbacks > 0 ? "Masukan baru kreator" : "0 feedback baru"}
           href="/admin/feedback"
         />
       </section>
@@ -299,13 +360,13 @@ export default async function AdminDashboardPage() {
       {(pendingTopups > 0 || pendingFeedbacks > 0 || errors24h > 0) && (
         <section className="rounded-2xl border border-ember/40 bg-ember/5 p-4 sm:p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <span className="text-base">⚠️</span>
+            <AlertTriangleIcon className="size-4 text-ember shrink-0" />
             <h2 className="font-display text-sm font-bold text-ink sm:text-base">Tindakan Yang Perlu Lo Lakukan Segera</h2>
           </div>
           <div className="mt-3 space-y-2.5">
             {pendingTopups > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3 text-xs text-ink">
-                <span>💳 Ada <strong>{pendingTopups} bukti transfer topup</strong> yang belum lo approve.</span>
+                <span>Ada <strong>{pendingTopups} bukti transfer topup</strong> yang belum lo approve.</span>
                 <Link
                   href="/admin/topups"
                   className="btn-ember inline-flex min-h-8 items-center rounded-lg px-3 text-micro font-bold text-obsidian"
@@ -316,7 +377,7 @@ export default async function AdminDashboardPage() {
             )}
             {pendingFeedbacks > 0 && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3 text-xs text-ink">
-                <span>💬 Ada <strong>{pendingFeedbacks} laporan / masukan baru</strong> dari kreator pengguna.</span>
+                <span>Ada <strong>{pendingFeedbacks} laporan / masukan baru</strong> dari kreator pengguna.</span>
                 <Link
                   href="/admin/feedback"
                   className="inline-flex min-h-8 items-center rounded-lg border border-hairline bg-surface-raised px-3 text-micro font-semibold text-ink hover:border-ember/40"
@@ -327,7 +388,7 @@ export default async function AdminDashboardPage() {
             )}
             {errors24h > 3 && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface p-3 text-xs text-ink">
-                <span>🚨 Tercatat <strong>{errors24h} error</strong> dalam 24 jam terakhir. Cek diagnosa Masalah → Solusi.</span>
+                <span>Tercatat <strong>{errors24h} error</strong> dalam 24 jam terakhir. Cek diagnosa Masalah → Solusi.</span>
                 <Link
                   href="/admin/errors"
                   className="inline-flex min-h-8 items-center rounded-lg border border-hairline bg-surface-raised px-3 text-micro font-semibold text-danger hover:bg-danger/10"
@@ -381,7 +442,7 @@ export default async function AdminDashboardPage() {
                               : "bg-danger/10 text-danger border border-danger/30"
                           }`}
                         >
-                          {isSuccess ? "Berhasil ✅" : "Gagal ❌"}
+                          {isSuccess ? "Berhasil" : "Gagal"}
                         </span>
                       </div>
 
@@ -438,7 +499,7 @@ export default async function AdminDashboardPage() {
               {recentErrors.map((err) => (
                 <li key={err.id} className="p-3 text-xs">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-danger">❌ {err.endpoint}</span>
+                    <span className="font-semibold text-danger">{err.endpoint}</span>
                     <span className="text-micro text-muted">{timeAgo(err.created_at)}</span>
                   </div>
                   <p className="mt-1 text-ink text-xs line-clamp-2">{err.message}</p>
