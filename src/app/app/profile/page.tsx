@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { CopyField } from "@/components/CopyField";
 import { PersonaManager, CtaSettings } from "@/components/PersonaManager";
 
@@ -67,15 +68,16 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
-      <a
+      <Link
         href="/app?tab=profil"
+        prefetch={true}
         className="inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 py-2 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ink"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
           <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
         </svg>
         Balik
-      </a>
+      </Link>
       <h1 className="mt-4 font-display text-2xl font-bold tracking-display-md text-ink">
         Profil lo
       </h1>

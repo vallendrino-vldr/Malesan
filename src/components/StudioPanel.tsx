@@ -48,8 +48,19 @@ export function StudioPanel({
       window.history.replaceState(null, "", `/app?tab=studio&m=${next}`);
       document.querySelector("main")?.scrollTo({ top: 0 });
     };
+    const handleTabSwitch = (e: Event) => {
+      const target = (e as CustomEvent<string>).detail;
+      if (target === "studio") {
+        setMod(null);
+        document.querySelector("main")?.scrollTo({ top: 0 });
+      }
+    };
     window.addEventListener("malesan:open-module", open);
-    return () => window.removeEventListener("malesan:open-module", open);
+    window.addEventListener("malesan:switch-tab", handleTabSwitch);
+    return () => {
+      window.removeEventListener("malesan:open-module", open);
+      window.removeEventListener("malesan:switch-tab", handleTabSwitch);
+    };
   }, []);
 
   const back = () => {

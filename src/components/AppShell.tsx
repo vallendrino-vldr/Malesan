@@ -10,24 +10,8 @@ import { TutorialSheet } from "./TutorialSheet";
 import { CommandOmnibar } from "./CommandOmnibar";
 import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 
-/**
- * Native-app shell.
- *
- * The page itself never scrolls — `h-[100dvh]` with `overflow-hidden`, a fixed
- * header, a single scroll container in the middle, and a bottom tab bar. That
- * is what makes a web app stop feeling like a web page on a phone: the chrome
- * stays put and only content moves, exactly like a native app.
- *
- * 100dvh rather than 100vh on purpose. On mobile Safari and Chrome, 100vh is
- * the viewport with the URL bar *hidden*, so a 100vh layout is taller than the
- * visible area on first paint and the bottom bar sits below the fold — the
- * single most common reason a mobile web app feels broken.
- *
- * `pb-[env(safe-area-inset-bottom)]` keeps the tab bar clear of the iPhone home
- * indicator; without it the last row of buttons is half-swallowed.
- */
-
 export type TabKey = "studio" | "vibe" | "pipeline" | "profil";
+const VALID_TABS: TabKey[] = ["studio", "vibe", "pipeline", "profil"];
 
 const TABS: { key: TabKey; label: string; icon: ReactNode }[] = [
   {
@@ -60,25 +44,6 @@ const TABS: { key: TabKey; label: string; icon: ReactNode }[] = [
   },
 ];
 
-/**
- * Tabs switch in the browser, not on the server.
- *
- * Each tab used to be `<Link href="/app?tab=...">` — a full RSC navigation per
- * tap. On the deployed setup that meant the middleware's `auth.getUser()`, the
- * page's `auth.getUser()`, and the profile read all crossing from the Vercel
- * function to a Supabase project in ap-southeast-1, in sequence, before
- * anything could render. Three trans-Pacific round trips plus a possible cold
- * start is the 5-second tab change.
- *
- * All four panels are rendered once by the server and swapped here with state.
- * Switching costs no network at all. The URL is kept in sync with
- * `history.replaceState` so refresh and deep links still land on the right tab
- * without triggering a navigation.
- *
- * `panels` rather than `children`: passing server-rendered nodes as props into
- * a client component is the standard slot pattern and keeps every panel a
- * server component — none of this ships their data-fetching to the browser.
- */
 export function AppShell({
   active,
   credits,
@@ -94,31 +59,56 @@ export function AppShell({
   active: TabKey;
   credits: number;
   isAdmin: boolean;
-  /**
-   * Top-ups waiting for review. A payment that arrives while the owner is using
-   * the product normally was invisible until they thought to open the admin
-   * panel — so the badge has to live out here, not only in there.
-   */
   pendingTopups?: number;
   avatarUrl?: string | null;
   initial: string;
-  /** One node per tab. Omit to render `children` instead (module sub-views). */
   panels?: Partial<Record<TabKey, ReactNode>>;
-  /**
-   * Magazine rails. Absent by default, and absence is the point: an unrendered
-   * grid area contributes no width, so the layout collapses to the plain
-   * header/main/footer stack rather than reserving an empty column.
-   *
-   * Desktop only. The shell is pinned to 100dvh with `main` as the sole
-   * scrolling region, so below `lg` a stacked rail does not flow below the fold
-   * — it takes its height out of `main`. See the note in globals.css.
-   */
   railLeft?: ReactNode;
   railRight?: ReactNode;
   children?: ReactNode;
 }) {
   const [current, setCurrent] = useState<TabKey>(active);
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
+
+  // A module sub-view (?m=hook) owns the whole content area, so tab state does
+  // not apply — fall back to server-driven navigation for those.
+  const clientTabs = Boolean(panels);
+  const shown = clientTabs ? current : active;
+
+  const go = (key: TabKey) => {
+    setCurrent(key);
+    // Instant tab switch with URL synchronization without triggering a full page navigation
+    window.history.replaceState(null, "", key === "studio" ? "/app" : `/app?tab=${key}`);
+    window.dispatchEvent(new CustomEvent("malesan:switch-tab", { detail: key }));
+  };
+
+  // Sync state with popstate and custom tab switch events
+  useEffect(() => {
+    const handleSwitch = (e: Event) => {
+      const next = (e as CustomEvent<TabKey>).detail;
+      if (VALID_TABS.includes(next)) {
+        setCurrent(next);
+        window.history.replaceState(null, "", next === "studio" ? "/app" : `/app?tab=${next}`);
+      }
+    };
+
+    const handlePopState = () => {
+      const url = new URL(window.location.href);
+      const tabParam = url.searchParams.get("tab") as TabKey;
+      if (tabParam && VALID_TABS.includes(tabParam)) {
+        setCurrent(tabParam);
+      } else {
+        setCurrent("studio");
+      }
+    };
+
+    window.addEventListener("malesan:switch-tab", handleSwitch);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("malesan:switch-tab", handleSwitch);
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   // Global shortcut for Cmd+K / Ctrl+K
   useEffect(() => {
@@ -132,39 +122,34 @@ export function AppShell({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // A module sub-view (?m=hook) owns the whole content area, so tab state does
-  // not apply — fall back to server-driven navigation for those.
-  const clientTabs = Boolean(panels);
-  const shown = clientTabs ? current : active;
-
-  const go = (key: TabKey) => {
-    setCurrent(key);
-    // replaceState, not pushState: the tab bar is not history. Back should
-    // leave the app, the way it does in a native shell.
-    window.history.replaceState(null, "", key === "studio" ? "/app" : `/app?tab=${key}`);
-  };
-
   return (
     <div className="magazine relative w-full bg-obsidian">
-      {/* Warm drifting glow behind the whole app, at the shell level so it fills
-          the black margins around every page's content instead of being trapped
-          inside one column. `relative` on this root makes the field's `inset:0`
-          resolve to the shell box; the chrome bars and `main` carry a z-index so
-          they paint above it, and it is `pointer-events-none` so it never eats a
-          tap. This is the layer that makes the product read as alive at rest. */}
+      {/* Warm drifting glow behind the whole app */}
       <AmbientField />
 
       {/* ---------- header ---------- */}
       <header className="area-header relative z-20 border-b border-hairline/70 bg-obsidian">
         <div className="mx-auto flex h-16 lg:h-[76px] w-full max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          {/* Logo & Brand Identity */}
-          <Link
-            href="/app"
-            aria-label="Malesan"
-            className="flex shrink-0 items-center overflow-visible transition-opacity hover:opacity-95"
-          >
-            <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
-          </Link>
+          {/* Logo & Brand Identity (Instant Client Tab or Prefetched Link) */}
+          {clientTabs ? (
+            <button
+              type="button"
+              onClick={() => go("studio")}
+              aria-label="Malesan"
+              className="flex shrink-0 items-center overflow-visible transition-opacity hover:opacity-95 cursor-pointer"
+            >
+              <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
+            </button>
+          ) : (
+            <Link
+              href="/app"
+              prefetch={true}
+              aria-label="Malesan"
+              className="flex shrink-0 items-center overflow-visible transition-opacity hover:opacity-95"
+            >
+              <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
+            </Link>
+          )}
 
           {/* Center/Right Omnibar search trigger */}
           <button
@@ -193,6 +178,7 @@ export function AppShell({
             {isAdmin && (
               <Link
                 href={pendingTopups > 0 ? "/admin/topups" : "/admin"}
+                prefetch={true}
                 aria-label={
                   pendingTopups > 0
                     ? `Panel admin — ${pendingTopups} topup nunggu di-approve`
@@ -223,26 +209,52 @@ export function AppShell({
 
             <CreditDisplay credits={credits} />
 
-            <Link
-              href="/app?tab=profil"
-              aria-label="Profil"
-              className="flex h-10 w-10 shrink-0 items-center justify-center"
-            >
-              <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                <span className="grid size-full place-items-center font-display text-xs font-bold text-muted">
-                  {initial}
+            {/* Avatar Profile Trigger (Instant Client Tab or Prefetched Link) */}
+            {clientTabs ? (
+              <button
+                type="button"
+                onClick={() => go("profil")}
+                aria-label="Profil"
+                className="flex h-10 w-10 shrink-0 items-center justify-center cursor-pointer"
+              >
+                <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="grid size-full place-items-center font-display text-xs font-bold text-muted">
+                      {initial}
+                    </span>
+                  )}
                 </span>
-              )}
-              </span>
-            </Link>
+              </button>
+            ) : (
+              <Link
+                href="/app?tab=profil"
+                prefetch={true}
+                aria-label="Profil"
+                className="flex h-10 w-10 shrink-0 items-center justify-center"
+              >
+                <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <span className="grid size-full place-items-center font-display text-xs font-bold text-muted">
+                      {initial}
+                    </span>
+                  )}
+                </span>
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -260,9 +272,6 @@ export function AppShell({
             shown === "pipeline" ? "max-w-[1600px]" : "max-w-6xl"
           }`}
         >
-          {/* Inactive panels stay mounted but hidden. Re-rendering them on every
-              switch would throw away scroll position and any in-progress form
-              state — the thing that makes a web app feel unlike a native one. */}
           {clientTabs
             ? TABS.map((t) => (
                 <div key={t.key} hidden={t.key !== shown}>
@@ -273,9 +282,7 @@ export function AppShell({
         </div>
       </main>
 
-      {/* ---------- magazine rails ----------
-          Nothing renders unless a rail is passed, so the grid tracks stay
-          collapsed and the shell is byte-for-byte the old stack until one is. */}
+      {/* ---------- magazine rails ---------- */}
       {railLeft && (
         <aside className="area-left border-r border-hairline/60 px-4 py-4">{railLeft}</aside>
       )}
@@ -293,8 +300,6 @@ export function AppShell({
             const on = t.key === shown;
             const inner = (
               <>
-                {/* The active tab is lit from above — the same heat language as
-                    the rest of the product, rather than a generic underline. */}
                 {on && (
                   <span
                     aria-hidden="true"
@@ -323,9 +328,6 @@ export function AppShell({
             const cls =
               "group relative flex flex-1 cursor-pointer flex-col items-center gap-1 py-2.5";
 
-            // A button when tabs switch in the browser; a real link when they
-            // drive a navigation. A link that does not navigate breaks
-            // middle-click and "open in new tab" for no benefit.
             return clientTabs ? (
               <button
                 key={t.key}
@@ -340,6 +342,7 @@ export function AppShell({
               <Link
                 key={t.key}
                 href={`/app?tab=${t.key}`}
+                prefetch={true}
                 aria-current={on ? "page" : undefined}
                 className={cls}
               >
