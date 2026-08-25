@@ -4,6 +4,29 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
+
+    // Support deactivation request
+    if (body?.action === "deactivate") {
+      const response = NextResponse.json({
+        success: true,
+        message: "Mode Tester berhasil dinonaktifkan.",
+      });
+
+      response.cookies.set("malesan_demo_mode", "", {
+        path: "/",
+        maxAge: 0,
+        sameSite: "lax",
+      });
+
+      response.cookies.set("malesan_test_mode", "", {
+        path: "/",
+        maxAge: 0,
+        sameSite: "lax",
+      });
+
+      return response;
+    }
+
     const password = body?.password?.trim();
 
     // Strict password check for creator test/demo bypass
@@ -56,7 +79,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: verifyError.message }, { status: 500 });
     }
 
-    // 3. Create response and set demo mode cookie
+    // 3. Create response and set demo mode cookies
     const response = NextResponse.json({
       success: true,
       redirect: "/app",
@@ -64,6 +87,13 @@ export async function POST(request: NextRequest) {
     });
 
     response.cookies.set("malesan_demo_mode", "1", {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax",
+      httpOnly: false,
+    });
+
+    response.cookies.set("malesan_test_mode", "1", {
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       sameSite: "lax",

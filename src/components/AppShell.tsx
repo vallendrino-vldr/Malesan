@@ -151,40 +151,12 @@ export function AppShell({
             </Link>
           )}
 
-          {/* Desktop Center Navigation Tabs (Studio | Bikin App | Alur | Profil) */}
-          <nav aria-label="Navigasi desktop" className="hidden md:flex items-center gap-1 bg-surface-raised/80 p-1 rounded-full border border-hairline/80 shadow-xs">
-            {TABS.map((t) => {
-              const on = t.key === shown;
-              return (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => go(t.key)}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                    on
-                      ? "bg-ember text-obsidian font-bold shadow-sm"
-                      : "text-muted hover:text-ink hover:bg-surface"
-                  }`}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className={`size-3.5 ${on ? "fill-obsidian" : "fill-current"}`}
-                  >
-                    {t.icon}
-                  </svg>
-                  <span>{t.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
           {/* Center/Right Omnibar search trigger */}
           <button
             type="button"
             onClick={() => setIsOmnibarOpen(true)}
             aria-label="Buka Command Omnibar (Cmd+K)"
-            className="hidden lg:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
               <circle cx="11" cy="11" r="8" />
