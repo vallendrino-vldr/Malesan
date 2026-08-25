@@ -4,6 +4,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback, useSyncExtern
 import { createPortal } from "react-dom";
 import type { ScriptOutput } from "./ScriptView";
 import { VoicePreview } from "./VoicePreview";
+import { haptic } from "@/lib/haptics";
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
@@ -147,11 +148,33 @@ export function ScriptFullViewModal({
 
   const handleCopy = useCallback((type: "vo" | "all", content: string) => {
     navigator.clipboard.writeText(content);
+    haptic.success();
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2000);
   }, []);
 
+  const handleShare = useCallback(async () => {
+    haptic.selection();
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: title || "Naskah Konten Malesan",
+          text: pureVoiceoverText || markdownContent,
+        });
+        haptic.success();
+        return;
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          handleCopy("vo", pureVoiceoverText);
+        }
+      }
+    } else {
+      handleCopy("vo", pureVoiceoverText);
+    }
+  }, [title, pureVoiceoverText, markdownContent, handleCopy]);
+
   const handleDownloadMd = useCallback(() => {
+    haptic.tap();
     const blob = new Blob([markdownContent], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -177,9 +200,11 @@ export function ScriptFullViewModal({
 
   const handleSave = async () => {
     if (!onSaveScript) return;
+    haptic.impact();
     setIsSaving(true);
     try {
       await onSaveScript(editableScript);
+      haptic.success();
       setHasChanges(false);
     } finally {
       setIsSaving(false);
@@ -577,7 +602,7 @@ export function ScriptFullViewModal({
           <button
             type="button"
             onClick={() => handleCopy("vo", pureVoiceoverText)}
-            className="h-8 rounded-xl border border-hairline bg-surface px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
+            className="h-8 rounded-xl border border-hairline bg-surface px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
@@ -589,7 +614,7 @@ export function ScriptFullViewModal({
           <button
             type="button"
             onClick={() => handleCopy("all", markdownContent)}
-            className="h-8 rounded-xl border border-hairline bg-surface px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
+            className="h-8 rounded-xl border border-hairline bg-surface px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
@@ -600,8 +625,23 @@ export function ScriptFullViewModal({
 
           <button
             type="button"
+            onClick={handleShare}
+            className="h-8 rounded-xl border border-ember/30 bg-surface px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold text-ember hover:border-ember hover:bg-ember/10 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+            </svg>
+            <span>Bagikan</span>
+          </button>
+
+          <button
+            type="button"
             onClick={handleDownloadMd}
-            className="h-8 rounded-xl border border-hairline bg-surface px-2.5 sm:px-3.5 text-[11px] sm:text-xs font-semibold text-muted hover:text-ink active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
+            className="h-8 rounded-xl border border-hairline bg-surface px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold text-muted hover:text-ink active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5 truncate"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -614,7 +654,7 @@ export function ScriptFullViewModal({
           <button
             type="button"
             onClick={onClose}
-            className="h-8 rounded-xl bg-ember px-3.5 sm:px-5 text-[11px] sm:text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1"
+            className="col-span-2 sm:col-span-1 h-8 rounded-xl bg-ember px-3.5 sm:px-5 text-[11px] sm:text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1"
           >
             Tutup
           </button>

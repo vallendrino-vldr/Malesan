@@ -16,6 +16,7 @@ import { todayPlatformLabel, normalizeTodayPlatform } from "@/lib/content-option
 import { completeStudioProcessing } from "./studio/AIProcessingOverlay";
 import { NetizenSimulatorModal } from "./NetizenSimulatorModal";
 import { ScriptFullViewModal } from "./ScriptFullViewModal";
+import { haptic } from "@/lib/haptics";
 
 type Column = "ide" | "draft" | "siap" | "posted";
 
@@ -116,6 +117,7 @@ export function PipelineCardModal({
   const generatedScript = content?.generated_script as ScriptOutput | undefined;
 
   const handleGenerateHook = async () => {
+    haptic.impact();
     setIsGenerating(true);
     setError("");
     setGeneratingLabel("Meracik 10 opsi hook tajam...");
@@ -146,8 +148,10 @@ export function PipelineCardModal({
       };
 
       const updated = await updateCardContentAndStatus(card.id, newContent, "draft");
+      haptic.success();
       onCardUpdated(updated);
     } catch (e) {
+      haptic.error();
       setError(e instanceof Error ? e.message : "Ada kendala saat membuat hook.");
     } finally {
       setIsGenerating(false);
@@ -157,6 +161,7 @@ export function PipelineCardModal({
   };
 
   const handlePickHook = async (index: number) => {
+    haptic.selection();
     setPickedHookIndex(index);
     const newContent = {
       ...content,
@@ -171,6 +176,7 @@ export function PipelineCardModal({
   };
 
   const handleGenerateScript = async () => {
+    haptic.impact();
     setIsGenerating(true);
     setError("");
     setGeneratingLabel("Menyusun naskah scene-by-scene...");
@@ -202,8 +208,10 @@ export function PipelineCardModal({
       };
 
       const updated = await updateCardContentAndStatus(card.id, newContent, "siap");
+      haptic.success();
       onCardUpdated(updated);
     } catch (e) {
+      haptic.error();
       setError(e instanceof Error ? e.message : "Ada kendala saat membuat naskah.");
     } finally {
       setIsGenerating(false);
@@ -213,15 +221,18 @@ export function PipelineCardModal({
   };
 
   const handleMarkAsPosted = async () => {
+    haptic.success();
     try {
       const updated = await updateCardStatus(card.id, "posted");
       onCardUpdated(updated);
     } catch (e) {
+      haptic.error();
       setError(e instanceof Error ? e.message : "Gagal mengubah status.");
     }
   };
 
   const handleChangeSchedule = async (newDate: string | null, newTime: string | null) => {
+    haptic.selection();
     try {
       const dateVal = newDate ? newDate : null;
       const timeVal = newTime ? newTime : null;
@@ -234,12 +245,14 @@ export function PipelineCardModal({
   };
 
   const handleDelete = async () => {
+    haptic.warning();
     setIsDeleting(true);
     try {
       await deletePipelineCard(card.id);
       onCardDeleted(card.id);
       onClose();
     } catch (e) {
+      haptic.error();
       setError(e instanceof Error ? e.message : "Gagal menghapus kartu.");
     } finally {
       setIsDeleting(false);

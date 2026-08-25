@@ -40,19 +40,54 @@ export const TEXT_INIT_SCRIPT = `
 `;
 
 /**
- * Haptic tap feedback on every button, app-wide.
+ * High-End Multi-Profile Haptic Feedback Script.
+ * Runs instantly at boot for zero-latency tactile feedback across all devices.
  */
 export const HAPTIC_SCRIPT = `
 (function(){try{
-  if (!("vibrate" in navigator)) return;
+  var audioCtx = null;
+  function audioTick(vol, freq, dur) {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended") audioCtx.resume().catch(function(){});
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq || 70, audioCtx.currentTime);
+      gain.gain.setValueAtTime(vol || 0.04, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (dur || 0.015));
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + (dur || 0.015));
+    } catch(e){}
+  }
+
   document.addEventListener("pointerdown", function(e){
     if (!e.isPrimary) return;
     var el = e.target && e.target.closest
       ? e.target.closest('button,[role="button"],a[href],[data-haptic]') : null;
     if (!el) return;
-    if (el.getAttribute("data-haptic") === "off") return;
+    var hapticAttr = el.getAttribute("data-haptic");
+    if (hapticAttr === "off") return;
     if (el.disabled || el.getAttribute("aria-disabled") === "true") return;
-    try { navigator.vibrate(8); } catch (err) {}
+
+    var isHeavy = hapticAttr === "heavy" || el.classList.contains("btn-ember");
+    var isSuccess = hapticAttr === "success";
+    var isMedium = hapticAttr === "medium" || el.classList.contains("surface-card-interactive");
+
+    var pattern = isSuccess ? [10, 35, 14] : isHeavy ? 18 : isMedium ? 12 : 6;
+    var vibrated = false;
+
+    if ("vibrate" in navigator && typeof navigator.vibrate === "function") {
+      try { vibrated = navigator.vibrate(pattern); } catch(err) {}
+    }
+
+    if (!vibrated) {
+      audioTick(isHeavy ? 0.07 : 0.04, isHeavy ? 55 : isSuccess ? 85 : 70, isSuccess ? 0.025 : 0.015);
+    }
   }, true);
 }catch(e){}})();
 `;
