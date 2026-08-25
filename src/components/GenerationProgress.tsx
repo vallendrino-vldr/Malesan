@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   startStudioProcessing,
   updateStudioChars,
@@ -23,24 +23,27 @@ export function GenerationProgress({
 }) {
   const isStartedRef = useRef(false);
 
+  // Trigger startStudioProcessing on mount ONLY and trigger completion sequence on unmount
   useEffect(() => {
     if (!isStartedRef.current) {
       isStartedRef.current = true;
       startStudioProcessing({ moduleKey, label, status });
     }
     return () => {
-      // When parent generation completes and unmounts, trigger smooth 100% completion sequence!
+      // When parent generation completes and unmounts, trigger smooth 100% completion sequence
       completeStudioProcessing();
     };
-  }, [moduleKey, label, status]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleKey]);
 
-  // Update dynamic status without re-triggering startStudioProcessing / reset
+  // Update dynamic status without re-triggering start/unmount lifecycle
   useEffect(() => {
     if (status) {
       updateStudioStatus(status);
     }
   }, [status]);
 
+  // Update streamed chars count
   useEffect(() => {
     if (chars > 0) {
       updateStudioChars(chars);

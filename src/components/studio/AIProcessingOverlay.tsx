@@ -383,6 +383,7 @@ export function GlobalStudioProcessingOverlay() {
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const progressRef = useRef<number>(0);
+  const charsRef = useRef<number>(0);
   const isCompletingRef = useRef<boolean>(false);
 
   // Subscribe to Global Store
@@ -400,6 +401,11 @@ export function GlobalStudioProcessingOverlay() {
   useEffect(() => {
     progressRef.current = progress;
   }, [progress]);
+
+  // Sync charsRef with data.chars without triggering loop re-creation
+  useEffect(() => {
+    charsRef.current = data.chars;
+  }, [data.chars]);
 
   // Main Processing & Smooth Completion Animation Engine
   useEffect(() => {
@@ -433,8 +439,8 @@ export function GlobalStudioProcessingOverlay() {
         }
 
         // Chars provide only a subtle organic pacing nudge (max +2%) without skipping phases
-        if (data.chars > 0) {
-          const charBonus = Math.min(2.5, data.chars / 400);
+        if (charsRef.current > 0) {
+          const charBonus = Math.min(2.5, charsRef.current / 400);
           nextProgress = Math.min(89.5, nextProgress + charBonus);
         }
 
@@ -490,7 +496,7 @@ export function GlobalStudioProcessingOverlay() {
         animationRef.current = null;
       }
     };
-  }, [data.isOpen, data.isCompleted, data.chars]);
+  }, [data.isOpen, data.isCompleted]);
 
   const config = resolveConfig(data.moduleKey);
   const isCompleted = visualCompleted || progress >= 100;
