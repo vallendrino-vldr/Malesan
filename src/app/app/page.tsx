@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
@@ -95,7 +96,9 @@ export default async function AppPage({
   const todayWib = jakartaDayKey();
   const needsRefill = profile.last_refill_date !== todayWib;
 
-  const isAdmin = profile.role === "admin";
+  const cookieStore = await cookies();
+  const isDemoMode = cookieStore.get("malesan_demo_mode")?.value === "1";
+  const isAdmin = isDemoMode ? false : profile.role === "admin";
   const [refillResult, pipelineResult, costs, waitingTopups, monthlyGens] = await Promise.all([
     // Supabase's builder is a PromiseLike, not a Promise, so it has no
     // `.catch` — wrap it before attaching one. Never block the app on a
@@ -229,8 +232,8 @@ export default async function AppPage({
     credits: totalCredits,
     isAdmin,
     pendingTopups: waitingTopups,
-    avatarUrl: avatar,
-    initial: profile.display_name?.charAt(0).toUpperCase() ?? "?",
+    avatarUrl: isDemoMode ? null : avatar,
+    initial: isDemoMode ? "K" : (profile.display_name?.charAt(0).toUpperCase() ?? "?"),
   };
 
   // The module sub-view branch that used to live here is gone. It re-rendered
@@ -292,7 +295,7 @@ export default async function AppPage({
                   </div>
                   <div className="min-w-0">
                     <p className="eyebrow text-ember font-bold tracking-wider">
-                      {greet().toUpperCase()}, {profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR"}
+                      {greet().toUpperCase()}, {isDemoMode ? "KREATOR" : (profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR")}
                     </p>
                     <h1 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-display-sm text-ink leading-tight">
                       Mau bikin konten apa hari ini?

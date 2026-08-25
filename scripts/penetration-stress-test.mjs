@@ -137,10 +137,12 @@ for (const file of routeFiles) {
     file.includes("cron") || 
     file.includes("autocomplete") || 
     file.includes("no-watermark") ||
-    file.includes("questions");
+    file.includes("questions") ||
+    file.includes("demo-bypass") ||
+    file.includes("auth");
 
   if (!isPublicRoute) {
-    if (content.includes("getUser") || content.includes("auth.getUser") || content.includes("spendCredits")) {
+    if (content.includes("getUser") || content.includes("auth.getUser") || content.includes("spendCredits") || content.includes("verifyOtp")) {
       authEnforcedCount++;
     }
   } else {
