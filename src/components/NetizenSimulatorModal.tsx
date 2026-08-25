@@ -94,6 +94,17 @@ const PERSONA_TAGS = [
   { label: "Pemburu Solusi", name: "@farhan_tips_id" },
 ];
 
+const netizenCache = new Map<
+  string,
+  {
+    potensiViral: string;
+    dayaDebat: string;
+    rasioKonversi: string;
+    suggestedPinnedComment: string;
+    comments: NetizenComment[];
+  }
+>();
+
 export function NetizenSimulatorModal({
   isOpen,
   onClose,
@@ -103,14 +114,26 @@ export function NetizenSimulatorModal({
 }: NetizenSimulatorModalProps) {
   const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
+  const cacheKey = `${title}_${scriptContent || ""}_${platform}`;
+
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStepIdx, setLoadingStepIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [comments, setComments] = useState<NetizenComment[]>([]);
-  const [potensiViral, setPotensiViral] = useState("");
-  const [dayaDebat, setDayaDebat] = useState("");
-  const [rasioKonversi, setRasioKonversi] = useState("");
-  const [suggestedPinnedComment, setSuggestedPinnedComment] = useState("");
+  const [comments, setComments] = useState<NetizenComment[]>(
+    () => netizenCache.get(`${title}_${scriptContent || ""}_${platform}`)?.comments || []
+  );
+  const [potensiViral, setPotensiViral] = useState(
+    () => netizenCache.get(`${title}_${scriptContent || ""}_${platform}`)?.potensiViral || ""
+  );
+  const [dayaDebat, setDayaDebat] = useState(
+    () => netizenCache.get(`${title}_${scriptContent || ""}_${platform}`)?.dayaDebat || ""
+  );
+  const [rasioKonversi, setRasioKonversi] = useState(
+    () => netizenCache.get(`${title}_${scriptContent || ""}_${platform}`)?.rasioKonversi || ""
+  );
+  const [suggestedPinnedComment, setSuggestedPinnedComment] = useState(
+    () => netizenCache.get(`${title}_${scriptContent || ""}_${platform}`)?.suggestedPinnedComment || ""
+  );
   const [copiedPinned, setCopiedPinned] = useState(false);
   const [likedComments, setLikedComments] = useState<Record<string, boolean>>({});
 
@@ -135,7 +158,7 @@ export function NetizenSimulatorModal({
     };
   }, [isOpen]);
 
-  // Fetch real AI-generated netizen reactions
+  // Fetch real AI-generated netizen reactions (updates cache)
   const fetchNetizenReactions = useCallback(async () => {
     if (!title && !scriptContent) return;
     setIsLoading(true);
@@ -157,16 +180,21 @@ export function NetizenSimulatorModal({
         throw new Error(data.error || "Gagal memuat simulasi netizen.");
       }
 
-      setPotensiViral(data.potensiViral || "8.8 / 10 (Tinggi)");
-      setDayaDebat(data.dayaDebat || "8.2 / 10 (Aktif)");
-      setRasioKonversi(data.rasioKonversi || "Tinggi (Relate)");
-      setSuggestedPinnedComment(
+      const pViral = data.potensiViral || "8.8 / 10 (Tinggi)";
+      const dDebat = data.dayaDebat || "8.2 / 10 (Aktif)";
+      const rKonv = data.rasioKonversi || "Tinggi (Relate)";
+      const sPinned =
         data.suggestedPinnedComment ||
-          `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`
-      );
+        `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`;
 
+      setPotensiViral(pViral);
+      setDayaDebat(dDebat);
+      setRasioKonversi(rKonv);
+      setSuggestedPinnedComment(sPinned);
+
+      let mappedComments: NetizenComment[] = [];
       if (Array.isArray(data.comments)) {
-        const mapped: NetizenComment[] = data.comments.map(
+        mappedComments = data.comments.map(
           (
             c: {
               type?: string;
@@ -196,19 +224,32 @@ export function NetizenSimulatorModal({
             };
           }
         );
-        setComments(mapped);
+        setComments(mappedComments);
       }
+
+      // Save to instant memory cache
+      netizenCache.set(cacheKey, {
+        potensiViral: pViral,
+        dayaDebat: dDebat,
+        rasioKonversi: rKonv,
+        suggestedPinnedComment: sPinned,
+        comments: mappedComments,
+      });
     } catch (err) {
       console.error("Netizen simulator fetch error:", err);
       setError(err instanceof Error ? err.message : "Gagal memuat respon netizen.");
     } finally {
       setIsLoading(false);
     }
-  }, [title, scriptContent, platform]);
+  }, [title, scriptContent, platform, cacheKey]);
 
-  // Load automatically on modal open if no comments yet
+  // Load automatically on modal open (instant 0ms if cached)
   useEffect(() => {
-    if (!isOpen || comments.length > 0) return;
+    if (!isOpen) return;
+
+    // If already cached or comments exist, do not fetch
+    if (netizenCache.has(cacheKey) || comments.length > 0) return;
+
     let isCurrent = true;
 
     async function loadInitial() {
@@ -224,16 +265,21 @@ export function NetizenSimulatorModal({
         if (!isCurrent) return;
         if (!res.ok) throw new Error(data.error || "Gagal memuat simulasi netizen.");
 
-        setPotensiViral(data.potensiViral || "8.8 / 10 (Tinggi)");
-        setDayaDebat(data.dayaDebat || "8.2 / 10 (Aktif)");
-        setRasioKonversi(data.rasioKonversi || "Tinggi (Relate)");
-        setSuggestedPinnedComment(
+        const pViral = data.potensiViral || "8.8 / 10 (Tinggi)";
+        const dDebat = data.dayaDebat || "8.2 / 10 (Aktif)";
+        const rKonv = data.rasioKonversi || "Tinggi (Relate)";
+        const sPinned =
           data.suggestedPinnedComment ||
-            `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`
-        );
+          `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`;
 
+        setPotensiViral(pViral);
+        setDayaDebat(dDebat);
+        setRasioKonversi(rKonv);
+        setSuggestedPinnedComment(sPinned);
+
+        let mappedComments: NetizenComment[] = [];
         if (Array.isArray(data.comments)) {
-          const mapped: NetizenComment[] = data.comments.map(
+          mappedComments = data.comments.map(
             (
               c: {
                 type?: string;
@@ -263,8 +309,17 @@ export function NetizenSimulatorModal({
               };
             }
           );
-          setComments(mapped);
+          setComments(mappedComments);
         }
+
+        // Save to instant memory cache
+        netizenCache.set(cacheKey, {
+          potensiViral: pViral,
+          dayaDebat: dDebat,
+          rasioKonversi: rKonv,
+          suggestedPinnedComment: sPinned,
+          comments: mappedComments,
+        });
       } catch (err) {
         if (!isCurrent) return;
         console.error("Netizen simulator fetch error:", err);
@@ -278,7 +333,7 @@ export function NetizenSimulatorModal({
     return () => {
       isCurrent = false;
     };
-  }, [isOpen, comments.length, title, scriptContent, platform]);
+  }, [isOpen, comments.length, title, scriptContent, platform, cacheKey]);
 
   const handleCopyPinned = useCallback(() => {
     if (!suggestedPinnedComment) return;

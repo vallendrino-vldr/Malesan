@@ -92,6 +92,8 @@ Violating any of these is a critical defect.
 11. **Continuous Kinetic Motion & Reduced-Motion Safety:** Whenever authoring any ambient, living, or continuous kinetic UI motion in the app (nodes, tickers, spinners, mascots, circuits), NEVER let the global `@media (prefers-reduced-motion: reduce)` block freeze it dead into a static broken element (`0.01ms`). The element MUST be explicitly exempted in `globals.css` (via `:not(.your-class)`) and given an active fallback animation so it never freezes on users with OS accessibility toggles.
 12. **Autonomous Mega-Skill Auto-Dispatch:** Never wait for the user to prompt `/mikir`, `/mikir-ui`, `/mikir-code`, or `/mikir-audit`. Automatically apply deep architectural reasoning, mobile-first anti-slop design (360px responsive, no scrollbars, equal button heights), server-side credit security, and comprehensive verification on every single turn.
 13. **Multi-Hop Predictive Intent ($A \to B \to C \to D$):** When receiving minimalist or shorthand prompts, trace all connected components, modals, scripts, mobile layouts, and server actions before taking action.
+14. **Zero Tacky Emojis in Professional UI:** Never use raw OS emojis in buttons, badges, headers, or action bars. Always use clean, crisp SVG stroke icons (Lucide style) with high-end obsidian/ember styling.
+15. **Kinetic Luminous Loading Skeletons:** Loading states must never be static, dead, or freeze into plain dark boxes. Always use active continuous shimmer sweeps (`animate-shimmer-sweep`) and dynamic progressing step labels so the UI visibly lives.
 
 ---
 

@@ -162,7 +162,14 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
         <div className="space-y-3">
           {filtered.map((item) => {
             const badge = STATUS_BADGES[item.status] ?? STATUS_BADGES.baru;
-            const cat = CATEGORY_LABELS[item.category] ?? { label: item.category, icon: "💬" };
+            const cat = CATEGORY_LABELS[item.category] ?? {
+              label: item.category,
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-muted">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+              ),
+            };
             const isUpdating = updatingId === item.id;
             return (
               <div

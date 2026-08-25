@@ -192,7 +192,23 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-display text-xs font-bold text-ink">🎙️ AI Voice Preview</span>
+              <span className="font-display text-xs font-bold text-ink flex items-center gap-1.5">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-3.5 text-ember"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="22" />
+                </svg>
+                <span>AI Voice Preview</span>
+              </span>
               <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[9px] font-bold text-emerald-400">
                 100% Bahasa Indonesia
               </span>
