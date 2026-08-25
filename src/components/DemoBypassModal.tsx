@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+
+const emptySubscribe = () => () => {};
 
 export function DemoBypassModal({
   isOpen,
@@ -15,34 +17,21 @@ export function DemoBypassModal({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [isTestModeActive, setIsTestModeActive] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Derive test mode status directly from environment/browser state
+  const isTestModeActive =
+    isMounted &&
+    typeof window !== "undefined" &&
+    (document.cookie.includes("malesan_test_mode=1") ||
+      localStorage.getItem("malesan_test_mode") === "1");
 
   useEffect(() => {
-    if (isOpen) {
-      setPassword("");
-      setErrorMessage(null);
-      setIsSuccess(false);
-
-      // Check current test mode status
-      const active =
-        typeof window !== "undefined" &&
-        (document.cookie.includes("malesan_test_mode=1") ||
-          localStorage.getItem("malesan_test_mode") === "1");
-      setIsTestModeActive(active);
-
-      if (!active) {
-        setTimeout(() => {
-          inputRef.current?.focus();
-        }, 50);
-      }
+    if (isOpen && !isTestModeActive) {
+      inputRef.current?.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, isTestModeActive]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -54,7 +43,7 @@ export function DemoBypassModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen || !mounted) return null;
+  if (!isOpen || !isMounted) return null;
 
   async function handleActivate(e: React.FormEvent) {
     e.preventDefault();
@@ -83,7 +72,6 @@ export function DemoBypassModal({
       }
 
       setIsSuccess(true);
-      setIsTestModeActive(true);
       setIsLoading(false);
 
       setTimeout(() => {
@@ -112,7 +100,6 @@ export function DemoBypassModal({
         document.cookie = "malesan_demo_mode=; path=/; max-age=0";
       }
 
-      setIsTestModeActive(false);
       setIsSuccess(true);
       setIsLoading(false);
 
@@ -170,7 +157,7 @@ export function DemoBypassModal({
                 <span>Status: Mode Tester Sedang Aktif</span>
               </div>
               <p className="mt-1 text-micro text-muted">
-                Google OAuth di-bypass & nama akun disamarkan sebagai "Kreator" untuk rekaman tutorial.
+                Google OAuth di-bypass & nama akun disamarkan sebagai &ldquo;Kreator&rdquo; untuk rekaman tutorial.
               </p>
             </div>
 
