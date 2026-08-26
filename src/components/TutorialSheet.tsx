@@ -38,7 +38,6 @@ import { TutorialVideoPlayer } from "@/components/tutorial/TutorialVideoPlayer";
 type Section = { q: string; a: React.ReactNode };
 
 const TUTORIAL_VIDEO_URL = process.env.NEXT_PUBLIC_TUTORIAL_VIDEO_URL?.trim();
-const TUTORIAL_CAPTIONS_URL = process.env.NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL?.trim();
 
 const QUICK_STEPS = [
   {

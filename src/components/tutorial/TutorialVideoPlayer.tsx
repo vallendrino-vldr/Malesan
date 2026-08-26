@@ -28,8 +28,6 @@ export function TutorialVideoPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Anti-Cheat tracking state
   const [maxReachedTime, setMaxReachedTime] = useState(0);
