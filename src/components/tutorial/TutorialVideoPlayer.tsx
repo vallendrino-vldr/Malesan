@@ -10,6 +10,7 @@ import Link from "next/link";
 
 interface TutorialVideoPlayerProps {
   videoSrc?: string;
+  captionsSrc?: string;
   onRewardClaimed?: (newBalance: number) => void;
   className?: string;
   autoPlay?: boolean;
@@ -17,6 +18,7 @@ interface TutorialVideoPlayerProps {
 
 export function TutorialVideoPlayer({
   videoSrc = "/tutorial/tutorial-demo.mp4",
+  captionsSrc,
   onRewardClaimed,
   className = "",
   autoPlay = false,
@@ -195,7 +197,17 @@ export function TutorialVideoPlayer({
           }}
           onClick={togglePlay}
           className="size-full object-contain cursor-pointer"
-        />
+        >
+          {captionsSrc && (
+            <track
+              kind="captions"
+              src={captionsSrc}
+              srcLang="id"
+              label="Bahasa Indonesia"
+              default
+            />
+          )}
+        </video>
 
         {/* Center Play Overlay when Paused */}
         {!isPlaying && (

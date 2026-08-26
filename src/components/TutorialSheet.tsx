@@ -38,6 +38,7 @@ import { TutorialVideoPlayer } from "@/components/tutorial/TutorialVideoPlayer";
 type Section = { q: string; a: React.ReactNode };
 
 const TUTORIAL_VIDEO_URL = process.env.NEXT_PUBLIC_TUTORIAL_VIDEO_URL?.trim();
+const TUTORIAL_CAPTIONS_URL = process.env.NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL?.trim();
 
 const QUICK_STEPS = [
   {
@@ -294,7 +295,10 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
 
               {/* Interactive Video Tutorial with +10 Bonus Credits Reward */}
               <section className="overflow-hidden rounded-xl border border-white/[0.08] bg-obsidian">
-                <TutorialVideoPlayer videoSrc={TUTORIAL_VIDEO_URL || "/tutorial/tutorial-demo.mp4"} />
+                <TutorialVideoPlayer
+                  videoSrc={TUTORIAL_VIDEO_URL || "/tutorial/tutorial-demo.mp4"}
+                  captionsSrc={TUTORIAL_CAPTIONS_URL}
+                />
               </section>
 
               <p className="eyebrow px-1 pt-1 text-muted">Kalau masih bingung</p>
