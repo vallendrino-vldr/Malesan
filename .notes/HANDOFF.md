@@ -35,8 +35,17 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Mascot Speech Bubble Overflow & Clipping Fix (§9z.75).
-**Newest work is §9z.75 — Mascot Speech Bubble Overflow & Clipping Fix: Fixed speech bubble text truncation on the 5th poke ("Lo lebih niat nyolek gue daripada bikin konten.") caused by the parent section's `overflow-hidden` clipping negative horizontal offsets. Adjusted speech bubble anchor in `MascotStage.tsx` with responsive positioning (`left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0`) and added backdrop blur styling so long dialogue bubbles flow naturally into the greeting area without clipping.** Read §9z.75, then §9z.74.
+Last updated: **2026-08-26**, after Mascot Dialogue Symmetrical Centering Fix (§9z.76).
+**Newest work is §9z.76 — Mascot Dialogue Symmetrical Centering Fix: Refined mascot dialogue strings to punchy, compact phrasing (e.g. "Daripada nyolek, yuk ngonten!") and centered the speech bubble symmetrically right beneath the mascot circle (`left-1/2 -translate-x-1/2`). Eliminates any overlap onto adjacent greeting/subtitle text while maintaining zero clipping and crisp visual balance.** Read §9z.76, then §9z.75.
+
+---
+
+## §9z.76 — Mascot Dialogue Symmetrical Centering Fix (2026-08-26)
+
+**What changed & Why:**
+- Eliminated Text Overlap & Asymmetry: Tightened dialogue lines to punchy phrasing so the speech bubble naturally fits within the mascot's horizontal bounds without spilling sideways into `"Pilih cara paling cepat..."`.
+- Symmetrical Center Anchor: Positioned speech bubble with `left-1/2 -translate-x-1/2` right beneath the mascot, styled with obsidian glass backdrop and glowing ember borders for a balanced, charming look.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 

@@ -24,8 +24,8 @@ const LINES = [
   "Hng? Apaan.",
   "Aduh. Ngapain sih.",
   "Gue lagi mager, seriusan.",
-  "Ya udah, gue bangun. Puas?",
-  "Lo lebih niat nyolek gue daripada bikin konten.",
+  "Ya udah bangun, puas?",
+  "Daripada nyolek, yuk ngonten!",
 ];
 
 const AWAKE_MS = 2600;
@@ -71,11 +71,11 @@ export function MascotStage({ className = "" }: { className?: string }) {
           the layout would shove the greeting down and back up, which is a
           layout shift on a page that currently measures CLS 0. */}
       {line && (
-        <div className="pointer-events-none absolute -bottom-2.5 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 z-30 flex items-center">
+        <div className="pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
           <span
             role="status"
             aria-live="polite"
-            className="whitespace-nowrap rounded-full border border-ember/40 bg-surface-raised/95 backdrop-blur-md px-3 py-1 text-micro font-semibold text-ember shadow-lg shadow-black/60 ring-1 ring-ember/25 animate-in fade-in zoom-in-95 duration-150"
+            className="whitespace-nowrap rounded-full border border-ember/40 bg-obsidian/95 backdrop-blur-md px-3 py-0.5 text-micro font-semibold text-ember shadow-xl shadow-black/80 ring-1 ring-ember/25 animate-in fade-in zoom-in-95 duration-150 text-center"
           >
             {line}
           </span>
