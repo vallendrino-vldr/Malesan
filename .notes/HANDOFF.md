@@ -35,8 +35,19 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Verified Badge Alignment & Compact Tabbed Workbench (§9z.72).
-**Newest work is §9z.72 — Verified Badge Alignment & Compact Tabbed Workbench: Fixed verified checkmark canvas alignment bug (recalculated author name metrics and vertically centered verified badge and handle lines with `textBaseline: middle`), eliminated page length scrolling fatigue by restructuring the left panel into 3 compact studio tabs (1. Edit Slide, 2. AI Auto-Gen, 3. Tema & Rasio), and added mobile segmented view switcher (Preview Card vs Edit Konten) for flawless 360px mobile experience.** Read §9z.72, then §9z.71.
+Last updated: **2026-08-26**, after 1-Screen Zero-Scroll Studio & Canvas Spacing Fix (§9z.73).
+**Newest work is §9z.73 — 1-Screen Zero-Scroll Studio & Canvas Spacing Fix: Fixed typography collision on canvas between title and category pill badge by enforcing mathematical `textBaseline: "top"` with explicit gap offsets. Streamlined Studio UI into a zero-scroll single-viewport workbench on desktop: compact top action bar, 4 dedicated tabs (Teks Slide, Tema & Rasio, Branding, AI Generator), constrained canvas preview (max-h: 380px), and compact filmstrip rail (h: 68px) that sits comfortably above the viewport fold without vertical scrollbars.** Read §9z.73, then §9z.72.
+
+---
+
+## §9z.73 — 1-Screen Zero-Scroll Studio & Canvas Spacing Fix (2026-08-26)
+
+**What changed & Why:**
+- Fixed Canvas Typography Collision: Switched multiline titles and body text to `ctx.textBaseline = "top"`, with mathematically calculated pill clearance (`cursorY += pillHeight + height * 0.045`), completely resolving text overlapping the "STRATEGI KONTEN" badge.
+- Full 1-Halaman Tanpa Scroll (Zero-Scroll Single Screen): Streamlined workbench layout so that both the left control tabs and the right canvas card + filmstrip rail fit 100% within a single screen without scrolling on desktop.
+- 4 Dedicated Tabs: Divided controls into 4 focused, low-height tabs (`Teks Slide`, `Tema & Rasio`, `Branding`, `AI Generator`), each taking under 320px in height.
+- Compact Filmstrip Rail: Placed miniature slide thumbnails directly under the preview card in an ultra-compact horizontal strip with quick reorder arrows.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 

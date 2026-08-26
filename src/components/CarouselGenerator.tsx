@@ -7,7 +7,7 @@ export type SlideTheme = "obsidian" | "midnight" | "noir" | "emerald" | "sunset"
 export type SlideRatio = "4:5" | "1:1" | "9:16";
 export type FontPairing = "modern" | "editorial" | "impact" | "tech";
 export type SlideType = "cover" | "point" | "stat" | "cta";
-export type StudioTab = "content" | "ai" | "design" | "brand";
+export type StudioTab = "content" | "design" | "brand" | "ai";
 
 export interface SlideData {
   id: string;
@@ -85,7 +85,7 @@ const THEMES: { id: SlideTheme; name: string; desc: string; accent: string; bg: 
   {
     id: "noir",
     name: "Editorial Noir",
-    desc: "High-Fashion Monochrome & Champagne Gold",
+    desc: "High-Fashion Monochrome & Gold",
     accent: "#e2d4b7",
     bg: "#000000",
     border: "border-amber-200/50",
@@ -109,7 +109,7 @@ const THEMES: { id: SlideTheme; name: string; desc: string; accent: string; bg: 
   {
     id: "porcelain",
     name: "Clean Porcelain",
-    desc: "Minimalist Studio White & Charcoal Ink",
+    desc: "Minimalist Studio White & Ink",
     accent: "#0f172a",
     bg: "#fafafa",
     border: "border-neutral-300",
@@ -121,7 +121,6 @@ const PROMPT_SUGGESTIONS = [
   "Framework 10x Produktivitas Kreator",
   "Rahasia Hook 3 Detik FYP TikTok",
   "Cara Jualan Affiliate Tanpa Hard-Selling",
-  "Mindset Mengubah 100 Followers Jadi Pembeli",
 ];
 
 export function CarouselGenerator({
@@ -207,7 +206,7 @@ export function CarouselGenerator({
     return lines;
   };
 
-  // High-Resolution 2D Canvas Slide Renderer (Pixel-Perfect Alignment)
+  // High-Resolution 2D Canvas Slide Renderer (Pixel-Perfect Mathematical Layout)
   const renderSlideToCanvas = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -231,7 +230,7 @@ export function CarouselGenerator({
       const isStat = slide.type === "stat";
       const isCta = slide.type === "cta";
 
-      // 1. Background Atmosphere & Ambient Mesh Lighting
+      // 1. Background Atmosphere & Lighting
       if (targetTheme === "obsidian") {
         const bgGrad = ctx.createLinearGradient(0, 0, width, height);
         bgGrad.addColorStop(0, "#09090b");
@@ -254,7 +253,6 @@ export function CarouselGenerator({
         ctx.fillStyle = glow;
         ctx.fillRect(0, 0, width, height);
 
-        // Bottom Glow
         const glow2 = ctx.createRadialGradient(
           width * 0.15,
           height * 0.88,
@@ -352,7 +350,7 @@ export function CarouselGenerator({
         ctx.fillRect(0, 0, width, height);
       }
 
-      // 2. Color Palette Settings
+      // 2. Palette Settings
       let accentColor = "#f26222";
       let badgeBg = "rgba(242, 98, 34, 0.16)";
       let badgeBorder = "rgba(242, 98, 34, 0.4)";
@@ -403,7 +401,7 @@ export function CarouselGenerator({
         cardBorder = "rgba(0, 0, 0, 0.1)";
       }
 
-      // Font Family selection
+      // Font Family
       let headerFont = "system-ui, -apple-system, sans-serif";
       let bodyFont = "system-ui, -apple-system, sans-serif";
 
@@ -420,7 +418,7 @@ export function CarouselGenerator({
 
       const paddingX = width * 0.085;
       const contentWidth = width - paddingX * 2;
-      let cursorY = height * 0.09;
+      let cursorY = height * 0.085;
 
       // 3. TOP HEADER BAR: Avatar Circle + Author Name + Verified Badge + Handle
       const avatarSize = width * 0.058; // 62px on 1080p
@@ -443,7 +441,7 @@ export function CarouselGenerator({
       const initialLetters = (author || "M").trim().slice(0, 2).toUpperCase();
       ctx.fillText(initialLetters, avatarX + avatarSize / 2, avatarY + avatarSize / 2 + 1);
 
-      // Author Name (Line 1, middle aligned with top half of avatar)
+      // Author Name (Line 1)
       const nameY = avatarY + avatarSize * 0.28;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
@@ -452,21 +450,19 @@ export function CarouselGenerator({
       const displayName = author || "Malesan Creator";
       ctx.fillText(displayName, avatarX + avatarSize + 16, nameY);
 
-      // Verified Badge Icon (Neatly aligned next to author name with 8px gap)
+      // Verified Badge Icon (Crisp alignment with 8px buffer)
       if (isVerified) {
         const nameWidth = ctx.measureText(displayName).width;
         const iconX = avatarX + avatarSize + 16 + nameWidth + width * 0.018;
         const iconY = nameY;
-        const iconR = width * 0.011; // 12px radius
+        const iconR = width * 0.011;
 
-        // Badge circle
         ctx.save();
         ctx.beginPath();
         ctx.arc(iconX, iconY, iconR, 0, Math.PI * 2);
         ctx.fillStyle = accentColor;
         ctx.fill();
 
-        // White/dark checkmark tick inside badge
         ctx.strokeStyle = isLight ? "#ffffff" : "#09090b";
         ctx.lineWidth = width * 0.0028;
         ctx.lineCap = "round";
@@ -479,25 +475,23 @@ export function CarouselGenerator({
         ctx.restore();
       }
 
-      // Creator Handle (Line 2, middle aligned with bottom half of avatar)
+      // Creator Handle (Line 2)
       const handleY = avatarY + avatarSize * 0.76;
       ctx.font = `normal ${width * 0.024}px ${bodyFont}`;
       ctx.fillStyle = secondaryTextColor;
       ctx.fillText(tag || "@malesan_creator", avatarX + avatarSize + 16, handleY);
 
-      // Top Slide Counter Tag (Right aligned)
+      // Slide Counter Tag (Right aligned)
       ctx.textAlign = "right";
       ctx.textBaseline = "middle";
       ctx.font = `bold ${width * 0.028}px sans-serif`;
       ctx.fillStyle = secondaryTextColor;
       ctx.fillText(`${slideIndex + 1} / ${totalSlides}`, width - paddingX, avatarY + avatarSize * 0.5);
 
-      cursorY += avatarSize + height * 0.065;
+      cursorY = avatarY + avatarSize + height * 0.055;
 
-      // 4. Badge Pill (Category or Step Tag)
+      // 4. Badge Pill (Category Tag)
       if (slide.badge) {
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
         const badgeText = slide.badge.toUpperCase();
         ctx.font = `bold ${width * 0.025}px sans-serif`;
         const badgeMetrics = ctx.measureText(badgeText);
@@ -514,17 +508,23 @@ export function CarouselGenerator({
         ctx.stroke();
         ctx.restore();
 
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillStyle = accentColor;
-        ctx.fillText(badgeText, paddingX + (pillWidth - badgeMetrics.width) / 2, cursorY + pillHeight * 0.68);
+        ctx.fillText(badgeText, paddingX + pillWidth / 2, cursorY + pillHeight / 2);
 
-        cursorY += pillHeight + height * 0.04;
+        // Advance cursor with safe gap so title never collides
+        cursorY += pillHeight + height * 0.045;
       }
 
-      // 5. Main Focal Content by Slide Type
+      // 5. Main Focal Content (Using textBaseline = "top" for 100% mathematical precision)
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
       if (isCover) {
         // --- COVER HOOK SLIDE ---
         ctx.fillStyle = primaryTextColor;
-        const titleFontSize = width * 0.076;
+        const titleFontSize = width * 0.074;
         ctx.font = `bold ${titleFontSize}px ${headerFont}`;
         const titleLineHeight = titleFontSize * 1.25;
 
@@ -534,7 +534,7 @@ export function CarouselGenerator({
           cursorY += titleLineHeight;
         }
 
-        cursorY += height * 0.03;
+        cursorY += height * 0.025;
 
         // Decorative Accent Line
         ctx.save();
@@ -549,11 +549,11 @@ export function CarouselGenerator({
         ctx.stroke();
         ctx.restore();
 
-        cursorY += height * 0.045;
+        cursorY += height * 0.035;
 
         // Subtitle / Body text
         ctx.fillStyle = secondaryTextColor;
-        const bodyFontSize = width * 0.04;
+        const bodyFontSize = width * 0.039;
         ctx.font = `normal ${bodyFontSize}px ${bodyFont}`;
         const bodyLineHeight = bodyFontSize * 1.45;
 
@@ -575,33 +575,35 @@ export function CarouselGenerator({
           cursorY += titleLineHeight;
         }
 
-        cursorY += height * 0.035;
+        cursorY += height * 0.03;
 
         // Big Stat Card Box
-        const statCardHeight = height * 0.26;
+        const statCardHeight = height * 0.25;
         ctx.save();
         ctx.fillStyle = cardBg;
         ctx.strokeStyle = cardBorder;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(paddingX, cursorY, contentWidth, statCardHeight, 26);
+        ctx.roundRect(paddingX, cursorY, contentWidth, statCardHeight, 24);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
 
         const statNum = slide.stat_number || "85%";
         ctx.fillStyle = accentColor;
-        ctx.font = `bold ${width * 0.135}px ${headerFont}`;
+        ctx.font = `bold ${width * 0.13}px ${headerFont}`;
         ctx.textAlign = "center";
-        ctx.fillText(statNum, width / 2, cursorY + statCardHeight * 0.52);
+        ctx.textBaseline = "middle";
+        ctx.fillText(statNum, width / 2, cursorY + statCardHeight * 0.42);
 
         const statLbl = slide.stat_label || "Penonton memutuskan di 3 detik pertama";
         ctx.fillStyle = primaryTextColor;
-        ctx.font = `bold ${width * 0.031}px ${bodyFont}`;
+        ctx.font = `bold ${width * 0.03}px ${bodyFont}`;
         ctx.fillText(statLbl, width / 2, cursorY + statCardHeight * 0.78);
 
         ctx.textAlign = "left";
-        cursorY += statCardHeight + height * 0.035;
+        ctx.textBaseline = "top";
+        cursorY += statCardHeight + height * 0.03;
 
         // Explanation text below card
         ctx.fillStyle = secondaryTextColor;
@@ -617,7 +619,7 @@ export function CarouselGenerator({
       } else if (isCta) {
         // --- ACTIONABLE CTA SLIDE ---
         ctx.fillStyle = primaryTextColor;
-        const titleFontSize = width * 0.068;
+        const titleFontSize = width * 0.066;
         ctx.font = `bold ${titleFontSize}px ${headerFont}`;
         const titleLineHeight = titleFontSize * 1.25;
 
@@ -627,22 +629,22 @@ export function CarouselGenerator({
           cursorY += titleLineHeight;
         }
 
-        cursorY += height * 0.035;
+        cursorY += height * 0.03;
 
         // CTA Card Highlight Box
-        const ctaCardHeight = height * 0.32;
+        const ctaCardHeight = height * 0.3;
         ctx.save();
         ctx.fillStyle = cardBg;
         ctx.strokeStyle = cardBorder;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(paddingX, cursorY, contentWidth, ctaCardHeight, 26);
+        ctx.roundRect(paddingX, cursorY, contentWidth, ctaCardHeight, 24);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
 
-        const cardPadding = width * 0.06;
-        let cardCursorY = cursorY + cardPadding * 1.1;
+        const cardPadding = width * 0.055;
+        let cardCursorY = cursorY + cardPadding;
 
         ctx.fillStyle = primaryTextColor;
         const bodyFontSize = width * 0.038;
@@ -656,7 +658,7 @@ export function CarouselGenerator({
         }
 
         // Profile Plug Bar
-        const plugY = cursorY + ctaCardHeight - width * 0.09;
+        const plugY = cursorY + ctaCardHeight - width * 0.085;
         ctx.save();
         ctx.fillStyle = badgeBg;
         ctx.strokeStyle = badgeBorder;
@@ -666,7 +668,7 @@ export function CarouselGenerator({
           paddingX + cardPadding,
           plugY,
           contentWidth - cardPadding * 2,
-          width * 0.065,
+          width * 0.062,
           12,
         );
         ctx.fill();
@@ -674,14 +676,16 @@ export function CarouselGenerator({
         ctx.restore();
 
         ctx.fillStyle = accentColor;
-        ctx.font = `bold ${width * 0.028}px sans-serif`;
+        ctx.font = `bold ${width * 0.027}px sans-serif`;
         ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
         ctx.fillText(
           `Follow ${tag} untuk insight konten harian`,
           width / 2,
-          plugY + width * 0.042,
+          plugY + width * 0.031,
         );
         ctx.textAlign = "left";
+        ctx.textBaseline = "top";
       } else {
         // --- POINT / INSIGHT SLIDE ---
         ctx.fillStyle = primaryTextColor;
@@ -695,22 +699,22 @@ export function CarouselGenerator({
           cursorY += titleLineHeight;
         }
 
-        cursorY += height * 0.035;
+        cursorY += height * 0.03;
 
         // Container Card for Body Insight
-        const bodyCardHeight = height * 0.35;
+        const bodyCardHeight = height * 0.34;
         ctx.save();
         ctx.fillStyle = cardBg;
         ctx.strokeStyle = cardBorder;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(paddingX, cursorY, contentWidth, bodyCardHeight, 26);
+        ctx.roundRect(paddingX, cursorY, contentWidth, bodyCardHeight, 24);
         ctx.fill();
         ctx.stroke();
         ctx.restore();
 
-        const cardPadding = width * 0.06;
-        let cardCursorY = cursorY + cardPadding * 1.1;
+        const cardPadding = width * 0.055;
+        let cardCursorY = cursorY + cardPadding;
 
         ctx.fillStyle = secondaryTextColor;
         const bodyFontSize = width * 0.039;
@@ -732,10 +736,12 @@ export function CarouselGenerator({
       ctx.strokeStyle = isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.08)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(paddingX, footerY - height * 0.025);
-      ctx.lineTo(width - paddingX, footerY - height * 0.025);
+      ctx.moveTo(paddingX, footerY - height * 0.022);
+      ctx.lineTo(width - paddingX, footerY - height * 0.022);
       ctx.stroke();
       ctx.restore();
+
+      ctx.textBaseline = "middle";
 
       // Footer note / Swipe Prompt
       if (hasSwipePrompt) {
@@ -893,7 +899,7 @@ export function CarouselGenerator({
         setCurrentIdx(0);
         if (finalJson.caption) setPostCaption(finalJson.caption);
         if (finalJson.hashtags) setPostHashtags(finalJson.hashtags);
-        setActiveTab("content"); // Switch to editor so creator can view results
+        setActiveTab("content");
         router.refresh();
       }
     } catch (err: unknown) {
@@ -940,7 +946,7 @@ export function CarouselGenerator({
 
     try {
       for (let i = 0; i < slides.length; i++) {
-        setExportProgress(`Mengunduh Slide ${i + 1} dari ${slides.length}...`);
+        setExportProgress(`Mengunduh Slide ${i + 1}/${slides.length}...`);
         renderSlideToCanvas(
           ctx,
           slides[i],
@@ -993,7 +999,7 @@ export function CarouselGenerator({
     setTimeout(() => setCopiedCaption(false), 2000);
   };
 
-  // Slide CRUD Operations
+  // Slide Operations
   const handleUpdateSlide = (field: keyof SlideData, val: string) => {
     setSlides((prev) =>
       prev.map((s, idx) => (idx === currentIdx ? { ...s, [field]: val } : s)),
@@ -1005,7 +1011,7 @@ export function CarouselGenerator({
       id: `slide-${Date.now()}`,
       type: "point",
       badge: `POIN #${slides.length}`,
-      title: "Judul Poin Tambahan",
+      title: "Judul Poin Baru",
       body: "Tuliskan penjelasan tajam dan solusi konkret di sini agar nyaman dibaca di layar HP.",
       footer: `Slide ${slides.length + 1} dari ${slides.length + 1}`,
     };
@@ -1048,76 +1054,71 @@ export function CarouselGenerator({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* 1. TOP ACTION & STATUS BAR */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/[0.12] bg-gradient-to-br from-surface-raised via-[#101014] to-[#0a0a0d] p-4 sm:p-6 shadow-2xl backdrop-blur-xl">
-        <div className="absolute top-0 right-0 h-40 w-40 rounded-full bg-ember/15 blur-3xl pointer-events-none" />
-
-        <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-micro font-bold uppercase tracking-wider text-ember">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
-                <rect width="18" height="18" x="3" y="3" rx="2" />
-                <path d="M7 3v18" />
-                <path d="M17 3v18" />
-              </svg>
-              <span>AI Carousel Studio</span>
-              <span className="h-1 w-1 rounded-full bg-ember" />
-              <span>{cost} Kredit</span>
+    <div className="space-y-3">
+      {/* 1. ULTRA-COMPACT TOP ACTION BAR */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-white/[0.1] bg-gradient-to-r from-surface-raised via-[#101014] to-surface p-2.5 sm:px-4 sm:py-2.5 shadow-md">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-ember/15 text-ember">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+              <rect width="18" height="18" x="3" y="3" rx="2" />
+              <path d="M7 3v18" />
+              <path d="M17 3v18" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-sm sm:text-base font-bold text-ink leading-none">
+                AI Carousel &amp; Slide Studio
+              </h1>
+              <span className="rounded-full bg-ember/15 px-2 py-0.5 text-[10px] font-bold text-ember border border-ember/30">
+                {cost} Kredit
+              </span>
               {typeof credits === "number" && (
-                <>
-                  <span className="h-1 w-1 rounded-full bg-ember/60" />
-                  <span className="text-muted">Saldo: {credits}</span>
-                </>
+                <span className="hidden sm:inline text-micro text-muted font-mono">
+                  Saldo: {credits}
+                </span>
               )}
             </div>
-            <h1 className="font-display text-lg sm:text-2xl font-bold tracking-tight text-ink">
-              Bikin Slide Card Instagram &amp; LinkedIn Kelas Agency
-            </h1>
-            <p className="text-xs sm:text-sm text-muted max-w-xl leading-relaxed">
-              Atur konten narasi per slide, ganti 6 tema mewah, dan unduh paket gambar HD 1080p dalam 1 klik.
-            </p>
           </div>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyCaption}
-              className="inline-flex h-9 sm:h-10 items-center justify-center gap-1.5 rounded-xl border border-white/[0.12] bg-surface px-3.5 sm:px-4 text-xs font-bold text-ink transition-all hover:border-white/[0.25] hover:bg-surface-raised active:scale-95 cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
-                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
-                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-              </svg>
-              <span>{copiedCaption ? "Caption Disalin! ✓" : "Salin Caption Post"}</span>
-            </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyCaption}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-surface px-3 text-xs font-semibold text-ink transition-all hover:border-white/[0.25] hover:bg-surface-raised active:scale-95 cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+            </svg>
+            <span className="hidden sm:inline">{copiedCaption ? "Caption Disalin! ✓" : "Salin Caption"}</span>
+            <span className="sm:hidden">{copiedCaption ? "Disalin!" : "Caption"}</span>
+          </button>
 
-            <button
-              type="button"
-              onClick={handleExportAll}
-              disabled={isExporting}
-              className="inline-flex h-9 sm:h-10 items-center justify-center gap-1.5 rounded-xl bg-ember px-4 sm:px-5 font-display text-xs font-bold text-obsidian shadow-lg shadow-ember/20 transition-all hover:bg-ember-lo active:scale-95 disabled:opacity-50 cursor-pointer"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" x2="12" y1="15" y2="3" />
-              </svg>
-              <span>{isExporting ? exportProgress : "Download Semua Slide (.PNG)"}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleExportAll}
+            disabled={isExporting}
+            className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl bg-ember px-3.5 font-display text-xs font-bold text-obsidian shadow-sm transition-all hover:bg-ember-lo active:scale-95 disabled:opacity-50 cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            <span>{isExporting ? exportProgress : "Download Semua (.PNG)"}</span>
+          </button>
         </div>
       </div>
 
-      {/* MOBILE SEGMENTED VIEW SWITCHER (Only visible on small screens) */}
-      <div className="lg:hidden flex rounded-2xl border border-white/[0.1] bg-surface p-1 shadow-md">
+      {/* MOBILE SEGMENTED VIEW SWITCHER */}
+      <div className="lg:hidden flex rounded-xl border border-white/[0.1] bg-surface p-1 shadow-sm">
         <button
           type="button"
           onClick={() => setMobileView("preview")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold transition-all cursor-pointer ${
-            mobileView === "preview"
-              ? "bg-ember text-obsidian shadow-sm"
-              : "text-muted hover:text-ink"
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition-all cursor-pointer ${
+            mobileView === "preview" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink"
           }`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
@@ -1125,108 +1126,74 @@ export function CarouselGenerator({
             <circle cx="9" cy="9" r="2" />
             <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
           </svg>
-          <span>1. Lihat Preview Card</span>
+          <span>Preview Kartu</span>
         </button>
 
         <button
           type="button"
           onClick={() => setMobileView("editor")}
-          className={`flex-1 flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold transition-all cursor-pointer ${
-            mobileView === "editor"
-              ? "bg-ember text-obsidian shadow-sm"
-              : "text-muted hover:text-ink"
+          className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold transition-all cursor-pointer ${
+            mobileView === "editor" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink"
           }`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
           </svg>
-          <span>2. Atur &amp; Edit Konten</span>
+          <span>Atur &amp; Edit Konten</span>
         </button>
       </div>
 
-      {/* 2. MAIN 2-COLUMN STUDIO WORKBENCH */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-start">
-        {/* LEFT COLUMN: Compact Tabbed Studio Workspace (7 cols) */}
+      {/* 2. MAIN WORKBENCH: FULL 1-PAGE ZERO-SCROLL LAYOUT */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 items-start">
+        {/* LEFT COLUMN: Compact 4-Tab Control Center (7 cols) */}
         <div
-          className={`space-y-4 lg:col-span-7 ${
+          className={`space-y-3 lg:col-span-7 ${
             mobileView === "preview" ? "hidden lg:block" : "block"
           }`}
         >
-          {/* TAB BAR (Content Editor, AI Generator, Themes & Format, Branding) */}
-          <div className="grid grid-cols-3 gap-1 rounded-2xl border border-white/[0.1] bg-surface p-1 shadow-md">
+          {/* TAB BAR (4 DEDICATED CRISP TABS) */}
+          <div className="grid grid-cols-4 gap-1 rounded-xl border border-white/[0.1] bg-surface p-1 shadow-xs">
             {[
-              {
-                id: "content" as StudioTab,
-                label: "Edit Slide",
-                badge: `#${currentIdx + 1}`,
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                  </svg>
-                ),
-              },
-              {
-                id: "ai" as StudioTab,
-                label: "AI Auto-Gen",
-                badge: "Auto",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                ),
-              },
-              {
-                id: "design" as StudioTab,
-                label: "Tema & Rasio",
-                badge: "6 Tema",
-                icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 2a7 7 0 1 0 7 7" />
-                  </svg>
-                ),
-              },
+              { id: "content" as StudioTab, label: "Teks Slide", badge: `#${currentIdx + 1}` },
+              { id: "design" as StudioTab, label: "Tema & Rasio", badge: "Tema" },
+              { id: "brand" as StudioTab, label: "Branding", badge: "Profil" },
+              { id: "ai" as StudioTab, label: "AI Generator", badge: "Auto" },
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-bold transition-all cursor-pointer ${
+                className={`flex items-center justify-center gap-1 rounded-lg py-2 px-1 text-xs font-bold transition-all cursor-pointer ${
                   activeTab === tab.id
-                    ? "bg-ember text-obsidian shadow-sm ring-1 ring-ember/30"
+                    ? "bg-ember text-obsidian shadow-xs ring-1 ring-ember/30"
                     : "text-muted hover:text-ink hover:bg-surface-raised"
                 }`}
               >
-                {tab.icon}
                 <span className="truncate">{tab.label}</span>
-                <span className="hidden sm:inline-block rounded-md bg-black/20 px-1.5 py-0.2 text-[10px] opacity-80 font-mono">
-                  {tab.badge}
-                </span>
               </button>
             ))}
           </div>
 
-          {/* TAB PANEL 1: 📝 PER-SLIDE PRECISION EDITOR */}
+          {/* TAB 1: 📝 PER-SLIDE TEXT EDITOR */}
           {activeTab === "content" && (
-            <div className="rounded-2xl border border-hairline bg-surface p-4 sm:p-5 space-y-4 shadow-sm animate-in fade-in duration-200">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline pb-3">
+            <div className="rounded-2xl border border-hairline bg-surface p-3.5 sm:p-4 space-y-3 shadow-xs animate-in fade-in duration-150">
+              <div className="flex items-center justify-between gap-2 border-b border-hairline pb-2.5">
                 <div className="flex items-center gap-2">
                   <span className="size-2 rounded-full bg-ember animate-pulse" />
-                  <span className="font-display text-sm font-bold text-ink">
+                  <span className="font-display text-xs font-bold text-ink">
                     Slide #{currentIdx + 1} dari {slides.length}
                   </span>
-                  <span className="rounded-full border border-ember/30 bg-ember/10 px-2 py-0.5 text-[10px] font-bold text-ember uppercase">
+                  <span className="rounded-md border border-ember/30 bg-ember/10 px-1.5 py-0.2 text-[10px] font-bold text-ember uppercase">
                     {slides[currentIdx]?.type || "point"}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => handleDuplicateSlide(currentIdx)}
-                    className="rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1 text-micro font-semibold text-muted hover:text-ink cursor-pointer"
+                    className="rounded-lg border border-hairline bg-[#09090b] px-2 py-0.5 text-micro font-semibold text-muted hover:text-ink cursor-pointer"
                   >
                     Duplikat
                   </button>
@@ -1234,7 +1201,7 @@ export function CarouselGenerator({
                   <button
                     type="button"
                     onClick={() => handleDeleteSlide(currentIdx)}
-                    className="rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1 text-micro font-semibold text-danger/80 hover:bg-danger/10 hover:text-danger cursor-pointer"
+                    className="rounded-lg border border-hairline bg-[#09090b] px-2 py-0.5 text-micro font-semibold text-danger/80 hover:text-danger cursor-pointer"
                   >
                     Hapus
                   </button>
@@ -1242,148 +1209,129 @@ export function CarouselGenerator({
                   <button
                     type="button"
                     onClick={handleAddSlide}
-                    className="rounded-lg bg-ember px-3 py-1 text-micro font-bold text-obsidian shadow-xs hover:bg-ember-lo transition-all cursor-pointer"
+                    className="rounded-lg bg-ember px-2.5 py-0.5 text-micro font-bold text-obsidian hover:bg-ember-lo cursor-pointer"
                   >
-                    + Tambah
+                    + Slide
                   </button>
                 </div>
               </div>
 
-              {/* Slide Stepper Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+              {/* Slide Stepper Selector */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1 custom-scrollbar">
                 {slides.map((s, idx) => (
                   <button
                     key={s.id || idx}
                     type="button"
                     onClick={() => setCurrentIdx(idx)}
-                    className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-mono font-bold transition-all shrink-0 cursor-pointer ${
+                    className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-mono font-bold transition-all shrink-0 cursor-pointer ${
                       currentIdx === idx
-                        ? "bg-ember text-obsidian shadow-md ring-2 ring-ember/25"
+                        ? "bg-ember text-obsidian shadow-xs"
                         : "bg-[#09090b] text-muted hover:text-ink border border-white/[0.08]"
                     }`}
                   >
                     <span>#{idx + 1}</span>
-                    <span className="text-[10px] font-normal uppercase opacity-75">
+                    <span className="text-[9px] uppercase opacity-75">
                       ({s.type})
                     </span>
                   </button>
                 ))}
               </div>
 
-              {/* Form Fields for Active Slide */}
+              {/* Input Form Fields */}
               {slides[currentIdx] && (
-                <div className="space-y-3 pt-1">
+                <div className="space-y-2.5">
                   {/* Layout Type Chips */}
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-muted mb-1.5">
-                      Tipe Layout Slide
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {[
-                        { id: "cover", label: "Cover Hook" },
-                        { id: "point", label: "Poin / Insight" },
-                        { id: "stat", label: "Fakta / Stat" },
-                        { id: "cta", label: "Kesimpulan / CTA" },
-                      ].map((st) => (
-                        <button
-                          key={st.id}
-                          type="button"
-                          onClick={() => handleUpdateSlide("type", st.id)}
-                          className={`rounded-xl border py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                            slides[currentIdx].type === st.id
-                              ? "border-ember/50 bg-ember/15 text-ember shadow-xs"
-                              : "border-white/[0.08] bg-[#09090b] text-muted hover:text-ink"
-                          }`}
-                        >
-                          {st.label}
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { id: "cover", label: "Cover Hook" },
+                      { id: "point", label: "Poin" },
+                      { id: "stat", label: "Fakta/Stat" },
+                      { id: "cta", label: "CTA" },
+                    ].map((st) => (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => handleUpdateSlide("type", st.id)}
+                        className={`rounded-lg border py-1 text-micro font-bold transition-all cursor-pointer ${
+                          slides[currentIdx].type === st.id
+                            ? "border-ember/50 bg-ember/15 text-ember shadow-xs"
+                            : "border-white/[0.08] bg-[#09090b] text-muted hover:text-ink"
+                        }`}
+                      >
+                        {st.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Badge & Stat Row */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-muted mb-0.5">
+                        Label Pill Badge Atas
+                      </label>
+                      <input
+                        type="text"
+                        value={slides[currentIdx].badge || ""}
+                        onChange={(e) => handleUpdateSlide("badge", e.target.value)}
+                        placeholder="Contoh: STRATEGI KONTEN"
+                        className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
+                      />
                     </div>
-                  </div>
 
-                  {/* Badge Label */}
-                  <div>
-                    <label className="block text-micro font-semibold text-muted mb-1">
-                      Label Kategori (Pill Badge Atas)
-                    </label>
-                    <input
-                      type="text"
-                      value={slides[currentIdx].badge || ""}
-                      onChange={(e) => handleUpdateSlide("badge", e.target.value)}
-                      placeholder="Contoh: TIPS KONTEN, KESALAHAN #01, RAHASIA"
-                      className="w-full rounded-xl border border-hairline bg-[#09090b] px-3.5 py-2.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Special Stat Input */}
-                  {slides[currentIdx].type === "stat" && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl border border-ember/25 bg-ember/5">
+                    {slides[currentIdx].type === "stat" ? (
                       <div>
-                        <label className="block text-micro font-bold text-ember mb-1">
-                          Angka Statistik Utama
+                        <label className="block text-[10px] font-bold text-ember mb-0.5">
+                          Angka Statistik
                         </label>
                         <input
                           type="text"
                           value={slides[currentIdx].stat_number || ""}
                           onChange={(e) => handleUpdateSlide("stat_number", e.target.value)}
-                          placeholder="Contoh: 87%, 10x, 3 Detik"
-                          className="w-full rounded-lg border border-ember/30 bg-obsidian px-3 py-2 text-sm font-bold text-ink focus:border-ember focus:outline-none"
+                          placeholder="87%, 10x, dll"
+                          className="w-full rounded-lg border border-ember/30 bg-obsidian px-2.5 py-1.5 text-xs font-bold text-ink focus:border-ember focus:outline-none"
                         />
                       </div>
+                    ) : (
                       <div>
-                        <label className="block text-micro font-bold text-ember mb-1">
-                          Label Keterangan Angka
+                        <label className="block text-[10px] font-semibold text-muted mb-0.5">
+                          Footer Callout (Bawah)
                         </label>
                         <input
                           type="text"
-                          value={slides[currentIdx].stat_label || ""}
-                          onChange={(e) => handleUpdateSlide("stat_label", e.target.value)}
-                          placeholder="Contoh: Penonton swipe away di awal"
-                          className="w-full rounded-lg border border-ember/30 bg-obsidian px-3 py-2 text-xs text-ink focus:border-ember focus:outline-none"
+                          value={slides[currentIdx].footer || ""}
+                          onChange={(e) => handleUpdateSlide("footer", e.target.value)}
+                          placeholder="Geser ke samping ➔"
+                          className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
                         />
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* Main Headline */}
+                  {/* Headline */}
                   <div>
-                    <label className="block text-micro font-semibold text-muted mb-1">
+                    <label className="block text-[10px] font-semibold text-muted mb-0.5">
                       Judul Utama Slide
                     </label>
                     <textarea
                       rows={2}
                       value={slides[currentIdx].title || ""}
                       onChange={(e) => handleUpdateSlide("title", e.target.value)}
-                      placeholder="Judul pokok poin atau hook slide..."
-                      className="w-full rounded-xl border border-hairline bg-[#09090b] px-3.5 py-2.5 text-xs sm:text-sm font-bold text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
+                      placeholder="Judul pokok slide..."
+                      className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs sm:text-sm font-bold text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
                     />
                   </div>
 
-                  {/* Body Explanation */}
+                  {/* Body Text */}
                   <div>
-                    <label className="block text-micro font-semibold text-muted mb-1">
-                      Isi Teks / Penjelasan Poin
+                    <label className="block text-[10px] font-semibold text-muted mb-0.5">
+                      Isi Penjelasan Poin
                     </label>
                     <textarea
-                      rows={3}
+                      rows={2}
                       value={slides[currentIdx].body || ""}
                       onChange={(e) => handleUpdateSlide("body", e.target.value)}
-                      placeholder="Penjelasan ringkas 2-3 kalimat yang nyaman dibaca di layar HP..."
-                      className="w-full rounded-xl border border-hairline bg-[#09090b] px-3.5 py-2.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
-                    />
-                  </div>
-
-                  {/* Footer Text */}
-                  <div>
-                    <label className="block text-micro font-semibold text-muted mb-1">
-                      Teks Kaki Slide (Footer Callout)
-                    </label>
-                    <input
-                      type="text"
-                      value={slides[currentIdx].footer || ""}
-                      onChange={(e) => handleUpdateSlide("footer", e.target.value)}
-                      placeholder="Contoh: Geser ke samping ➔ atau Simpan postingan ini ✨"
-                      className="w-full rounded-xl border border-hairline bg-[#09090b] px-3.5 py-2 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
+                      placeholder="Penjelasan ringkas 2-3 kalimat..."
+                      className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
                     />
                   </div>
                 </div>
@@ -1391,49 +1339,177 @@ export function CarouselGenerator({
             </div>
           )}
 
-          {/* TAB PANEL 2: 🪄 1-CLICK AI CAROUSEL GENERATOR */}
-          {activeTab === "ai" && (
-            <div className="rounded-2xl border border-ember/35 bg-gradient-to-b from-[#131114] to-[#09090b] p-4 sm:p-5 shadow-lg space-y-4 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-7 items-center justify-center rounded-lg bg-ember/15 text-ember">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-display text-sm font-bold text-ink">
-                      1-Click AI Carousel Generator
-                    </h3>
-                    <p className="text-micro text-muted">
-                      Ketik topik atau ide, AI otomatis meracik alur lengkap {slideCount} slide siap pakai.
-                    </p>
+          {/* TAB 2: 🎨 TEMA VISUAL, RASIO & TIPOGRAFI */}
+          {activeTab === "design" && (
+            <div className="rounded-2xl border border-hairline bg-surface p-3.5 sm:p-4 space-y-3 shadow-xs animate-in fade-in duration-150">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1.5">
+                  Pilih Tema Desain ({THEMES.find((t) => t.id === theme)?.name})
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTheme(t.id)}
+                      className={`flex items-center gap-2 rounded-xl border p-2 text-left transition-all cursor-pointer ${
+                        theme === t.id
+                          ? `${t.border} bg-surface-raised ring-1 ring-ember/30 shadow-xs`
+                          : "border-white/[0.08] bg-[#09090b] hover:border-white/[0.18]"
+                      }`}
+                    >
+                      <span
+                        className="size-3 rounded-full border border-white/20 shrink-0"
+                        style={{ backgroundColor: t.accent }}
+                      />
+                      <span className="text-xs font-bold text-ink truncate">{t.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-hairline">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
+                    Format Rasio
+                  </label>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[
+                      { id: "4:5", label: "4:5", sub: "IG Feed" },
+                      { id: "1:1", label: "1:1", sub: "Square" },
+                      { id: "9:16", label: "9:16", sub: "Story" },
+                    ].map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => setRatio(r.id as SlideRatio)}
+                        className={`rounded-lg border py-1 px-1 text-center transition-all cursor-pointer ${
+                          ratio === r.id
+                            ? "border-ember/50 bg-ember/15 text-ember shadow-xs"
+                            : "border-white/[0.08] bg-[#09090b] text-muted hover:text-ink"
+                        }`}
+                      >
+                        <div className="text-xs font-bold leading-none">{r.label}</div>
+                        <div className="text-[9px] opacity-70 mt-0.5">{r.sub}</div>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <span className="rounded-md bg-surface px-2.5 py-1 font-mono text-micro font-bold text-ember border border-hairline">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
+                    Tipografi
+                  </label>
+                  <div className="grid grid-cols-2 gap-1">
+                    {[
+                      { id: "modern", label: "Modern Sans" },
+                      { id: "editorial", label: "Editorial Serif" },
+                      { id: "impact", label: "Impact Bold" },
+                      { id: "tech", label: "Tech Mono" },
+                    ].map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setFontPairing(f.id as FontPairing)}
+                        className={`rounded-lg border py-1.5 px-2 text-left text-xs font-bold transition-all truncate cursor-pointer ${
+                          fontPairing === f.id
+                            ? "border-ember/50 bg-ember/15 text-ember shadow-xs"
+                            : "border-white/[0.08] bg-[#09090b] text-muted hover:text-ink"
+                        }`}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: 👤 BRANDING & PROFIL KREATOR */}
+          {activeTab === "brand" && (
+            <div className="rounded-2xl border border-hairline bg-surface p-3.5 sm:p-4 space-y-3 shadow-xs animate-in fade-in duration-150">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[10px] font-semibold text-muted mb-0.5">
+                    Nama Kreator / Brand
+                  </label>
+                  <input
+                    type="text"
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
+                    placeholder="Nama Akun"
+                    className="w-full rounded-lg border border-hairline bg-[#09090b] px-3 py-1.5 text-xs text-ink focus:border-ember focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-muted mb-0.5">
+                    Username / Handle Sosmed
+                  </label>
+                  <input
+                    type="text"
+                    value={creatorTag}
+                    onChange={(e) => setCreatorTag(e.target.value)}
+                    placeholder="@username"
+                    className="w-full rounded-lg border border-hairline bg-[#09090b] px-3 py-1.5 text-xs text-ink focus:border-ember focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-hairline">
+                <label className="inline-flex items-center gap-2 text-xs text-muted cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showVerified}
+                    onChange={(e) => setShowVerified(e.target.checked)}
+                    className="size-4 rounded accent-ember"
+                  />
+                  <span>Tampilkan Badge Verified Kreator</span>
+                </label>
+
+                <label className="inline-flex items-center gap-2 text-xs text-muted cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showSwipePrompt}
+                    onChange={(e) => setShowSwipePrompt(e.target.checked)}
+                    className="size-4 rounded accent-ember"
+                  />
+                  <span>Tampilkan Petunjuk Geser (Swipe ➔)</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: 🪄 1-CLICK AI CAROUSEL GENERATOR */}
+          {activeTab === "ai" && (
+            <div className="rounded-2xl border border-ember/35 bg-gradient-to-b from-[#131114] to-[#09090b] p-3.5 sm:p-4 space-y-3 shadow-sm animate-in fade-in duration-150">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-display text-xs font-bold text-ink flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full bg-ember" />
+                  1-Click AI Carousel Generator
+                </h3>
+                <span className="rounded-md bg-surface px-2 py-0.5 font-mono text-[10px] font-bold text-ember border border-hairline">
                   {cost} Kredit
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={aiTopic}
                   onChange={(e) => setAiTopic(e.target.value)}
-                  placeholder="Contoh: 3 kesalahan fatal pemula saat jualan online di TikTok Shop..."
-                  className="w-full rounded-xl border border-white/[0.1] bg-obsidian px-4 py-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember resize-none"
+                  placeholder="Ketik topik: contoh 3 kesalahan fatal pemula saat jualan..."
+                  className="w-full rounded-xl border border-white/[0.1] bg-obsidian px-3 py-2 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
                 />
 
-                {/* Suggestions chips */}
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="text-[11px] font-semibold text-muted">Inspirasi:</span>
+                <div className="flex flex-wrap items-center gap-1">
                   {PROMPT_SUGGESTIONS.map((sug) => (
                     <button
                       key={sug}
                       type="button"
                       onClick={() => setAiTopic(sug)}
-                      className="rounded-lg border border-white/[0.08] bg-surface px-2.5 py-1 text-[11px] text-muted hover:border-ember/40 hover:text-ink transition-all cursor-pointer"
+                      className="rounded-md border border-white/[0.08] bg-surface px-2 py-0.5 text-[10px] text-muted hover:text-ink cursor-pointer"
                     >
                       {sug}
                     </button>
@@ -1441,17 +1517,17 @@ export function CarouselGenerator({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-hairline">
-                <div className="flex items-center gap-2">
-                  <span className="text-micro font-bold uppercase text-muted">Jumlah Slide:</span>
-                  <div className="inline-flex rounded-xl border border-white/[0.1] bg-surface p-0.5">
+              <div className="flex items-center justify-between gap-2 pt-2 border-t border-hairline">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-muted">Slide:</span>
+                  <div className="inline-flex rounded-lg border border-white/[0.1] bg-surface p-0.5">
                     {[4, 5, 6, 7].map((num) => (
                       <button
                         key={num}
                         type="button"
                         onClick={() => setSlideCount(num)}
-                        className={`rounded-lg px-3 py-1 text-xs font-mono font-bold transition-all cursor-pointer ${
-                          slideCount === num ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink"
+                        className={`rounded px-2 py-0.5 text-[11px] font-mono font-bold cursor-pointer ${
+                          slideCount === num ? "bg-ember text-obsidian" : "text-muted hover:text-ink"
                         }`}
                       >
                         {num}
@@ -1464,213 +1540,44 @@ export function CarouselGenerator({
                   type="button"
                   onClick={handleGenerateAI}
                   disabled={isGenerating || !aiTopic.trim()}
-                  className="inline-flex h-9 sm:h-10 items-center justify-center gap-2 rounded-xl bg-ember px-5 font-display text-xs font-bold text-obsidian shadow-md transition-all hover:bg-ember-lo active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl bg-ember px-4 font-display text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo disabled:opacity-50 cursor-pointer"
                 >
                   {isGenerating ? (
-                    <>
-                      <span className="size-3.5 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
-                      <span>{generationProgress || "Menyusun Narasi..."}</span>
-                    </>
+                    <span>{generationProgress || "Memproses..."}</span>
                   ) : (
-                    <>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
-                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                      </svg>
-                      <span>Bikin Carousel Otomatis ➔</span>
-                    </>
+                    <span>Bikin Otomatis ➔</span>
                   )}
                 </button>
               </div>
             </div>
           )}
-
-          {/* TAB PANEL 3: 🎨 TEMA VISUAL, RASIO & BRANDING */}
-          {activeTab === "design" && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              {/* 6 Luxury Themes */}
-              <div className="rounded-2xl border border-hairline bg-surface p-4 sm:p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-display text-xs font-bold uppercase tracking-wider text-muted">
-                    6 Tema Visual Eksklusif
-                  </h3>
-                  <span className="text-micro text-ember font-semibold font-mono">
-                    {THEMES.find((t) => t.id === theme)?.name}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {THEMES.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setTheme(t.id)}
-                      className={`group relative flex flex-col rounded-xl border p-3 text-left transition-all cursor-pointer ${
-                        theme === t.id
-                          ? `${t.border} bg-surface-raised ring-2 ring-ember/25 shadow-md`
-                          : "border-white/[0.08] bg-[#09090b] hover:border-white/[0.18]"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span
-                          className="size-3.5 rounded-full border border-white/20 shadow-xs"
-                          style={{ backgroundColor: t.accent }}
-                        />
-                        {theme === t.id && (
-                          <span className="size-1.5 rounded-full bg-ember animate-pulse" />
-                        )}
-                      </div>
-                      <span className="mt-2 text-xs font-bold text-ink group-hover:text-ember transition-colors">
-                        {t.name}
-                      </span>
-                      <span className="mt-0.5 text-[10px] text-muted line-clamp-1 leading-tight">
-                        {t.desc}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Format & Tipografi & Branding */}
-              <div className="rounded-2xl border border-hairline bg-surface p-4 sm:p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Format Rasio */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-muted">
-                      Format Rasio Kanvas
-                    </label>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      {[
-                        { id: "4:5", label: "4:5 Portrait", sub: "Instagram" },
-                        { id: "1:1", label: "1:1 Square", sub: "LinkedIn" },
-                        { id: "9:16", label: "9:16 Story", sub: "Reels/TikTok" },
-                      ].map((r) => (
-                        <button
-                          key={r.id}
-                          type="button"
-                          onClick={() => setRatio(r.id as SlideRatio)}
-                          className={`flex flex-col items-center justify-center rounded-xl border py-2 px-1 text-center transition-all cursor-pointer ${
-                            ratio === r.id
-                              ? "border-ember/50 bg-ember/15 text-ember shadow-xs"
-                              : "border-white/[0.08] bg-[#09090b] text-muted hover:text-ink"
-                          }`}
-                        >
-                          <span className="text-xs font-bold">{r.label}</span>
-                          <span className="text-[10px] opacity-70">{r.sub}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tipografi */}
-                  <div className="space-y-2">
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-muted">
-                      Karakter Tipografi
-                    </label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {[
-                        { id: "modern", label: "Modern Sans", sub: "Clean & Legible" },
-                        { id: "editorial", label: "Editorial Serif", sub: "Luxury Editorial" },
-                        { id: "impact", label: "Impact Bold", sub: "Punchy Statement" },
-                        { id: "tech", label: "Tech Mono", sub: "Developer Style" },
-                      ].map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => setFontPairing(f.id as FontPairing)}
-                          className={`flex flex-col rounded-xl border p-2 text-left transition-all cursor-pointer ${
-                            fontPairing === f.id
-                              ? "border-ember/50 bg-ember/15 text-ember shadow-xs"
-                              : "border-white/[0.08] bg-[#09090b] text-muted hover:text-ink"
-                          }`}
-                        >
-                          <span className="text-xs font-bold">{f.label}</span>
-                          <span className="text-[10px] opacity-70 line-clamp-1">{f.sub}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Branding Creator Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-hairline">
-                  <div>
-                    <label className="block text-micro font-semibold text-muted mb-1">
-                      Nama Kreator / Brand
-                    </label>
-                    <input
-                      type="text"
-                      value={authorName}
-                      onChange={(e) => setAuthorName(e.target.value)}
-                      placeholder="Nama Akun"
-                      className="w-full rounded-xl border border-hairline bg-[#09090b] px-3.5 py-2 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-micro font-semibold text-muted mb-1">
-                      Username / Handle Sosmed
-                    </label>
-                    <input
-                      type="text"
-                      value={creatorTag}
-                      onChange={(e) => setCreatorTag(e.target.value)}
-                      placeholder="@username"
-                      className="w-full rounded-xl border border-hairline bg-[#09090b] px-3.5 py-2 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2 flex flex-wrap items-center gap-4 pt-1">
-                    <label className="inline-flex items-center gap-2 text-xs text-muted cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showVerified}
-                        onChange={(e) => setShowVerified(e.target.checked)}
-                        className="size-4 rounded accent-ember"
-                      />
-                      <span>Tampilkan Badge Verified Kreator</span>
-                    </label>
-
-                    <label className="inline-flex items-center gap-2 text-xs text-muted cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={showSwipePrompt}
-                        onChange={(e) => setShowSwipePrompt(e.target.checked)}
-                        className="size-4 rounded accent-ember"
-                      />
-                      <span>Tampilkan Petunjuk Geser (Swipe ➔)</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* RIGHT COLUMN: Live HD Canvas Card Preview & Filmstrip Rail (5 cols) */}
+        {/* RIGHT COLUMN: HD Canvas Display + Single-Screen Filmstrip (5 cols) */}
         <div
-          className={`flex flex-col items-center lg:col-span-5 space-y-4 ${
+          className={`flex flex-col items-center lg:col-span-5 space-y-2.5 ${
             mobileView === "editor" ? "hidden lg:flex" : "flex"
           }`}
         >
-          {/* Main Canvas Card Display */}
+          {/* Main Canvas Card Display (Adaptive compact size for 1-screen viewport) */}
           <div className="w-full flex flex-col items-center">
-            <div className="relative w-full max-w-[340px] sm:max-w-[380px] rounded-3xl border border-white/[0.15] overflow-hidden shadow-2xl bg-black transition-all">
+            <div className="relative w-full max-w-[280px] sm:max-w-[320px] max-h-[380px] rounded-2xl border border-white/[0.15] overflow-hidden shadow-xl bg-black transition-all flex items-center justify-center">
               <canvas
                 ref={canvasRef}
-                className="w-full h-auto object-contain block"
+                className="w-full h-auto max-h-[380px] object-contain block"
               />
             </div>
           </div>
 
           {/* Slide Navigator & Action Controls */}
-          <div className="w-full max-w-[380px] flex items-center justify-between gap-2">
+          <div className="w-full max-w-[320px] flex items-center justify-between gap-1.5">
             <button
               type="button"
               disabled={currentIdx === 0}
               onClick={() => setCurrentIdx((p) => Math.max(0, p - 1))}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-surface px-3 text-xs font-semibold text-ink disabled:opacity-30 hover:border-ember/40 transition-all cursor-pointer"
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-white/[0.1] bg-surface px-2.5 text-xs font-semibold text-ink disabled:opacity-30 hover:border-ember/40 cursor-pointer"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
               <span>Prev</span>
@@ -1686,10 +1593,10 @@ export function CarouselGenerator({
               type="button"
               disabled={currentIdx === slides.length - 1}
               onClick={() => setCurrentIdx((p) => Math.min(slides.length - 1, p + 1))}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-white/[0.1] bg-surface px-3 text-xs font-semibold text-ink disabled:opacity-30 hover:border-ember/40 transition-all cursor-pointer"
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-white/[0.1] bg-surface px-2.5 text-xs font-semibold text-ink disabled:opacity-30 hover:border-ember/40 cursor-pointer"
             >
               <span>Next</span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
             </button>
@@ -1697,10 +1604,10 @@ export function CarouselGenerator({
             <button
               type="button"
               onClick={handleExportSingle}
-              className="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-ember/40 bg-ember/10 px-3 text-xs font-bold text-ember hover:bg-ember/20 transition-all cursor-pointer"
-              title="Download slide yang sedang aktif"
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-ember/40 bg-ember/10 px-2.5 text-xs font-bold text-ember hover:bg-ember/20 cursor-pointer"
+              title="Download slide aktif ini"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" x2="12" y1="15" y2="3" />
@@ -1709,32 +1616,32 @@ export function CarouselGenerator({
             </button>
           </div>
 
-          {/* FILMSTRIP RAIL: Multi-Slide Thumbnails */}
-          <div className="w-full max-w-[380px] rounded-2xl border border-hairline bg-surface p-3.5 space-y-2 shadow-sm">
-            <div className="flex items-center justify-between text-micro font-bold uppercase tracking-wider text-muted">
+          {/* ULTRA-COMPACT FILMSTRIP RAIL */}
+          <div className="w-full max-w-[320px] rounded-xl border border-hairline bg-surface p-2 space-y-1 shadow-xs">
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted">
               <span>Alur Urutan Slide</span>
-              <span>{slides.length} Kartu Slide</span>
+              <span>{slides.length} Kartu</span>
             </div>
 
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">
               {slides.map((s, idx) => (
                 <div
                   key={s.id || idx}
                   onClick={() => setCurrentIdx(idx)}
-                  className={`relative flex-shrink-0 w-16 sm:w-20 rounded-xl border p-2 cursor-pointer transition-all ${
+                  className={`relative flex-shrink-0 w-14 rounded-lg border p-1 cursor-pointer transition-all ${
                     currentIdx === idx
-                      ? "border-ember bg-surface-raised ring-2 ring-ember/30 shadow-md"
+                      ? "border-ember bg-surface-raised ring-1 ring-ember/30 shadow-xs"
                       : "border-white/[0.08] bg-[#09090b] hover:border-white/[0.2]"
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold text-ember">#{idx + 1}</span>
-                    <span className="size-1 rounded-full bg-muted" />
+                    <span className="text-[9px] font-mono font-bold text-ember">#{idx + 1}</span>
+                    <span className="text-[7px] uppercase text-muted font-bold">{s.type.slice(0, 3)}</span>
                   </div>
-                  <p className="mt-1 text-[9px] font-bold text-ink line-clamp-2 leading-tight">
+                  <p className="mt-0.5 text-[8px] font-bold text-ink line-clamp-1 leading-tight">
                     {s.title || "Slide"}
                   </p>
-                  <div className="mt-2 flex items-center justify-between text-[8px] text-muted">
+                  <div className="mt-1 flex items-center justify-between text-[8px] text-muted">
                     <button
                       type="button"
                       disabled={idx === 0}
@@ -1746,7 +1653,6 @@ export function CarouselGenerator({
                     >
                       ◀
                     </button>
-                    <span className="uppercase">{s.type.slice(0, 3)}</span>
                     <button
                       type="button"
                       disabled={idx === slides.length - 1}
