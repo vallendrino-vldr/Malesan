@@ -70,8 +70,42 @@ export function DraftEditor({
 }) {
   const supabase = useMemo(() => createClient(), []);
 
-  const [title, setTitle] = useState(draft.title);
-  const [content, setContent] = useState(draft.content);
+  const [title, setTitle] = useState(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const backupKey = `malesan:draft-backup:${draft.id}`;
+        const savedRaw = localStorage.getItem(backupKey);
+        if (savedRaw) {
+          const parsed = JSON.parse(savedRaw);
+          if (parsed && parsed.updatedAt && new Date(parsed.updatedAt).getTime() > new Date(draft.updated_at).getTime()) {
+            if (parsed.title) return parsed.title;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return draft.title;
+  });
+
+  const [content, setContent] = useState(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const backupKey = `malesan:draft-backup:${draft.id}`;
+        const savedRaw = localStorage.getItem(backupKey);
+        if (savedRaw) {
+          const parsed = JSON.parse(savedRaw);
+          if (parsed && parsed.updatedAt && new Date(parsed.updatedAt).getTime() > new Date(draft.updated_at).getTime()) {
+            if (parsed.content) return parsed.content;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return draft.content;
+  });
+
   const [state, setState] = useState<SaveState>("saved");
 
   const [ghost, setGhost] = useState("");
@@ -82,7 +116,7 @@ export function DraftEditor({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   /** What the user has typed right now, readable from callbacks that outlive a render. */
-  const latest = useRef({ title: draft.title, content: draft.content });
+  const latest = useRef({ title, content });
   /** What the database is known to hold. */
   const stored = useRef({ title: draft.title, content: draft.content });
   /** Rising counter so a slow write cannot report over a newer one. */
@@ -141,29 +175,6 @@ export function DraftEditor({
   useEffect(() => {
     saveRef.current = save;
   });
-
-  // LocalStorage Crash & Offline Resilience
-  useEffect(() => {
-    try {
-      const backupKey = `malesan:draft-backup:${draft.id}`;
-      const savedRaw = localStorage.getItem(backupKey);
-      if (savedRaw) {
-        const parsed = JSON.parse(savedRaw);
-        if (parsed && parsed.updatedAt && new Date(parsed.updatedAt).getTime() > new Date(draft.updated_at).getTime()) {
-          if (parsed.content && parsed.content !== draft.content) {
-            setContent(parsed.content);
-            latest.current.content = parsed.content;
-          }
-          if (parsed.title && parsed.title !== draft.title) {
-            setTitle(parsed.title);
-            latest.current.title = parsed.title;
-          }
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, [draft.id, draft.updated_at, draft.title, draft.content]);
 
   // Keyboard shortcut: Cmd+S / Ctrl+S to save immediately
   useEffect(() => {
