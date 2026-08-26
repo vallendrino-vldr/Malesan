@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { TutorialVideoPlayer } from "@/components/tutorial/TutorialVideoPlayer";
 
 /**
  * Tutorial.
@@ -292,28 +293,10 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
                 </ol>
               </section>
 
-              {TUTORIAL_VIDEO_URL && (
-                <section className="overflow-hidden rounded-xl border border-hairline bg-obsidian">
-                  <video
-                    controls
-                    playsInline
-                    preload="metadata"
-                    className="aspect-video w-full bg-obsidian"
-                    aria-label="Video cara pakai Malesan dalam 60 detik"
-                  >
-                    <source src={TUTORIAL_VIDEO_URL} type="video/mp4" />
-                    {TUTORIAL_CAPTIONS_URL && (
-                      <track
-                        kind="captions"
-                        src={TUTORIAL_CAPTIONS_URL}
-                        srcLang="id"
-                        label="Bahasa Indonesia"
-                        default
-                      />
-                    )}
-                  </video>
-                </section>
-              )}
+              {/* Interactive Video Tutorial with +10 Bonus Credits Reward */}
+              <section className="overflow-hidden rounded-xl border border-white/[0.08] bg-obsidian">
+                <TutorialVideoPlayer videoSrc={TUTORIAL_VIDEO_URL || "/tutorial/tutorial-demo.mp4"} />
+              </section>
 
               <p className="eyebrow px-1 pt-1 text-muted">Kalau masih bingung</p>
               {SECTIONS.map((s, i) => {

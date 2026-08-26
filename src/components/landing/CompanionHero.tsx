@@ -4,9 +4,11 @@ import { useState } from "react";
 import { TransitionButton } from "./TransitionButton";
 import { ThreeCanvas } from "./ThreeCanvas";
 import { LivingStudioCanvas, TOPIC_PRESETS } from "./LivingStudioCanvas";
+import { DemoVideoModal } from "./DemoVideoModal";
 
 export function CompanionHero() {
   const [selectedTopicId, setSelectedTopicId] = useState("bengkel");
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
 
   return (
     <section className="relative overflow-hidden pt-3 pb-8 sm:pt-6 sm:pb-14 lg:pt-10 lg:pb-18">
@@ -102,24 +104,28 @@ export function CompanionHero() {
                 </svg>
               </TransitionButton>
 
+              <button
+                type="button"
+                onClick={() => setDemoModalOpen(true)}
+                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-ember/40 bg-ember/10 px-5 py-3.5 font-display text-sm sm:text-base font-semibold text-ember backdrop-blur-md transition-all duration-200 hover:border-ember hover:bg-ember/20 active:scale-[0.99] cursor-pointer"
+              >
+                <span className="flex size-2 rounded-full bg-ember animate-pulse" />
+                <span>▶ Tonton Demo (+10 Kredit)</span>
+              </button>
+
               <a
                 href="#journey"
-                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-surface/60 px-6 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember active:scale-[0.99]"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-surface/60 px-5 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember active:scale-[0.99]"
               >
-                <span>Lihat cara kerja</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="size-4 text-muted transition-transform duration-200 group-hover:translate-y-0.5 group-hover:text-ember"
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
+                <span>Lihat alur</span>
               </a>
             </div>
+
+            {/* Demo Video Modal Portal */}
+            <DemoVideoModal
+              isOpen={demoModalOpen}
+              onClose={() => setDemoModalOpen(false)}
+            />
 
             {/* Trust Badges */}
             {/* Desktop Horizontal Badges */}

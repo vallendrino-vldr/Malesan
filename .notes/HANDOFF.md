@@ -35,12 +35,22 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after TikTok In-App Browser Speed Optimization & Resource Preconnect (§9z.64).
-**Newest work is §9z.64 — TikTok In-App Browser Speed Optimization & Resource Preconnect: Optimized root landing page `/` for ultra-low latency (<200ms FCP) inside mobile in-app webviews (TikTok, Instagram, Telegram). Split below-the-fold bundles via `next/dynamic`, added immutable static asset caching (`Cache-Control: public, max-age=31536000, immutable`), preconnected Supabase origins, and enabled gzip/brotli compression in `next.config.ts`.** Read §9z.64, then §9z.63.
+Last updated: **2026-08-26**, after Demo Video Integration & +10 Credit Anti-Cheat Reward System (§9z.65).
+**Newest work is §9z.65 — Demo Video Integration & +10 Credit Anti-Cheat Reward System: Integrated the 18.2MB compressed demo video (`public/tutorial/tutorial-demo.mp4`). Built `TutorialVideoPlayer.tsx` with anti-cheat / anti-skip playback tracking (`actualWatchSeconds >= duration * 0.9`). Created Server Action `claimTutorialBonusAction()` with idempotent database ledger checking (`reason = 'tutorial_watch_bonus'`) granting +10 free credits. Added `DemoVideoModal.tsx` on the Landing Page and integrated into Studio `TutorialSheet.tsx`.** Read §9z.65, then §9z.64.
 
 ---
 
-## §9z.64 — TikTok In-App Browser Speed Optimization & Resource Preconnect (2026-08-26)
+## §9z.65 — Demo Video Integration & +10 Credit Anti-Cheat Reward System (2026-08-26)
+
+**What changed & Why:**
+- Copied 18.2MB H.264 video to `public/tutorial/tutorial-demo.mp4`.
+- Created `src/app/actions/tutorial.ts` with `getTutorialRewardStatus` and `claimTutorialBonusAction` (SQL RPC `grant_credits` with reason `tutorial_watch_bonus`).
+- Created `src/components/tutorial/TutorialVideoPlayer.tsx` with forward-seek restrictions, continuous watch accumulation, reward banner, and realtime credit update.
+- Created `src/components/landing/DemoVideoModal.tsx` and connected to Landing Page Hero trigger button *"▶ Tonton Demo (+10 Kredit)"*.
+- Updated Studio `TutorialSheet.tsx` to render the interactive reward video player.
+- 100% passing tests, security scan, and Turbopack build.
+
+---
 
 **What changed & Why:**
 - Root landing page `/` optimized for mobile in-app webviews (TikTok, IG, Twitter/X):
