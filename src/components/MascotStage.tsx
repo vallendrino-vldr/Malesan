@@ -71,13 +71,15 @@ export function MascotStage({ className = "" }: { className?: string }) {
           the layout would shove the greeting down and back up, which is a
           layout shift on a page that currently measures CLS 0. */}
       {line && (
-        <span
-          role="status"
-          aria-live="polite"
-          className="pointer-events-none absolute -bottom-1 whitespace-nowrap rounded-full border border-ember/35 bg-surface px-2.5 py-1 text-micro font-semibold text-ember-lo shadow-[0_2px_10px_-4px_color-mix(in_oklab,#000_70%,transparent)]"
-        >
-          {line}
-        </span>
+        <div className="pointer-events-none absolute -bottom-2.5 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 z-30 flex items-center">
+          <span
+            role="status"
+            aria-live="polite"
+            className="whitespace-nowrap rounded-full border border-ember/40 bg-surface-raised/95 backdrop-blur-md px-3 py-1 text-micro font-semibold text-ember shadow-lg shadow-black/60 ring-1 ring-ember/25 animate-in fade-in zoom-in-95 duration-150"
+          >
+            {line}
+          </span>
+        </div>
       )}
     </div>
   );

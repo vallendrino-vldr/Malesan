@@ -35,8 +35,17 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Free Studio Usage & Zero-Letterbox Aspect Ratio Polish (§9z.74).
-**Newest work is §9z.74 — Free Studio Usage & Zero-Letterbox Aspect Ratio Polish: Aligned dashboard and studio header badge to "Gratis" (editing slides, switching themes, custom fonts, PNG download are 100% free; credit cost only applies when running 1-Click AI Auto-Gen). Eliminated black letterbox bars on desktop preview card by replacing generic fixed-width/height wrapper with dynamic aspect-ratio container (`aspect-[4/5]`, `aspect-square`, `aspect-[9/16]`) so canvas seamlessly fills border edge with zero background gaps.** Read §9z.74, then §9z.73.
+Last updated: **2026-08-26**, after Mascot Speech Bubble Overflow & Clipping Fix (§9z.75).
+**Newest work is §9z.75 — Mascot Speech Bubble Overflow & Clipping Fix: Fixed speech bubble text truncation on the 5th poke ("Lo lebih niat nyolek gue daripada bikin konten.") caused by the parent section's `overflow-hidden` clipping negative horizontal offsets. Adjusted speech bubble anchor in `MascotStage.tsx` with responsive positioning (`left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0`) and added backdrop blur styling so long dialogue bubbles flow naturally into the greeting area without clipping.** Read §9z.75, then §9z.74.
+
+---
+
+## §9z.75 — Mascot Speech Bubble Overflow & Clipping Fix (2026-08-26)
+
+**What changed & Why:**
+- Fixed Mascot Dialogue Clipping: The longest dialogue line (*"Lo lebih niat nyolek gue daripada bikin konten."*) previously clipped its left side (*"Lo lebih "*) because it was horizontally centered on the mascot near the section's left edge, overflowing past $X = 0$ into the parent's `overflow-hidden` boundary.
+- Responsive Alignment: Set `left-1/2 -translate-x-1/2` for centered mobile view, and `lg:left-0 lg:translate-x-0` for desktop view, anchoring the bubble to the mascot's left boundary and flowing rightwards safely into open space.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 
