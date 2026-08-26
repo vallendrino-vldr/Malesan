@@ -75,7 +75,6 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
   const [presetId, setPresetId] = useState<(typeof SOCIAL_PRESETS)[number]["id"]>("tiktok");
   const [noWatermark, setNoWatermark] = useState(false);
   const [doneMsg, setDoneMsg] = useState<string | null>(null);
-  const [now, setNow] = useState(0);
   /** Sub-progress percentage for the blocking export overlay, plus what it is
    *  doing right now. Kept separate from `progress` so the overlay can show a
    *  fractional frame-accurate figure while the inline bar stays integer. */
@@ -490,11 +489,6 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
 
 function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Word[]) => void }) {
   const text = useMemo(() => words.map((w) => w.word).join(" "), [words]);
-  const [val, setVal] = useState(text);
-
-  useEffect(() => {
-    setVal(text);
-  }, [text]);
 
   const commit = (newVal: string) => {
     const tokens = newVal.trim().split(/\s+/).filter(Boolean);
@@ -510,8 +504,8 @@ function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Wo
     <div className="rounded-xl border border-hairline bg-surface p-3">
       <p className="mb-2 text-mini font-semibold text-ink">Betulin teks (kalau ada typo)</p>
       <textarea
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
+        key={text}
+        defaultValue={text}
         onBlur={(e) => commit(e.target.value)}
         rows={5}
         placeholder="Teks subtitle..."
