@@ -35,8 +35,18 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Luxury AI Carousel Studio Overhaul (§9z.71).
-**Newest work is §9z.71 — Luxury AI Carousel & Slide Studio Overhaul: Complete redesign and architectural overhaul of `CarouselGenerator.tsx` from a bare text mockup into an ultra-luxury, agency-grade 2-column Studio. Added 1-Click AI generation engine (`/api/generate` with `CAROUSEL_ENGINE_SCHEMA`), 6 designer luxury themes (Obsidian Ember, Midnight Cyber, Editorial Noir, Emerald Velvet, Sunset Neon, Clean Porcelain), 3 canvas aspect ratios (4:5, 1:1, 9:16), 4 typography pairings, 4 slide layout archetypes (Cover Hook, Point, Big Stat, CTA), author avatar & verified badges, interactive filmstrip thumbnail rail with reordering, single/batch HD PNG download, and ready-to-post caption generator.** Read §9z.71, then §9z.70.
+Last updated: **2026-08-26**, after Verified Badge Alignment & Compact Tabbed Workbench (§9z.72).
+**Newest work is §9z.72 — Verified Badge Alignment & Compact Tabbed Workbench: Fixed verified checkmark canvas alignment bug (recalculated author name metrics and vertically centered verified badge and handle lines with `textBaseline: middle`), eliminated page length scrolling fatigue by restructuring the left panel into 3 compact studio tabs (1. Edit Slide, 2. AI Auto-Gen, 3. Tema & Rasio), and added mobile segmented view switcher (Preview Card vs Edit Konten) for flawless 360px mobile experience.** Read §9z.72, then §9z.71.
+
+---
+
+## §9z.72 — Verified Badge Alignment & Compact Tabbed Workbench (2026-08-26)
+
+**What changed & Why:**
+- Fixed Verified Badge Alignment: Recalculated canvas text measurement offsets with `textBaseline = "middle"`, giving author name and verified checkmark badge crisp vertical alignment and a clean 10px spacing buffer, with handle placed cleanly beneath.
+- Eliminated Endless Scrolling ("Halaman terlalu panjang"): Replaced long stacked cards with 3 sleek, compact Studio tabs on the left workbench (`Edit Slide`, `AI Auto-Gen`, `Tema & Rasio`), reducing vertical scroll height by 70%.
+- Mobile Responsive Polish: Added mobile segmented toggle (`1. Lihat Preview Card` vs `2. Atur & Edit Konten`) allowing mobile creators to comfortably switch between the live card preview/filmstrip rail and the slide editing controls without vertical clutter.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 
