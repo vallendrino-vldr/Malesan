@@ -156,7 +156,12 @@ export async function transcribeAudio(
     HALLUCINATION_PHRASES.some((pat) => pat.test(rawText)) &&
     rawText.split(/\s+/).length <= 7;
 
-  let words: Word[] = (json.words ?? [])
+  const rawWords =
+    json.words && json.words.length > 0
+      ? json.words
+      : (json.segments?.flatMap((s) => (s as { words?: { word?: string; start?: number; end?: number }[] }).words ?? []) ?? []);
+
+  let words: Word[] = rawWords
     .filter((w) => typeof w.word === "string" && typeof w.start === "number")
     .map((w) => ({
       word: (w.word as string).trim(),

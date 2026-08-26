@@ -94,7 +94,8 @@ export function groupLines(words: Word[], maxWords = 4, maxGap = 0.6): Line[] {
     const w = words[i];
     const prev = cur[cur.length - 1];
     const gap = prev ? w.start - prev.end : 0;
-    if (cur.length >= maxWords || (prev && gap > maxGap)) {
+    const isPunctuationBreak = prev && /[.!?]$/.test(prev.word);
+    if (cur.length >= maxWords || (prev && (gap > maxGap || isPunctuationBreak))) {
       lines.push(toLine(cur));
       cur = [];
     }

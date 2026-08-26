@@ -20,7 +20,12 @@ export const even = (n: number) => (n % 2 === 0 ? n : n - 1);
  */
 export function frameSize(sw: number, sh: number): { W: number; H: number } {
   const short = Math.min(sw, sh);
-  const scale = Math.min(short < 1080 ? 1080 / short : 1, 2.5);
+  let scale = 1;
+  if (short < 720) {
+    scale = Math.min(720 / short, 2.5);
+  } else if (short > 1080) {
+    scale = 1080 / short;
+  }
   return { W: even(Math.round(sw * scale)), H: even(Math.round(sh * scale)) };
 }
 

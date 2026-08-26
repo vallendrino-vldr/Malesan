@@ -28,4 +28,16 @@ assert.match(drawSource, /Math\.max\(Math\.round\(mbps \* 1_000_000\), floor\)/)
 assert.equal(time.jakartaDayKey("2026-08-22T18:00:00.000Z"), "2026-08-23");
 assert.equal(time.startOfJakartaDay("2026-08-23T12:00:00.000Z").toISOString(), "2026-08-22T17:00:00.000Z");
 
+const puncWords = [
+  { word: "Selesai.", start: 0, end: 0.5 },
+  { word: "Lanjut", start: 0.6, end: 0.9 },
+];
+const puncLines = captions.groupLines(puncWords, 4, 1.0);
+assert.equal(puncLines.length, 2, "punctuation (.!?) must break line naturally");
+
+const drawModule = await import(pathToFileURL(resolve("src/lib/video/draw.ts")));
+const size4k = drawModule.frameSize(2160, 3840);
+assert.equal(size4k.W, 1080, "4k vertical short side must scale to 1080 for hardware AVC compatibility");
+assert.equal(size4k.H, 1920, "4k vertical long side must scale to 1920");
+
 console.log("Video/time core: pacing, timing, sizing, pricing day boundary verified");
