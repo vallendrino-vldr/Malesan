@@ -2,14 +2,6 @@
 
 import { useState } from "react";
 
-/**
- * A value you are meant to copy, with a button that actually copies it.
- *
- * The profile page rendered the referral link in a `<code>` with a comment
- * saying a copy button would need a client component "in a real app" — so the
- * one thing the user is supposed to do with a referral link, they could not do.
- * A long URL in a flex row also overflowed its container on a phone.
- */
 export function CopyField({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -17,29 +9,45 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard blocked (insecure context, or denied). The value is on screen
-      // and selectable, so say so instead of failing silently.
       setCopied(false);
     }
   };
 
   return (
-    <div className="rounded-xl border border-hairline bg-obsidian p-3">
-      {label && <p className="eyebrow mb-1.5 text-muted">{label}</p>}
-      <div className="flex items-center gap-2">
-        {/* `break-all` and `min-w-0`: without them a long link pushes the button
-            off the edge of a 360px screen. */}
-        <code className="min-w-0 flex-1 break-all font-mono text-mini leading-relaxed text-ember-lo">
+    <div className="rounded-2xl border border-white/[0.08] bg-[#0c0c0e] p-3.5 shadow-inner transition-all hover:border-ember/30">
+      {label && <p className="mb-1.5 text-xs font-semibold text-muted">{label}</p>}
+      <div className="flex items-center gap-2.5">
+        <code className="min-w-0 flex-1 truncate font-mono text-xs text-ember selection:bg-ember/20 selection:text-white">
           {value}
         </code>
         <button
+          type="button"
           onClick={copy}
           aria-label={`Salin ${label ?? "nilai"}`}
-          className="shrink-0 cursor-pointer rounded-lg border border-hairline bg-surface px-3 py-2 text-micro font-bold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember"
+          className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 font-display text-xs font-bold transition-all cursor-pointer ${
+            copied
+              ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
+              : "border-ember/40 bg-ember/10 text-ember hover:border-ember hover:bg-ember/20 active:scale-[0.98]"
+          }`}
         >
-          {copied ? "Kesalin!" : "Salin"}
+          {copied ? (
+            <>
+              <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>Tersalin!</span>
+            </>
+          ) : (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+              </svg>
+              <span>Salin Link</span>
+            </>
+          )}
         </button>
       </div>
     </div>

@@ -10,14 +10,6 @@ import {
   saveCta,
 } from "@/app/actions/personas";
 
-/**
- * The two settings that change how every future generation sounds: the saved
- * voices, and the link the AI is allowed to close with.
- *
- * Structural copy of what the actions return. Declared here rather than
- * imported so nothing but async functions ever crosses the "use server"
- * boundary — the shape is three keys wide and TypeScript matches it by shape.
- */
 type Result = { ok: true } | { ok: false; error: string };
 
 const NAME_MAX = 60;
@@ -25,14 +17,12 @@ const VOICE_MAX = 2000;
 const LABEL_MAX = 60;
 
 const inputCls =
-  "w-full resize-none rounded-xl border border-hairline bg-obsidian px-4 py-3 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-60";
+  "w-full rounded-xl border border-white/[0.1] bg-[#09090b] px-4 py-3 text-sm text-ink placeholder:text-muted/60 transition-all focus:border-ember focus:bg-[#0c0c0e] focus:outline-none focus:ring-2 focus:ring-ember/20 disabled:opacity-60";
 
-const btnCls =
-  "inline-flex min-h-11 items-center justify-center rounded-xl border border-hairline bg-surface-raised px-4 text-mini font-semibold text-ink transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember disabled:opacity-60";
+const btnSecondaryCls =
+  "inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-surface-raised/80 px-4 text-xs sm:text-sm font-semibold text-ink backdrop-blur-sm transition-all duration-200 hover:border-ember/50 hover:bg-ember/10 hover:text-ember active:scale-[0.98] disabled:opacity-60 cursor-pointer";
 
 export function PersonaManager({ personas }: { personas: Persona[] }) {
-  // One id at a time, or "new" for the create form. Two open editors would let
-  // someone type into a row they think is saved and lose it on the next click.
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,36 +37,65 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
     });
 
   return (
-    <div className="surface-card rounded-2xl p-5">
-      <h2 className="font-display text-lg font-bold text-ink">Profil konten</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        Punya akun pribadi, toko, affiliate, atau klien? Simpan cara ngomongnya di
-        sini, lalu tinggal pilih waktu bikin konten. Profil default kepilih otomatis.
-      </p>
+    <div className="surface-card rounded-3xl border border-white/[0.08] bg-gradient-to-b from-surface-raised/90 via-surface to-[#0e0e11] p-5 sm:p-6 shadow-xl backdrop-blur-xl transition-all">
+      {/* Header with Lucide Icon */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-2xl border border-ember/30 bg-ember/15 text-ember shadow-xs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-bold text-ink">
+              Profil Konten &amp; Persona Suara
+            </h2>
+            <p className="text-xs sm:text-sm text-muted">
+              Simpan gaya bicara spesifik untuk akun pribadi, toko, affiliate, atau klien.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {error && (
-        <p className="mt-3 rounded-xl border border-danger/50 bg-surface px-3.5 py-2.5 text-mini text-danger">
+        <div className="mt-4 rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 text-xs text-rose-300">
           {error}
-        </p>
+        </div>
       )}
 
+      {/* Empty State */}
       {personas.length === 0 && editing !== "new" && (
-        <p className="mt-4 rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-mini leading-relaxed text-muted">
-          Belum ada profil tambahan. Profil utama lo tetap bisa dipakai.
-        </p>
+        <div className="mt-5 flex flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.12] bg-[#09090b]/60 px-6 py-8 text-center backdrop-blur-xs">
+          <div className="flex size-10 items-center justify-center rounded-full bg-white/[0.05] text-muted">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5 text-ember/70">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <p className="mt-3 text-xs sm:text-sm font-medium text-ink">
+            Belum ada persona tambahan
+          </p>
+          <p className="mt-1 text-xs text-muted max-w-sm">
+            Malesan otomatis menggunakan Profil Utama lo. Tambah persona jika ingin suara berbeda untuk tiap akun.
+          </p>
+        </div>
       )}
 
+      {/* Persona List */}
       {personas.length > 0 && (
-        <ul className="mt-4 space-y-2.5">
+        <ul className="mt-5 space-y-3">
           {personas.map((p) => (
-            <li key={p.id} className="rounded-xl border border-hairline bg-obsidian p-3.5">
+            <li
+              key={p.id}
+              className="rounded-2xl border border-white/[0.08] bg-[#09090b] p-4.5 shadow-inner transition-all hover:border-white/[0.15]"
+            >
               {editing === p.id ? (
                 <PersonaForm
                   idPrefix={`persona-${p.id}`}
                   initialName={p.name}
                   initialVoice={p.voice}
                   pending={pending}
-                  submitLabel="Simpan perubahan"
+                  submitLabel="Simpan Perubahan"
                   onCancel={() => setEditing(null)}
                   onSubmit={(name, voice) =>
                     run(() => updatePersona(p.id, name, voice), () => setEditing(null))
@@ -84,33 +103,47 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                 />
               ) : (
                 <>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-ink">{p.name}</span>
-                    {p.is_default && (
-                      <span className="rounded-full border border-ember/50 px-2 py-0.5 text-micro font-semibold text-ember">
-                        Utama
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-display text-sm sm:text-base font-bold text-ink">
+                        {p.name}
                       </span>
-                    )}
+                      {p.is_default && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-micro font-bold text-emerald-400">
+                          <span className="size-1.5 rounded-full bg-emerald-400" />
+                          Utama
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <p className="mt-1.5 line-clamp-3 text-mini leading-relaxed text-muted">{p.voice}</p>
+                  <p className="mt-2 line-clamp-3 text-xs sm:text-sm leading-relaxed text-muted">
+                    {p.voice}
+                  </p>
 
                   {confirming === p.id ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      <span className="text-mini text-danger">Hapus &quot;{p.name}&quot;?</span>
+                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
+                      <span className="text-xs font-semibold text-rose-400">
+                        Yakin hapus &quot;{p.name}&quot;?
+                      </span>
                       <button
                         type="button"
                         disabled={pending}
                         onClick={() => run(() => deletePersona(p.id), () => setConfirming(null))}
-                        className={`${btnCls} border-danger/50 text-danger hover:border-danger hover:text-danger`}
+                        className="inline-flex h-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-950/60 px-3 text-xs font-bold text-rose-300 hover:bg-rose-900/60 cursor-pointer"
                       >
-                        {pending ? "Lagi ngapus..." : "Iya, hapus"}
+                        {pending ? "Menghapus..." : "Iya, Hapus"}
                       </button>
-                      <button type="button" disabled={pending} onClick={() => setConfirming(null)} className={btnCls}>
+                      <button
+                        type="button"
+                        disabled={pending}
+                        onClick={() => setConfirming(null)}
+                        className="inline-flex h-9 items-center justify-center rounded-lg border border-white/[0.1] bg-surface px-3 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+                      >
                         Batal
                       </button>
                     </div>
                   ) : (
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
                       <button
                         type="button"
                         disabled={pending}
@@ -118,27 +151,40 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                           setError(null);
                           setEditing(p.id);
                         }}
-                        className={btnCls}
+                        className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-lg border border-white/[0.1] bg-surface/80 px-3 text-xs font-semibold text-ink hover:border-ember/40 hover:text-ember cursor-pointer transition-all"
                       >
-                        Edit
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                        </svg>
+                        <span>Edit</span>
                       </button>
+
                       {!p.is_default && (
                         <button
                           type="button"
                           disabled={pending}
                           onClick={() => run(() => setDefaultPersona(p.id))}
-                          className={btnCls}
+                          className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-lg border border-white/[0.1] bg-surface/80 px-3 text-xs font-semibold text-muted hover:border-emerald-500/40 hover:text-emerald-400 cursor-pointer transition-all"
                         >
-                          Jadiin utama
+                          <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span>Jadikan Utama</span>
                         </button>
                       )}
+
                       <button
                         type="button"
                         disabled={pending}
                         onClick={() => setConfirming(p.id)}
-                        className={`${btnCls} text-muted hover:border-danger/50 hover:text-danger`}
+                        className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-lg border border-white/[0.1] bg-surface/80 px-3 text-xs font-semibold text-muted hover:border-rose-500/40 hover:text-rose-400 cursor-pointer transition-all ml-auto"
                       >
-                        Hapus
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                        <span>Hapus</span>
                       </button>
                     </div>
                   )}
@@ -149,15 +195,16 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
         </ul>
       )}
 
-      <div className="mt-4">
+      {/* Add Button / New Form */}
+      <div className="mt-5">
         {editing === "new" ? (
-          <div className="rounded-xl border border-hairline bg-obsidian p-3.5">
+          <div className="rounded-2xl border border-ember/30 bg-[#09090b] p-4.5 shadow-inner">
             <PersonaForm
               idPrefix="persona-new"
               initialName=""
               initialVoice=""
               pending={pending}
-              submitLabel="Simpen profil ini"
+              submitLabel="Simpan Persona Baru"
               onCancel={() => setEditing(null)}
               onSubmit={(name, voice) =>
                 run(() => createPersona(name, voice), () => setEditing(null))
@@ -172,9 +219,13 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
               setError(null);
               setEditing("new");
             }}
-            className={btnCls}
+            className="group inline-flex h-11 w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-ember/40 bg-ember/10 px-5 font-display text-xs sm:text-sm font-bold text-ember transition-all hover:border-ember hover:bg-ember/20 active:scale-[0.98] cursor-pointer"
           >
-            {personas.length === 0 ? "Bikin profil tambahan" : "Tambah profil"}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4 transition-transform group-hover:rotate-90">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>{personas.length === 0 ? "Bikin Profil Tambahan" : "Tambah Persona Baru"}</span>
           </button>
         )}
       </div>
@@ -208,50 +259,70 @@ function PersonaForm({
         e.preventDefault();
         onSubmit(name, voice);
       }}
+      className="space-y-4"
     >
-      <label htmlFor={`${idPrefix}-name`} className="block text-mini font-semibold text-ink">
-        Nama profil
-      </label>
-      <input
-        id={`${idPrefix}-name`}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        maxLength={NAME_MAX}
-        disabled={pending}
-        placeholder="Akun pribadi"
-        className={`${inputCls} mt-1.5`}
-      />
+      <div>
+        <label htmlFor={`${idPrefix}-name`} className="block text-xs font-bold text-ink">
+          Nama Persona / Akun
+        </label>
+        <input
+          id={`${idPrefix}-name`}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={NAME_MAX}
+          disabled={pending}
+          placeholder="Misal: Akun Affiliate Skincare / Klien Toko Kopi"
+          className={`${inputCls} mt-1.5`}
+          required
+        />
+      </div>
 
-      <label htmlFor={`${idPrefix}-voice`} className="mt-3 block text-mini font-semibold text-ink">
-        Yang bikin profil ini beda?
-      </label>
-      <p className="mt-1 text-micro leading-relaxed text-muted">
-        Ceritain niche, target orangnya, tujuan, platform utama, dan cara ngomongnya.
-        Gak perlu rapi — satu paragraf juga cukup.
-      </p>
-      <textarea
-        id={`${idPrefix}-voice`}
-        rows={4}
-        value={voice}
-        onChange={(e) => setVoice(e.target.value)}
-        maxLength={VOICE_MAX}
-        disabled={pending}
-        placeholder="Akun affiliate skincare buat cewek 20–30. Fokus jualan halus di TikTok, bahasanya santai, kalimat pendek, gak pernah pakai kata ‘sobat’."
-        className={`${inputCls} mt-1.5`}
-      />
-      <p className="mt-1 tabular text-micro text-muted">
-        {voice.length.toLocaleString("id-ID")} / {VOICE_MAX.toLocaleString("id-ID")} karakter
-      </p>
+      <div>
+        <div className="flex items-center justify-between">
+          <label htmlFor={`${idPrefix}-voice`} className="block text-xs font-bold text-ink">
+            Instruksi Gaya Bicara &amp; Karakter
+          </label>
+          <span className="font-mono text-micro text-muted">
+            {voice.length} / {VOICE_MAX}
+          </span>
+        </div>
+        <p className="mt-1 text-micro text-muted">
+          Ceritakan target audiens, bahasa santai/formal, platform utama, dan pantangan kata.
+        </p>
+        <textarea
+          id={`${idPrefix}-voice`}
+          rows={4}
+          value={voice}
+          onChange={(e) => setVoice(e.target.value)}
+          maxLength={VOICE_MAX}
+          disabled={pending}
+          placeholder="Akun TikTok affiliate skincare untuk cewek 20-30. Gaya bahasa santai, kalimat singkat, gak pernah pakai kata 'sobat'."
+          className={`${inputCls} mt-1.5`}
+          required
+        />
+      </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2.5 pt-1">
         <button
           type="submit"
-          disabled={pending}
-          className={`${btnCls} border-ember/50 text-ember hover:border-ember`}
+          disabled={pending || !name.trim() || !voice.trim()}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-ember px-5 font-display text-xs font-bold text-obsidian shadow-xs transition-all hover:bg-ember-lo active:scale-[0.98] disabled:opacity-50 cursor-pointer"
         >
-          {pending ? "Lagi nyimpen..." : submitLabel}
+          {pending ? (
+            <>
+              <span className="size-3.5 rounded-full border-2 border-obsidian/30 border-t-obsidian animate-spin" />
+              <span>Menyimpan...</span>
+            </>
+          ) : (
+            <span>{submitLabel}</span>
+          )}
         </button>
-        <button type="button" disabled={pending} onClick={onCancel} className={btnCls}>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={onCancel}
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-white/[0.12] bg-surface px-4 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
+        >
           Batal
         </button>
       </div>
@@ -260,13 +331,7 @@ function PersonaForm({
 }
 
 /**
- * The closing CTA.
- *
- * The preview is a mock of the SHAPE, not the sentence the model will write —
- * the prompt asks for one casual line that fits whatever was just generated, so
- * promising exact wording here would be a lie. What it does show honestly is
- * where the link lands and what it gets called, which is the part the owner is
- * actually deciding.
+ * High-End CTA Link Injection Settings with Live Content Simulation
  */
 export function CtaSettings({
   initial,
@@ -294,72 +359,102 @@ export function CtaSettings({
     });
 
   return (
-    <div className="surface-card rounded-2xl p-5">
-      <h2 className="font-display text-lg font-bold text-ink">Ajakan penutup</h2>
-      <p className="mt-1.5 text-sm leading-relaxed text-muted">
-        Kalau nyala, tiap hasil bakal nutup dengan ajakan ke link lo — ditulis natural
-        sama Malesan, nyambung sama isi kontennya, dan cuma sekali di paling akhir.
-      </p>
+    <div className="surface-card rounded-3xl border border-white/[0.08] bg-gradient-to-b from-surface-raised/90 via-surface to-[#0e0e11] p-5 sm:p-6 shadow-xl backdrop-blur-xl transition-all">
+      {/* Header with Lucide Icon */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-2xl border border-ember/30 bg-ember/15 text-ember shadow-xs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="font-display text-lg font-bold text-ink">
+              Ajakan Penutup (Smart CTA Injection)
+            </h2>
+            <p className="text-xs sm:text-sm text-muted">
+              Malesan menyelipkan ajakan ke link promosi lo secara halus dan natural di akhir konten.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <form
-        className="mt-4 space-y-3.5"
+        className="mt-5 space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           submit();
         }}
       >
-        <div>
-          <label htmlFor="cta-url" className="block text-mini font-semibold text-ink">
-            Link lo
-          </label>
-          <input
-            id="cta-url"
-            type="url"
-            inputMode="url"
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setSaved(false);
-            }}
-            disabled={pending}
-            placeholder="https://tokogue.com"
-            className={`${inputCls} mt-1.5`}
-          />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="cta-url" className="block text-xs font-bold text-ink">
+              Link Tujuan (URL)
+            </label>
+            <input
+              id="cta-url"
+              type="url"
+              inputMode="url"
+              value={url}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setSaved(false);
+              }}
+              disabled={pending}
+              placeholder="https://tokogue.com"
+              className={`${inputCls} mt-1.5`}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="cta-label" className="block text-xs font-bold text-ink">
+              Nama Sebutan Link <span className="font-normal text-muted">(Opsional)</span>
+            </label>
+            <input
+              id="cta-label"
+              value={label}
+              onChange={(e) => {
+                setLabel(e.target.value);
+                setSaved(false);
+              }}
+              maxLength={LABEL_MAX}
+              disabled={pending}
+              placeholder="Misal: toko gue / link di bio"
+              className={`${inputCls} mt-1.5`}
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="cta-label" className="block text-mini font-semibold text-ink">
-            Sebutannya apa? <span className="font-normal text-muted">(opsional)</span>
-          </label>
-          <input
-            id="cta-label"
-            value={label}
-            onChange={(e) => {
-              setLabel(e.target.value);
-              setSaved(false);
-            }}
-            maxLength={LABEL_MAX}
-            disabled={pending}
-            placeholder="toko gue"
-            className={`${inputCls} mt-1.5`}
-          />
-          <p className="mt-1 text-micro leading-relaxed text-muted">
-            Dikosongin? Link-nya disebut apa adanya.
-          </p>
+        {/* Live Simulation Preview Card */}
+        <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-[#08080a] shadow-inner">
+          <div className="flex items-center justify-between border-b border-white/[0.06] bg-white/[0.02] px-4 py-2.5 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="flex size-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-display text-micro font-bold uppercase tracking-wider text-muted">
+                Simulasi Penutup Konten
+              </span>
+            </div>
+            <span className="rounded-full border border-white/[0.08] bg-surface px-2 py-0.5 text-[10px] font-semibold text-muted">
+              Auto-Contextual
+            </span>
+          </div>
+
+          <div className="p-4">
+            <p className="text-xs sm:text-sm leading-relaxed text-ink/90">
+              &ldquo;...nah itu tadi tipsnya. Kalau mau langsung gas praktek, cek aja di{" "}
+              <strong className="text-white underline decoration-ember/60 underline-offset-2">
+                {shownLabel}
+              </strong>{" "}
+              — <span className="font-mono text-xs font-medium text-ember">{shownUrl}</span>&rdquo;
+            </p>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted">
+              ✨ Kalimat bervariasi mengikuti topik konten lo. Link hanya muncul 1 kali di bagian akhir tanpa kesan jualan agresif.
+            </p>
+          </div>
         </div>
 
-        <div className="rounded-xl border border-hairline bg-obsidian p-3.5">
-          <div className="eyebrow text-muted">Kira-kira nutupnya gini</div>
-          <p className="mt-1.5 text-mini leading-relaxed text-ink">
-            &ldquo;...oke segitu dulu. Kalau mau lanjut, mampir aja ke {shownLabel} —{" "}
-            <span className="break-all text-ember">{shownUrl}</span>&rdquo;
-          </p>
-          <p className="mt-1.5 text-micro leading-relaxed text-muted">
-            Kalimatnya beda-beda tiap hasil, nyesuain kontennya. Yang pasti cuma: link lo muncul
-            sekali, di paling akhir, gak jualan keras.
-          </p>
-        </div>
-
+        {/* Interactive Toggle Switch */}
         <button
           type="button"
           role="switch"
@@ -369,46 +464,71 @@ export function CtaSettings({
             setEnabled(!enabled);
             setSaved(false);
           }}
-          className="flex min-h-11 w-full items-center justify-between gap-3 rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-left transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember disabled:opacity-60"
+          className="flex min-h-12 w-full items-center justify-between gap-4 rounded-2xl border border-white/[0.1] bg-[#09090b] px-4 py-3 text-left transition-all hover:border-ember/40 active:scale-[0.99] cursor-pointer"
         >
-          <span>
-            <span className="block text-sm font-semibold text-ink">Nyalain ajakan penutup</span>
-            <span className="block text-micro text-muted">
-              {enabled ? "Nyala — semua hasil bakal nutup ke link lo." : "Mati — hasilnya gak nyebut link lo sama sekali."}
+          <div>
+            <span className="block font-display text-xs sm:text-sm font-bold text-ink">
+              Aktifkan Ajakan Penutup Otomatis
             </span>
-          </span>
-          <span
-            aria-hidden="true"
-            className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors duration-[var(--duration-standard)] ease-heat ${
-              enabled ? "border-ember bg-ember/30" : "border-hairline bg-surface-raised"
+            <span className="block text-micro text-muted">
+              {enabled
+                ? "Aktif — semua hasil generasi otomatis menyertakan link promosi lo."
+                : "Nonaktif — hasil generasi tidak akan menyertakan link luar."}
+            </span>
+          </div>
+
+          <div
+            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
+              enabled ? "bg-ember" : "bg-surface-raised border border-white/[0.12]"
             }`}
           >
             <span
-              className={`absolute top-1/2 size-4 -translate-y-1/2 rounded-full transition-all duration-[var(--duration-standard)] ease-heat ${
-                enabled ? "left-[calc(100%-1.25rem)] bg-ember" : "left-1 bg-muted"
+              className={`absolute top-1 size-4 rounded-full transition-all duration-200 ${
+                enabled
+                  ? "left-[calc(100%-1.25rem)] bg-obsidian shadow-sm"
+                  : "left-1 bg-muted"
               }`}
             />
-          </span>
+          </div>
         </button>
 
         {error && (
-          <p className="rounded-xl border border-danger/50 bg-surface px-3.5 py-2.5 text-mini text-danger">
+          <div className="rounded-xl border border-rose-500/30 bg-rose-950/40 px-4 py-3 text-xs text-rose-300">
             {error}
-          </p>
+          </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-3">
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
             type="submit"
             disabled={pending || !dirty}
-            className={`${btnCls} border-ember/50 text-ember hover:border-ember`}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-ember px-6 font-display text-xs sm:text-sm font-bold text-obsidian shadow-xs transition-all hover:bg-ember-lo active:scale-[0.98] disabled:opacity-50 cursor-pointer"
           >
-            {pending ? "Lagi nyimpen..." : "Simpan"}
+            {pending ? (
+              <>
+                <span className="size-3.5 rounded-full border-2 border-obsidian/30 border-t-obsidian animate-spin" />
+                <span>Menyimpan...</span>
+              </>
+            ) : (
+              <span>Simpan Pengaturan</span>
+            )}
           </button>
+
           {dirty && !pending && (
-            <span className="text-micro text-muted">Ada perubahan yang belum kesimpen.</span>
+            <span className="text-xs font-semibold text-amber-400">
+              Ada perubahan belum disimpan
+            </span>
           )}
-          {saved && !dirty && <span className="text-micro text-success">Kesimpen.</span>}
+
+          {saved && !dirty && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              <span>Pengaturan Berhasil Disimpan!</span>
+            </span>
+          )}
         </div>
       </form>
     </div>

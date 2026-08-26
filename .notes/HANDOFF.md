@@ -35,12 +35,21 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Demo Video Sync, Auto-Claim on Login & Hero Button Symmetry Polish (§9z.66).
-**Newest work is §9z.66 — Demo Video Sync, Auto-Claim on Login & Hero Button Symmetry Polish: Fixed Landing Hero layout squishing by transforming CTA into a pixel-perfect 2-button symmetrical cluster (`Mulai bikin konten` + `▶ Tonton Demo (+10 Kredit)`). Eliminated duplicate modal header in `DemoVideoModal.tsx` and unified single header in `TutorialVideoPlayer.tsx` labeled 'Demo Malesan'. Fixed credit granting by routing +10 bonus to permanent `paid` bucket and attaching auto-claim listener across OAuth callback (`/auth/callback`) and `/app` SSR session load.** Read §9z.66, then §9z.65.
+Last updated: **2026-08-26**, after Profile, Persona Manager & Smart CTA UI Redesign (§9z.67).
+**Newest work is §9z.67 — Profile, Persona Manager & Smart CTA UI Redesign: Total visual overhaul of `/app/profile`, `PersonaManager.tsx`, `CtaSettings`, and `CopyField.tsx`. Replaced dull flat grey containers with high-end obsidian/ember glassmorphism cards (`rounded-3xl border-white/[0.08] bg-gradient-to-b`). Upgraded empty states, action buttons (`h-10` to `h-11`), live CTA injection simulation mockup bubble with auto-contextual badge, iOS-grade toggle switch, and referral stats grid.** Read §9z.67, then §9z.66.
 
 ---
 
-## §9z.66 — Demo Video Sync, Auto-Claim on Login & Hero Button Symmetry Polish (2026-08-26)
+## §9z.67 — Profile, Persona Manager & Smart CTA UI Redesign (2026-08-26)
+
+**What changed & Why:**
+- Upgraded `src/app/app/profile/page.tsx` with elegant navigation (`← Balik ke Studio`), icon badges, and cohesive visual hierarchy.
+- Completely redesigned `PersonaManager` and `PersonaForm` in `src/components/PersonaManager.tsx` with glowing empty states and ember accent action controls.
+- Transformed `CtaSettings` (Ajakan Penutup) with interactive live content simulation preview bubble, clean URL/label inputs, smooth toggle switch, and persistent save feedback.
+- Upgraded `src/components/CopyField.tsx` with SVG clipboard icons and emerald copied indicator.
+- 100% verified with ESLint (0 warnings/errors), 11 engine invariant tests, penetration scan (5/5), and Turbopack production build.
+
+---
 
 **What changed & Why:**
 - Refined Landing Page Hero CTA in `CompanionHero.tsx` to 2 symmetrical buttons with matching `h-12 sm:h-13` height, eliminating cramped multi-line button wrapping.
