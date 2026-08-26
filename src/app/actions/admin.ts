@@ -97,26 +97,31 @@ export async function setAdminRole(userId: string, makeAdmin: boolean) {
  * first — that path already refuses to strip the last one) and refuses to let
  * an operator delete themselves.
  */
-export async function deleteUser(userId: string) {
-  const adminId = await verifyAdmin();
-  if (userId === adminId) throw new Error("Gak bisa hapus akun lo sendiri.");
+export async function deleteUser(userId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const adminId = await verifyAdmin();
+    if (userId === adminId) return { ok: false, error: "Gak bisa hapus akun lo sendiri." };
 
-  const serviceRole = createServiceRoleClient();
-  const { data: target } = await serviceRole
-    .from("profiles")
-    .select("role, email")
-    .eq("id", userId)
-    .single();
+    const serviceRole = createServiceRoleClient();
+    const { data: target } = await serviceRole
+      .from("profiles")
+      .select("role, email")
+      .eq("id", userId)
+      .single();
 
-  if (!target) throw new Error("User gak ketemu.");
-  if (target.role === "admin") throw new Error("Turunin dari admin dulu sebelum dihapus.");
+    if (!target) return { ok: false, error: "User gak ketemu di database." };
+    if (target.role === "admin") return { ok: false, error: "Turunin dari role admin dulu sebelum dihapus." };
 
-  await audit(adminId, "user.delete", userId, { email: target.email });
+    await audit(adminId, "user.delete", userId, { email: target.email });
 
-  const { error } = await serviceRole.auth.admin.deleteUser(userId);
-  if (error) throw new Error(error.message);
+    const { error } = await serviceRole.auth.admin.deleteUser(userId);
+    if (error) return { ok: false, error: `Gagal menghapus akun: ${error.message}` };
 
-  revalidatePath("/admin/users");
+    revalidatePath("/admin/users");
+    return { ok: true };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "Gagal menghapus user." };
+  }
 }
 
 /**

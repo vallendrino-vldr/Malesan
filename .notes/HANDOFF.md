@@ -35,8 +35,19 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Structured Persona Wizard & Onboarding Welcome Modal (§9z.69).
-**Newest work is §9z.69 — Structured Persona Wizard & Onboarding Welcome Modal: Implemented friendly non-intrusive Welcome Modal in Studio (`OnboardingWelcomeModal.tsx`) for new users suggesting 1-minute profile setup without hard blocking, with localStorage dismissal. Overhauled persona creation in `PersonaManager.tsx` with the identical 3-step structured wizard as Onboarding (1. Konteks Akun & Niche -> 2. Gaya & Karakter -> 3. Detail & Platform), eliminating blank textarea cognitive friction and aligning primary & secondary profile setup flows 100%.** Read §9z.69, then §9z.68.
+Last updated: **2026-08-26**, after User Deletion FK Constraint Fix & Think Skill Integration (§9z.70).
+**Newest work is §9z.70 — User Deletion FK Constraint Fix & Think Skill Integration: Fixed Minified React Error #441 on Admin User Deletion by resolving Postgres Foreign Key constraints on `vouchers.redeemed_by`, `profiles.referred_by`, `topups.reviewed_by`, `audit_log.actor_id` (`ON DELETE SET NULL`), and refactoring `deleteUser` to return structured `{ ok, error }` results. Installed `think` skill globally and merged its architectural discovery and attack vector analysis into mega-skill `mikir`.** Read §9z.70, then §9z.69.
+
+---
+
+## §9z.70 — User Deletion FK Constraint Fix & Think Skill Integration (2026-08-26)
+
+**What changed & Why:**
+- Fixed Admin User Deletion: Database foreign keys on `vouchers.redeemed_by` (and related auditing tables) were previously set to `NO ACTION`, causing `auth.admin.deleteUser` to trigger a Postgres constraint violation 500 error when deleting users who had redeemed vouchers or performed audited actions.
+- Executed SQL schema migration setting `ON DELETE SET NULL` on `vouchers.redeemed_by`, `vouchers.created_by`, `profiles.referred_by`, `topups.reviewed_by`, `audit_log.actor_id`, and `ai_routes.updated_by`.
+- Refactored `deleteUser` in `src/app/actions/admin.ts` and `UserSheet` in `src/app/admin/users/page.tsx` to handle structured result objects and prevent unhandled server action exceptions / React Error #441.
+- Installed `think` skill from `tw93/waza` globally and synthesized its architectural intent discovery, attack vector matrix, and phase independence protocols into `.agents/skills/mikir/SKILL.md`.
+- 100% verified with ESLint (0 errors/warnings), unit tests, penetration audit (5/5), and Next.js Turbopack build.
 
 ---
 

@@ -251,11 +251,16 @@ function UserSheet({
   const [reason, setReason] = useState("");
   const [confirming, setConfirming] = useState<"ban" | "delete" | null>(null);
 
-  const run = async (key: string, fn: () => Promise<void>) => {
+  const run = async (key: string, fn: () => Promise<void | { ok: boolean; error?: string }>) => {
     setBusy(key);
     setError("");
     try {
-      await fn();
+      const res = await fn();
+      if (res && typeof res === "object" && "ok" in res && !res.ok) {
+        setError(res.error || "Gagal memproses aksi.");
+        setBusy("");
+        return;
+      }
       onDone();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Gagal.");
