@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import {
   getTutorialRewardStatus,
   claimTutorialBonusAction,
-  type TutorialRewardStatus,
 } from "@/app/actions/tutorial";
+import type { TutorialRewardStatus } from "@/lib/tutorial";
 import Link from "next/link";
 
 interface TutorialVideoPlayerProps {

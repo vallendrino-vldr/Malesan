@@ -3,21 +3,13 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-
-export type TutorialRewardStatus = {
-  isLoggedIn: boolean;
-  hasClaimed: boolean;
-  userId?: string;
-  totalCredits?: number;
-};
-
-export type ClaimRewardResult =
-  | { success: true; creditsAdded: number; newBalance: number; message: string }
-  | { success: false; alreadyClaimed?: boolean; error: string };
-
-export const TUTORIAL_REASON = "demo_watch_bonus";
-export const TUTORIAL_BONUS_AMOUNT = 10;
-export const PENDING_BONUS_COOKIE = "malesan_pending_demo_bonus";
+import {
+  type TutorialRewardStatus,
+  type ClaimRewardResult,
+  TUTORIAL_REASON,
+  TUTORIAL_BONUS_AMOUNT,
+  PENDING_BONUS_COOKIE,
+} from "@/lib/tutorial";
 
 /**
  * Checks whether the current user has already claimed the 10 credit demo bonus.
