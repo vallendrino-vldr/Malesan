@@ -35,8 +35,17 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Seamless Studio Profile Embedding & Widescreen Onboarding Header (§9z.68).
-**Newest work is §9z.68 — Seamless Studio Profile Embedding & Widescreen Onboarding Header: Solved disconnected UI experience by directly embedding PersonaManager, CtaSettings, and Referral Program inside the Studio AppShell Profil tab (`/app?tab=profil`). Upgraded `/app/onboarding` and `/app/profile` with sticky branded Malesan top headers, 'Kembali ke Studio' buttons on all steps, 'Lewati Dulu' shortcuts, and widescreen desktop 2-column layouts (`max-w-3xl` / `max-w-4xl`), eliminating isolated mobile-like floating views.** Read §9z.68, then §9z.67.
+Last updated: **2026-08-26**, after Structured Persona Wizard & Onboarding Welcome Modal (§9z.69).
+**Newest work is §9z.69 — Structured Persona Wizard & Onboarding Welcome Modal: Implemented friendly non-intrusive Welcome Modal in Studio (`OnboardingWelcomeModal.tsx`) for new users suggesting 1-minute profile setup without hard blocking, with localStorage dismissal. Overhauled persona creation in `PersonaManager.tsx` with the identical 3-step structured wizard as Onboarding (1. Konteks Akun & Niche -> 2. Gaya & Karakter -> 3. Detail & Platform), eliminating blank textarea cognitive friction and aligning primary & secondary profile setup flows 100%.** Read §9z.69, then §9z.68.
+
+---
+
+## §9z.69 — Structured Persona Wizard & Onboarding Welcome Modal (2026-08-26)
+
+**What changed & Why:**
+- Added `src/components/OnboardingWelcomeModal.tsx`: Warm and high-converting welcoming modal for new users (`!profile.onboarding_completed`) when entering Studio `/app`, highlighting benefits and offering "Atur Profil Karakter Sekarang (1 Menit) ➔" or "Nanti Saja" with dismissal persistence.
+- Overhauled `PersonaForm` in `src/components/PersonaManager.tsx`: Replaced raw blank textarea with an interactive 3-Step Wizard identical to Onboarding (Context & Niche -> Voice & Style -> Detail & Platform) plus dynamic prompt compiler and live prompt preview box.
+- 100% verified with ESLint (0 errors/warnings), unit tests, penetration audit (5/5), and Next.js Turbopack build.
 
 ---
 

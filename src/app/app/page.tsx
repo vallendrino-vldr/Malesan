@@ -15,6 +15,7 @@ import { StudioPanel, StudioHeroCard, StudioTile } from "@/components/StudioPane
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
+import { OnboardingWelcomeModal } from "@/components/OnboardingWelcomeModal";
 import { PersonaManager, CtaSettings } from "@/components/PersonaManager";
 import { CopyField } from "@/components/CopyField";
 import { jakartaDayKey } from "@/lib/time";
@@ -290,10 +291,12 @@ export default async function AppPage({
   // All four panels render once; the shell swaps them in the browser with no
   // network at all. This is what removes the multi-second tab delay.
   return (
-    <AppShell
-      {...shellProps}
-      panels={{
-        studio: (
+    <>
+      <OnboardingWelcomeModal show={!isDemoMode && !profile.onboarding_completed} />
+      <AppShell
+        {...shellProps}
+        panels={{
+          studio: (
           <StudioPanel
             initialMod={mod}
             credits={totalCredits}
@@ -705,6 +708,7 @@ export default async function AppPage({
         ),
       }}
     />
+    </>
   );
 }
 
