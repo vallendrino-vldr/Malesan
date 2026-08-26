@@ -45,8 +45,6 @@ const PERSONA_STYLES = [
   "Hype & energik",
 ];
 
-const FREQUENCY = ["Tiap hari", "3-4x seminggu", "Seminggu sekali", "Belum tentu"];
-
 const inputCls =
   "w-full rounded-xl border border-white/[0.1] bg-[#09090b] px-4 py-3 text-sm text-ink placeholder:text-muted/60 transition-all focus:border-ember focus:bg-[#0c0c0e] focus:outline-none focus:ring-2 focus:ring-ember/20 disabled:opacity-60";
 

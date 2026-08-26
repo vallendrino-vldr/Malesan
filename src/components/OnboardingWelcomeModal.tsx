@@ -1,30 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 
-export function OnboardingWelcomeModal({ show }: { show: boolean }) {
-  const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false);
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    setMounted(true);
-    if (show) {
-      // Check if user previously dismissed the welcome prompt
-      const isDismissed = localStorage.getItem("malesan_onboarding_welcome_dismissed") === "1";
-      if (!isDismissed) {
-        setOpen(true);
-      }
-    }
-  }, [show]);
+export function OnboardingWelcomeModal({ show }: { show: boolean }) {
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!isClient || !show || dismissed) return null;
+
+  const isLocallyDismissed =
+    typeof window !== "undefined" &&
+    localStorage.getItem("malesan_onboarding_welcome_dismissed") === "1";
+
+  if (isLocallyDismissed) return null;
 
   const handleDismiss = () => {
-    localStorage.setItem("malesan_onboarding_welcome_dismissed", "1");
-    setOpen(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("malesan_onboarding_welcome_dismissed", "1");
+    }
+    setDismissed(true);
   };
-
-  if (!mounted || !open) return null;
 
   return createPortal(
     <div
@@ -108,7 +112,7 @@ export function OnboardingWelcomeModal({ show }: { show: boolean }) {
         <div className="mt-6 flex flex-col sm:flex-row gap-2.5">
           <Link
             href="/app/onboarding"
-            onClick={() => setOpen(false)}
+            onClick={handleDismiss}
             className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-ember px-5 font-display text-xs sm:text-sm font-bold text-obsidian shadow-md transition-all hover:bg-ember-lo active:scale-[0.98] cursor-pointer"
           >
             <span>Atur Profil Karakter Sekarang ➔</span>
