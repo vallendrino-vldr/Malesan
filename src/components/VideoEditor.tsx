@@ -83,7 +83,6 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
   const [exportStage, setExportStage] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const rafRef = useRef<number | null>(null);
 
   const preset = SOCIAL_PRESETS.find((item) => item.id === presetId) ?? SOCIAL_PRESETS[0];
   const lines = useMemo(
@@ -108,18 +107,6 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
   }, [videoUrl]);
-
-  useEffect(() => {
-    const tick = () => {
-      const v = videoRef.current;
-      if (v && !v.paused) setNow(v.currentTime);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
 
   const onPick = (f: File | null) => {
     if (!f) return;
@@ -224,6 +211,87 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       a.href = url;
       const base = file.name.replace(/\.[^.]+$/, "").slice(0, 40) || "video";
       a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
+    setError(null);
+    setProgress(0);
+    try {
+      setPhase("extracting");
+      setStatus("Ngambil audio dari video...");
+      const { extractAudio } = await import("@/lib/video/ffmpeg");
+      const audio = await extractAudio(file, (r) => setProgress(Math.round(r * 100)));
+
+      setPhase("transcribing");
+      setProgress(0);
+      setStatus("AI lagi denger & nulis tiap kata...");
+      const form = new FormData();
+      form.append("audio", audio, "audio.m4a");
+      // Send the raw duration, not a pre-ceiled one: the server does its own
+      // minute rounding, and ceiling here too billed a 60.04s clip as 2 minutes.
+      form.append("durationSec", String(durationSec));
+      form.append("language", "id");
+
+      const res = await fetch("/api/video/transcribe", { method: "POST", body: form });
+      const data = (await res.json().catch(() => null)) as
+        | { words?: Word[]; error?: string }
+        | null;
+      if (!res.ok || !data?.words?.length) {
+        setError(data?.error ?? "Transkripsi gagal. Coba lagi bentar lagi.");
+        setPhase("idle");
+        return;
+      }
+      setWords(data.words);
+      setPhase("ready");
+      setStatus("");
+      // Credits were just spent server-side; re-pull so the header balance is
+      // current without waiting on the realtime channel (which can lag or miss).
+      router.refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error ? `Gagal ngolah video: ${e.message}` : "Gagal ngolah video.",
+      );
+      setPhase("idle");
+    }
+  }, [file, router]);
+
+  const doExport = useCallback(async () => {
+    if (!file || !words.length) return;
+    const v = videoRef.current;
+    if (v && !v.paused) v.pause();
+    setError(null);
+    setDoneMsg(null);
+    setProgress(0);
+    setExportPct(0);
+    setExportStage("Nyiapin");
+    setPhase("exporting");
+    setStatus("Nge-render caption ke video, jangan tutup tab...");
+    try {
+      if (noWatermark) {
+        const wm = await fetch("/api/video/no-watermark", { method: "POST" });
+        if (!wm.ok) {
+          const d = (await wm.json().catch(() => null)) as { error?: string } | null;
+          setError(d?.error ?? "Gagal motong kredit buat hapus watermark.");
+          setPhase("ready");
+          return;
+        }
+        // Watermark credit just came off — update the header now, not on refresh.
+        router.refresh();
+      }
+      const { blob, ext } = await exportBurnedVideo({
+        file,
+        lines,
+        style,
+        bitrateMbps: bitrate,
+        watermark: !noWatermark,
+        onProgress: (r) => {
+          setProgress(Math.round(r * 100));
+          setExportPct(r * 100);
+        },
+        onStage: setExportStage,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const base = file.name.replace(/\.[^.]+$/, "").slice(0, 40) || "video";
+      a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -240,8 +308,6 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setPhase("ready");
     }
   }, [file, words, lines, style, bitrate, noWatermark, noWatermarkCost, router]);
-
-  const active = activeAt(lines, now);
 
   return (
     <div className="space-y-4">
@@ -264,18 +330,13 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       ) : (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
           <div className="lg:flex-1">
-            <div className="relative mx-auto aspect-[9/16] max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black">
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                controls
-                playsInline
-                onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
-                className="absolute inset-0 h-full w-full object-contain"
-              />
-              {safeZones && <SafeZones />}
-              {active && <CaptionOverlay line={active.line} now={now} style={style} />}
-            </div>
+            <VideoPreviewPlayer
+              videoRef={videoRef}
+              videoUrl={videoUrl}
+              lines={lines}
+              style={style}
+              safeZones={safeZones}
+            />
 
             <label className="mt-3 flex cursor-pointer items-center gap-2 text-mini text-muted">
               <input
@@ -407,6 +468,58 @@ function SafeZones() {
   );
 }
 
+function VideoPreviewPlayer({
+  videoRef,
+  videoUrl,
+  lines,
+  style,
+  safeZones,
+}: {
+  videoRef: React.RefObject<HTMLVideoElement | null>;
+  videoUrl: string;
+  lines: Line[];
+  style: CaptionStyle;
+  safeZones: boolean;
+}) {
+  const [now, setNow] = useState(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const tick = () => {
+      if (!active) return;
+      const v = videoRef.current;
+      if (v && !v.paused) {
+        setNow(v.currentTime);
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      active = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [videoRef]);
+
+  const active = activeAt(lines, now);
+
+  return (
+    <div className="relative mx-auto aspect-[9/16] max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black">
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        controls
+        playsInline
+        onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
+        onSeeked={(e) => setNow(e.currentTarget.currentTime)}
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+      {safeZones && <SafeZones />}
+      {active && <CaptionOverlay line={active.line} now={now} style={style} />}
+    </div>
+  );
+}
+
 /** Preview overlay: same per-word reveal the export burns in — only spoken
  *  words show, the latest one lit. */
 function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: CaptionStyle }) {
@@ -457,24 +570,35 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
 
 function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Word[]) => void }) {
   const text = useMemo(() => words.map((w) => w.word).join(" "), [words]);
+  const [val, setVal] = useState(text);
+
+  useEffect(() => {
+    setVal(text);
+  }, [text]);
+
+  const commit = (newVal: string) => {
+    const tokens = newVal.trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return;
+    onChange(
+      words
+        .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
+        .filter((_, i) => i < tokens.length),
+    );
+  };
+
   return (
     <div className="rounded-xl border border-hairline bg-surface p-3">
       <p className="mb-2 text-mini font-semibold text-ink">Betulin teks (kalau ada typo)</p>
       <textarea
-        defaultValue={text}
-        onBlur={(e) => {
-          const tokens = e.target.value.trim().split(/\s+/).filter(Boolean);
-          onChange(
-            words
-              .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
-              .filter((_, i) => i < tokens.length),
-          );
-        }}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={(e) => commit(e.target.value)}
         rows={5}
+        placeholder="Teks subtitle..."
         className="w-full resize-none rounded-lg border border-hairline bg-obsidian/40 p-2.5 text-sm text-ink outline-none focus:border-ember/50"
       />
       <p className="mt-1.5 text-micro text-muted">
-        Betulin ejaan aja — jangan nambah/ngurangin jumlah kata biar timing-nya gak geser.
+        Betulin ejaan atau lirik — ketuk di luar kotak untuk menerapkan perubahan.
       </p>
     </div>
   );

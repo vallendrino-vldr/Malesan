@@ -65,10 +65,33 @@ const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3-turbo";
  * a bad request and is not retried. If every key is exhausted, the last error
  * is surfaced.
  */
+const HALLUCINATION_PHRASES = [
+  /sub\s*indo\s*by/i,
+  /subtitle\s*(by|oleh)/i,
+  /subbed\s*by/i,
+  /transcribed\s*by/i,
+  /captions?\s*(by|oleh)/i,
+  /diterjemahkan\s*oleh/i,
+  /terjemahan\s*oleh/i,
+  /thanks?\s*for\s*watching/i,
+  /terima\s*kasih\s*(sudah|telah)?\s*menonton/i,
+  /jangan\s*lupa\s*subscribe/i,
+  /like\s*and\s*subscribe/i,
+  /broth3rmax/i,
+  /amara\.org/i,
+  /opensubtitles/i,
+  /insan\s*team/i,
+];
+
+function isHallucinatedWord(word: string): boolean {
+  const clean = word.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return clean === "broth3rmax" || clean === "opensubtitles" || clean === "amaraorg";
+}
+
 async function postWithRotation(
   audio: Blob,
   filename: string,
-  opts?: { language?: string; signal?: AbortSignal },
+  opts?: { language?: string; prompt?: string; signal?: AbortSignal },
 ): Promise<Response> {
   const keys = groqAttempts();
   let last: TranscribeError | null = null;
@@ -79,6 +102,13 @@ async function postWithRotation(
     form.append("model", GROQ_MODEL);
     form.append("response_format", "verbose_json");
     form.append("timestamp_granularities[]", "word");
+    form.append("temperature", "0");
+    // Explicit prompt to avoid Whisper subtitle watermark hallucinations on music/silence
+    form.append(
+      "prompt",
+      opts?.prompt ||
+        "Transkripsi audio percakapan, narasi, vokal, dan ucapan video Bahasa Indonesia secara akurat kata demi kata. Hindari teks watermark subtitle atau ucapan penutup seperti sub indo atau subscribe.",
+    );
     // Indonesian by default — Whisper autodetects when omitted, which is worse
     // for Indonesian specifically.
     if (opts?.language) form.append("language", opts.language);
@@ -122,7 +152,7 @@ async function postWithRotation(
 export async function transcribeAudio(
   audio: Blob,
   filename: string,
-  opts?: { language?: string; signal?: AbortSignal },
+  opts?: { language?: string; prompt?: string; signal?: AbortSignal },
 ): Promise<Transcript> {
   if (!hasGroq()) {
     throw new TranscribeError(
@@ -138,17 +168,24 @@ export async function transcribeAudio(
     text?: string;
     duration?: number;
     words?: { word?: string; start?: number; end?: number }[];
-    segments?: { start?: number; end?: number }[];
+    segments?: { start?: number; end?: number; text?: string }[];
   };
 
-  const words: Word[] = (json.words ?? [])
+  const rawText = (json.text ?? "").trim();
+  const isPureHallucination = HALLUCINATION_PHRASES.some((pat) => pat.test(rawText)) && rawText.split(/\s+/).length <= 7;
+
+  let words: Word[] = (json.words ?? [])
     .filter((w) => typeof w.word === "string" && typeof w.start === "number")
     .map((w) => ({
       word: (w.word as string).trim(),
       start: w.start as number,
       end: typeof w.end === "number" ? w.end : (w.start as number),
     }))
-    .filter((w) => w.word.length > 0);
+    .filter((w) => w.word.length > 0 && !isHallucinatedWord(w.word));
+
+  if (isPureHallucination) {
+    words = [];
+  }
 
   // Prefer the model's reported duration; fall back to the last word or segment
   // so the credit charge always has a real number to work from.
@@ -158,5 +195,7 @@ export async function transcribeAudio(
     : 0;
   const duration = json.duration ?? Math.max(lastWordEnd, lastSegEnd);
 
-  return { text: (json.text ?? "").trim(), duration, words };
+  const cleanedText = isPureHallucination ? "" : rawText;
+
+  return { text: cleanedText, duration, words };
 }
