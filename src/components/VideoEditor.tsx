@@ -498,11 +498,23 @@ function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Wo
   const commit = (newVal: string) => {
     const tokens = newVal.trim().split(/\s+/).filter(Boolean);
     if (!tokens.length) return;
-    onChange(
-      words
-        .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
-        .filter((_, i) => i < tokens.length),
-    );
+    if (tokens.length <= words.length) {
+      onChange(
+        words
+          .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
+          .filter((_, i) => i < tokens.length),
+      );
+    } else {
+      const totalDur = words.length ? words[words.length - 1].end : 5;
+      const durPerTok = totalDur / tokens.length;
+      onChange(
+        tokens.map((tok, i) => ({
+          word: tok,
+          start: i < words.length ? words[i].start : i * durPerTok,
+          end: i < words.length ? words[i].end : (i + 1) * durPerTok,
+        })),
+      );
+    }
   };
 
   return (

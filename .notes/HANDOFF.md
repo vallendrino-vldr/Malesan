@@ -35,8 +35,17 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after PCM WAV Audio Standard, Zero-Tint SafeZones & Hallucination Filter Removal (§9z.85).
-**Newest work is §9z.85 — PCM WAV Audio Standard, Zero-Tint SafeZones & Hallucination Filter Removal: (1) Switched `extractAudio` in `ffmpeg.ts` to 16kHz 16-bit Mono WAV (`audio.wav`) — eliminates unfinalized MP4/AAC container header failures on short clips (<10s). (2) Removed destructive `isPureHallucination` in `transcribe.ts` that wiped out legitimate short creator speech and outro phrases. (3) Removed `bg-danger/10` colored background fill from `SafeZones` in `VideoEditor.tsx` and defaulted `safeZones` to `false` (transparent dashed guidelines only).** Read §9z.85, then §9z.84.
+Last updated: **2026-08-27**, after Removal of Biased Hardcoded Whisper Prompt & Expansion of Transcript Editor (§9z.86).
+**Newest work is §9z.86 — Removal of Biased Hardcoded Whisper Prompt & Expansion of Transcript Editor: (1) Removed the hardcoded creator prompt (`INDONESIAN_CREATOR_PROMPT`) from `transcribe.ts` that caused Whisper to hallucinate content-creator jargon on casual/couple/vlog videos. (2) Upgraded `TranscriptEditor` `commit` in `VideoEditor.tsx` to handle adding new words dynamically with auto-interpolated timestamps.** Read §9z.86, then §9z.85.
+
+---
+
+## §9z.86 — Removal of Biased Hardcoded Whisper Prompt & Expansion of Transcript Editor (2026-08-27)
+
+**What changed & Why:**
+- Unbiased Whisper Transcription: In `transcribe.ts`, removed the hardcoded `INDONESIAN_CREATOR_PROMPT`. Whisper's prompt is an autoregressive conditioning prefix — forcing a creator sentence caused Whisper to mis-transcribe non-creator videos into creator buzzwords. Now transcribes pure acoustic audio directly with `language: "id"`.
+- Flexible Transcript Editor: In `VideoEditor.tsx`, `commit` in `TranscriptEditor` now handles token additions beyond initial word count without dropping words.
+- 100% verified: ESLint 0 warnings/errors, 100% invariant tests, 5/5 penetration audit, Turbopack clean compilation.
 
 ---
 

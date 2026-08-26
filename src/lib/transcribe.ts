@@ -48,9 +48,6 @@ const GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 // Whisper Large V3 is the full 32-layer state-of-the-art model for Indonesian transcription.
 const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3";
 
-const INDONESIAN_CREATOR_PROMPT =
-  "Halo teman-teman, hari ini gue mau sharing tips bikin konten video, script, hook, ide menarik, dan workflow santai buat kalian semua.";
-
 const WATERMARK_WORDS = new Set(["broth3rmax", "opensubtitles", "amaraorg"]);
 
 function isHallucinatedWord(word: string): boolean {
@@ -73,8 +70,8 @@ async function postWithRotation(
     form.append("response_format", "verbose_json");
     form.append("timestamp_granularities[]", "word");
     form.append("temperature", "0");
-    form.append("prompt", opts?.prompt || INDONESIAN_CREATOR_PROMPT);
-    if (opts?.language) form.append("language", opts.language);
+    if (opts?.prompt) form.append("prompt", opts.prompt);
+    form.append("language", opts?.language || "id");
 
     let res: Response;
     try {
