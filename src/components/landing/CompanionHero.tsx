@@ -82,12 +82,12 @@ export function CompanionHero() {
               />
             </div>
 
-            {/* Clean Solid CTA Buttons */}
-            <div className="mt-2 sm:mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            {/* Clean Solid CTA Buttons — Pixel-Perfect 2-Button Cluster */}
+            <div className="mt-4 sm:mt-6 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
               <TransitionButton
                 href="/masuk"
                 variant="primary"
-                className="group"
+                className="group h-12 sm:h-13 px-7 whitespace-nowrap"
               >
                 <span>Mulai bikin konten</span>
                 <svg
@@ -107,18 +107,11 @@ export function CompanionHero() {
               <button
                 type="button"
                 onClick={() => setDemoModalOpen(true)}
-                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-ember/40 bg-ember/10 px-5 py-3.5 font-display text-sm sm:text-base font-semibold text-ember backdrop-blur-md transition-all duration-200 hover:border-ember hover:bg-ember/20 active:scale-[0.99] cursor-pointer"
+                className="group inline-flex h-12 sm:h-13 items-center justify-center gap-2.5 rounded-xl border border-ember/50 bg-surface-raised/80 px-6 font-display text-sm sm:text-base font-semibold text-ember backdrop-blur-md transition-all duration-200 hover:border-ember hover:bg-ember/15 hover:text-ink active:scale-[0.99] cursor-pointer whitespace-nowrap shadow-xs"
               >
                 <span className="flex size-2 rounded-full bg-ember animate-pulse" />
                 <span>▶ Tonton Demo (+10 Kredit)</span>
               </button>
-
-              <a
-                href="#journey"
-                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-surface/60 px-5 py-3.5 font-display text-sm sm:text-base font-semibold text-ink backdrop-blur-md transition-all duration-200 hover:border-ember/40 hover:bg-surface-raised hover:text-ember active:scale-[0.99]"
-              >
-                <span>Lihat alur</span>
-              </a>
             </div>
 
             {/* Demo Video Modal Portal */}

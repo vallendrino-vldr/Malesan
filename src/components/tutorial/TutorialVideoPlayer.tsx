@@ -12,6 +12,7 @@ interface TutorialVideoPlayerProps {
   videoSrc?: string;
   captionsSrc?: string;
   onRewardClaimed?: (newBalance: number) => void;
+  onClose?: () => void;
   className?: string;
   autoPlay?: boolean;
 }
@@ -20,6 +21,7 @@ export function TutorialVideoPlayer({
   videoSrc = "/tutorial/tutorial-demo.mp4",
   captionsSrc,
   onRewardClaimed,
+  onClose,
   className = "",
   autoPlay = false,
 }: TutorialVideoPlayerProps) {
@@ -75,53 +77,8 @@ export function TutorialVideoPlayer({
     }
   }, [isPlaying]);
 
-  // Video Time Update & Anti-Skip tracking
-  const handleTimeUpdate = () => {
-    if (!videoRef.current) return;
-    const curr = videoRef.current.currentTime;
-    const dur = videoRef.current.duration || 1;
-
-    setCurrentTime(curr);
-
-    // Track max reached point without forward leaps
-    if (curr > maxReachedTime) {
-      // If jump is small (continuous playback <= 1.5s delta), update maxReachedTime
-      if (curr - maxReachedTime < 2) {
-        setMaxReachedTime(curr);
-      }
-    }
-
-    // Accumulate real watched seconds
-    setActualWatchSeconds((prev) => prev + 0.25);
-
-    // Check completion (90%+ of video watched)
-    if (!hasCompletedWatch && dur > 5) {
-      if (curr >= dur * 0.90 || maxReachedTime >= dur * 0.90) {
-        setHasCompletedWatch(true);
-      }
-    }
-  };
-
-  // Prevent forward seeking past maxReachedTime
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current || duration <= 0) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const targetTime = (clickX / rect.width) * duration;
-
-    // Allow seeking backwards or up to maxReachedTime + 1s
-    if (targetTime <= maxReachedTime + 1) {
-      videoRef.current.currentTime = targetTime;
-      setCurrentTime(targetTime);
-    } else {
-      // Snap to maxReachedTime and show notification
-      videoRef.current.currentTime = maxReachedTime;
-      setCurrentTime(maxReachedTime);
-    }
-  };
-
   // Claim bonus credits
-  const handleClaimBonus = async () => {
+  const handleClaimBonus = useCallback(async () => {
     if (isClaiming || rewardStatus.hasClaimed || justClaimed) return;
     setIsClaiming(true);
     setClaimError(null);
@@ -129,7 +86,7 @@ export function TutorialVideoPlayer({
     try {
       const result = await claimTutorialBonusAction(
         Math.max(actualWatchSeconds, maxReachedTime),
-        duration || 60,
+        duration || 55,
       );
 
       if (result.success) {
@@ -148,6 +105,60 @@ export function TutorialVideoPlayer({
     } finally {
       setIsClaiming(false);
     }
+  }, [actualWatchSeconds, duration, isClaiming, justClaimed, maxReachedTime, onRewardClaimed, rewardStatus.hasClaimed]);
+
+  // Video Time Update & Anti-Skip tracking
+  const handleTimeUpdate = () => {
+    if (!videoRef.current) return;
+    const curr = videoRef.current.currentTime;
+    const dur = videoRef.current.duration || 1;
+
+    setCurrentTime(curr);
+
+    // Track max reached point without forward leaps
+    if (curr > maxReachedTime) {
+      if (curr - maxReachedTime < 2) {
+        setMaxReachedTime(curr);
+      }
+    }
+
+    // Accumulate real watched seconds
+    setActualWatchSeconds((prev) => prev + 0.25);
+
+    // Check completion (90%+ of video watched)
+    if (!hasCompletedWatch && dur > 5) {
+      if (curr >= dur * 0.90 || maxReachedTime >= dur * 0.90) {
+        setHasCompletedWatch(true);
+
+        // Store pending bonus cookie & local storage so it persists if they log in later
+        try {
+          document.cookie = "malesan_pending_demo_bonus=1; path=/; max-age=86400; SameSite=Lax";
+          localStorage.setItem("malesan_pending_demo_bonus", "1");
+        } catch {}
+
+        // If user is already logged in, auto-claim instantly!
+        if (rewardStatus.isLoggedIn && !rewardStatus.hasClaimed && !justClaimed && !isClaiming) {
+          handleClaimBonus();
+        }
+      }
+    }
+  };
+
+  // Prevent forward seeking past maxReachedTime
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current || duration <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const targetTime = (clickX / rect.width) * duration;
+
+    // Allow seeking backwards or up to maxReachedTime + 1s
+    if (targetTime <= maxReachedTime + 1) {
+      videoRef.current.currentTime = targetTime;
+      setCurrentTime(targetTime);
+    } else {
+      videoRef.current.currentTime = maxReachedTime;
+      setCurrentTime(maxReachedTime);
+    }
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -155,29 +166,45 @@ export function TutorialVideoPlayer({
 
   return (
     <div className={`relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.12] bg-[#0c0c0e] shadow-xl ${className}`}>
-      {/* Top Incentive Status Bar */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] bg-surface-raised/80 px-4 py-2.5 backdrop-blur-md">
-        <div className="flex items-center gap-2">
+      {/* Single Unified Header */}
+      <div className="flex items-center justify-between border-b border-white/[0.08] bg-surface-raised/90 px-4 py-3 backdrop-blur-md">
+        <div className="flex items-center gap-2.5">
           <span className="flex size-2 rounded-full bg-ember animate-pulse" />
-          <span className="font-display text-xs font-semibold text-ink">
-            Video Tutorial Malesan
+          <span className="font-display text-xs sm:text-sm font-bold text-ink">
+            Demo Malesan
           </span>
         </div>
 
-        {/* Reward Status Chip */}
-        {rewardStatus.hasClaimed || justClaimed ? (
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-micro font-bold text-emerald-400">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-            +10 Kredit Sudah Diklaim
-          </div>
-        ) : (
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
-            <span>🎁</span>
-            <span>Tonton Selesai: +10 Kredit Gratis</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Reward Status Chip */}
+          {rewardStatus.hasClaimed || justClaimed ? (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-micro font-bold text-emerald-400">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              +10 Kredit Sudah Masuk
+            </div>
+          ) : (
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
+              <span>🎁</span>
+              <span>Tonton Selesai: +10 Kredit Gratis</span>
+            </div>
+          )}
+
+          {/* Close button if inside modal */}
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex size-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/10 hover:text-ink cursor-pointer"
+              aria-label="Tutup"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Video Viewport Container */}
@@ -291,7 +318,7 @@ export function TutorialVideoPlayer({
               </span>
             </div>
 
-            {/* Anti-Skip Badge */}
+            {/* Watch Progress Badge */}
             <span className="font-display text-[10px] text-white/60">
               {hasCompletedWatch ? "100% Selesai" : `Progress: ${Math.round(maxReachedPercent)}%`}
             </span>
@@ -305,14 +332,16 @@ export function TutorialVideoPlayer({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
             <div className="flex items-center gap-3">
               <span className="flex size-10 items-center justify-center rounded-xl bg-ember text-xl text-obsidian shadow-sm">
-                🎉
+                🎁
               </span>
               <div>
                 <h4 className="font-display text-sm font-bold text-ink">
-                  Keren! Video Tutorial Selesai Ditonton
+                  Keren! Lo udah tonton Demo Malesan sampai habis
                 </h4>
                 <p className="text-xs text-muted">
-                  Klaim hadiah 10 kredit gratis lo sekarang untuk mulai bikin konten!
+                  {rewardStatus.isLoggedIn
+                    ? "Bonus 10 kredit lo siap dimasukkan ke saldo akun."
+                    : "10 Kredit Bonus lo siap masuk. Masuk untuk langsung mulai bikin konten!"}
                 </p>
               </div>
             </div>
@@ -332,13 +361,13 @@ export function TutorialVideoPlayer({
                 ) : (
                   <>
                     <span>🎁</span>
-                    <span>Klaim +10 Kredit</span>
+                    <span>Klaim +10 Kredit Sekarang</span>
                   </>
                 )}
               </button>
             ) : (
               <Link
-                href="/masuk"
+                href="/masuk?next=/app"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-ember px-5 py-2.5 font-display text-xs font-bold text-obsidian shadow-xs transition-all hover:bg-ember-lo active:scale-[0.98] cursor-pointer"
               >
                 <span>Masuk & Ambil 10 Kredit ➔</span>
@@ -358,7 +387,7 @@ export function TutorialVideoPlayer({
       {justClaimed && (
         <div className="border-t border-emerald-500/30 bg-emerald-950/40 p-4 text-center">
           <p className="font-display text-xs font-bold text-emerald-400">
-            {claimMessage || "🎉 Selamat! 10 Kredit Gratis berhasil masuk ke saldo akun lo!"}
+            {claimMessage || "🎉 Selamat! +10 Kredit Bonus berhasil masuk ke saldo akun lo!"}
           </p>
         </div>
       )}

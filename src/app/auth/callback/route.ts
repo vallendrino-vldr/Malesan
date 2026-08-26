@@ -61,7 +61,20 @@ export async function GET(request: NextRequest) {
         .eq("id", sessionData.user.id)
         .is("referred_by", null);
     }
+  // If user previously completed the demo video before logging in, auto-grant the +10 bonus
+  const hasPendingBonus = request.cookies.get("malesan_pending_demo_bonus")?.value === "1";
+  if (hasPendingBonus && sessionData.user) {
+    try {
+      const { grantDemoBonusToUser } = await import("@/app/actions/tutorial");
+      await grantDemoBonusToUser(sessionData.user.id);
+    } catch (e) {
+      console.error("auto-grant demo bonus on auth callback failed:", e);
+    }
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  const response = NextResponse.redirect(`${origin}${next}`);
+  if (hasPendingBonus) {
+    response.cookies.delete("malesan_pending_demo_bonus");
+  }
+  return response;
 }

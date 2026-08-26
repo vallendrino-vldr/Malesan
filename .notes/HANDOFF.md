@@ -35,12 +35,21 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Demo Video Integration & +10 Credit Anti-Cheat Reward System (§9z.65).
-**Newest work is §9z.65 — Demo Video Integration & +10 Credit Anti-Cheat Reward System: Integrated the 18.2MB compressed demo video (`public/tutorial/tutorial-demo.mp4`). Built `TutorialVideoPlayer.tsx` with anti-cheat / anti-skip playback tracking (`actualWatchSeconds >= duration * 0.9`). Created Server Action `claimTutorialBonusAction()` with idempotent database ledger checking (`reason = 'tutorial_watch_bonus'`) granting +10 free credits. Added `DemoVideoModal.tsx` on the Landing Page and integrated into Studio `TutorialSheet.tsx`.** Read §9z.65, then §9z.64.
+Last updated: **2026-08-26**, after Demo Video Sync, Auto-Claim on Login & Hero Button Symmetry Polish (§9z.66).
+**Newest work is §9z.66 — Demo Video Sync, Auto-Claim on Login & Hero Button Symmetry Polish: Fixed Landing Hero layout squishing by transforming CTA into a pixel-perfect 2-button symmetrical cluster (`Mulai bikin konten` + `▶ Tonton Demo (+10 Kredit)`). Eliminated duplicate modal header in `DemoVideoModal.tsx` and unified single header in `TutorialVideoPlayer.tsx` labeled 'Demo Malesan'. Fixed credit granting by routing +10 bonus to permanent `paid` bucket and attaching auto-claim listener across OAuth callback (`/auth/callback`) and `/app` SSR session load.** Read §9z.66, then §9z.65.
 
 ---
 
-## §9z.65 — Demo Video Integration & +10 Credit Anti-Cheat Reward System (2026-08-26)
+## §9z.66 — Demo Video Sync, Auto-Claim on Login & Hero Button Symmetry Polish (2026-08-26)
+
+**What changed & Why:**
+- Refined Landing Page Hero CTA in `CompanionHero.tsx` to 2 symmetrical buttons with matching `h-12 sm:h-13` height, eliminating cramped multi-line button wrapping.
+- Eliminated redundant double header in `DemoVideoModal.tsx` and renamed all labels to "Demo Malesan".
+- Upgraded `src/app/actions/tutorial.ts` to grant +10 bonus credits into the `paid` bucket so daily refill never wipes it out.
+- Implemented `malesan_pending_demo_bonus` cookie & localStorage auto-claim flow in `src/app/auth/callback/route.ts` and `src/app/app/page.tsx` so users who watch before logging in automatically receive +10 credits upon login.
+- 100% passing tests, lint, security scan, and Turbopack build.
+
+---
 
 **What changed & Why:**
 - Copied 18.2MB H.264 video to `public/tutorial/tutorial-demo.mp4`.

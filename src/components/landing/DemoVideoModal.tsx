@@ -42,32 +42,13 @@ export function DemoVideoModal({
         onClick={onClose}
       />
 
-      {/* Modal Dialog Container */}
+      {/* Modal Dialog Container with Unified Header */}
       <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-3xl border border-white/[0.15] bg-[#0c0c0e] shadow-2xl animate-scaleUp">
-        {/* Header with Title and Close Button */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-3.5 bg-surface/50">
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-2 rounded-full bg-ember animate-pulse" />
-            <h3 className="font-display text-sm font-bold text-ink">
-              Demo Praktis Malesan (Full HD)
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/10 hover:text-ink cursor-pointer"
-            aria-label="Tutup"
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Video Player */}
-        <div className="p-3 sm:p-4">
-          <TutorialVideoPlayer videoSrc="/tutorial/tutorial-demo.mp4" autoPlay={true} />
-        </div>
+        <TutorialVideoPlayer
+          videoSrc="/tutorial/tutorial-demo.mp4"
+          autoPlay={true}
+          onClose={onClose}
+        />
       </div>
     </div>,
     document.body,

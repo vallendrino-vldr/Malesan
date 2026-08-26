@@ -99,6 +99,18 @@ export default async function AppPage({
   const cookieStore = await cookies();
   const isDemoMode = cookieStore.get("malesan_demo_mode")?.value === "1";
   const isAdmin = isDemoMode ? false : profile.role === "admin";
+
+  // Check if user came from watching the demo video on landing page
+  const hasPendingBonus = cookieStore.get("malesan_pending_demo_bonus")?.value === "1";
+  if (hasPendingBonus) {
+    try {
+      const { grantDemoBonusToUser } = await import("@/app/actions/tutorial");
+      const bonusRes = await grantDemoBonusToUser(user.id);
+      if (bonusRes.success) {
+        totalCredits += bonusRes.creditsAdded;
+      }
+    } catch {}
+  }
   const [refillResult, pipelineResult, costs, waitingTopups, monthlyGens] = await Promise.all([
     // Supabase's builder is a PromiseLike, not a Promise, so it has no
     // `.catch` — wrap it before attaching one. Never block the app on a
