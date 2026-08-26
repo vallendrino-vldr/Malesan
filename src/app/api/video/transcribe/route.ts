@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { spendCredits } from "@/lib/credits";
 import { getVideoCostPerMin, isVideoEnabled } from "@/lib/config";
 import { transcribeAudio, TranscribeError } from "@/lib/transcribe";
+import { refineTranscriptWithAI } from "@/lib/video/refine-transcript";
 import { aiRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -130,6 +131,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Refine misheard phonetics & colloquial speech using Indonesian contextual AI
+  let finalWords = transcript.words;
+  let finalText = transcript.text;
+  if (language === "id" && finalWords.length > 0) {
+    const refined = await refineTranscriptWithAI(finalWords, finalText);
+    finalWords = refined.words;
+    finalText = refined.text;
+  }
+
   // The real charge, on the model's own duration.
   const minutes = billedMinutes(transcript.duration);
   const cost = minutes * perMin;
@@ -143,9 +153,9 @@ export async function POST(request: NextRequest) {
 
   return json(
     {
-      text: transcript.text,
+      text: finalText,
       duration: transcript.duration,
-      words: transcript.words,
+      words: finalWords,
       creditsSpent: cost,
     },
     200,
