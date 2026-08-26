@@ -35,8 +35,17 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after 1-Screen Zero-Scroll Studio & Canvas Spacing Fix (§9z.73).
-**Newest work is §9z.73 — 1-Screen Zero-Scroll Studio & Canvas Spacing Fix: Fixed typography collision on canvas between title and category pill badge by enforcing mathematical `textBaseline: "top"` with explicit gap offsets. Streamlined Studio UI into a zero-scroll single-viewport workbench on desktop: compact top action bar, 4 dedicated tabs (Teks Slide, Tema & Rasio, Branding, AI Generator), constrained canvas preview (max-h: 380px), and compact filmstrip rail (h: 68px) that sits comfortably above the viewport fold without vertical scrollbars.** Read §9z.73, then §9z.72.
+Last updated: **2026-08-26**, after Free Studio Usage & Zero-Letterbox Aspect Ratio Polish (§9z.74).
+**Newest work is §9z.74 — Free Studio Usage & Zero-Letterbox Aspect Ratio Polish: Aligned dashboard and studio header badge to "Gratis" (editing slides, switching themes, custom fonts, PNG download are 100% free; credit cost only applies when running 1-Click AI Auto-Gen). Eliminated black letterbox bars on desktop preview card by replacing generic fixed-width/height wrapper with dynamic aspect-ratio container (`aspect-[4/5]`, `aspect-square`, `aspect-[9/16]`) so canvas seamlessly fills border edge with zero background gaps.** Read §9z.74, then §9z.73.
+
+---
+
+## §9z.74 — Free Studio Usage & Zero-Letterbox Aspect Ratio Polish (2026-08-26)
+
+**What changed & Why:**
+- Studio Pricing Consistency: Aligned Studio Header badge with Dashboard (`Gratis` badge). Manual editing, layout toggling, theme switching, and HD PNG exporting are completely FREE. Only the 1-Click AI Auto-Gen tab charges `{cost} Kredit` with explicit label on the generate button.
+- Eliminated Black Pillarbox/Letterbox Bars on Canvas: Replaced the fixed `bg-black max-w-[320px] max-h-[380px]` container with exact aspect ratio classes (`aspect-[4/5]`, `aspect-square`, `aspect-[9/16]`), allowing the canvas card to hug the card borders with zero black side bars.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 

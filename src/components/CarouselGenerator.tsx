@@ -1070,8 +1070,8 @@ export function CarouselGenerator({
               <h1 className="font-display text-sm sm:text-base font-bold text-ink leading-none">
                 AI Carousel &amp; Slide Studio
               </h1>
-              <span className="rounded-full bg-ember/15 px-2 py-0.5 text-[10px] font-bold text-ember border border-ember/30">
-                {cost} Kredit
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                Gratis
               </span>
               {typeof credits === "number" && (
                 <span className="hidden sm:inline text-micro text-muted font-mono">
@@ -1545,7 +1545,7 @@ export function CarouselGenerator({
                   {isGenerating ? (
                     <span>{generationProgress || "Memproses..."}</span>
                   ) : (
-                    <span>Bikin Otomatis ➔</span>
+                    <span>Bikin Otomatis ({cost} Kredit) ➔</span>
                   )}
                 </button>
               </div>
@@ -1559,18 +1559,26 @@ export function CarouselGenerator({
             mobileView === "editor" ? "hidden lg:flex" : "flex"
           }`}
         >
-          {/* Main Canvas Card Display (Adaptive compact size for 1-screen viewport) */}
+          {/* Main Canvas Card Display (Zero letterboxing black bars) */}
           <div className="w-full flex flex-col items-center">
-            <div className="relative w-full max-w-[280px] sm:max-w-[320px] max-h-[380px] rounded-2xl border border-white/[0.15] overflow-hidden shadow-xl bg-black transition-all flex items-center justify-center">
+            <div
+              className={`relative rounded-2xl border border-white/[0.18] overflow-hidden shadow-2xl transition-all flex items-center justify-center ${
+                ratio === "1:1"
+                  ? "w-[270px] sm:w-[290px] aspect-square"
+                  : ratio === "9:16"
+                  ? "w-[190px] sm:w-[210px] aspect-[9/16]"
+                  : "w-[245px] sm:w-[275px] aspect-[4/5]"
+              }`}
+            >
               <canvas
                 ref={canvasRef}
-                className="w-full h-auto max-h-[380px] object-contain block"
+                className="w-full h-full block"
               />
             </div>
           </div>
 
           {/* Slide Navigator & Action Controls */}
-          <div className="w-full max-w-[320px] flex items-center justify-between gap-1.5">
+          <div className="w-full max-w-[275px] sm:max-w-[290px] flex items-center justify-between gap-1.5">
             <button
               type="button"
               disabled={currentIdx === 0}
@@ -1617,7 +1625,7 @@ export function CarouselGenerator({
           </div>
 
           {/* ULTRA-COMPACT FILMSTRIP RAIL */}
-          <div className="w-full max-w-[320px] rounded-xl border border-hairline bg-surface p-2 space-y-1 shadow-xs">
+          <div className="w-full max-w-[275px] sm:max-w-[290px] rounded-xl border border-hairline bg-surface p-2 space-y-1 shadow-xs">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted">
               <span>Alur Urutan Slide</span>
               <span>{slides.length} Kartu</span>
