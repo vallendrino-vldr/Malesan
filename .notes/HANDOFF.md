@@ -35,8 +35,23 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Mascot Speech Layer Overflow Isolation Fix (§9z.77).
-**Newest work is §9z.77 — Mascot Speech Layer Overflow Isolation Fix: Unclamped popup dialogue layer by moving `overflow-hidden` from the parent `<section>` card to an isolated inner glow container (`absolute inset-0 overflow-hidden rounded-3xl`). Elevated speech bubble with `z-50`, backdrop blur, and 0% card clipping so dialogue popups float seamlessly across layers without cutting off any letters.** Read §9z.77, then §9z.76.
+Last updated: **2026-08-26**, after Full Codebase Audit & Dead Code/Asset Cleanup (§9z.78).
+**Newest work is §9z.78 — Full Codebase Audit & Dead Code/Asset Cleanup: Executed full repository audit. Cleaned up ~3.5MB of dead screenshots (`public/tutorial_flow_1080p/`), stray tool folders (`src/graphify-out/`, `scripts/__pycache__/`), 4 superseded legacy components (`FirstTimeGuide.tsx`, `GeminiPoolPanel.tsx`, `NavTile.tsx`, `ThemeToggle.tsx`), and 6 unused early-iteration landing components (`CapabilitiesSection.tsx`, `ComparisonSection.tsx`, `CreatorTestimonials.tsx`, `ProductMagic.tsx`, `ProductStory.tsx`, `StorySection.tsx`).** Read §9z.78, then §9z.77.
+
+---
+
+## §9z.78 — Full Codebase Audit & Dead Code/Asset Cleanup (2026-08-26)
+
+**What changed & Why:**
+- Eliminated 3.5MB of dead screenshots: Deleted `public/tutorial_flow_1080p/` containing 8 unreferenced images from early documentation.
+- Removed Stray Directories: Deleted `src/graphify-out/` and `scripts/__pycache__/`.
+- Removed 10 Dead/Superseded Components:
+  - `src/components/FirstTimeGuide.tsx` (superseded by `OnboardingWelcomeModal.tsx` & `TutorialSheet.tsx`)
+  - `src/components/GeminiPoolPanel.tsx` (superseded by `ProviderManager.tsx`)
+  - `src/components/NavTile.tsx` (superseded by `StudioPanel.tsx` & `StudioModuleCard.tsx`)
+  - `src/components/ThemeToggle.tsx` (redundant null-export)
+  - `src/components/landing/` old sections: `CapabilitiesSection.tsx`, `ComparisonSection.tsx`, `CreatorTestimonials.tsx`, `ProductMagic.tsx`, `ProductStory.tsx`, `StorySection.tsx`
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 
