@@ -35,19 +35,29 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Seamless Tester Mode & Centered 5-Click Logo Easter Egg (§9z.62).
-**Newest work is §9z.62 — Seamless Tester Mode & Centered 5-Click Logo Easter Egg: Refined secret 5-click logo trigger on Landing Page to pop up a dead-center modal asking for password `vadlyvldr`. Upon verification, it activates `malesan_test_mode=1` while keeping the user on the Landing Page. When the user records clicking 'Mulai Gratis' / 'Masuk' -> `/masuk` -> 'Lanjutkan dengan Google', the Google sign-in button automatically intercepts the click to authenticate seamlessly into `/app` Studio as a clean creator session with zero Google OAuth popups and masks the ADMIN badge during Demo Mode.** Read §9z.62, then §9z.61.
+Last updated: **2026-08-26**, after Value Strip Mobile Alignment & Copy Polish (§9z.63).
+**Newest work is §9z.63 — Value Strip Mobile Alignment & Copy Polish: Refined the 'NYAMBUNG - UPDATE - PRAKTIS' trust strip in `src/app/app/page.tsx`. Replaced cramped unaligned text with a pixel-perfect 3-column divided rail layout (`divide-x divide-hairline/60` with `text-balance` font scaling) that ensures 100% symmetric vertical baselines on 360px-430px mobile screens. Updated copy from 'siap pos' to 'siap pake' for product accuracy.** Read §9z.63, then §9z.62.
 
 ---
 
-## §9z.62 — Seamless Tester Mode & Centered 5-Click Logo Easter Egg (2026-08-26)
+## §9z.63 — Value Strip Mobile Alignment & Copy Polish (2026-08-26)
 
 **What changed & Why:**
-- Implemented dead-center modal `src/components/DemoBypassModal.tsx` triggered by 5 rapid clicks on the Malesan logo on the landing page or anywhere in the app.
-- Entering password `vadlyvldr` arms Tester Mode (`malesan_test_mode=1`) and closes smoothly so the creator can start recording from the Landing Page.
-- In `src/components/GoogleSignInButton.tsx`: When `malesan_test_mode=1` is active, clicking "Lanjutkan dengan Google" executes the server-side bypass via `POST /api/auth/demo-bypass` and redirects directly to `/app` without showing any Google OAuth account picker / email popups on camera.
-- In `src/app/app/page.tsx`: `isAdmin` is masked when in demo/tester mode to present a clean creator interface for tutorial recordings.
-- Tested end-to-end, 100% passing tests and Next.js Turbopack build.
+- Refined the 3-column trust banner below the tools grid in `src/app/app/page.tsx`.
+- Changed copy on item 3 from *"Langsung jadi konten siap pos"* to *"Langsung jadi konten siap pake"*.
+- Replaced unstyled 3-column container with a balanced obsidian card (`bg-surface/60 backdrop-blur-xs border border-hairline/70`) with vertical divider rails (`divide-x divide-hairline/60`), equalized padding, and centered flex baselines so items on mobile screens (360px+) do not wrap unevenly or look misaligned.
+- Verified on mobile viewport (360px & 390px) and passed all verification tests (0 ESLint errors, 11 invariants, 5/5 penetration tests, clean build).
+
+---
+
+**What changed & Why:**
+- UI layout is 100% original (no header tabs, bottom tab bar unchanged).
+- Mode Tester is purely a seamless behavioral bypass for clean video recordings:
+  - 5-click logo easter egg opens a dead-center React Portal modal anywhere on `malesan.my.id`.
+  - Password `vadlyvldr` arms test mode while keeping the user on the Landing Page.
+  - Clicking "Mulai Gratis" -> `/masuk` -> "Lanjutkan dengan Google" logs into `/app` Studio instantly with 0 Google popups and masks personal name to 'Kreator' / avatar 'K'.
+  - **Deactivation**: Clicking logo 5x again presents **"🔴 Nonaktifkan Mode Tester"**, which clears cookies and reloads back to normal mode.
+- Deployed live and verified on production `https://www.malesan.my.id/`.
 
 ---
 

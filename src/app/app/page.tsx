@@ -455,18 +455,24 @@ export default async function AppPage({
           </section>
 
           {/* LEVEL 3: VALUE STRIP */}
-          <ul className="grid grid-cols-3 gap-2 rounded-2xl border border-hairline bg-surface/50 p-3 shadow-xs">
-            {[
-              { k: "Nyambung", v: "Ngikutin gaya persona lo" },
-              { k: "Update", v: "Tau tren creator hari ini" },
-              { k: "Praktis", v: "Langsung jadi konten siap pos" },
-            ].map((x) => (
-              <li key={x.k} className="min-w-0 text-center">
-                <p className="eyebrow text-ember font-bold">{x.k}</p>
-                <p className="mt-0.5 text-micro leading-snug text-muted">{x.v}</p>
-              </li>
-            ))}
-          </ul>
+          <div className="rounded-2xl border border-hairline/70 bg-surface/60 backdrop-blur-xs p-3.5 sm:p-4 shadow-xs">
+            <ul className="grid grid-cols-3 divide-x divide-hairline/60">
+              {[
+                { k: "NYAMBUNG", v: "Ngikutin gaya persona lo" },
+                { k: "UPDATE", v: "Tau tren kreator hari ini" },
+                { k: "PRAKTIS", v: "Langsung jadi konten siap pake" },
+              ].map((x) => (
+                <li key={x.k} className="flex flex-col items-center justify-center text-center px-1.5 sm:px-3 min-w-0 first:pl-0 last:pr-0">
+                  <p className="eyebrow text-ember font-bold tracking-wider text-[10px] sm:text-xs">
+                    {x.k}
+                  </p>
+                  <p className="mt-1 text-[11px] sm:text-xs leading-snug text-muted font-medium break-words text-balance">
+                    {x.v}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
           </div>
         </div>
             }
