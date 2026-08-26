@@ -127,6 +127,11 @@ export function DraftEditor({
     }
     stored.current = next;
     setState("saved");
+    try {
+      localStorage.removeItem(`malesan:draft-backup:${draft.id}`);
+    } catch {
+      // ignore
+    }
     onSaved?.({ ...next, updated_at: data.updated_at });
   };
 
@@ -136,6 +141,41 @@ export function DraftEditor({
   useEffect(() => {
     saveRef.current = save;
   });
+
+  // LocalStorage Crash & Offline Resilience
+  useEffect(() => {
+    try {
+      const backupKey = `malesan:draft-backup:${draft.id}`;
+      const savedRaw = localStorage.getItem(backupKey);
+      if (savedRaw) {
+        const parsed = JSON.parse(savedRaw);
+        if (parsed && parsed.updatedAt && new Date(parsed.updatedAt).getTime() > new Date(draft.updated_at).getTime()) {
+          if (parsed.content && parsed.content !== draft.content) {
+            setContent(parsed.content);
+            latest.current.content = parsed.content;
+          }
+          if (parsed.title && parsed.title !== draft.title) {
+            setTitle(parsed.title);
+            latest.current.title = parsed.title;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, [draft.id, draft.updated_at, draft.title, draft.content]);
+
+  // Keyboard shortcut: Cmd+S / Ctrl+S to save immediately
+  useEffect(() => {
+    const handleGlobalSave = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        void saveRef.current();
+      }
+    };
+    window.addEventListener("keydown", handleGlobalSave);
+    return () => window.removeEventListener("keydown", handleGlobalSave);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -153,6 +193,18 @@ export function DraftEditor({
     if (patch.title !== undefined) setTitle(patch.title);
     if (patch.content !== undefined) setContent(patch.content);
     setState("dirty");
+    try {
+      localStorage.setItem(
+        `malesan:draft-backup:${draft.id}`,
+        JSON.stringify({
+          title: latest.current.title,
+          content: latest.current.content,
+          updatedAt: new Date().toISOString(),
+        })
+      );
+    } catch {
+      // ignore
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => void saveRef.current(), AUTOSAVE_MS);
   };

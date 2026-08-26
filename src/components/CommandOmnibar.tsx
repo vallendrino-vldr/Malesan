@@ -52,6 +52,7 @@ export function CommandOmnibar({
         ),
         onSelect: () => {
           onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "ide" }));
           onClose();
         },
       },
@@ -69,6 +70,7 @@ export function CommandOmnibar({
         ),
         onSelect: () => {
           onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "script" }));
           onClose();
         },
       },
@@ -85,6 +87,25 @@ export function CommandOmnibar({
         ),
         onSelect: () => {
           onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "hook" }));
+          onClose();
+        },
+      },
+      {
+        id: "studio-carousel",
+        title: "Carousel & Slide Studio (HD Generator)",
+        category: "Studio",
+        subtitle: "Bikin slide carousel estetik Instagram & LinkedIn",
+        badge: "Gratis Edit",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M7 3v18M17 3v18" />
+          </svg>
+        ),
+        onSelect: () => {
+          onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "carousel" }));
           onClose();
         },
       },
@@ -102,6 +123,43 @@ export function CommandOmnibar({
         ),
         onSelect: () => {
           onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "video" }));
+          onClose();
+        },
+      },
+      {
+        id: "studio-clip-engine",
+        title: "Mesin Klip Video (Clip Engine)",
+        category: "Studio",
+        subtitle: "Bikin rancangan scene-by-scene clip cepat",
+        badge: "4 Kredit",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
+            <polygon points="5 3 19 12 5 21 5 3" />
+          </svg>
+        ),
+        onSelect: () => {
+          onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "clip" }));
+          onClose();
+        },
+      },
+      {
+        id: "studio-affiliate",
+        title: "Affiliate & Review Engine",
+        category: "Studio",
+        subtitle: "Hook dan naskah jualan soft-selling berkonversi",
+        badge: "3 Kredit",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
+            <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+            <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4" />
+          </svg>
+        ),
+        onSelect: () => {
+          onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "affiliate" }));
           onClose();
         },
       },
@@ -120,6 +178,7 @@ export function CommandOmnibar({
         ),
         onSelect: () => {
           onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "repurpose" }));
           onClose();
         },
       },
@@ -139,6 +198,7 @@ export function CommandOmnibar({
         ),
         onSelect: () => {
           onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "thread" }));
           onClose();
         },
       },

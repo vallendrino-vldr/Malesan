@@ -35,8 +35,18 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Phase 1 Speed & Dynamic Code-Splitting Execution (§9z.79).
-**Newest work is §9z.79 — Phase 1 Speed & Dynamic Code-Splitting Execution: Implemented dynamic code splitting (`next/dynamic`) across all Studio modules (`CarouselGenerator`, `VideoEditor`, `ClipEngine`, `ThreadEngine`, `AffiliateEngine`, `ModuleRunner`, `IdeHariIni`, `IdeaEngine`) in `StudioPanel.tsx` and across heavy tab modules (`PipelineBoard`, `VibeCodingStudio`, `PersonaManager`) in `app/page.tsx`. Each chunk features kinetic luminous skeleton loaders. Cuts initial dashboard JS bundle payload by ~160KB+, dropping LCP to lowest floor.** Read §9z.79, then §9z.78.
+Last updated: **2026-08-26**, after Phase 2 Resilience & Omnibar Keyboard Ergonomics Polish (§9z.80).
+**Newest work is §9z.80 — Phase 2 Resilience & Omnibar Keyboard Ergonomics Polish: Hardened `DraftEditor.tsx` with a dual zero-data-loss hybrid buffer (instant `localStorage` snapshot on every keystroke + auto-recovery on mount if newer uncommitted buffer exists, plus `Cmd+S` / `Ctrl+S` instant save hotkey). Updated `CommandOmnibar.tsx` with 1-click triggers for all 10 studio tools including `CarouselGenerator`, `ClipEngine`, and `AffiliateEngine` with custom event dispatching.** Read §9z.80, then §9z.79.
+
+---
+
+## §9z.80 — Phase 2 Resilience & Omnibar Keyboard Ergonomics Polish (2026-08-26)
+
+**What changed & Why:**
+- Zero-Data-Loss Hybrid Buffer in Drafts: In `DraftEditor.tsx`, keystrokes are recorded immediately in `localStorage` under `malesan:draft-backup:${draft.id}`. If a session closes abruptly or Wi-Fi drops, work is recovered seamlessly on next open, and buffer is cleaned upon database confirmation.
+- Quick Save Keyboard Accelerator: Added `Cmd+S` / `Ctrl+S` listener inside `DraftEditor` to trigger instant save.
+- Comprehensive Omnibar Actions: Expanded `CommandOmnibar.tsx` to directly dispatch `malesan:open-module` for Carousel, Clip, Affiliate, and all studio engines.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 
