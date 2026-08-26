@@ -290,3 +290,92 @@ Format JSON Wajib:
 }`;
 }
 
+export const CAROUSEL_ENGINE_SCHEMA = {
+  type: "object",
+  properties: {
+    topic_title: { type: "string" },
+    slides: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          type: { type: "string" }, // "cover" | "point" | "stat" | "cta"
+          badge: { type: "string" },
+          title: { type: "string" },
+          body: { type: "string" },
+          stat_number: { type: "string" },
+          stat_label: { type: "string" },
+          footer: { type: "string" },
+        },
+        required: ["type", "badge", "title", "body", "footer"],
+      },
+    },
+    caption: { type: "string" },
+    hashtags: { type: "array", items: { type: "string" } },
+  },
+  required: ["topic_title", "slides", "caption", "hashtags"],
+};
+
+/**
+ * AI Carousel & Slide Deck Generator Engine.
+ */
+export function buildCarouselEnginePrompt(
+  topic: string,
+  slideCount: number,
+  platform: string,
+  dna: CreatorDna | null,
+  trends: TrendCard[],
+  learned?: LearnedNote[],
+  extras?: PromptExtras,
+): string {
+  const shared = buildEngineContext(dna, trends, learned, extras);
+  const count = Math.min(Math.max(slideCount || 5, 4), 7);
+
+  return `${shared}
+Tugas lo adalah merancang 1 SET KONTEN CAROUSEL / SLIDE CARD VISUAL yang sangat mewah, tajam, bernilai tinggi, dan viral untuk Instagram & LinkedIn (${count} slide).
+
+TOPIK / DRAFT / IDE KONTEN:
+"${topic}"
+TARGET JUMLAH SLIDE: ${count} Slide
+PLATFORM UTAMA: ${platform || "Instagram & LinkedIn"}
+
+STRUKTUR ANATOMI CAROUSEL FLAGSHIP:
+1. SLIDE 1 (COVER HOOK - 'cover'):
+   - Badge: Label kategori / Niche (misal: "STRATEGI KONTEN", "FRAMEWORK 10X", "BEDAH KASUS").
+   - Title: Judul Hook yang super punchy, bikin penasaran, dan mematahkan asumsi umum (maksimal 8-12 kata).
+   - Body: Subtitle 1 kalimat yang menjelaskan keuntungan jika membaca sampai habis.
+   - Footer: "Geser ke samping ➔"
+
+2. SLIDE 2 s/d ${count - 1} (ISI / INSIGHT / BUKTI - 'point' atau 'stat'):
+   - Campurkan variasi slide 'point' (langkah/strategi konkret) dan 'stat' (fakta/angka mengejutkan jika relevan).
+   - Badge: Penanda urutan (misal: "LANGKAH #1", "FAKTA MENGEJUTKAN", "KESALAHAN FATAL").
+   - Title: Header poin yang tegas, actionable, dan tidak bertele-tele.
+   - Body: Penjelasan tajam 2-3 kalimat yang nyaman dibaca di layar HP (tidak berparagraf tebal).
+   - Stat (jika tipe 'stat'): Isi stat_number (misal: "87%", "10x", "3 Detik") dan stat_label (penjelasan singkat di bawah angka).
+   - Footer: "Slide N dari ${count}"
+
+3. SLIDE TERAKHIR (KESIMPULAN & CTA - 'cta'):
+   - Badge: "ACTION STEP" / "KESIMPULAN"
+   - Title: Ajakan bertindak / Ringkasan utama dalam 1 kalimat berbobot.
+   - Body: Panduan praktis untuk mulai mempraktikkan hari ini.
+   - Footer: "Simpan & bagikan postingan ini ✨"
+
+4. CAPTION & HASHTAGS:
+   - Tuliskan caption Instagram/LinkedIn yang rapi, ada hook, ringkasan bullet points, dan pertanyaan pemancing komentar (engagement trigger).
+
+Format JSON Wajib:
+{
+  "topic_title": "${topic.slice(0, 40)}",
+  "slides": [
+    {
+      "type": "cover",
+      "badge": "PANDUAN LENGKAP",
+      "title": "Judul Hook Utama",
+      "body": "Penjelasan singkat sub-hook penarik perhatian.",
+      "footer": "Geser ke samping ➔"
+    }
+  ],
+  "caption": "Teks caption lengkap dengan spacing rapi...",
+  "hashtags": ["tipsbisnis", "carouseltips", "malesan"]
+}`;
+}

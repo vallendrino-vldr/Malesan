@@ -25,6 +25,7 @@ export type StudioCosts = {
   video?: number;
   videoNoWm?: number;
   affiliate?: number;
+  carousel?: number;
 };
 
 export function StudioPanel({
@@ -104,7 +105,7 @@ export function StudioPanel({
       ) : mod === "affiliate" ? (
         <AffiliateEngine cost={affiliateCost} />
       ) : mod === "carousel" ? (
-        <CarouselGenerator />
+        <CarouselGenerator cost={costs.carousel ?? 3} credits={credits} />
       ) : (
         <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
       )}

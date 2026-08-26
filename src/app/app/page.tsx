@@ -162,6 +162,7 @@ export default async function AppPage({
       getVideoCostPerMin(),
       getVideoNoWatermarkCost(),
       getCost("affiliate"),
+      getCost("carousel"),
     ]),
 
     // Owner-only pending topups
@@ -224,7 +225,7 @@ export default async function AppPage({
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .slice(0, 8)
     .map((c) => ({ id: c.id, title: c.title ?? "", created_at: c.created_at }));
-  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm, costAffiliate] =
+  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm, costAffiliate, costCarousel] =
     costs;
 
   // Owner's live announcement. Same config cache the costs above just warmed, so
@@ -311,6 +312,7 @@ export default async function AppPage({
               video: costVideo,
               videoNoWm: costVideoNoWm,
               affiliate: costAffiliate,
+              carousel: costCarousel,
             }}
             home={
         <div className="reveal relative flex flex-col gap-4 py-1">

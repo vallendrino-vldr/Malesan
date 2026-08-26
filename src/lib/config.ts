@@ -24,7 +24,8 @@ export type ModuleKey =
   // they carry their own price, their own on/off switch and their own schema.
   | "clip"
   | "thread"
-  | "affiliate";
+  | "affiliate"
+  | "carousel";
 
 const FALLBACK_COST: Record<ModuleKey, number> = {
   ide_hari_ini: 1,
@@ -36,6 +37,7 @@ const FALLBACK_COST: Record<ModuleKey, number> = {
   clip: 4,
   thread: 3,
   affiliate: 3,
+  carousel: 3,
 };
 
 const TTL_MS = 30_000;

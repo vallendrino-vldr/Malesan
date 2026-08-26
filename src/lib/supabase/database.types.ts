@@ -580,7 +580,7 @@ export type Database = {
         Row: {
           id: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate" | "carousel";
           platform: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input: Json | null;
           output: Json | null;
@@ -593,7 +593,7 @@ export type Database = {
         Insert: {
           id?: string;
           user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate";
+          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate" | "carousel";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;
@@ -606,7 +606,7 @@ export type Database = {
         Update: {
           id?: string;
           user_id?: string;
-          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread";
+          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate" | "carousel";
           platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
           input?: Json | null;
           output?: Json | null;

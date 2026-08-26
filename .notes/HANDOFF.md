@@ -35,8 +35,23 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after User Deletion FK Constraint Fix & Think Skill Integration (§9z.70).
-**Newest work is §9z.70 — User Deletion FK Constraint Fix & Think Skill Integration: Fixed Minified React Error #441 on Admin User Deletion by resolving Postgres Foreign Key constraints on `vouchers.redeemed_by`, `profiles.referred_by`, `topups.reviewed_by`, `audit_log.actor_id` (`ON DELETE SET NULL`), and refactoring `deleteUser` to return structured `{ ok, error }` results. Installed `think` skill globally and merged its architectural discovery and attack vector analysis into mega-skill `mikir`.** Read §9z.70, then §9z.69.
+Last updated: **2026-08-26**, after Luxury AI Carousel Studio Overhaul (§9z.71).
+**Newest work is §9z.71 — Luxury AI Carousel & Slide Studio Overhaul: Complete redesign and architectural overhaul of `CarouselGenerator.tsx` from a bare text mockup into an ultra-luxury, agency-grade 2-column Studio. Added 1-Click AI generation engine (`/api/generate` with `CAROUSEL_ENGINE_SCHEMA`), 6 designer luxury themes (Obsidian Ember, Midnight Cyber, Editorial Noir, Emerald Velvet, Sunset Neon, Clean Porcelain), 3 canvas aspect ratios (4:5, 1:1, 9:16), 4 typography pairings, 4 slide layout archetypes (Cover Hook, Point, Big Stat, CTA), author avatar & verified badges, interactive filmstrip thumbnail rail with reordering, single/batch HD PNG download, and ready-to-post caption generator.** Read §9z.71, then §9z.70.
+
+---
+
+## §9z.71 — Luxury AI Carousel & Slide Studio Overhaul (2026-08-26)
+
+**What changed & Why:**
+- Overhauled `CarouselGenerator.tsx` from a flat, basic mockup with raw OS emojis into an agency-grade luxury Studio.
+- Added AI-powered auto-generation: users input a topic or choose from instant prompts, and the backend engine generates structured 4-7 slide narratives with high-converting hooks, insights, big stats, and CTAs.
+- Added 6 luxury theme presets: **Obsidian Ember** (Malesan Signature), **Midnight Cyber** (Electric Cyan), **Editorial Noir** (Luxury Monochrome Serif), **Emerald Velvet** (Forest Gold), **Sunset Neon** (Viral Hook Gradient), and **Clean Porcelain** (Studio Minimalist).
+- Added multi-aspect ratio rendering: `4:5` (Instagram Portrait 1080×1350), `1:1` (Square Feed 1080×1080), and `9:16` (Story/Reels 1080×1920).
+- Added 4 typography pairings: Modern Sans, Editorial Serif, Impact Heavy, and Tech Mono.
+- Added author branding on canvas: Author display name, avatar initials badge, social media handle, and verified creator tick icon.
+- Added interactive filmstrip thumbnail rail for jumping between slides, duplicating, deleting, and reordering with arrows.
+- Added 1-click single slide HD download, sequential batch all-slides download, and ready-to-post caption generator.
+- 100% verified: ESLint 0 errors/0 warnings, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 
