@@ -112,6 +112,8 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://hjdctzrvnhvarxoxixrn.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://hjdctzrvnhvarxoxixrn.supabase.co" />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TEXT_INIT_SCRIPT + HAPTIC_SCRIPT + SECURITY_SHIELD_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">

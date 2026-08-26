@@ -1,11 +1,24 @@
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { CompanionHero } from "@/components/landing/CompanionHero";
-import { CreatorJourney } from "@/components/landing/CreatorJourney";
-import { CreatorActivityTicker } from "@/components/landing/CreatorActivityTicker";
-import { CompactCTA } from "@/components/landing/CompactCTA";
 import { CinematicTransitionProvider } from "@/components/landing/CinematicTransitionContext";
 import { TransitionButton } from "@/components/landing/TransitionButton";
+
+const CreatorJourney = dynamic(
+  () => import("@/components/landing/CreatorJourney").then((m) => m.CreatorJourney),
+  { ssr: true }
+);
+
+const CreatorActivityTicker = dynamic(
+  () => import("@/components/landing/CreatorActivityTicker").then((m) => m.CreatorActivityTicker),
+  { ssr: true }
+);
+
+const CompactCTA = dynamic(
+  () => import("@/components/landing/CompactCTA").then((m) => m.CompactCTA),
+  { ssr: true }
+);
 
 export default function Home() {
   return (

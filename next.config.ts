@@ -21,6 +21,8 @@ const BUILD_ID =
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
+  compress: true,
+  poweredByHeader: false,
 
   /**
    * The dev server is reached through a Cloudflare quick tunnel so the app can
@@ -34,14 +36,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],
 
   /**
-   * The service worker must never be served from cache.
-   *
-   * Files under /public are sent with long-lived caching by default. Applied to
-   * sw.js that is self-defeating: the browser keeps handing back the old worker
-   * script, so the old worker stays in control and the installed app keeps
-   * rendering a build from whenever it was installed. `updateViaCache: "none"`
-   * on the registration covers browsers that honour it; this header covers the
-   * rest and the initial fetch.
+   * High performance caching headers for static assets and service worker.
    */
   async headers() {
     return [
@@ -50,6 +45,12 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
           { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
+        source: "/:all*(svg|jpg|png|webp|ico|woff2)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ];

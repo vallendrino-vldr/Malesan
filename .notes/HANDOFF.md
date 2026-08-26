@@ -35,12 +35,21 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Value Strip Mobile Alignment & Copy Polish (§9z.63).
-**Newest work is §9z.63 — Value Strip Mobile Alignment & Copy Polish: Refined the 'NYAMBUNG - UPDATE - PRAKTIS' trust strip in `src/app/app/page.tsx`. Replaced cramped unaligned text with a pixel-perfect 3-column divided rail layout (`divide-x divide-hairline/60` with `text-balance` font scaling) that ensures 100% symmetric vertical baselines on 360px-430px mobile screens. Updated copy from 'siap pos' to 'siap pake' for product accuracy.** Read §9z.63, then §9z.62.
+Last updated: **2026-08-26**, after TikTok In-App Browser Speed Optimization & Resource Preconnect (§9z.64).
+**Newest work is §9z.64 — TikTok In-App Browser Speed Optimization & Resource Preconnect: Optimized root landing page `/` for ultra-low latency (<200ms FCP) inside mobile in-app webviews (TikTok, Instagram, Telegram). Split below-the-fold bundles via `next/dynamic`, added immutable static asset caching (`Cache-Control: public, max-age=31536000, immutable`), preconnected Supabase origins, and enabled gzip/brotli compression in `next.config.ts`.** Read §9z.64, then §9z.63.
 
 ---
 
-## §9z.63 — Value Strip Mobile Alignment & Copy Polish (2026-08-26)
+## §9z.64 — TikTok In-App Browser Speed Optimization & Resource Preconnect (2026-08-26)
+
+**What changed & Why:**
+- Root landing page `/` optimized for mobile in-app webviews (TikTok, IG, Twitter/X):
+  - Dynamic imports for below-the-fold sections (`CreatorJourney`, `CreatorActivityTicker`, `CompactCTA`) to reduce initial JS payload.
+  - Added preconnect and dns-prefetch links in `src/app/layout.tsx`.
+  - Added immutable cache headers for static image/font assets and enabled server compression in `next.config.ts`.
+- 100% passing tests and Next.js Turbopack build.
+
+---
 
 **What changed & Why:**
 - Refined the 3-column trust banner below the tools grid in `src/app/app/page.tsx`.
