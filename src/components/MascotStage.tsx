@@ -71,11 +71,11 @@ export function MascotStage({ className = "" }: { className?: string }) {
           the layout would shove the greeting down and back up, which is a
           layout shift on a page that currently measures CLS 0. */}
       {line && (
-        <div className="pointer-events-none absolute -bottom-2 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center">
+        <div className="pointer-events-none absolute -bottom-2.5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center">
           <span
             role="status"
             aria-live="polite"
-            className="whitespace-nowrap rounded-full border border-ember/40 bg-obsidian/95 backdrop-blur-md px-3 py-0.5 text-micro font-semibold text-ember shadow-xl shadow-black/80 ring-1 ring-ember/25 animate-in fade-in zoom-in-95 duration-150 text-center"
+            className="whitespace-nowrap rounded-full border border-ember/50 bg-[#09090b]/95 backdrop-blur-md px-3.5 py-1 text-micro font-bold text-ember shadow-2xl shadow-black ring-1 ring-ember/30 animate-in fade-in zoom-in-95 duration-150 text-center"
           >
             {line}
           </span>

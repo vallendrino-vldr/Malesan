@@ -333,9 +333,11 @@ export default async function AppPage({
           <RecycleBanner cards={postedCards} />
 
           {/* LEVEL 1: HERO SPOTLIGHT EXPERIENCE (AI Creative Companion) */}
-          <section className="relative overflow-hidden rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/90 via-surface to-obsidian p-5 sm:p-6 lg:p-7 shadow-lg transition-all">
-            {/* Ambient Warmth Glow */}
-            <div className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-72 sm:size-96 rounded-full bg-ember/15 blur-3xl" />
+          <section className="relative rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/90 via-surface to-obsidian p-5 sm:p-6 lg:p-7 shadow-lg transition-all">
+            {/* Ambient Warmth Glow (Isolated overflow container so mascot popups float without clipping) */}
+            <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+              <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-72 sm:size-96 rounded-full bg-ember/15 blur-3xl" />
+            </div>
 
             <div className="relative z-10 grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-12 lg:items-center">
               {/* [ LEFT AREA: Mascot + Greeting + Thesis ] (lg:col-span-5) */}

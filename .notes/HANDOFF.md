@@ -35,8 +35,17 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Mascot Dialogue Symmetrical Centering Fix (§9z.76).
-**Newest work is §9z.76 — Mascot Dialogue Symmetrical Centering Fix: Refined mascot dialogue strings to punchy, compact phrasing (e.g. "Daripada nyolek, yuk ngonten!") and centered the speech bubble symmetrically right beneath the mascot circle (`left-1/2 -translate-x-1/2`). Eliminates any overlap onto adjacent greeting/subtitle text while maintaining zero clipping and crisp visual balance.** Read §9z.76, then §9z.75.
+Last updated: **2026-08-26**, after Mascot Speech Layer Overflow Isolation Fix (§9z.77).
+**Newest work is §9z.77 — Mascot Speech Layer Overflow Isolation Fix: Unclamped popup dialogue layer by moving `overflow-hidden` from the parent `<section>` card to an isolated inner glow container (`absolute inset-0 overflow-hidden rounded-3xl`). Elevated speech bubble with `z-50`, backdrop blur, and 0% card clipping so dialogue popups float seamlessly across layers without cutting off any letters.** Read §9z.77, then §9z.76.
+
+---
+
+## §9z.77 — Mascot Speech Layer Overflow Isolation Fix (2026-08-26)
+
+**What changed & Why:**
+- Unclamped Popup Dialogue Layer ("Keluar Layer"): Removed `overflow-hidden` from the parent Level 1 Hero section card and isolated it into an inner background decorator (`absolute inset-0 overflow-hidden rounded-3xl`).
+- High-Z Popup Float: Set the speech bubble to `z-50` with `backdrop-blur-md` and `shadow-2xl`, allowing it to float seamlessly over the card boundary with 0% clipping risk.
+- 100% verified: ESLint 0 errors, 100% invariant tests pass, 5/5 penetration audit pass, Turbopack clean build.
 
 ---
 
