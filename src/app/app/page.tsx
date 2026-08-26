@@ -592,10 +592,10 @@ export default async function AppPage({
                   Top Up Kredit
                 </Link>
                 <Link
-                  href="/app/onboarding"
+                  href={profile.onboarding_completed ? "/app/profile" : "/app/onboarding"}
                   className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/[0.12] bg-surface-raised px-4 text-xs font-bold text-ink hover:border-ember/40 hover:text-ember transition-all"
                 >
-                  <span>Atur Profil Utama</span>
+                  <span>{profile.onboarding_completed ? "Profil konten lo" : "Atur Profil Utama"}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
