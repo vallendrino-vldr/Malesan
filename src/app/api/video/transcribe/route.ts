@@ -12,25 +12,14 @@ import { aiRateLimit } from "@/lib/rate-limit";
  * and posts only that audio here — the video itself never leaves the user's
  * machine. This route forwards the audio to Groq Whisper, charges credits by the
  * real audio length, and returns per-word timings.
- *
- * Credits are charged on the model's reported duration, not the client's claim,
- * because the client controls the number it sends and this one costs money.
  */
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Vercel Hobby caps a serverless request body at ~4.5MB, and long audio is also
-// slow to transcribe on a free tier, so the editor is bounded to short-form —
-// which is exactly what Auto-CC is for. The client must extract 16kHz mono to
-// stay under this for the full window.
 const MAX_DURATION_SEC = 600; // 10 minutes
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024;
 
-// Minutes billed for a clip. A nominal "1:00" video almost never measures a flat
-// 60.00s — the container reports 60.2, Whisper reports 60.1 — and a bare ceil
-// then bills it as two minutes (double the price). Absorb ~1.5s of that noise so
-// a one-minute clip stays one minute, then ceil: 1:30 is still 2 minutes.
 const GRACE_SEC = 1.5;
 const billedMinutes = (sec: number) => Math.max(1, Math.ceil((sec - GRACE_SEC) / 60));
 
@@ -46,6 +35,7 @@ export async function POST(request: NextRequest) {
     .select("is_banned, credits_free, credits_paid")
     .eq("id", user.id)
     .single();
+
   if (!profile) return json({ error: "Profil gak ketemu." }, 404);
   if (profile.is_banned) return json({ error: "Akun lo lagi dibekuin." }, 403);
 
@@ -64,6 +54,7 @@ export async function POST(request: NextRequest) {
   }
 
   const audio = form.get("audio");
+  const filename = audio instanceof File && audio.name ? audio.name : "audio.wav";
   const language = String(form.get("language") || "id").trim().toLowerCase();
   const clientDuration = Number(form.get("durationSec") ?? 0);
 
@@ -107,7 +98,7 @@ export async function POST(request: NextRequest) {
   try {
     // Leave enough time for a clean response before Vercel's 60-second hard
     // ceiling. Credits are charged only after this returns successfully.
-    transcript = await transcribeAudio(audio, "audio.m4a", {
+    transcript = await transcribeAudio(audio, filename, {
       language,
       signal: AbortSignal.timeout(48_000),
     });

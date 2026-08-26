@@ -51,27 +51,11 @@ const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3";
 const INDONESIAN_CREATOR_PROMPT =
   "Halo teman-teman, hari ini gue mau sharing tips bikin konten video, script, hook, ide menarik, dan workflow santai buat kalian semua.";
 
-const HALLUCINATION_PHRASES = [
-  /sub\s*indo\s*by/i,
-  /subtitle\s*(by|oleh)/i,
-  /subbed\s*by/i,
-  /transcribed\s*by/i,
-  /captions?\s*(by|oleh)/i,
-  /diterjemahkan\s*oleh/i,
-  /terjemahan\s*oleh/i,
-  /thanks?\s*for\s*watching/i,
-  /terima\s*kasih\s*(sudah|telah)?\s*menonton/i,
-  /jangan\s*lupa\s*subscribe/i,
-  /like\s*and\s*subscribe/i,
-  /broth3rmax/i,
-  /amara\.org/i,
-  /opensubtitles/i,
-  /insan\s*team/i,
-];
+const WATERMARK_WORDS = new Set(["broth3rmax", "opensubtitles", "amaraorg"]);
 
 function isHallucinatedWord(word: string): boolean {
   const clean = word.toLowerCase().replace(/[^a-z0-9]/g, "");
-  return clean === "broth3rmax" || clean === "opensubtitles" || clean === "amaraorg";
+  return WATERMARK_WORDS.has(clean);
 }
 
 async function postWithRotation(
@@ -89,7 +73,6 @@ async function postWithRotation(
     form.append("response_format", "verbose_json");
     form.append("timestamp_granularities[]", "word");
     form.append("temperature", "0");
-    // Explicit prompt to avoid Whisper subtitle watermark hallucinations on music/silence
     form.append("prompt", opts?.prompt || INDONESIAN_CREATOR_PROMPT);
     if (opts?.language) form.append("language", opts.language);
 
@@ -148,18 +131,15 @@ export async function transcribeAudio(
     text?: string;
     duration?: number;
     words?: { word?: string; start?: number; end?: number }[];
-    segments?: { start?: number; end?: number; text?: string }[];
+    segments?: { start?: number; end?: number; text?: string; words?: { word?: string; start?: number; end?: number }[] }[];
   };
 
   const rawText = (json.text ?? "").trim();
-  const isPureHallucination =
-    HALLUCINATION_PHRASES.some((pat) => pat.test(rawText)) &&
-    rawText.split(/\s+/).length <= 7;
 
   const rawWords =
     json.words && json.words.length > 0
       ? json.words
-      : (json.segments?.flatMap((s) => (s as { words?: { word?: string; start?: number; end?: number }[] }).words ?? []) ?? []);
+      : (json.segments?.flatMap((s) => s.words ?? []) ?? []);
 
   let words: Word[] = rawWords
     .filter((w) => typeof w.word === "string" && typeof w.start === "number")
@@ -173,8 +153,7 @@ export async function transcribeAudio(
     }))
     .filter((w) => w.word.length > 0 && !isHallucinatedWord(w.word));
 
-  // Fallback: If word-level granularity wasn't returned by the endpoint but segments were,
-  // interpolate word timings evenly across each segment so captions still sync.
+  // Fallback 1: Interpolate from segments if segment words were absent
   if (!words.length && json.segments?.length) {
     for (const seg of json.segments) {
       const segText = (seg.text ?? "").trim();
@@ -193,8 +172,18 @@ export async function transcribeAudio(
     }
   }
 
-  if (isPureHallucination) {
-    words = [];
+  // Fallback 2: Direct raw text tokenization if words & segments were not returned
+  if (!words.length && rawText) {
+    const tokens = rawText.split(/\s+/).filter(Boolean);
+    const audioDur = json.duration ?? 5;
+    const durPerTok = Math.max(0.15, audioDur / Math.max(tokens.length, 1));
+    tokens.forEach((tok, idx) => {
+      const s = idx * durPerTok;
+      const e = s + durPerTok;
+      if (!isHallucinatedWord(tok)) {
+        words.push({ word: tok, start: s, end: e });
+      }
+    });
   }
 
   // Ensure words are strictly ordered by start time
@@ -208,7 +197,5 @@ export async function transcribeAudio(
     : 0;
   const duration = json.duration ?? Math.max(lastWordEnd, lastSegEnd);
 
-  const cleanedText = isPureHallucination ? "" : rawText;
-
-  return { text: cleanedText, duration, words };
+  return { text: rawText, duration, words };
 }

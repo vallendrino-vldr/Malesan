@@ -70,7 +70,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
     ...DEFAULT_STYLE,
     ...SOCIAL_PRESETS[0].style,
   }));
-  const [safeZones, setSafeZones] = useState(true);
+  const [safeZones, setSafeZones] = useState(false);
   const [bitrate, setBitrate] = useState(12);
   const [presetId, setPresetId] = useState<(typeof SOCIAL_PRESETS)[number]["id"]>("tiktok");
   const [noWatermark, setNoWatermark] = useState(false);
@@ -135,13 +135,16 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setPhase("extracting");
       setStatus("Ngambil audio dari video...");
       const { extractAudio } = await import("@/lib/video/ffmpeg");
-      const audio = await extractAudio(file, (r) => setProgress(Math.round(r * 100)));
+      const { blob: audioBlob, filename: audioFilename } = await extractAudio(
+        file,
+        (r) => setProgress(Math.round(r * 100)),
+      );
 
       setPhase("transcribing");
       setProgress(0);
       setStatus("AI lagi denger & nulis tiap kata...");
       const form = new FormData();
-      form.append("audio", audio, "audio.m4a");
+      form.append("audio", audioBlob, audioFilename);
       // Send the raw duration, not a pre-ceiled one: the server does its own
       // minute rounding, and ceiling here too billed a 60.04s clip as 2 minutes.
       form.append("durationSec", String(durationSec));
@@ -377,11 +380,13 @@ function UploadDrop({ onPick }: { onPick: (f: File | null) => void }) {
 function SafeZones() {
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-      <div className="absolute inset-y-0 right-0 w-[16%] bg-danger/10" />
-      <div className="absolute inset-x-0 bottom-0 h-[18%] bg-danger/10" />
+      {/* Right button area guide */}
+      <div className="absolute inset-y-0 right-0 w-[16%] border-l border-dashed border-white/20" />
+      {/* Bottom caption safe area guide */}
+      <div className="absolute inset-x-0 bottom-0 h-[18%] border-t border-dashed border-white/20" />
       <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 border-y border-dashed border-white/20" />
-      <span className="absolute bottom-1 left-2 rounded bg-obsidian/70 px-1.5 py-0.5 text-[10px] font-semibold text-white/80">
-        area caption
+      <span className="absolute bottom-2 left-2 rounded bg-obsidian/80 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
+        area caption aman
       </span>
     </div>
   );

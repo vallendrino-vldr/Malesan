@@ -68,10 +68,10 @@ export async function getFFmpeg(onLog?: (msg: string) => void): Promise<FFmpeg> 
 export async function extractAudio(
   file: File,
   onProgress?: ProgressFn,
-): Promise<Blob> {
+): Promise<{ blob: Blob; filename: string }> {
   const ff = await getFFmpeg();
   const inName = "in_" + safeExt(file.name);
-  const outName = "audio.m4a";
+  const outName = "audio.wav";
 
   const handler = onProgress ? ({ progress }: { progress: number }) => onProgress(progress) : null;
   if (handler) ff.on("progress", handler);
@@ -81,13 +81,15 @@ export async function extractAudio(
       "-i", inName,
       "-vn",
       "-ac", "1",
-      "-ar", "24000",
-      "-c:a", "aac",
-      "-b:a", "128k",
+      "-ar", "16000",
+      "-c:a", "pcm_s16le",
       outName,
     ]);
     const data = await ff.readFile(outName);
-    return new Blob([new Uint8Array(data as Uint8Array)], { type: "audio/mp4" });
+    return {
+      blob: new Blob([new Uint8Array(data as Uint8Array)], { type: "audio/wav" }),
+      filename: "audio.wav",
+    };
   } finally {
     if (handler) ff.off("progress", handler);
     await safeDelete(ff, inName);

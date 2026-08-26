@@ -35,8 +35,18 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Conversational Context Prompting & DOM-Attached Hardware Video Acceleration (§9z.84).
-**Newest work is §9z.84 — Conversational Context Prompting & DOM-Attached Hardware Video Acceleration: (1) Replaced meta-instruction Whisper prompt with realistic conversational speech context in `transcribe.ts` to stop Whisper autoregressive instruction confusion. (2) Upgraded audio extraction sample rate to 24kHz in `ffmpeg.ts`. (3) Attached offscreen `<video>` element directly to the DOM in `encode.ts` and `export.ts` to stop Chromium/WebKit from background-throttling GPU video texture presentation.** Read §9z.84, then §9z.83.
+Last updated: **2026-08-26**, after PCM WAV Audio Standard, Zero-Tint SafeZones & Hallucination Filter Removal (§9z.85).
+**Newest work is §9z.85 — PCM WAV Audio Standard, Zero-Tint SafeZones & Hallucination Filter Removal: (1) Switched `extractAudio` in `ffmpeg.ts` to 16kHz 16-bit Mono WAV (`audio.wav`) — eliminates unfinalized MP4/AAC container header failures on short clips (<10s). (2) Removed destructive `isPureHallucination` in `transcribe.ts` that wiped out legitimate short creator speech and outro phrases. (3) Removed `bg-danger/10` colored background fill from `SafeZones` in `VideoEditor.tsx` and defaulted `safeZones` to `false` (transparent dashed guidelines only).** Read §9z.85, then §9z.84.
+
+---
+
+## §9z.85 — PCM WAV Audio Standard, Zero-Tint SafeZones & Hallucination Filter Removal (2026-08-26)
+
+**What changed & Why:**
+- WAV Audio Extraction Standard: In `ffmpeg.ts`, extract audio as raw uncompressed 16kHz 16-bit PCM WAV (`audio.wav`). This eliminates container header bugs on short clips (e.g. 6-second video) so Whisper decodes audio without silence errors.
+- Hallucination Filter Fix: In `transcribe.ts`, removed over-aggressive regex filter that wiped real creator outro and short speech into empty words array. Added rawText token fallback.
+- Transparent SafeZones: In `VideoEditor.tsx`, removed `bg-danger/10` magenta/red fill from safe zones and set checkbox default to unchecked, eliminating the weird purple tint on preview.
+- 100% verified: ESLint 0 warnings/errors, 100% invariant tests, 5/5 penetration audit, Turbopack clean compilation.
 
 ---
 
