@@ -19,9 +19,6 @@ const LABEL_MAX = 60;
 const inputCls =
   "w-full rounded-xl border border-white/[0.1] bg-[#09090b] px-4 py-3 text-sm text-ink placeholder:text-muted/60 transition-all focus:border-ember focus:bg-[#0c0c0e] focus:outline-none focus:ring-2 focus:ring-ember/20 disabled:opacity-60";
 
-const btnSecondaryCls =
-  "inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-surface-raised/80 px-4 text-xs sm:text-sm font-semibold text-ink backdrop-blur-sm transition-all duration-200 hover:border-ember/50 hover:bg-ember/10 hover:text-ember active:scale-[0.98] disabled:opacity-60 cursor-pointer";
-
 export function PersonaManager({ personas }: { personas: Persona[] }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
