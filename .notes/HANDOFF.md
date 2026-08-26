@@ -35,12 +35,20 @@ mandatory, and it is the only reason the next session starts fast.
 session start working without re-auditing the repo, because re-auditing is
 expensive and the owner pays per token.
 
-Last updated: **2026-08-26**, after Profile, Persona Manager & Smart CTA UI Redesign (§9z.67).
-**Newest work is §9z.67 — Profile, Persona Manager & Smart CTA UI Redesign: Total visual overhaul of `/app/profile`, `PersonaManager.tsx`, `CtaSettings`, and `CopyField.tsx`. Replaced dull flat grey containers with high-end obsidian/ember glassmorphism cards (`rounded-3xl border-white/[0.08] bg-gradient-to-b`). Upgraded empty states, action buttons (`h-10` to `h-11`), live CTA injection simulation mockup bubble with auto-contextual badge, iOS-grade toggle switch, and referral stats grid.** Read §9z.67, then §9z.66.
+Last updated: **2026-08-26**, after Seamless Studio Profile Embedding & Widescreen Onboarding Header (§9z.68).
+**Newest work is §9z.68 — Seamless Studio Profile Embedding & Widescreen Onboarding Header: Solved disconnected UI experience by directly embedding PersonaManager, CtaSettings, and Referral Program inside the Studio AppShell Profil tab (`/app?tab=profil`). Upgraded `/app/onboarding` and `/app/profile` with sticky branded Malesan top headers, 'Kembali ke Studio' buttons on all steps, 'Lewati Dulu' shortcuts, and widescreen desktop 2-column layouts (`max-w-3xl` / `max-w-4xl`), eliminating isolated mobile-like floating views.** Read §9z.68, then §9z.67.
 
 ---
 
-## §9z.67 — Profile, Persona Manager & Smart CTA UI Redesign (2026-08-26)
+## §9z.68 — Seamless Studio Profile Embedding & Widescreen Onboarding Header (2026-08-26)
+
+**What changed & Why:**
+- Directly integrated `PersonaManager`, `CtaSettings`, and `CopyField` (referral) inside Studio AppShell `panels.profil` (`src/app/app/page.tsx`). Users can manage their voices, CTA injection, and referral without ever navigating away from the Studio dashboard.
+- Redesigned `src/app/app/onboarding/page.tsx` with a top branded navbar (Logo, "Kembali ke Studio", "Lewati Dulu ➔"), back buttons across all 3 steps, and widescreen desktop layout (`max-w-3xl`) with 3-column context selector cards.
+- Redesigned `src/app/app/profile/page.tsx` with top Malesan navbar (Logo, "Balik ke Studio", live credit badge) and widescreen `max-w-4xl` layout.
+- 100% verified with ESLint (0 errors/warnings), unit tests, penetration audit (5/5), and Next.js Turbopack build.
+
+---
 
 **What changed & Why:**
 - Upgraded `src/app/app/profile/page.tsx` with elegant navigation (`← Balik ke Studio`), icon badges, and cohesive visual hierarchy.

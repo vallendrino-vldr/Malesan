@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
@@ -15,6 +15,8 @@ import { StudioPanel, StudioHeroCard, StudioTile } from "@/components/StudioPane
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { FeedbackModal } from "@/components/FeedbackModal";
+import { PersonaManager, CtaSettings } from "@/components/PersonaManager";
+import { CopyField } from "@/components/CopyField";
 import { jakartaDayKey } from "@/lib/time";
 
 export const metadata: Metadata = {
@@ -111,7 +113,16 @@ export default async function AppPage({
       }
     } catch {}
   }
-  const [refillResult, pipelineResult, costs, waitingTopups, monthlyGens] = await Promise.all([
+  const [
+    refillResult,
+    pipelineResult,
+    costs,
+    waitingTopups,
+    monthlyGens,
+    personasResult,
+    dnaResult,
+    referralsResult,
+  ] = await Promise.all([
     // Supabase's builder is a PromiseLike, not a Promise, so it has no
     // `.catch` — wrap it before attaching one. Never block the app on a
     // refill failure.
@@ -128,11 +139,7 @@ export default async function AppPage({
         })()
       : Promise.resolve(null),
 
-    // Loaded unconditionally. Skipping this unless `tab === "pipeline"` made
-    // sense when each tab was its own navigation; once tabs became client-side
-    // the server only ever renders once, so the conditional meant the pipeline
-    // board and the history list were permanently empty for anyone who landed
-    // on /app and then tapped across. A regression I introduced.
+    // Loaded unconditionally.
     supabase
       .from("pipeline_cards")
       .select("*")
@@ -156,10 +163,7 @@ export default async function AppPage({
       getCost("affiliate"),
     ]),
 
-    // Owner-only. A bank transfer lands in `topups` and then waits for someone
-    // to look at it — and nothing anywhere told the owner it had arrived unless
-    // they happened to open the admin panel. Counting it here puts the number
-    // on the admin pill in the header of the app they actually use all day.
+    // Owner-only pending topups
     isAdmin
       ? serviceRole
           .from("topups")
@@ -175,10 +179,40 @@ export default async function AppPage({
       .eq("user_id", user.id)
       .gte("created_at", new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString())
       .then((r) => r.count ?? 0),
+
+    // Personas for inline profile management
+    supabase
+      .from("personas")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true })
+      .then((r) => r.data ?? []),
+
+    // Creator DNA for smart CTA injection
+    supabase
+      .from("creator_dna")
+      .select("cta_url, cta_label, cta_enabled")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then((r) => r.data),
+
+    // Referral count
+    supabase
+      .from("referrals")
+      .select("*", { count: "exact", head: true })
+      .eq("referrer_id", user.id)
+      .then((r) => r.count ?? 0),
   ]);
 
   if (typeof refillResult === "number") totalCredits = refillResult;
   const pipelineCards = pipelineResult ?? [];
+
+  // Referral link resolution from request headers
+  const reqHeaders = await headers();
+  const reqHost = reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host") ?? "localhost:3000";
+  const reqProto = reqHeaders.get("x-forwarded-proto") ?? (reqHost.startsWith("localhost") ? "http" : "https");
+  const referralLink = `${reqProto}://${reqHost}/masuk?ref=${profile.referral_code}`;
 
   // Smart Content Recycle: posted pieces, oldest first, derived from the pipeline
   // read already in flight — no extra query. The 30-day age cut is applied in the
@@ -496,7 +530,7 @@ export default async function AppPage({
         pipeline: <PipelineBoard initialCards={pipelineCards || []} />,
 
         profil: (
-        <div className="reveal space-y-5">
+        <div className="reveal space-y-6">
           {/* LEVEL 1: CREATOR ACHIEVEMENT & MILESTONE (TOP) */}
           <section className="surface-card rounded-3xl border border-ember/35 bg-gradient-to-br from-surface-raised/90 via-surface to-obsidian p-5 sm:p-6 shadow-md">
             <div className="flex items-center justify-between">
@@ -522,85 +556,121 @@ export default async function AppPage({
             </p>
           </section>
 
-          {/* LEVEL 2: CREATOR IDENTITY & CREDITS (2-COL ON DESKTOP) */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            {/* Creator DNA & Voice Profile */}
-            <section className="surface-card flex flex-col justify-between rounded-3xl border border-hairline p-5 sm:p-6 transition-all hover:border-ember/40 hover:shadow-xs">
-              <div>
-                <div className="flex items-center justify-between">
-                  <span className="eyebrow text-ember font-bold">Profil konten lo</span>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-micro font-semibold ${
-                      profile.onboarding_completed
-                        ? "border-success/30 bg-success/10 text-success"
-                        : "border-ember/30 bg-ember/10 text-ember"
-                    }`}
-                  >
-                    {profile.onboarding_completed ? "Aktif" : "Belum lengkap"}
-                  </span>
+          {/* LEVEL 2: ACCOUNT OVERVIEW & CREDITS */}
+          <section className="surface-card rounded-3xl border border-white/[0.08] bg-gradient-to-b from-surface-raised/90 via-surface to-[#0e0e11] p-5 sm:p-6 shadow-xl backdrop-blur-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="size-12 shrink-0 overflow-hidden rounded-full border border-white/[0.15] bg-surface-raised">
+                  {avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatar} alt="" className="size-full object-cover" />
+                  ) : (
+                    <span className="grid size-full place-items-center font-display text-base font-bold text-muted">
+                      {profile.display_name?.charAt(0).toUpperCase() ?? "?"}
+                    </span>
+                  )}
                 </div>
-                <h3 className="mt-2 font-display text-lg font-bold text-ink">
-                  {profile.onboarding_completed ? "Malesan kenal gaya konten lo" : "Biar hasilnya makin berasa lo"}
-                </h3>
-                <p className="mt-1.5 text-xs sm:text-sm leading-relaxed text-muted">
-                  Simpan niche, cara ngomong, dan siapa yang mau lo ajak ngobrol biar AI langsung nyambung tanpa instruksi berulang.
-                </p>
-              </div>
-
-              <Link
-                href={profile.onboarding_completed ? "/app/profile" : "/app/onboarding"}
-                className="btn-ember mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl px-4 font-display text-sm font-bold text-obsidian shadow-xs"
-              >
-                {profile.onboarding_completed ? "Kelola Profil Konten" : "Kenalin Gaya Gue →"}
-              </Link>
-            </section>
-
-            {/* Account & Credits Overview */}
-            <section className="surface-card flex flex-col justify-between rounded-3xl border border-hairline p-5 sm:p-6 transition-all hover:border-ember/40 hover:shadow-xs">
-              <div>
-                <div className="flex items-center gap-3.5">
-                  <div className="size-12 shrink-0 overflow-hidden rounded-full border border-hairline bg-surface">
-                    {avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatar} alt="" className="size-full object-cover" />
-                    ) : (
-                      <span className="grid size-full place-items-center font-display text-base font-bold text-muted">
-                        {profile.display_name?.charAt(0).toUpperCase() ?? "?"}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
                     <p className="truncate font-display text-base font-bold text-ink">
                       {profile.display_name ?? "Kreator"}
                     </p>
-                    <p className="truncate text-xs text-muted">{profile.email}</p>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-surface px-2 py-0.5 text-[10px] font-bold text-ink">
+                      <span className="size-1.5 rounded-full bg-ember" />
+                      {profile.is_pro ? "Pro" : "Free"}
+                    </span>
                   </div>
+                  <p className="truncate text-xs text-muted">{profile.email}</p>
                 </div>
-
-                <dl className="mt-4 grid grid-cols-2 gap-2.5">
-                  <Stat label="Kredit gratis" value={profile.credits_free} />
-                  <Stat label="Kredit berbayar" value={profile.credits_paid} />
-                </dl>
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <div className="flex items-center gap-2">
                 <Link
                   href="/app/topup"
-                  className="btn-ember flex-1 inline-flex min-h-11 items-center justify-center rounded-xl px-4 font-display text-xs sm:text-sm font-bold text-obsidian shadow-xs"
+                  className="btn-ember inline-flex h-10 items-center justify-center rounded-xl px-4 font-display text-xs font-bold text-obsidian shadow-xs"
                 >
                   Top Up Kredit
                 </Link>
                 <Link
-                  href="/app/profile"
-                  className="skeu skeu-press flex-1 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-4 font-display text-xs sm:text-sm font-semibold text-ink hover:border-ember/40 hover:text-ember-lo"
+                  href="/app/onboarding"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/[0.12] bg-surface-raised px-4 text-xs font-bold text-ink hover:border-ember/40 hover:text-ember transition-all"
                 >
-                  Referral &amp; Akun
+                  <span>Atur Profil Utama</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
                 </Link>
               </div>
-            </section>
+            </div>
+
+            <dl className="mt-4 grid grid-cols-2 gap-3">
+              <Stat label="Kredit Gratis (Harian)" value={profile.credits_free} />
+              <Stat label="Kredit Permanen (Bonus/Beli)" value={profile.credits_paid} />
+            </dl>
+          </section>
+
+          {/* LEVEL 3: INLINE PERSONA VOICES MANAGER */}
+          <PersonaManager personas={personasResult} />
+
+          {/* LEVEL 4: INLINE SMART CTA LINK INJECTION */}
+          <CtaSettings
+            initial={{
+              url: dnaResult?.cta_url ?? "",
+              label: dnaResult?.cta_label ?? "",
+              enabled: dnaResult?.cta_enabled ?? false,
+            }}
+          />
+
+          {/* LEVEL 5: INLINE REFERRAL PROGRAM */}
+          <div className="surface-card rounded-3xl border border-white/[0.08] bg-gradient-to-b from-surface-raised/90 via-surface to-[#0e0e11] p-5 sm:p-6 shadow-xl backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 shadow-xs">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+                  <polyline points="20 12 20 22 4 22 4 12" />
+                  <rect width="20" height="5" x="2" y="7" />
+                  <line x1="12" x2="12" y1="22" y2="7" />
+                  <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                  <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-display text-base sm:text-lg font-bold text-ink">
+                  Program Referral Kreator
+                </h3>
+                <p className="text-xs text-muted">
+                  Ajak teman pakai link lo. Begitu dia bikin konten pertama, lo dan teman lo otomatis dapet +10 kredit permanen!
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <CopyField value={referralLink} label="Link Referral Lo" />
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-white/[0.08] bg-[#09090b] p-4 shadow-inner">
+                <div className="font-display text-micro font-bold uppercase tracking-wider text-muted">
+                  Teman Bergabung
+                </div>
+                <div className="mt-1 font-display text-2xl font-bold text-ink">
+                  {referralsResult}
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 shadow-inner">
+                <div className="font-display text-micro font-bold uppercase tracking-wider text-emerald-400">
+                  Bonus Kredit Didapat
+                </div>
+                <div className="mt-1 font-display text-2xl font-bold text-emerald-400">
+                  {referralsResult * 10}{" "}
+                  <span className="text-xs font-normal text-emerald-400/70">kredit</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* LEVEL 3: CREATOR ACTIVITY TIMELINE (HISTORY) */}
+          {/* LEVEL 6: CREATOR ACTIVITY TIMELINE (HISTORY) */}
           <section className="space-y-2.5">
             <div className="flex items-center justify-between px-0.5">
               <h3 className="eyebrow text-muted font-bold tracking-wider">Aktivitas &amp; Riwayat Konten</h3>
@@ -609,7 +679,7 @@ export default async function AppPage({
             <HistoryList items={history} />
           </section>
 
-          {/* FOOTER CONTROLS & UTILITIES */}
+          {/* LEVEL 7: FOOTER CONTROLS & UTILITIES */}
           <div className="space-y-3 pt-2">
             <section className="surface-card rounded-2xl border border-hairline p-4">
               <TextScale />
