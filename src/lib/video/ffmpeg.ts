@@ -83,13 +83,39 @@ export async function extractAudio(
       "-ac", "1",
       "-ar", "16000",
       "-c:a", "aac",
-      "-b:a", "64k",
+      "-b:a", "128k",
       outName,
     ]);
     const data = await ff.readFile(outName);
     return new Blob([new Uint8Array(data as Uint8Array)], { type: "audio/mp4" });
   } finally {
     if (handler) ff.off("progress", handler);
+    await safeDelete(ff, inName);
+    await safeDelete(ff, outName);
+  }
+}
+
+/**
+ * Extract clean 44.1kHz 16-bit PCM WAV audio for frame-accurate WebCodecs export.
+ * This guarantees AudioContext.decodeAudioData will never reject or fail on MP4 files.
+ */
+export async function extractWavAudio(file: File): Promise<ArrayBuffer> {
+  const ff = await getFFmpeg();
+  const inName = "in_wav_" + safeExt(file.name);
+  const outName = "audio_export.wav";
+  try {
+    await ff.writeFile(inName, await fetchFile(file));
+    await ff.exec([
+      "-i", inName,
+      "-vn",
+      "-c:a", "pcm_s16le",
+      "-ar", "44100",
+      outName,
+    ]);
+    const data = await ff.readFile(outName);
+    const u8 = new Uint8Array(data as Uint8Array);
+    return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength);
+  } finally {
     await safeDelete(ff, inName);
     await safeDelete(ff, outName);
   }

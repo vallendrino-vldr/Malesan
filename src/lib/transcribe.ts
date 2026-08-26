@@ -45,26 +45,12 @@ export class TranscribeError extends Error {
 }
 
 const GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
-// Turbo is the fast, cheap tier and still returns word timestamps. The model id
-// is an env override for the same reason Gemini's is — hosted model names move.
-const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3-turbo";
+// Whisper Large V3 is the full 32-layer state-of-the-art model for Indonesian transcription.
+const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3";
 
-/**
- * Transcribe one audio file to words + timings.
- *
- * `verbose_json` + `timestamp_granularities[]=word` is what makes Groq return
- * the per-word array; without the granularity parameter it returns segments
- * only, and the per-word highlight has nothing to sync to.
- */
-/**
- * POST the audio to Groq, rotating across the key pool.
- *
- * A 429 benches that account and moves to the next key immediately — a second
- * account's quota is independent, so trying it costs nothing and usually
- * succeeds. 5xx also rolls to the next key. A 4xx that is not 429 is our bug or
- * a bad request and is not retried. If every key is exhausted, the last error
- * is surfaced.
- */
+const INDONESIAN_CREATOR_PROMPT =
+  "Transkripsi audio percakapan, narasi, vokal, musik, podcast, edukasi, dan konten video Bahasa Indonesia secara akurat kata demi kata. Gunakan kata percakapan Indonesia yang wajar (seperti gue, lo, banget, nggak, udah, lagi, gimana, bikin, konten, video, tips, bisnis, sharing, affiliate). Hindari teks watermark subtitle buatan fansub.";
+
 const HALLUCINATION_PHRASES = [
   /sub\s*indo\s*by/i,
   /subtitle\s*(by|oleh)/i,
@@ -104,13 +90,7 @@ async function postWithRotation(
     form.append("timestamp_granularities[]", "word");
     form.append("temperature", "0");
     // Explicit prompt to avoid Whisper subtitle watermark hallucinations on music/silence
-    form.append(
-      "prompt",
-      opts?.prompt ||
-        "Transkripsi audio percakapan, narasi, vokal, dan ucapan video Bahasa Indonesia secara akurat kata demi kata. Hindari teks watermark subtitle atau ucapan penutup seperti sub indo atau subscribe.",
-    );
-    // Indonesian by default — Whisper autodetects when omitted, which is worse
-    // for Indonesian specifically.
+    form.append("prompt", opts?.prompt || INDONESIAN_CREATOR_PROMPT);
     if (opts?.language) form.append("language", opts.language);
 
     let res: Response;
@@ -172,20 +152,48 @@ export async function transcribeAudio(
   };
 
   const rawText = (json.text ?? "").trim();
-  const isPureHallucination = HALLUCINATION_PHRASES.some((pat) => pat.test(rawText)) && rawText.split(/\s+/).length <= 7;
+  const isPureHallucination =
+    HALLUCINATION_PHRASES.some((pat) => pat.test(rawText)) &&
+    rawText.split(/\s+/).length <= 7;
 
   let words: Word[] = (json.words ?? [])
     .filter((w) => typeof w.word === "string" && typeof w.start === "number")
     .map((w) => ({
       word: (w.word as string).trim(),
-      start: w.start as number,
-      end: typeof w.end === "number" ? w.end : (w.start as number),
+      start: Math.max(0, Number(w.start) || 0),
+      end: Math.max(
+        Math.max(0, Number(w.start) || 0) + 0.05,
+        typeof w.end === "number" ? w.end : (Number(w.start) || 0) + 0.25,
+      ),
     }))
     .filter((w) => w.word.length > 0 && !isHallucinatedWord(w.word));
+
+  // Fallback: If word-level granularity wasn't returned by the endpoint but segments were,
+  // interpolate word timings evenly across each segment so captions still sync.
+  if (!words.length && json.segments?.length) {
+    for (const seg of json.segments) {
+      const segText = (seg.text ?? "").trim();
+      if (!segText || typeof seg.start !== "number" || typeof seg.end !== "number") continue;
+      const tokens = segText.split(/\s+/).filter(Boolean);
+      if (!tokens.length) continue;
+      const segDuration = Math.max(0.1, seg.end - seg.start);
+      const tokenDur = segDuration / tokens.length;
+      tokens.forEach((tok, idx) => {
+        const wStart = seg.start! + idx * tokenDur;
+        const wEnd = wStart + tokenDur;
+        if (!isHallucinatedWord(tok)) {
+          words.push({ word: tok, start: wStart, end: wEnd });
+        }
+      });
+    }
+  }
 
   if (isPureHallucination) {
     words = [];
   }
+
+  // Ensure words are strictly ordered by start time
+  words.sort((a, b) => a.start - b.start);
 
   // Prefer the model's reported duration; fall back to the last word or segment
   // so the credit charge always has a real number to work from.

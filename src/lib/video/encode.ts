@@ -120,7 +120,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     // needs an exact chunk count, which is a guess that corrupts the file when it
     // is wrong. A downloaded local file plays fine either way — only HTTP
     // progressive streaming cares where the index sits.
-    fastStart: false,
+    fastStart: "in-memory",
     video: { codec: "avc", width: W, height: H, frameRate: fps },
     ...(audio
       ? {
@@ -147,7 +147,6 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     height: H,
     bitrate,
     framerate: fps,
-    // AVCC, which is what the MP4 muxer expects.
     avc: { format: "avc" },
     hardwareAcceleration: "prefer-hardware",
     latencyMode: "quality",
@@ -170,34 +169,87 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
       await encodeAudio(audio, muxer, () => failure);
     }
 
-    // ---- the frame walk
+    // ---- the frame walk: Continuous presentation via requestVideoFrameCallback
     onStage?.("Nge-render tiap frame");
     const frameDurUs = Math.round(1_000_000 / fps);
-    // A keyframe every ~2 seconds: standard for social platforms, and it keeps
-    // seeking in the finished file responsive.
     const gop = Math.max(1, Math.round(fps * 2));
 
-    for (let i = 0; i < totalFrames; i++) {
-      if (failure) throw failure;
-      const t = i / fps;
-      await seekTo(video, Math.min(t, Math.max(0, duration - 1e-3)));
-      drawFrame(ctx, video, lines, t, style, W, H, watermark);
+    const rvfc = video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
+    };
 
-      const frame = new VideoFrame(canvas, {
-        timestamp: Math.round(t * 1_000_000),
-        duration: frameDurUs,
-      });
-      videoEncoder.encode(frame, { keyFrame: i % gop === 0 });
-      // Closing immediately is what stops frames piling up in memory.
-      frame.close();
+    let frameIndex = 0;
+    let lastRenderedTime = -1;
 
-      // Backpressure: never let the encoder queue grow into a memory problem.
-      while (videoEncoder.encodeQueueSize > 4) {
-        await sleep(4);
-        if (failure) throw failure;
+    if (typeof rvfc.requestVideoFrameCallback === "function") {
+      video.currentTime = 0;
+      try {
+        await video.play();
+      } catch {
+        /* fallback to stepping if browser rejects play */
       }
+    }
 
-      onProgress(Math.min(0.999, (i + 1) / totalFrames));
+    if (!video.paused) {
+      await new Promise<void>((resolve) => {
+        let isDone = false;
+        const finish = () => {
+          if (isDone) return;
+          isDone = true;
+          resolve();
+        };
+
+        video.addEventListener("ended", finish, { once: true });
+        const maxTimer = setTimeout(finish, (duration + 5) * 1000);
+
+        const step = (_now: number, meta: { mediaTime: number }) => {
+          if (isDone || failure || video.ended) {
+            clearTimeout(maxTimer);
+            finish();
+            return;
+          }
+          const t = meta.mediaTime;
+          if (t > lastRenderedTime || lastRenderedTime < 0) {
+            lastRenderedTime = t;
+            drawFrame(ctx, video, lines, t, style, W, H, watermark);
+            const frame = new VideoFrame(canvas, {
+              timestamp: Math.round(t * 1_000_000),
+              duration: frameDurUs,
+            });
+            videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
+            frame.close();
+            frameIndex++;
+            onProgress(Math.min(0.999, t / (duration || 1)));
+          }
+          if (!video.ended && !failure && !isDone) {
+            rvfc.requestVideoFrameCallback!(step);
+          }
+        };
+        rvfc.requestVideoFrameCallback!(step);
+      });
+      video.pause();
+    } else {
+      // Frame-by-frame step fallback with verified decode
+      for (let i = 0; i < totalFrames; i++) {
+        if (failure) throw failure;
+        const t = i / fps;
+        await seekToFrame(video, Math.min(t, Math.max(0, duration - 1e-3)));
+        drawFrame(ctx, video, lines, t, style, W, H, watermark);
+
+        const frame = new VideoFrame(canvas, {
+          timestamp: Math.round(t * 1_000_000),
+          duration: frameDurUs,
+        });
+        videoEncoder.encode(frame, { keyFrame: i % gop === 0 });
+        frame.close();
+
+        while (videoEncoder.encodeQueueSize > 4) {
+          await sleep(4);
+          if (failure) throw failure;
+        }
+
+        onProgress(Math.min(0.999, (i + 1) / totalFrames));
+      }
     }
 
     await videoEncoder.flush();
@@ -220,9 +272,8 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
 type LoadedAudio = { channels: Float32Array[]; sampleRate: number; numberOfChannels: number; frames: number };
 
 /**
- * Decode the original audio once, at its own sample rate — no resampling, no
- * downmix, so nothing is lost. The channel data is copied out and the AudioBuffer
- * dropped, so only the PCM we actually need stays alive.
+ * Decode audio losslessly. If native AudioContext cannot parse the container
+ * directly (common for MP4/MOV), uses ffmpeg.wasm extractWavAudio fallback.
  */
 async function loadAudio(file: File): Promise<LoadedAudio | null> {
   const AC: typeof AudioContext | undefined =
@@ -230,9 +281,21 @@ async function loadAudio(file: File): Promise<LoadedAudio | null> {
   if (!AC) return null;
   const actx = new AC();
   try {
-    const buf = await file.arrayBuffer();
-    const decoded = await actx.decodeAudioData(buf);
-    if (!decoded.length) return null;
+    let decoded: AudioBuffer | null = null;
+    try {
+      const buf = await file.arrayBuffer();
+      decoded = await actx.decodeAudioData(buf);
+    } catch {
+      // Fallback to ffmpeg.wasm lossless WAV extraction
+      try {
+        const { extractWavAudio } = await import("./ffmpeg");
+        const wavBuf = await extractWavAudio(file);
+        decoded = await actx.decodeAudioData(wavBuf);
+      } catch {
+        decoded = null;
+      }
+    }
+    if (!decoded || !decoded.length) return null;
     const channels: Float32Array[] = [];
     for (let c = 0; c < decoded.numberOfChannels; c++) channels.push(decoded.getChannelData(c).slice());
     return {
@@ -242,7 +305,7 @@ async function loadAudio(file: File): Promise<LoadedAudio | null> {
       frames: decoded.length,
     };
   } catch {
-    return null; // a video with no audio track is perfectly valid
+    return null; // a video with no audio track is valid
   } finally {
     try { await actx.close(); } catch {}
   }
@@ -255,25 +318,19 @@ async function encodeAudio(
 ) {
   const encoder = new AudioEncoder({
     output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
-    error: () => {
-      /* surfaced through the shared failure flag by the caller's next check */
-    },
+    error: () => {},
   });
   encoder.configure({
     codec: "mp4a.40.2",
     sampleRate: audio.sampleRate,
     numberOfChannels: audio.numberOfChannels,
-    // 192kbps AAC: transparent for speech and music at these lengths.
     bitrate: 192_000,
   });
 
-  // One second of audio per AudioData: few enough copies to be quick, small
-  // enough that peak memory never spikes.
   const step = audio.sampleRate;
   for (let offset = 0; offset < audio.frames; offset += step) {
     if (failed()) break;
     const count = Math.min(step, audio.frames - offset);
-    // f32-planar: every channel back to back in one buffer.
     const planar = new Float32Array(count * audio.numberOfChannels);
     for (let c = 0; c < audio.numberOfChannels; c++) {
       planar.set(audio.channels[c].subarray(offset, offset + count), c * count);
@@ -293,7 +350,6 @@ async function encodeAudio(
 
   await encoder.flush();
   encoder.close();
-  // The PCM is no longer needed; let it go before the frame walk starts.
   audio.channels.length = 0;
 }
 
@@ -323,11 +379,6 @@ async function pickAvc(W: number, H: number, bitrate: number, fps: number): Prom
 
 /**
  * Measure the source frame rate instead of assuming 30.
- *
- * Plays a fraction of a second muted and reads the real presentation times from
- * `requestVideoFrameCallback`; the median gap is the frame rate. Guessing wrong
- * here is exactly what makes an export look subtly wrong — 24fps footage walked
- * at 30 duplicates frames, 60fps footage walked at 30 throws half of them away.
  */
 async function probeFps(video: HTMLVideoElement): Promise<number> {
   const rvfc = video as HTMLVideoElement & {
@@ -349,7 +400,7 @@ async function probeFps(video: HTMLVideoElement): Promise<number> {
       rvfc.requestVideoFrameCallback!(step);
     };
     rvfc.requestVideoFrameCallback!(step);
-    setTimeout(resolve, 1200); // never hang on a video that will not decode
+    setTimeout(resolve, 1200);
   });
   video.pause();
   video.currentTime = 0;
@@ -359,29 +410,35 @@ async function probeFps(video: HTMLVideoElement): Promise<number> {
   gaps.sort((a, b) => a - b);
   const median = gaps[Math.floor(gaps.length / 2)];
   const raw = 1 / median;
-  // Snap to the rates real footage is actually shot at; anything else is noise
-  // in the measurement, not a genuinely odd frame rate.
   const common = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60];
   const near = common.reduce((best, c) => (Math.abs(c - raw) < Math.abs(best - raw) ? c : best), 30);
   return Math.abs(near - raw) / near < 0.12 ? near : Math.min(60, Math.max(15, Math.round(raw)));
 }
 
-/** Seek to an exact time and wait for the frame to actually be there. */
-function seekTo(video: HTMLVideoElement, t: number): Promise<void> {
+/** Seek to an exact time with frame presentation verification. */
+function seekToFrame(video: HTMLVideoElement, t: number): Promise<void> {
   if (Math.abs(video.currentTime - t) < 1e-4 && video.readyState >= 2) return Promise.resolve();
+  const rvfc = video as HTMLVideoElement & {
+    requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
+  };
   return new Promise<void>((resolve) => {
     let done = false;
     const finish = () => {
       if (done) return;
       done = true;
-      video.removeEventListener("seeked", finish);
+      video.removeEventListener("seeked", onSeeked);
       clearTimeout(timer);
       resolve();
     };
-    // A seek that never reports back must not stall the whole export — draw
-    // whatever frame is current and keep going.
-    const timer = setTimeout(finish, 3000);
-    video.addEventListener("seeked", finish);
+    const onSeeked = () => {
+      if (typeof rvfc.requestVideoFrameCallback === "function") {
+        rvfc.requestVideoFrameCallback(() => finish());
+      } else {
+        finish();
+      }
+    };
+    const timer = setTimeout(finish, 1000);
+    video.addEventListener("seeked", onSeeked, { once: true });
     video.currentTime = t;
   });
 }

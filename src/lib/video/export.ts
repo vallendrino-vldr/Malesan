@@ -89,10 +89,9 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
-  // captureStream(0): frames are produced only when we ask, via requestFrame, so
-  // every recorded frame is a finished draw rather than a timer sampling a
-  // half-updated canvas.
-  const canvasStream = canvas.captureStream(0);
+  // captureStream(30): frames are produced at a steady 30fps with requestFrame boosts,
+  // preventing frame starvation and stutter on media recording.
+  const canvasStream = canvas.captureStream(30);
   const vTrack = canvasStream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack | undefined;
   const vStream = getStream(video);
   if (vStream) for (const t of vStream.getAudioTracks()) canvasStream.addTrack(t);
