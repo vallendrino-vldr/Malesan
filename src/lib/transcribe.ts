@@ -141,7 +141,7 @@ export async function transcribeAudio(
       ? json.words
       : (json.segments?.flatMap((s) => s.words ?? []) ?? []);
 
-  let words: Word[] = rawWords
+  const words: Word[] = rawWords
     .filter((w) => typeof w.word === "string" && typeof w.start === "number")
     .map((w) => ({
       word: (w.word as string).trim(),
