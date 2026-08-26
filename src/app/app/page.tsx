@@ -2,11 +2,10 @@ import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import type { Metadata } from "next";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { AppShell, type TabKey } from "@/components/AppShell";
 import { MascotStage } from "@/components/MascotStage";
-import { PipelineBoard } from "@/components/PipelineBoard";
-import { VibeCodingStudio } from "@/components/VibeCodingStudio";
 import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCost } from "@/lib/config";
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { TextScale } from "@/components/TextScale";
@@ -14,11 +13,39 @@ import { LowCreditNotice } from "@/components/CreditNudge";
 import { StudioPanel, StudioHeroCard, StudioTile } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
-import { FeedbackModal } from "@/components/FeedbackModal";
-import { OnboardingWelcomeModal } from "@/components/OnboardingWelcomeModal";
-import { PersonaManager, CtaSettings } from "@/components/PersonaManager";
 import { CopyField } from "@/components/CopyField";
 import { jakartaDayKey } from "@/lib/time";
+
+const PipelineBoard = dynamic(() => import("@/components/PipelineBoard").then((m) => m.PipelineBoard), {
+  loading: () => (
+    <div className="w-full rounded-2xl border border-hairline bg-surface p-8 flex flex-col items-center justify-center gap-3 min-h-[360px]">
+      <div className="size-8 rounded-full border-2 border-ember border-t-transparent animate-spin" />
+      <span className="text-xs font-semibold text-muted">Memuat Pipeline Kanban...</span>
+    </div>
+  ),
+});
+
+const VibeCodingStudio = dynamic(() => import("@/components/VibeCodingStudio").then((m) => m.VibeCodingStudio), {
+  loading: () => (
+    <div className="w-full rounded-2xl border border-hairline bg-surface p-8 flex flex-col items-center justify-center gap-3 min-h-[360px]">
+      <div className="size-8 rounded-full border-2 border-ember border-t-transparent animate-spin" />
+      <span className="text-xs font-semibold text-muted">Memuat Vibe Studio...</span>
+    </div>
+  ),
+});
+
+const PersonaManager = dynamic(() => import("@/components/PersonaManager").then((m) => m.PersonaManager), {
+  loading: () => (
+    <div className="w-full rounded-2xl border border-hairline bg-surface p-6 flex flex-col items-center justify-center gap-2">
+      <div className="size-6 rounded-full border-2 border-ember border-t-transparent animate-spin" />
+      <span className="text-micro font-semibold text-muted">Memuat Suara Persona...</span>
+    </div>
+  ),
+});
+
+const CtaSettings = dynamic(() => import("@/components/PersonaManager").then((m) => m.CtaSettings));
+const FeedbackModal = dynamic(() => import("@/components/FeedbackModal").then((m) => m.FeedbackModal));
+const OnboardingWelcomeModal = dynamic(() => import("@/components/OnboardingWelcomeModal").then((m) => m.OnboardingWelcomeModal));
 
 export const metadata: Metadata = {
   title: "Malesan",

@@ -2,14 +2,53 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { IdeHariIni } from "./IdeHariIni";
-import { IdeaEngine } from "./IdeaEngine";
-import { ModuleRunner } from "./ModuleRunner";
-import { ClipEngine } from "./ClipEngine";
-import { ThreadEngine } from "./ThreadEngine";
-import { VideoEditor } from "./VideoEditor";
-import { AffiliateEngine } from "./AffiliateEngine";
-import { CarouselGenerator } from "./CarouselGenerator";
+import dynamic from "next/dynamic";
+
+function StudioSkeleton({ label }: { label: string }) {
+  return (
+    <div className="w-full rounded-2xl border border-hairline bg-surface p-5 sm:p-7 space-y-4 animate-in fade-in duration-200">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="size-9 rounded-xl bg-surface-raised animate-pulse" />
+          <div className="space-y-1">
+            <div className="h-4 w-32 rounded-md bg-surface-raised animate-pulse" />
+            <div className="h-2.5 w-44 rounded-md bg-surface-raised/60" />
+          </div>
+        </div>
+        <div className="h-6 w-16 rounded-full bg-surface-raised animate-pulse" />
+      </div>
+      <div className="h-40 w-full rounded-xl bg-surface-raised/30 border border-hairline/60 flex flex-col items-center justify-center gap-2">
+        <div className="size-6 rounded-full border-2 border-ember border-t-transparent animate-spin" />
+        <span className="text-micro font-semibold text-muted">Menyiapkan {label}...</span>
+      </div>
+    </div>
+  );
+}
+
+const IdeHariIni = dynamic(() => import("./IdeHariIni").then((m) => m.IdeHariIni), {
+  loading: () => <StudioSkeleton label="Ide Hari Ini" />,
+});
+const IdeaEngine = dynamic(() => import("./IdeaEngine").then((m) => m.IdeaEngine), {
+  loading: () => <StudioSkeleton label="Idea Engine" />,
+});
+const ModuleRunner = dynamic(() => import("./ModuleRunner").then((m) => m.ModuleRunner), {
+  loading: () => <StudioSkeleton label="Studio Module" />,
+});
+const ClipEngine = dynamic(() => import("./ClipEngine").then((m) => m.ClipEngine), {
+  loading: () => <StudioSkeleton label="Clip Engine" />,
+});
+const ThreadEngine = dynamic(() => import("./ThreadEngine").then((m) => m.ThreadEngine), {
+  loading: () => <StudioSkeleton label="Thread Engine" />,
+});
+const VideoEditor = dynamic(() => import("./VideoEditor").then((m) => m.VideoEditor), {
+  loading: () => <StudioSkeleton label="Video Auto-CC Editor" />,
+});
+const AffiliateEngine = dynamic(() => import("./AffiliateEngine").then((m) => m.AffiliateEngine), {
+  loading: () => <StudioSkeleton label="Affiliate Engine" />,
+});
+const CarouselGenerator = dynamic(() => import("./CarouselGenerator").then((m) => m.CarouselGenerator), {
+  loading: () => <StudioSkeleton label="AI Carousel Studio" />,
+});
 
 type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video" | "affiliate" | "carousel";
 const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video", "affiliate", "carousel"];
