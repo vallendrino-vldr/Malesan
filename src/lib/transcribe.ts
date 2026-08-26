@@ -49,7 +49,7 @@ const GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions";
 const GROQ_MODEL = process.env.GROQ_WHISPER_MODEL || "whisper-large-v3";
 
 const INDONESIAN_CREATOR_PROMPT =
-  "Transkripsi audio percakapan, narasi, vokal, musik, podcast, edukasi, dan konten video Bahasa Indonesia secara akurat kata demi kata. Gunakan kata percakapan Indonesia yang wajar (seperti gue, lo, banget, nggak, udah, lagi, gimana, bikin, konten, video, tips, bisnis, sharing, affiliate). Hindari teks watermark subtitle buatan fansub.";
+  "Halo teman-teman, hari ini gue mau sharing tips bikin konten video, script, hook, ide menarik, dan workflow santai buat kalian semua.";
 
 const HALLUCINATION_PHRASES = [
   /sub\s*indo\s*by/i,

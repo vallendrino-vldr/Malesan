@@ -81,7 +81,7 @@ export async function extractAudio(
       "-i", inName,
       "-vn",
       "-ac", "1",
-      "-ar", "16000",
+      "-ar", "24000",
       "-c:a", "aac",
       "-b:a", "128k",
       outName,

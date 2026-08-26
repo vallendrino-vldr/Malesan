@@ -65,11 +65,16 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   const video = document.createElement("video");
   video.src = URL.createObjectURL(file);
   video.playsInline = true;
-  // Muted is what makes play() start reliably: a non-muted programmatic play,
-  // after awaits have broken the click's user-activation, is rejected — and then
-  // the code awaits an "ended" that never comes and hangs forever. Audio is still
-  // captured from the element's stream regardless of muted.
   video.muted = true;
+  video.style.position = "fixed";
+  video.style.top = "-9999px";
+  video.style.left = "-9999px";
+  video.style.width = "320px";
+  video.style.height = "180px";
+  video.style.opacity = "0.01";
+  video.style.pointerEvents = "none";
+  document.body.appendChild(video);
+
   await once(video, "loadedmetadata");
 
   const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920);
@@ -85,7 +90,10 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas gak kebentuk di browser ini.");
+  if (!ctx) {
+    try { video.remove(); } catch {}
+    throw new Error("Canvas gak kebentuk di browser ini.");
+  }
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
@@ -103,6 +111,7 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
     try { canvasStream.getTracks().forEach((t) => t.stop()); } catch {}
     try { vStream?.getTracks().forEach((t) => t.stop()); } catch {}
     try { video.pause(); } catch {}
+    try { video.remove(); } catch {}
     try { URL.revokeObjectURL(video.src); } catch {}
     video.removeAttribute("src");
     try { video.load(); } catch {}

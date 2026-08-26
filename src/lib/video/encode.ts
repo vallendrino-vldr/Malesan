@@ -48,7 +48,14 @@ export class UnsupportedEncoder extends Error {}
 
 /** H.264 profiles, best first. High → Main → Baseline, all at a level that
  *  covers 4K so a large source is never rejected for its size. */
-const AVC_CANDIDATES = ["avc1.640034", "avc1.4d0034", "avc1.42E034", "avc1.640028", "avc1.42E01E"];
+const AVC_CANDIDATES = [
+  "avc1.640034",
+  "avc1.640028",
+  "avc1.4d0034",
+  "avc1.4d0028",
+  "avc1.42E034",
+  "avc1.42E01E",
+];
 
 export function canUseWebCodecs(): boolean {
   return (
@@ -73,10 +80,22 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
   video.muted = true;
   video.playsInline = true;
   video.preload = "auto";
+  // Attach offscreen to DOM: vital to prevent Chromium/WebKit from background-throttling
+  // GPU texture presentation during video rendering.
+  video.style.position = "fixed";
+  video.style.top = "-9999px";
+  video.style.left = "-9999px";
+  video.style.width = "320px";
+  video.style.height = "180px";
+  video.style.opacity = "0.01";
+  video.style.pointerEvents = "none";
+  document.body.appendChild(video);
+
   await once(video, "loadedmetadata");
 
   const duration = Number.isFinite(video.duration) ? video.duration : 0;
   if (!duration) {
+    try { video.remove(); } catch {}
     URL.revokeObjectURL(srcUrl);
     throw new Error("Durasi videonya gak kebaca. Coba video lain.");
   }
@@ -99,7 +118,10 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext("2d", { alpha: false });
-  if (!ctx) throw new Error("Canvas gak kebentuk di browser ini.");
+  if (!ctx) {
+    try { video.remove(); } catch {}
+    throw new Error("Canvas gak kebentuk di browser ini.");
+  }
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
@@ -154,6 +176,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
 
   const cleanup = async () => {
     try { if (videoEncoder.state !== "closed") videoEncoder.close(); } catch {}
+    try { video.remove(); } catch {}
     try { URL.revokeObjectURL(srcUrl); } catch {}
     video.removeAttribute("src");
     try { video.load(); } catch {}
