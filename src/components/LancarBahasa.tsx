@@ -3005,7 +3005,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             )}
           </div>
         </div>
-      )}
 
       {/* ========================================================================= */}
       {/* HIGH-END ISOLATED VOICE VALIDATION POP-UP WINDOW (DIALOG PORTAL) */}
@@ -3777,6 +3776,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 >
                   Kirim
                 </button>
+              </div>
             </div>
           )}
         </div>
