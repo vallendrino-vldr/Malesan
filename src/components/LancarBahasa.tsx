@@ -213,6 +213,13 @@ interface AudioDrillOption {
   isCorrect: boolean;
 }
 
+interface StepVoiceChallenge {
+  targetSentence: string;
+  easyPronunciation: string;
+  focusTips: string;
+  sampleAudio: string;
+}
+
 interface AudioLessonStep {
   title: string;
   focusHighlight: string;
@@ -236,6 +243,7 @@ interface AudioLessonStep {
     options: AudioDrillOption[];
     explanation: string;
   };
+  stepVoiceChallenge: StepVoiceChallenge;
 }
 
 interface AudioGateExamQuestion {
@@ -249,13 +257,6 @@ interface AudioGateExamQuestion {
   explanation: string;
 }
 
-interface VoiceChallenge {
-  targetSentence: string;
-  easyPronunciation: string;
-  focusTips: string;
-  sampleAudio: string;
-}
-
 interface AudioGatedStage {
   id: number;
   percentage: number;
@@ -265,7 +266,7 @@ interface AudioGatedStage {
   summary: string;
   steps: AudioLessonStep[];
   exam: AudioGateExamQuestion[];
-  voiceChallenge: VoiceChallenge;
+  voiceChallenge: StepVoiceChallenge;
 }
 
 const AUDIO_GATED_STAGES: AudioGatedStage[] = [
@@ -313,6 +314,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "Abjad H dalam bahasa Inggris dibaca murni 'Eitch'.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "The letter H is pronounced Eitch and R is smooth.",
+          easyPronunciation: "D-HI LE-TER EITCH IZ PRO-NAUNST EITCH END AR IZ SMUT-H.",
+          focusTips: "Lafalkan kata 'Eitch' murni tanpa H di awal, dan huruf R lembut.",
+          sampleAudio: "The letter H is pronounced Eitch and R is smooth.",
+        },
       },
       {
         title: "Bunyi Lidah 'TH' (Tebal vs Tipis)",
@@ -349,6 +356,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             },
           ],
           explanation: "Kata 'Think' dan 'Thank' wajib diawali desisan jepit lidah, bukan huruf T biasa.",
+        },
+        stepVoiceChallenge: {
+          targetSentence: "I think that this is very good, thank you.",
+          easyPronunciation: "AI T-HINGK DET D-HIS IZ VE-RI GUD, T-HENGK YU.",
+          focusTips: "Keluarkan ujung lidah di antara gigi seri untuk think, that, this, dan thank you.",
+          sampleAudio: "I think that this is very good, thank you.",
         },
       },
       {
@@ -387,6 +400,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "Huruf V wajib menghasilkan getaran bibir, tidak boleh ditekan menjadi huruf P.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "This is my favorite video and it is very nice.",
+          easyPronunciation: "D-HIS IZ MAI FE-VE-RIT VI-DI-O END IT IZ VE-RI NAIS.",
+          focusTips: "Getarkan bibir bawah dengan gigi atas pada kata favorite, video, dan very.",
+          sampleAudio: "This is my favorite video and it is very nice.",
+        },
       },
       {
         title: "Huruf Bisu S pada kata 'Island' (Pulau)",
@@ -424,6 +443,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "Huruf S pada 'Island' adalah silent letter, dibaca murni 'Eye-land'.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "We will visit the beautiful island tomorrow.",
+          easyPronunciation: "WI WIL VI-ZIT D-HI BYU-TI-FUL AI-LEND TU-MO-RO.",
+          focusTips: "Huruf S pada island WAJIB bisu: 'AI-LEND' (bukan Is-land).",
+          sampleAudio: "We will visit the beautiful island tomorrow.",
+        },
       },
       {
         title: "Huruf Bisu B pada kata 'Doubt' (Ragu)",
@@ -460,6 +485,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             },
           ],
           explanation: "Huruf B pada 'doubt' dan 'debt' tidak pernah disuarakan sama sekali.",
+        },
+        stepVoiceChallenge: {
+          targetSentence: "I have no doubt that they will pay the debt.",
+          easyPronunciation: "AI HEV NO DA-UT DET D-HEI WIL PEI D-HI DET.",
+          focusTips: "Huruf B pada doubt ('DA-UT') dan debt ('DET') sama sekali tidak boleh dibunyikan.",
+          sampleAudio: "I have no doubt that they will pay the debt.",
         },
       },
     ],
@@ -543,6 +574,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "Connected speech menyambung konsonan ke vokal menjadi 'Hol-don' dan 'Pi-ki-tap'.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "Hold on, please pick it up right now.",
+          easyPronunciation: "HOL-DON, PLIZ PI-KI-TAP RAIT NAU.",
+          focusTips: "Sambungkan Hold on jadi 'HOL-DON' dan Pick it up jadi 'PI-KI-TAP'.",
+          sampleAudio: "Hold on, please pick it up right now.",
+        },
       },
       {
         title: "Reduksi Percakapan: 'Gonna' & 'Wanna'",
@@ -579,6 +616,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             },
           ],
           explanation: "'Gonna' dan 'Wanna' membuat ritme bicara terasa rileks dan luwes.",
+        },
+        stepVoiceChallenge: {
+          targetSentence: "I am gonna tell you what I wanna do.",
+          easyPronunciation: "AI'M GONNA TEL YU WHAT AI WANNA DU.",
+          focusTips: "Lafalkan 'gonna' dan 'wanna' dengan santai dan mengalir.",
+          sampleAudio: "I am gonna tell you what I wanna do.",
         },
       },
     ],
@@ -653,6 +696,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "'Agree' adalah verb (kata kerja), jadi langsung 'I agree' tanpa to be 'am'.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "I agree with your proposal completely.",
+          easyPronunciation: "AI E-GRI WIT-H YUR PRO-PO-ZAL KOM-PLIT-LI.",
+          focusTips: "Langsung 'I agree' tanpa kata 'am'!",
+          sampleAudio: "I agree with your proposal completely.",
+        },
       },
       {
         title: "Larangan Keras: 'Thanks before'",
@@ -690,6 +739,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "'Thanks in advance' adalah ungkapan resmi dan baku dalam bahasa Inggris.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "Thanks in advance for your support and feedback.",
+          easyPronunciation: "TENGKS IN ED-VANS FOR YUR SE-PORT END FID-BEK.",
+          focusTips: "Gunakan 'thanks in advance' (jangan sebut thanks before).",
+          sampleAudio: "Thanks in advance for your support and feedback.",
+        },
       },
       {
         title: "Larangan Keras: 'Join with us'",
@@ -726,6 +781,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             },
           ],
           explanation: "Kata 'Join' tidak membutuhkan preposisi 'with'. Cukup 'Join our team'.",
+        },
+        stepVoiceChallenge: {
+          targetSentence: "Please join our team for lunch today.",
+          easyPronunciation: "PLIZ JOIN AUR TIM FOR LANCH TU-DEI.",
+          focusTips: "Langsung 'join our team' tanpa kata 'with'.",
+          sampleAudio: "Please join our team for lunch today.",
         },
       },
     ],
@@ -800,6 +861,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "Masa lalu wajib menggunakan bentuk lampau: 'went' dan 'met'.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "Yesterday I went to the office and met the client.",
+          easyPronunciation: "YES-TER-DEI AI WENT TU D-HI OFIS END MET D-HI KLAI-ENT.",
+          focusTips: "Pastikan bentuk lampau went dan met terucap jelas.",
+          sampleAudio: "Yesterday I went to the office and met the client.",
+        },
       },
       {
         title: "Pola Bertanya & Meminta Sangat Sopan",
@@ -836,6 +903,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             },
           ],
           explanation: "'Could you please...' adalah bentuk permintaan tolong yang santun dan profesional.",
+        },
+        stepVoiceChallenge: {
+          targetSentence: "Could you please share the report when you have time?",
+          easyPronunciation: "KUD YU PLIZ SHER D-HI RE-PORT WEN YU HEV TAIM?",
+          focusTips: "Gunakan 'Could you please' dengan lembut dan sopan.",
+          sampleAudio: "Could you please share the report when you have time?",
         },
       },
     ],
@@ -901,6 +974,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "'Can everyone see my screen?' dan 'You are on mute' adalah standar universal.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "Can everyone see my screen? You are currently on mute.",
+          easyPronunciation: "KEN EV-RI-WAN SI MAI SKRIN? YU AR KA-RENT-LI ON MYUT.",
+          focusTips: "Lafalkan frasa 'see my screen' dan 'on mute' dengan intonasi jelas.",
+          sampleAudio: "Can everyone see my screen? You are currently on mute.",
+        },
       },
     ],
     exam: [
@@ -965,6 +1044,12 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           ],
           explanation: "Kalimat opsi 1 menggunakan 'lend', 'could you please', dan 'thanks in advance' secara sempurna.",
         },
+        stepVoiceChallenge: {
+          targetSentence: "Could you please lend me the report? Thanks in advance.",
+          easyPronunciation: "KUD YU PLIZ LEND MI D-HI RE-PORT? TENGKS IN ED-VANS.",
+          focusTips: "Lafalkan 'lend me' dan 'thanks in advance' secara sempurna.",
+          sampleAudio: "Could you please lend me the report? Thanks in advance.",
+        },
       },
     ],
     exam: [
@@ -1002,11 +1087,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [drillAnswer, setDrillAnswer] = useState<number | null>(null);
   const [currentlyPlayingAudioText, setCurrentlyPlayingAudioText] = useState<string | null>(null);
 
-  // Real Voice Recording Validation States for Exams
+  // Step-by-Step AI Voice Validation States
+  const [stepVoiceResults, setStepVoiceResults] = useState<Record<string, VoiceValidationResponse>>({});
+  const [isRecordingStepVoice, setIsRecordingStepVoice] = useState<boolean>(false);
+  const [stepVoiceTranscribing, setStepVoiceTranscribing] = useState<boolean>(false);
+  const [stepVoiceRecordedText, setStepVoiceRecordedText] = useState<string>("");
+
+  // Exam Real Voice Recording Validation States
   const [isRecordingVoiceExam, setIsRecordingVoiceExam] = useState<boolean>(false);
   const [voiceExamTranscribing, setVoiceExamTranscribing] = useState<boolean>(false);
   const [voiceExamResult, setVoiceExamResult] = useState<VoiceValidationResponse | null>(null);
-  const [voiceExamBlob, setVoiceExamBlob] = useState<Blob | null>(null);
   const [voiceExamRecordedText, setVoiceExamRecordedText] = useState<string>("");
 
   const [completedStages, setCompletedStages] = useState<number[]>(() => {
@@ -1037,10 +1127,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const stepMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const voiceExamMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
+  const stepSpeechRecRef = useRef<SpeechRecognitionInstanceLike | null>(null);
   const voiceExamSpeechRecRef = useRef<SpeechRecognitionInstanceLike | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const stepChunksRef = useRef<Blob[]>([]);
   const voiceExamChunksRef = useRef<Blob[]>([]);
   const currentAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1089,7 +1182,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     });
   }, []);
 
-  // Helper to smoothly scroll back to the top of the lesson card ONLY when explicitly navigating steps
+  // Explicit helper to smoothly scroll back to top of lesson card only when navigating steps
   const scrollToDrillTop = useCallback(() => {
     if (drillChamberRef.current) {
       drillChamberRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1162,7 +1255,166 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   );
 
   // =========================================================================
-  // REAL VOICE VALIDATION RECORDING FOR STAGE GATE EXAM
+  // STEP-BY-STEP VOICE RECORDING VALIDATION HANDLER
+  // =========================================================================
+  const toggleStepVoiceRecording = async (stage: AudioGatedStage, step: AudioLessonStep, stepKey: string) => {
+    if (stepVoiceTranscribing) return;
+
+    if (isRecordingStepVoice) {
+      setIsRecordingStepVoice(false);
+
+      if (stepSpeechRecRef.current) {
+        try {
+          stepSpeechRecRef.current.stop();
+        } catch {}
+      }
+
+      if (stepMediaRecorderRef.current && stepMediaRecorderRef.current.state !== "inactive") {
+        try {
+          stepMediaRecorderRef.current.stop();
+        } catch {}
+      }
+    } else {
+      setStepVoiceRecordedText("");
+      setFeedbackNotice(null);
+
+      // Web Speech Recognition for live feedback
+      const SpeechRecognition =
+        typeof window !== "undefined"
+          ? (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).SpeechRecognition ||
+            (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).webkitSpeechRecognition
+          : null;
+
+      if (SpeechRecognition) {
+        try {
+          const rec = new SpeechRecognition();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = "en-US";
+          rec.onresult = (event: SpeechRecognitionEventLike) => {
+            let tr = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              tr += event.results[i][0].transcript;
+            }
+            if (tr.trim()) {
+              setStepVoiceRecordedText(tr.trim());
+            }
+          };
+          rec.start();
+          stepSpeechRecRef.current = rec;
+        } catch (e) {
+          console.warn("SpeechRec step voice exam failed to start:", e);
+        }
+      }
+
+      // MediaRecorder for raw audio blob
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
+          : "";
+
+        const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+        stepMediaRecorderRef.current = mediaRecorder;
+        stepChunksRef.current = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data && event.data.size > 0) {
+            stepChunksRef.current.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach((track) => track.stop());
+          const audioBlob = new Blob(stepChunksRef.current, {
+            type: mediaRecorder.mimeType || "audio/webm",
+          });
+          await submitStepVoiceValidation(stage, step, stepKey, audioBlob, stepVoiceRecordedText);
+        };
+
+        mediaRecorder.start(200);
+        setIsRecordingStepVoice(true);
+      } catch (err) {
+        console.warn("Mic getUserMedia failed:", err);
+        setIsRecordingStepVoice(true);
+      }
+    }
+  };
+
+  const submitStepVoiceValidation = async (
+    stage: AudioGatedStage,
+    step: AudioLessonStep,
+    stepKey: string,
+    blobParam?: Blob | null,
+    textParam?: string,
+  ) => {
+    setStepVoiceTranscribing(true);
+    setFeedbackNotice(null);
+
+    try {
+      const activeBlob = blobParam;
+      const activeText = textParam || stepVoiceRecordedText;
+
+      let res: Response;
+
+      if (activeBlob && activeBlob.size > 100) {
+        const formData = new FormData();
+        formData.append("audio", activeBlob, "user_step_voice.webm");
+        formData.append("targetSentence", step.stepVoiceChallenge.targetSentence);
+        formData.append("stageId", String(stage.id));
+        formData.append("stageTitle", `${stage.title} - ${step.title}`);
+        formData.append("focusPhonetics", step.stepVoiceChallenge.focusTips);
+        if (activeText) formData.append("text", activeText);
+
+        res = await fetch("/api/speaking/validate-voice", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        res = await fetch("/api/speaking/validate-voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: activeText || step.stepVoiceChallenge.targetSentence,
+            targetSentence: step.stepVoiceChallenge.targetSentence,
+            stageId: stage.id,
+            stageTitle: `${stage.title} - ${step.title}`,
+            focusPhonetics: step.stepVoiceChallenge.focusTips,
+          }),
+        });
+      }
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Gagal memvalidasi suara pelafalan.");
+      }
+
+      const payload = await res.json();
+      const valResult: VoiceValidationResponse = payload.data;
+
+      setStepVoiceResults((prev) => ({
+        ...prev,
+        [stepKey]: valResult,
+      }));
+
+      if (valResult.isPassed) {
+        saveSessionRecord({
+          type: "academy",
+          title: `Lulus Suara: ${step.title}`,
+          score: valResult.score,
+        });
+      }
+    } catch (err) {
+      setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memvalidasi suara.");
+    } finally {
+      setStepVoiceTranscribing(false);
+    }
+  };
+
+  // =========================================================================
+  // STAGE EXAM REAL VOICE VALIDATION
   // =========================================================================
   const toggleVoiceExamRecording = async (stage: AudioGatedStage) => {
     if (voiceExamTranscribing) return;
@@ -1184,10 +1436,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     } else {
       setVoiceExamResult(null);
       setVoiceExamRecordedText("");
-      setVoiceExamBlob(null);
       setFeedbackNotice(null);
 
-      // Web Speech recognition for real-time text feedback
       const SpeechRecognition =
         typeof window !== "undefined"
           ? (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).SpeechRecognition ||
@@ -1216,7 +1466,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         }
       }
 
-      // MediaRecorder for raw audio blob
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -1240,7 +1489,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           const audioBlob = new Blob(voiceExamChunksRef.current, {
             type: mediaRecorder.mimeType || "audio/webm",
           });
-          setVoiceExamBlob(audioBlob);
           await submitVoiceExamValidation(stage, audioBlob, voiceExamRecordedText);
         };
 
@@ -1253,13 +1501,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   };
 
-  // Submit voice recording to /api/speaking/validate-voice
   const submitVoiceExamValidation = async (stage: AudioGatedStage, blobParam?: Blob | null, textParam?: string) => {
     setVoiceExamTranscribing(true);
     setFeedbackNotice(null);
 
     try {
-      const activeBlob = blobParam || voiceExamBlob;
+      const activeBlob = blobParam;
       const activeText = textParam || voiceExamRecordedText;
 
       let res: Response;
@@ -1333,7 +1580,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Audio Visualizer Waveform Animation Loop
   useEffect(() => {
-    if (!isCalling && !isRecordingVoiceExam) return;
+    if (!isCalling && !isRecordingVoiceExam && !isRecordingStepVoice) return;
 
     let animId: number;
 
@@ -1352,22 +1599,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
           for (let i = 0; i < barCount; i++) {
             const freq = Math.sin(time + i * 0.3) * 0.5 + 0.5;
-            const barHeight = isRecording || isRecordingVoiceExam
+            const barHeight = isRecording || isRecordingVoiceExam || isRecordingStepVoice
               ? Math.max(8, freq * (height * 0.9))
               : isPlayingAudio
               ? Math.max(6, Math.sin(time * 3 + i * 0.4) * (height * 0.75))
-              : isProcessing || voiceExamTranscribing
+              : isProcessing || voiceExamTranscribing || stepVoiceTranscribing
               ? Math.max(4, Math.sin(time * 2 + i * 0.2) * (height * 0.45))
               : 4;
 
             const x = i * (barWidth + gap);
             const y = (height - barHeight) / 2;
 
-            ctx.fillStyle = isRecording || isRecordingVoiceExam
+            ctx.fillStyle = isRecording || isRecordingVoiceExam || isRecordingStepVoice
               ? "#ef4444"
               : isPlayingAudio
               ? "#10b981"
-              : isProcessing || voiceExamTranscribing
+              : isProcessing || voiceExamTranscribing || stepVoiceTranscribing
               ? "#f59e0b"
               : "#3f3f46";
             ctx.fillRect(x, y, barWidth, barHeight);
@@ -1379,7 +1626,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
     animId = requestAnimationFrame(renderWaveform);
     return () => cancelAnimationFrame(animId);
-  }, [isCalling, isRecording, isProcessing, isPlayingAudio, isRecordingVoiceExam, voiceExamTranscribing]);
+  }, [isCalling, isRecording, isProcessing, isPlayingAudio, isRecordingVoiceExam, voiceExamTranscribing, isRecordingStepVoice, stepVoiceTranscribing]);
 
   // Start Voice Call or Scenario Chamber
   const startCall = (scenarioItem?: ScenarioItem) => {
@@ -1826,6 +2073,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   const activeStage = AUDIO_GATED_STAGES.find((s) => s.id === activeStageId) || AUDIO_GATED_STAGES[0];
   const activeStep = activeStage.steps[activeStepIndex] || activeStage.steps[0];
+  const currentStepKey = `stage_${activeStage.id}_step_${activeStepIndex}`;
+  const currentStepVoiceResult = stepVoiceResults[currentStepKey] || null;
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-3 sm:space-y-4">
@@ -1865,7 +2114,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               Lancar Inggris
             </h1>
             <p className="text-[11px] sm:text-xs text-muted leading-relaxed line-clamp-2 sm:line-clamp-none">
-              Validasi suara asli AI, ear-training salah vs benar, speaking partner native, roleplay, &amp; esai.
+              Validasi suara asli per langkah, ear-training salah vs benar, speaking partner native, &amp; esai.
             </p>
           </div>
 
@@ -1903,14 +2152,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
         </div>
 
-        {/* 6 COMPACT STREAMLINED SUB-MODULE TABS (MOBILE-OPTIMIZED) */}
+        {/* 6 COMPACT STREAMLINED SUB-MODULE TABS */}
         <div className="border-t border-hairline/60 pt-2.5 sm:pt-3">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
             {[
               {
                 id: "academy",
                 label: "Belajar 0-100%",
-                sub: "Uji Suara AI",
+                sub: "Uji Suara Per Step",
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
@@ -2011,7 +2260,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       </div>
 
       {/* ========================================================================= */}
-      {/* MODE 0: BELAJAR 0-100% (DUAL-AUDIO & MANDATORY VOICE VALIDATION GATE) */}
+      {/* MODE 0: BELAJAR 0-100% (DUAL-AUDIO & STEP-BY-STEP MANDATORY VOICE GATE) */}
       {/* ========================================================================= */}
       {mode === "academy" && (
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
@@ -2021,7 +2270,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             <div className="flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <span className="text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider block truncate">
-                  Belajar 0% → 100%
+                  Belajar 0% → 100% (Uji Suara Asli di Tiap Langkah)
                 </span>
                 <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate mt-0.5">
                   {activeStage.title}
@@ -2064,6 +2313,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       setDrillAnswer(null);
                       setVoiceExamResult(null);
                       setVoiceExamRecordedText("");
+                      scrollToDrillTop();
                     }}
                     className={`rounded-xl sm:rounded-2xl border p-1.5 sm:p-2.5 text-center transition-all relative flex flex-col items-center justify-center h-12 sm:h-16 cursor-pointer min-w-0 ${borderStyle}`}
                   >
@@ -2091,7 +2341,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           {/* ACTIVE STAGE DRILL CHAMBER */}
           <div ref={drillChamberRef} className="border-t border-hairline/60 pt-3 sm:pt-4 space-y-3 sm:space-y-4 scroll-mt-20 sm:scroll-mt-24">
             {!isExamMode ? (
-              /* LESSON STEP VIEW (NO SCROLL CHAOS, DIRECT FOCUSED ARENA) */
+              /* LESSON STEP VIEW (WITH STEP-BY-STEP REAL AI VOICE VALIDATION) */
               <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-200">
                 {/* Step Progress Pill */}
                 <div className="flex items-center justify-between bg-surface-raised/70 px-3 py-2 rounded-xl border border-hairline">
@@ -2103,7 +2353,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   </div>
                 </div>
 
-                {/* Big Interactive Focus Arena (Compact & Ergonomic) */}
+                {/* Big Interactive Focus Arena */}
                 <div className="rounded-2xl sm:rounded-3xl border border-ember/30 bg-gradient-to-b from-surface-raised to-surface p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 shadow-md w-full min-w-0">
                   {/* Focus Sound Banner */}
                   <div className="space-y-1 border-b border-hairline/60 pb-3">
@@ -2117,7 +2367,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <p className="text-[11px] sm:text-xs text-muted mt-1 leading-relaxed">{activeStep.explanation}</p>
                   </div>
 
-                  {/* DUAL-AUDIO SIDE-BY-SIDE ON MOBILE */}
+                  {/* DUAL-AUDIO SIDE-BY-SIDE */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
                       Dengarkan Perbandingan Suara:
@@ -2181,7 +2431,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <p><b>Posisi Lidah:</b> {activeStep.tongueTip}</p>
                   </div>
 
-                  {/* LUMINOUS INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
+                  {/* 1. INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
                   <div className="rounded-2xl sm:rounded-3xl border border-ember/35 bg-surface-raised/80 p-3 sm:p-4 space-y-3 shadow-sm w-full min-w-0">
                     <div>
                       <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider">
@@ -2190,14 +2440,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                           <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
-                        Uji Pemahaman Suara:
+                        1. Uji Pemahaman Telinga (Pilih Jawaban):
                       </span>
                       <p className="font-display text-xs sm:text-sm font-bold text-ink mt-0.5 leading-snug">
                         {activeStep.audioDrill.prompt}
                       </p>
                     </div>
 
-                    {/* Highly Interactive Choice Cards */}
+                    {/* Choice Cards */}
                     <div className="space-y-2">
                       {activeStep.audioDrill.options.map((opt, optIdx) => {
                         const isChosen = drillAnswer === optIdx;
@@ -2219,7 +2469,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             className={`rounded-xl sm:rounded-2xl border p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
                           >
                             <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
-                              {/* Round Badge */}
                               <div
                                 className={`size-7 sm:size-8 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
                                   drillAnswer !== null && isRight
@@ -2242,7 +2491,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               </div>
                             </div>
 
-                            {/* Audio Play Trigger */}
                             <button
                               type="button"
                               onClick={(e) => {
@@ -2274,13 +2522,139 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     )}
                   </div>
 
-                  {/* STRICT GATED NAVIGATION CONTROLS */}
+                  {/* 2. MANDATORY REAL AI VOICE RECORDING VALIDATION FOR THIS STEP */}
+                  <div className="rounded-2xl sm:rounded-3xl border-2 border-ember/50 bg-gradient-to-b from-surface-raised via-surface to-ember/10 p-3.5 sm:p-4 space-y-3 shadow-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="size-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                        <span className="font-display text-xs sm:text-sm font-bold text-ink uppercase tracking-wider truncate">
+                          2. Uji Rekam Suara Lo Sendiri (Wajib Lolos):
+                        </span>
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] font-mono font-bold text-ember bg-ember/20 px-2 py-0.5 rounded-full border border-ember/30 shrink-0">
+                        Validasi AI
+                      </span>
+                    </div>
+
+                    {/* Step Target Sentence Card */}
+                    <div className="rounded-xl border border-hairline bg-surface p-3 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1 min-w-0">
+                          <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
+                            Ucapkan Kalimat Ini:
+                          </span>
+                          <h4 className="font-display text-xs sm:text-sm font-bold text-ember leading-snug">
+                            &ldquo;{activeStep.stepVoiceChallenge.targetSentence}&rdquo;
+                          </h4>
+                          <p className="text-[10px] sm:text-[11px] font-mono font-medium text-ink bg-surface-raised px-2 py-0.5 rounded border border-hairline inline-block">
+                            {activeStep.stepVoiceChallenge.easyPronunciation}
+                          </p>
+                        </div>
+
+                        {/* Listen Sample Audio */}
+                        <button
+                          type="button"
+                          onClick={() => playSpeechAudio(activeStep.stepVoiceChallenge.sampleAudio)}
+                          className="btn-ember h-7 sm:h-8 px-2.5 rounded-lg text-obsidian text-[11px] font-bold transition-all flex items-center gap-1 shadow-xs hover:brightness-105 shrink-0 cursor-pointer"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          </svg>
+                          <span>{currentlyPlayingAudioText === activeStep.stepVoiceChallenge.sampleAudio ? "Memutar..." : "Contoh"}</span>
+                        </button>
+                      </div>
+
+                      <p className="text-[10px] text-muted border-t border-hairline/50 pt-1.5">
+                        <b>Kunci Lulus:</b> {activeStep.stepVoiceChallenge.focusTips}
+                      </p>
+                    </div>
+
+                    {/* Step Mic Recorder Button */}
+                    <div className="flex flex-col items-center justify-center space-y-1.5 pt-1">
+                      <button
+                        type="button"
+                        disabled={stepVoiceTranscribing}
+                        onClick={() => toggleStepVoiceRecording(activeStage, activeStep, currentStepKey)}
+                        className={`h-11 sm:h-12 px-5 sm:px-7 rounded-xl font-display text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto cursor-pointer ${
+                          isRecordingStepVoice
+                            ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/40"
+                            : stepVoiceTranscribing
+                            ? "bg-surface-raised text-muted border border-hairline cursor-not-allowed"
+                            : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
+                        }`}
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" x2="12" y1="19" y2="22" />
+                        </svg>
+                        <span>
+                          {isRecordingStepVoice
+                            ? "Selesai Rekam (Kirim ke AI) ⏹"
+                            : stepVoiceTranscribing
+                            ? "AI Menganalisis Suara Lo..."
+                            : "🎙️ Tekan & Rekam Pelafalan Suara Lo"}
+                        </span>
+                      </button>
+
+                      {stepVoiceRecordedText && (
+                        <p className="text-[10px] font-mono text-muted text-center animate-in fade-in">
+                          Suara Terdengar: &ldquo;{stepVoiceRecordedText}&rdquo;
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Step Voice Validation Result Card */}
+                    {currentStepVoiceResult && (
+                      <div className={`rounded-xl border p-3 space-y-2 animate-in fade-in duration-300 ${
+                        currentStepVoiceResult.isPassed
+                          ? "border-emerald-500/50 bg-emerald-500/15"
+                          : "border-rose-500/50 bg-rose-500/15"
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                              currentStepVoiceResult.isPassed ? "bg-emerald-400 text-obsidian" : "bg-rose-500 text-white"
+                            }`}>
+                              {currentStepVoiceResult.isPassed ? "✓" : "✕"}
+                            </span>
+                            <span className={`font-display text-xs sm:text-sm font-bold ${
+                              currentStepVoiceResult.isPassed ? "text-emerald-400" : "text-rose-400"
+                            }`}>
+                              {currentStepVoiceResult.isPassed ? "LULUS UJI SUARA LANGKAH INI!" : "BELUM LULUS — REKAM ULANG"}
+                            </span>
+                          </div>
+                          <span className="font-display text-sm font-bold text-ink font-mono">
+                            Skor: {currentStepVoiceResult.score}/100
+                          </span>
+                        </div>
+
+                        <div className="rounded-lg bg-surface/80 p-2 text-[11px] space-y-1 border border-hairline/60">
+                          <p className="text-muted">
+                            <b>Terdengar:</b> &ldquo;{currentStepVoiceResult.transcribedText}&rdquo;
+                          </p>
+                        </div>
+
+                        <div className="rounded-lg bg-surface-raised p-2 text-[11px] border border-hairline">
+                          <p className="font-bold text-ember uppercase text-[9px] tracking-wider mb-0.5">
+                            Catatan Humor Malesan AI:
+                          </p>
+                          <p className="text-ink font-medium italic">
+                            &ldquo;{currentStepVoiceResult.humorRoast}&rdquo;
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* STRICT GATED NAVIGATION CONTROLS (GATED ON QUIZ + REAL VOICE VALIDATION) */}
                   <div className="flex items-center justify-between pt-2.5 border-t border-hairline/60 gap-2">
                     <button
                       disabled={activeStepIndex === 0}
                       onClick={() => {
                         setActiveStepIndex((prev) => prev - 1);
                         setDrillAnswer(null);
+                        setStepVoiceRecordedText("");
                         scrollToDrillTop();
                       }}
                       className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
@@ -2291,10 +2665,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     {activeStepIndex < activeStage.steps.length - 1 ? (
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <button
-                          disabled={drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect}
+                          disabled={
+                            drillAnswer === null ||
+                            !activeStep.audioDrill.options[drillAnswer]?.isCorrect ||
+                            !currentStepVoiceResult?.isPassed
+                          }
                           onClick={() => {
                             setActiveStepIndex((prev) => prev + 1);
                             setDrillAnswer(null);
+                            setStepVoiceRecordedText("");
                             scrollToDrillTop();
                           }}
                           className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:saturate-50"
@@ -2302,16 +2681,26 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           Langkah Berikutnya →
                         </button>
                         {drillAnswer === null && (
-                          <span className="text-[9px] text-muted font-medium">Jawab kuis suara untuk lanjut</span>
+                          <span className="text-[9px] text-muted font-medium">1. Jawab kuis pilihan ganda</span>
                         )}
                         {drillAnswer !== null && !activeStep.audioDrill.options[drillAnswer]?.isCorrect && (
-                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar untuk lanjut</span>
+                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar pada kuis</span>
+                        )}
+                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && !currentStepVoiceResult && (
+                          <span className="text-[9px] text-amber-400 font-bold">2. Rekam suara pelafalan lo di atas</span>
+                        )}
+                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && currentStepVoiceResult && !currentStepVoiceResult.isPassed && (
+                          <span className="text-[9px] text-rose-400 font-bold">Skor suara {currentStepVoiceResult.score}/100 — Rekam ulang untuk lanjut</span>
                         )}
                       </div>
                     ) : (
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <button
-                          disabled={drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect}
+                          disabled={
+                            drillAnswer === null ||
+                            !activeStep.audioDrill.options[drillAnswer]?.isCorrect ||
+                            !currentStepVoiceResult?.isPassed
+                          }
                           onClick={() => {
                             setIsExamMode(true);
                             setExamAnswers({});
@@ -2324,10 +2713,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           Ujian Kelulusan Tahap Ini →
                         </button>
                         {drillAnswer === null && (
-                          <span className="text-[9px] text-muted font-medium">Jawab kuis suara untuk ujian</span>
+                          <span className="text-[9px] text-muted font-medium">1. Jawab kuis pilihan ganda</span>
                         )}
                         {drillAnswer !== null && !activeStep.audioDrill.options[drillAnswer]?.isCorrect && (
-                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar untuk ujian</span>
+                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar pada kuis</span>
+                        )}
+                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && !currentStepVoiceResult && (
+                          <span className="text-[9px] text-amber-400 font-bold">2. Rekam suara pelafalan lo di atas</span>
+                        )}
+                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && currentStepVoiceResult && !currentStepVoiceResult.isPassed && (
+                          <span className="text-[9px] text-rose-400 font-bold">Skor suara {currentStepVoiceResult.score}/100 — Rekam ulang untuk ujian</span>
                         )}
                       </div>
                     )}
@@ -2439,7 +2834,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   </div>
 
                   <p className="text-[11px] sm:text-xs text-muted leading-relaxed">
-                    Malesan akan menganalisis getaran lidah dan akurasi fonetik dari rekaman suara lo. Jangan asal pilih, buktikan pelafalan aslimu di sini!
+                    Malesan akan menganalisis getaran lidah dan akurasi fonetik dari rekaman suara lo. Buktikan pelafalan aslimu untuk lulus tahap ini!
                   </p>
 
                   {/* Challenge Target Sentence Card */}
@@ -2528,7 +2923,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           <span className={`font-display text-sm sm:text-base font-bold ${
                             voiceExamResult.isPassed ? "text-emerald-400" : "text-rose-400"
                           }`}>
-                            {voiceExamResult.isPassed ? "LULUS UJIAN SUARA!" : "BELUM LULUS — COBA REKAM LAGI"}
+                            {voiceExamResult.isPassed ? "LULUS UJIAN SUARA TAHAP INI!" : "BELUM LULUS — COBA REKAM LAGI"}
                           </span>
                         </div>
                         <span className="font-display text-base sm:text-lg font-bold text-ink font-mono">
@@ -2720,7 +3115,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           ) : isCalling ? (
             /* ACTIVE PHONE CALL SCREEN */
             <div className="space-y-4 sm:space-y-5">
-              {/* Call Top Bar */}
               <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="size-9 rounded-full border border-ember/40 bg-ember/20 flex items-center justify-center text-ember font-display font-bold text-xs shrink-0">
@@ -2746,7 +3140,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </button>
               </div>
 
-              {/* Real-time Tips & Roast Badges */}
               {(activeTip || activeRoast) && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in duration-200">
                   {activeTip && (
@@ -2973,7 +3366,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </p>
               </div>
 
-              {/* Scenario Cards Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {SCENARIOS.map((s) => (
                   <div
@@ -3003,7 +3395,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               </div>
             </div>
           ) : (
-            /* ACTIVE ROLEPLAY CHAMBER VIEW */
             <div className="space-y-4">
               <div className="rounded-xl border border-ember/30 bg-ember/10 p-3 flex items-center justify-between gap-2">
                 <h3 className="font-display text-xs sm:text-sm font-bold text-ink truncate">
@@ -3017,7 +3408,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </button>
               </div>
 
-              {/* Chat Transcript */}
               <div className="h-56 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 space-y-2.5 custom-scrollbar">
                 {messages.map((m) => (
                   <div
@@ -3037,7 +3427,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 ))}
               </div>
 
-              {/* Input */}
               <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised p-1 focus-within:border-ember/60 transition-all">
                 <input
                   type="text"
@@ -3083,7 +3472,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </p>
               </div>
 
-              {/* Topic Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {[
                   { id: "grammar_tenses", title: "Grammar & Tenses", desc: "Past, Present, Perfect" },
@@ -3132,7 +3520,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               </div>
             </div>
           ) : !quizFinished ? (
-            /* ACTIVE QUIZ QUESTION */
             <div className="space-y-3.5">
               <div className="flex items-center justify-between border-b border-hairline/60 pb-2.5">
                 <span className="text-[11px] font-bold text-ember uppercase">
@@ -3178,7 +3565,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     })}
                   </div>
 
-                  {/* Navigation */}
                   <div className="flex justify-end gap-2 pt-2">
                     {currentQuestionIdx < quizQuestions.length - 1 ? (
                       <button
@@ -3202,7 +3588,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               )}
             </div>
           ) : (
-            /* QUIZ SUMMARY */
             <div className="space-y-4 text-center py-4">
               <h3 className="font-display text-lg font-bold text-ink">Hasil Kuis Lo</h3>
               <button
@@ -3262,7 +3647,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             {essayLoading ? "Menganalisis..." : "Evaluasi Esai →"}
           </button>
 
-          {/* Essay Evaluation Result View */}
           {essayResult && (
             <div className="rounded-xl border border-hairline bg-surface-raised p-3.5 space-y-3 animate-in fade-in duration-200">
               <div className="flex items-center justify-between">
@@ -3315,7 +3699,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           </div>
 
-          {/* Activity Metrics Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
             <div className="rounded-xl border border-hairline bg-surface-raised p-3 text-center">
               <p className="text-[10px] font-bold text-muted uppercase">Menit Bicara</p>
