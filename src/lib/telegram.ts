@@ -50,6 +50,35 @@ export async function getTelegramConfig(): Promise<{ token?: string; chatId?: st
 }
 
 /**
+ * Sanitizes arbitrary HTML to only Telegram Bot API supported tags:
+ * <b>, <i>, <u>, <s>, <a>, <code>, <pre>, <blockquote>, <tg-spoiler>.
+ * Converts <ul>, <ol>, <li> into clean bullet points.
+ */
+export function sanitizeTelegramHtml(html?: string | null): string {
+  if (!html) return "";
+
+  let cleaned = String(html)
+    .replace(/</?(ul|ol)>/gi, "")
+    .replace(/<li>/gi, "• ")
+    .replace(/</li>/gi, "\n")
+    .replace(/</?p>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?(h[1-6]|header|div|section|article)>/gi, "\n")
+    .replace(/<span(?![^>]*class=["']tg-spoiler["'])[^>]*>(.*?)<\/span>/gi, "$1");
+
+  // Whitelist supported tags only
+  cleaned = cleaned.replace(
+    /<(?!\/?(b|strong|i|em|u|ins|s|strike|del|a|code|pre|blockquote|tg-spoiler)\b)[^>]+>/gi,
+    "",
+  );
+
+  // Normalize excessive line breaks
+  cleaned = cleaned.replace(/\n{3,}/g, "\n\n").trim();
+
+  return cleaned;
+}
+
+/**
  * Sends a typing/action indicator to Telegram so the user sees "typing..." in real-time.
  */
 export async function sendChatAction(
@@ -78,7 +107,7 @@ export async function sendChatAction(
 
 /**
  * Sends a message to the owner's Telegram chat.
- * Fails safely without throwing so user requests in Next.js never break.
+ * Bulletproof delivery: automatically sanitizes HTML and retries in plaintext if Telegram rejects parsing.
  */
 export async function sendTelegramMessage(
   text: string,
@@ -88,9 +117,12 @@ export async function sendTelegramMessage(
   const token = config.token;
   const chatId = options.chatId || config.chatId;
 
-  if (!token || !chatId) {
+  if (!token || !chatId || !text) {
     return { ok: false };
   }
+
+  const parseMode = options.parseMode || "HTML";
+  const processedText = parseMode === "HTML" ? sanitizeTelegramHtml(text) : text;
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
@@ -99,18 +131,42 @@ export async function sendTelegramMessage(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: chatId,
-        text,
-        parse_mode: options.parseMode || "HTML",
+        text: processedText,
+        parse_mode: parseMode,
         reply_markup: options.replyMarkup,
         disable_notification: options.disableNotification,
         disable_web_page_preview: true,
       }),
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.warn("[telegram] sendMessage failed:", res.status, errBody);
+      console.warn("[telegram] sendMessage initial attempt failed:", res.status, errBody);
+
+      // Resilient Auto-Fallback: If HTML parsing failed, strip all tags and send clean plain text!
+      if (res.status === 400 && errBody.includes("can't parse entities")) {
+        console.info("[telegram] Retrying delivery with clean plaintext fallback...");
+        const plainText = text.replace(/<[^>]*>/g, "").trim();
+        const fallbackRes = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: plainText,
+            reply_markup: options.replyMarkup,
+            disable_notification: options.disableNotification,
+            disable_web_page_preview: true,
+          }),
+          signal: AbortSignal.timeout(6000),
+        });
+
+        if (fallbackRes.ok) {
+          const fallbackData = (await fallbackRes.json()) as { ok: boolean; result?: { message_id: number } };
+          return { ok: true, messageId: fallbackData.result?.message_id };
+        }
+      }
+
       return { ok: false };
     }
 
@@ -138,6 +194,8 @@ export async function sendTelegramPhoto(
     return { ok: false };
   }
 
+  const processedCaption = caption ? sanitizeTelegramHtml(caption) : undefined;
+
   try {
     const url = `https://api.telegram.org/bot${token}/sendPhoto`;
     const res = await fetch(url, {
@@ -146,7 +204,7 @@ export async function sendTelegramPhoto(
       body: JSON.stringify({
         chat_id: chatId,
         photo: photoUrl,
-        caption,
+        caption: processedCaption,
         parse_mode: options.parseMode || "HTML",
         reply_markup: options.replyMarkup,
       }),
