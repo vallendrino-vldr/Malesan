@@ -30,9 +30,11 @@ export async function GET(request: NextRequest) {
   const supabase = getAdminSupabase();
   const config = await getTelegramConfig();
 
+  const { searchParams } = new URL(request.url);
+  const typeParam = searchParams.get("type");
   const nowJakarta = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
   const hour = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })).getHours();
-  const isMorning = hour >= 4 && hour < 14;
+  const isMorning = typeParam ? typeParam === "morning" : hour >= 4 && hour < 14;
   const briefingType = isMorning ? "MORNING EXECUTIVE BRIEFING" : "EVENING WRAP-UP BRIEFING";
 
   const past24hIso = new Date(Date.now() - 24 * 3600 * 1000).toISOString();

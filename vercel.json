@@ -4,12 +4,16 @@
   "framework": "nextjs",
   "crons": [
     {
-      "path": "/api/cron/briefing",
-      "schedule": "0 1,13 * * *"
+      "path": "/api/cron/briefing?type=morning",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/briefing?type=evening",
+      "schedule": "0 13 * * *"
     },
     {
       "path": "/api/cron/trends",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
