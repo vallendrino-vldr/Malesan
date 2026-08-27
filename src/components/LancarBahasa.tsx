@@ -1175,6 +1175,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     } catch {
       return [];
     }
+  });
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isVoiceModalOpen) {
