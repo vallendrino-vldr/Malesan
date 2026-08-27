@@ -151,12 +151,21 @@ export function splitTelegramMessage(text: string, maxLen = 3800): string[] {
 }
 
 /**
+ * Strips excessive emojis to maintain a clean executive appearance.
+ */
+export function stripExcessiveEmojis(text: string): string {
+  if (!text) return "";
+  // Strip emojis, pictographs, and emoticons while preserving letters, numbers, punctuation and standard bullet points
+  return text.replace(/[🌀-🧿☀-⛿✀-➿🇠-🇿🨀-🫿🀀-🀯🂠-🃿]/gu, "").trim();
+}
+
+/**
  * Sanitizes arbitrary HTML to only Telegram Bot API supported tags.
  */
 export function sanitizeTelegramHtml(html?: string | null): string {
   if (!html) return "";
 
-  let cleaned = String(html)
+  let cleaned = stripExcessiveEmojis(String(html))
     .replace(/<\/?(ul|ol)>/gi, "")
     .replace(/<li>/gi, "• ")
     .replace(/<\/li>/gi, "\n")
@@ -216,7 +225,7 @@ async function sendSingleTelegramMessage(
   options: SendTelegramOptions,
 ): Promise<{ ok: boolean; messageId?: number }> {
   const parseMode = options.parseMode || "HTML";
-  const processedText = parseMode === "HTML" ? sanitizeTelegramHtml(rawText) : rawText;
+  const processedText = parseMode === "HTML" ? sanitizeTelegramHtml(rawText) : stripExcessiveEmojis(rawText);
 
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
@@ -241,7 +250,7 @@ async function sendSingleTelegramMessage(
 
       // Auto-fallback: if HTML formatting failed, strip all tags and deliver cleanly in plain text
       if (res.status === 400 && errBody.includes("can't parse entities")) {
-        const plainText = rawText.replace(/<[^>]*>/g, "").trim();
+        const plainText = processedText.replace(/<[^>]*>/g, "").trim();
         const fallbackRes = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -357,7 +366,7 @@ export async function sendTelegramPhoto(
 export async function notifyNewUser(data: { email: string; name?: string | null; provider?: string }) {
   const config = await getTelegramConfig();
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-  const text = `<b>[PENDAFTARAN USER BARU]</b>\n\n• <b>Nama:</b> ${escapeHtml(data.name || "Tanpa Nama")}\n• <b>Email:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Metode:</b> ${data.provider || "Google OAuth"}\n• <b>Waktu:</b> ${now} WIB`;
+  const text = `<b>[PENDAFTARAN PENGGUNA]</b>\n\n• <b>Nama:</b> ${escapeHtml(data.name || "Tanpa Nama")}\n• <b>Email:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Metode:</b> ${data.provider || "Google OAuth"}\n• <b>Waktu:</b> ${now} WIB`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.users,
@@ -372,7 +381,7 @@ export async function notifyGeneration(data: {
 }) {
   const config = await getTelegramConfig();
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-  const text = `<b>[LOG GENERASI KONTEN]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Modul:</b> <b>${escapeHtml(data.moduleName)}</b>\n• <b>Biaya:</b> -${data.creditsSpent} Kredit\n• <b>Detail:</b> ${escapeHtml(data.details || "-")}\n• <b>Waktu:</b> ${now} WIB`;
+  const text = `<b>[AKTIVITAS PRODUKSI]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Modul:</b> <b>${escapeHtml(data.moduleName)}</b>\n• <b>Biaya:</b> -${data.creditsSpent} Kredit\n• <b>Detail:</b> ${escapeHtml(data.details || "-")}\n• <b>Waktu:</b> ${now} WIB`;
 
   return sendTelegramMessage(text, {
     disableNotification: true,
@@ -387,7 +396,7 @@ export async function notifyFeedback(data: {
   moduleName?: string | null;
 }) {
   const config = await getTelegramConfig();
-  const text = `<b>[FEEDBACK PENGGUNA]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Rating:</b> ${data.rating} / 5\n• <b>Modul:</b> ${escapeHtml(data.moduleName || "Umum")}\n• <b>Catatan:</b>\n<i>"${escapeHtml(data.comment || "Tanpa komentar")}"</i>`;
+  const text = `<b>[ULASAN PENGGUNA]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Skor:</b> ${data.rating} / 5\n• <b>Modul:</b> ${escapeHtml(data.moduleName || "Umum")}\n• <b>Catatan:</b>\n<i>"${escapeHtml(data.comment || "Tanpa catatan")}"</i>`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.feedback,
@@ -403,7 +412,7 @@ export async function notifyTopupRequest(data: {
 }) {
   const config = await getTelegramConfig();
   const formattedRp = Number(data.amount || 0).toLocaleString("id-ID");
-  const caption = `<b>[REQUEST TOPUP SALDO]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Nominal:</b> Rp ${formattedRp}\n• <b>Paket:</b> ${data.credits} Kredit\n• <b>ID Tiket:</b> <code>${data.topupId}</code>\n\n<i>Gunakan tombol di bawah untuk verifikasi:</i>`;
+  const caption = `<b>[PERMINTAAN TOPUP]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Nominal:</b> Rp ${formattedRp}\n• <b>Paket:</b> ${data.credits} Kredit\n• <b>ID Tiket:</b> <code>${data.topupId}</code>\n\n<i>Pilih tindakan di bawah:</i>`;
 
   const inlineKeyboard = {
     inline_keyboard: [
@@ -429,7 +438,7 @@ export async function notifyTopupRequest(data: {
 export async function notifyVoucherRedeemed(data: { email: string; code: string; credits: number }) {
   const config = await getTelegramConfig();
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-  const text = `<b>[VOUCHER DIKLAIM]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Kode:</b> <code>${escapeHtml(data.code)}</code>\n• <b>Hadiah:</b> +${data.credits} Kredit Paid\n• <b>Waktu:</b> ${now} WIB`;
+  const text = `<b>[KLAIM VOUCHER]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Kode:</b> <code>${escapeHtml(data.code)}</code>\n• <b>Kredit:</b> +${data.credits} Kredit Paid\n• <b>Waktu:</b> ${now} WIB`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.users,
@@ -439,7 +448,7 @@ export async function notifyVoucherRedeemed(data: { email: string; code: string;
 export async function notifyUserProUpgrade(data: { email: string; isPro: boolean }) {
   const config = await getTelegramConfig();
   const tierStatus = data.isPro ? "PRO TIER (Aktif)" : "Free Tier";
-  const text = `<b>[PERUBAHAN STATUS PRO]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Status:</b> ${tierStatus}`;
+  const text = `<b>[PERUBAHAN STATUS PRO]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Status:</b> ${tierStatus}`;
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.users,
   });
@@ -447,7 +456,7 @@ export async function notifyUserProUpgrade(data: { email: string; isPro: boolean
 
 export async function notifyCriticalError(data: { module: string; message: string; userEmail?: string }) {
   const config = await getTelegramConfig();
-  const text = `<b>[CRITICAL SYSTEM ALERT]</b>\n\n• <b>Modul:</b> ${escapeHtml(data.module)}\n• <b>User:</b> ${escapeHtml(data.userEmail || "System/Anonymous")}\n• <b>Log:</b>\n<code>${escapeHtml(data.message.slice(0, 300))}</code>`;
+  const text = `<b>[PERINGATAN SISTEM]</b>\n\n• <b>Modul:</b> ${escapeHtml(data.module)}\n• <b>Pengguna:</b> ${escapeHtml(data.userEmail || "System/Anonymous")}\n• <b>Log:</b>\n<code>${escapeHtml(data.message.slice(0, 300))}</code>`;
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.error,
   });
@@ -455,7 +464,7 @@ export async function notifyCriticalError(data: { module: string; message: strin
 
 export async function notifySystemAlert(data: { title: string; message: string }) {
   const config = await getTelegramConfig();
-  const text = `<b>[SYSTEM ALERT: ${escapeHtml(data.title)}]</b>\n\n${escapeHtml(data.message)}`;
+  const text = `<b>[PERINGATAN SISTEM: ${escapeHtml(data.title)}]</b>\n\n${escapeHtml(data.message)}`;
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.error,
   });

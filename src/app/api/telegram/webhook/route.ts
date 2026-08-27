@@ -164,17 +164,17 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         });
 
-        // 2. Automatically create Forum Topics via Telegram Bot API with clean names
+        // 2. Automatically create Forum Topics (Opsi 2: Elegan, Tanpa Nomor, Tanpa Emoji)
         const topicsConfig: Record<string, number> = {};
 
         const topicDefs = [
-          { key: "executive", name: "01-executive-chat", color: 16766590 },
-          { key: "topup", name: "02-topup-transaksi", color: 7322096 },
-          { key: "users", name: "03-user-growth", color: 9367192 },
-          { key: "generation", name: "04-generasi-konten", color: 16478047 },
-          { key: "feedback", name: "05-feedback-review", color: 16749490 },
-          { key: "error", name: "06-error-sentry", color: 13338331 },
-          { key: "otak_kedua", name: "07-otak-kedua", color: 7322096 },
+          { key: "executive", name: "Komando", color: 16766590 },
+          { key: "topup", name: "Transaksi", color: 7322096 },
+          { key: "users", name: "Pengguna", color: 9367192 },
+          { key: "generation", name: "Produksi", color: 16478047 },
+          { key: "feedback", name: "Ulasan", color: 16749490 },
+          { key: "error", name: "Keamanan", color: 13338331 },
+          { key: "otak_kedua", name: "Otak Kedua", color: 7322096 },
         ];
 
         for (const t of topicDefs) {
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
         });
 
         await sendTelegramMessage(
-          "<b>[SETUP SELESAI]</b> Seluruh kanal topik MALESAN HQ berhasil diaktifkan. Semua notifikasi platform sekarang dialihkan otomatis sesuai kategorinya.",
+          "<b>[SETUP SELESAI]</b> Seluruh kanal topik MALESAN HQ (Komando, Transaksi, Pengguna, Produksi, Ulasan, Keamanan, Otak Kedua) telah aktif dan terhubung ke sistem.",
           { chatId, messageThreadId },
         );
 
