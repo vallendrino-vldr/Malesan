@@ -114,12 +114,93 @@ function makeId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
-const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string; accent: string }> = [
-  { id: "sarah", name: "Sarah", tag: "British Casual", accent: "London", desc: "Ramah, sopan, aksen British mengalir alami" },
-  { id: "alex", name: "Alex", tag: "American Slang", accent: "California", desc: "Santai, banyak ungkapan gaul modern & ceria" },
-  { id: "david", name: "David", tag: "Tech Recruiter", accent: "Executive", desc: "Wawancara kerja profesional, tajam & suportif" },
-  { id: "emma", name: "Emma", tag: "IELTS Coach", accent: "Academic", desc: "Melatih struktur berpikir kritis & kelancaran" },
+const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string; accent: string; gender: "male" | "female" }> = [
+  { id: "sarah", name: "Sarah", tag: "British Casual", accent: "London", desc: "Ramah, sopan, aksen British wanita mengalir alami", gender: "female" },
+  { id: "alex", name: "Alex", tag: "American Slang", accent: "California", desc: "Santai, aksen pria Amerika modern & gaul", gender: "male" },
+  { id: "david", name: "David", tag: "Tech Recruiter", accent: "Executive", desc: "Wawancara kerja profesional, suara pria berwibawa", gender: "male" },
+  { id: "emma", name: "Emma", tag: "IELTS Coach", accent: "Academic", desc: "Melatih struktur berpikir kritis & aksen akademis wanita", gender: "female" },
 ];
+
+interface PersonaVoiceProfile {
+  name: string;
+  gender: "male" | "female";
+  lang: string;
+  pitch: number;
+  rateMultiplier: number;
+  preferredKeywords: string[];
+}
+
+const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
+  david: {
+    name: "David",
+    gender: "male",
+    lang: "en-US",
+    pitch: 0.82, // Masculine, deep executive resonance
+    rateMultiplier: 0.95,
+    preferredKeywords: [
+      "david",
+      "microsoft david",
+      "google us english male",
+      "guy",
+      "male",
+      "daniel",
+      "george",
+      "james",
+      "arthur",
+      "en-us-x-sfg#male",
+      "en-us",
+    ],
+  },
+  alex: {
+    name: "Alex",
+    gender: "male",
+    lang: "en-US",
+    pitch: 0.95, // Young upbeat American male
+    rateMultiplier: 1.0,
+    preferredKeywords: [
+      "alex",
+      "mark",
+      "christopher",
+      "guy",
+      "male",
+      "google us english",
+      "en-us",
+    ],
+  },
+  sarah: {
+    name: "Sarah",
+    gender: "female",
+    lang: "en-GB",
+    pitch: 1.05, // Refined British female
+    rateMultiplier: 0.98,
+    preferredKeywords: [
+      "sarah",
+      "hazel",
+      "google uk english female",
+      "susan",
+      "libby",
+      "sonia",
+      "female",
+      "en-gb",
+    ],
+  },
+  emma: {
+    name: "Emma",
+    gender: "female",
+    lang: "en-US",
+    pitch: 1.02, // Crisp articulate academic female
+    rateMultiplier: 0.98,
+    preferredKeywords: [
+      "emma",
+      "zira",
+      "google us english female",
+      "samantha",
+      "victoria",
+      "female",
+      "en-us",
+    ],
+  },
+};
 
 const SCENARIOS: ScenarioItem[] = [
   {
@@ -1189,6 +1270,20 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     };
   }, [isVoiceModalOpen]);
 
+  // Warm up SpeechSynthesis Voices for Instant Native Playback
+  useEffect(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+      const onVoicesChanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+      window.speechSynthesis.addEventListener("voiceschanged", onVoicesChanged);
+      return () => {
+        window.speechSynthesis.removeEventListener("voiceschanged", onVoicesChanged);
+      };
+    }
+  }, []);
+
   // Save record helper
   const saveSessionRecord = useCallback((rec: Omit<SessionRecord, "id" | "timestamp">) => {
     const newRec: SessionRecord = {
@@ -1212,31 +1307,94 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   }, []);
 
-  // Play Speech Audio via /api/tts with browser fallback
+  // Play Speech Audio with Intelligent Persona Gender & Voice Profile Matching
   const playSpeechAudio = useCallback(
     async (text: string, customPersona?: Persona) => {
       const activeP = customPersona || persona;
+      const profile = PERSONA_VOICE_PROFILES[activeP] || PERSONA_VOICE_PROFILES.david;
       setCurrentlyPlayingAudioText(text);
-      try {
-        if (currentAudioElementRef.current) {
-          currentAudioElementRef.current.pause();
-          currentAudioElementRef.current = null;
+
+      // Stop any existing HTML audio playback
+      if (currentAudioElementRef.current) {
+        currentAudioElementRef.current.pause();
+        currentAudioElementRef.current = null;
+      }
+
+      // 1. Native Web Speech Synthesis with Gender & Pitch Shaping (Fast, Crystal-Clear Male/Female Voices)
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+          setIsPlayingAudio(true);
+
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = profile.lang;
+          utterance.pitch = profile.pitch;
+          utterance.rate = playbackSpeed * profile.rateMultiplier * (level === "beginner" ? 0.88 : 1.0);
+
+          const voices = window.speechSynthesis.getVoices();
+          if (voices && voices.length > 0) {
+            const langPrefix = profile.lang.split("-")[0].toLowerCase();
+            const langVoices = voices.filter((v) => v.lang.toLowerCase().startsWith(langPrefix));
+            const pool = langVoices.length > 0 ? langVoices : voices;
+
+            let matchedVoice: SpeechSynthesisVoice | null = null;
+
+            // Step A: Match by preferred keywords
+            for (const kw of profile.preferredKeywords) {
+              const found = pool.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
+              if (found) {
+                matchedVoice = found;
+                break;
+              }
+            }
+
+            // Step B: Gender fallback heuristics
+            if (!matchedVoice && profile.gender === "male") {
+              matchedVoice =
+                pool.find((v) => v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("female")) ||
+                pool.find((v) => !v.name.toLowerCase().includes("female") && !v.name.toLowerCase().includes("zira") && !v.name.toLowerCase().includes("samantha")) ||
+                null;
+            } else if (!matchedVoice && profile.gender === "female") {
+              matchedVoice =
+                pool.find((v) => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("samantha")) ||
+                null;
+            }
+
+            if (matchedVoice) {
+              utterance.voice = matchedVoice;
+            }
+          }
+
+          utterance.onend = () => {
+            setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
+          };
+          utterance.onerror = () => {
+            setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
+          };
+
+          window.speechSynthesis.speak(utterance);
+          return;
+        } catch (synthErr) {
+          console.warn("Native SpeechSynthesis failed, falling back to API:", synthErr);
         }
+      }
 
+      // 2. Fallback: Server TTS Endpoint
+      try {
         setIsPlayingAudio(true);
-        const langCode = activeP === "sarah" || activeP === "emma" ? "en-GB" : "en-US";
-
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, lang: langCode }),
+          body: JSON.stringify({ text, lang: profile.lang }),
         });
 
         if (res.ok) {
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
-          audio.playbackRate = playbackSpeed;
+          audio.playbackRate = playbackSpeed * (profile.gender === "male" ? 0.92 : 1.0);
           currentAudioElementRef.current = audio;
           audio.onended = () => {
             setIsPlayingAudio(false);
@@ -1251,25 +1409,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           return;
         }
       } catch (err) {
-        console.warn("API TTS playback failed, falling back to Web Speech:", err);
-      }
-
-      // Fallback: Web Speech Synthesis
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = activeP === "sarah" || activeP === "emma" ? "en-GB" : "en-US";
-        utterance.rate = playbackSpeed * (level === "beginner" ? 0.85 : 1.0);
-        utterance.onend = () => {
-          setIsPlayingAudio(false);
-          setCurrentlyPlayingAudioText(null);
-        };
-        utterance.onerror = () => {
-          setIsPlayingAudio(false);
-          setCurrentlyPlayingAudioText(null);
-        };
-        window.speechSynthesis.speak(utterance);
-      } else {
+        console.warn("API TTS playback failed:", err);
+      } finally {
         setIsPlayingAudio(false);
         setCurrentlyPlayingAudioText(null);
       }
@@ -3212,9 +3353,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         {m.role === "assistant" && (
                           <button
                             type="button"
-                            onClick={() => playSpeechAudio(m.text)}
+                            onClick={() => playSpeechAudio(m.text, activeScenario?.partner || persona)}
                             title="Putar suara"
-                            className="shrink-0 text-muted hover:text-ember transition-colors p-0.5"
+                            className="shrink-0 text-muted hover:text-ember transition-colors p-0.5 cursor-pointer"
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
