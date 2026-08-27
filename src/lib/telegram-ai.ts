@@ -252,8 +252,9 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
 
   switch (actionData.actionType) {
     case "grant_credits": {
-      const email = actionData.payload?.email;
+      const email = String(actionData.payload?.email || "").trim();
       const amount = Number(actionData.payload?.amount || 0);
+      const reason = String(actionData.payload?.reason || "telegram_admin_bonus");
       if (!email || !amount) return "❌ Data email atau nominal kredit tidak valid.";
 
       const { data: user } = await supabase.from("profiles").select("id").eq("email", email.toLowerCase()).maybeSingle();
@@ -263,14 +264,14 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
         p_user: user.id,
         p_amount: amount,
         p_bucket: "paid",
-        p_reason: actionData.payload?.reason || "telegram_admin_bonus",
+        p_reason: reason,
       });
 
       if (grantErr) return `❌ Gagal menambahkan kredit: ${grantErr.message}`;
       return `✅ <b>BERHASIL DITAMBAHKAN!</b>\n\n+${amount} Kredit paid telah masuk ke akun <code>${escapeHtml(email)}</code>.`;
     }
     case "ban_user": {
-      const email = actionData.payload?.email;
+      const email = String(actionData.payload?.email || "").trim();
       if (!email) return "❌ Email tidak valid.";
       await supabase.from("profiles").update({ is_banned: true }).eq("email", email.toLowerCase());
       return `🚫 <b>AKUN DIBEKUKAN!</b>\n\nUser <code>${escapeHtml(email)}</code> telah dibanned dari platform.`;
