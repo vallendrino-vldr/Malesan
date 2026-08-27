@@ -190,10 +190,11 @@ const ESSAY_TOPICS = [
 ];
 
 // =========================================================================
-// DUAL-AUDIO EAR TRAINING DATA STRUCTURE (0% -> 100%)
+// BEGINNER-FRIENDLY DUAL-AUDIO DATA STRUCTURE (NO CONFUSING IPA JARGON)
 // =========================================================================
 interface AudioDrillOption {
   text: string;
+  subtext: string;
   soundSample: string;
   isCorrect: boolean;
 }
@@ -201,7 +202,7 @@ interface AudioDrillOption {
 interface AudioLessonStep {
   title: string;
   focusHighlight: string;
-  phonetic: string;
+  easyPhonetic: string;
   explanation: string;
   wrongAudio: {
     label: string;
@@ -227,6 +228,7 @@ interface AudioGateExamQuestion {
   question: string;
   options: Array<{
     text: string;
+    subtext?: string;
     soundSample?: string;
   }>;
   correctIndex: number;
@@ -254,69 +256,89 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     summary: "Dengarkan perbandingan langsung bunyi salah vs benar untuk abjad kunci, desisan lidah TH, getaran V, dan huruf bisu.",
     steps: [
       {
-        title: "Huruf 'H' & 'R' yang Sering Salah Diucapkan",
-        focusHighlight: "H [eitch] & R [ar lidah melengkung]",
-        phonetic: "/eɪtʃ/ • /ɑːr/",
-        explanation: "Huruf H murni dibaca 'Eitch' tanpa bunyi hek di awal. Huruf R dibaca dengan menarik pangkal lidah ke belakang tanpa getaran keras khas Indonesia.",
+        title: "Abjad 'H' & 'R' yang Sering Salah Dibaca",
+        focusHighlight: "Huruf H = "EITCH" • Huruf R = "AR" (Lidah Melengkung)",
+        easyPhonetic: "Panduan Ejaan Santai: H dibaca 'EITCH' (Bukan Hek) • R dibaca 'AR' lembut tanpa getar",
+        explanation: "Orang Indonesia sering membaca huruf H menjadi 'Hek'. Huruf H murni dibaca 'Eitch'. Huruf R dibaca dengan menarik lidah ke belakang tanpa bergetar keras.",
         wrongAudio: {
           label: "BUNYI SALAH (Kaku / Terbata):",
-          text: "H dibaca 'Hek' atau 'Het'",
+          text: "H dibaca 'Hek' / R bergetar keras 'Rrr'",
           sampleText: "Hek, het, het.",
-          explanation: "Menambahkan letupan 'H' kasar di awal abjad.",
+          explanation: "Menambahkan letupan 'H' kasar yang tidak ada pada penutur asli.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Native):",
           text: "H dibaca 'Eitch' / R dibaca 'Ar' lembut",
           sampleText: "A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z.",
-          explanation: "Murni melafalkan vokal 'ei' diikuti desisan lembut 'tch'.",
+          explanation: "Murni melafalkan vokal 'ei' diikuti desisan halus 'tch'.",
         },
-        tongueTip: "Tarik ujung lidah menjauh dari gigi seri dan lengkungkan ke atas langit-langit mulut saat menyebut R.",
+        tongueTip: "Tarik ujung lidah ke belakang menjauhi gigi seri saat menyebut huruf R.",
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah pelafalan abjad 'H' yang benar?",
           options: [
-            { text: "Opsi 1: Pelafalan 'Eitch' murni", soundSample: "H is pronounced Eitch.", isCorrect: true },
-            { text: "Opsi 2: Pelafalan 'Hek' dengan bunyi H kasar", soundSample: "Hek is wrong.", isCorrect: false },
+            {
+              text: "Pelafalan 'Eitch' murni",
+              subtext: "Ejaan: 'EITCH' (Tanpa huruf H di depan)",
+              soundSample: "H is pronounced Eitch.",
+              isCorrect: true,
+            },
+            {
+              text: "Pelafalan 'Hek'",
+              subtext: "Ejaan: 'HEK' (Dengan bunyi H kasar di awal)",
+              soundSample: "Hek is wrong.",
+              isCorrect: false,
+            },
           ],
-          explanation: "Abjad H dalam bahasa Inggris dibaca 'Eitch' (/eɪtʃ/).",
+          explanation: "Abjad H dalam bahasa Inggris dibaca murni 'Eitch'.",
         },
       },
       {
         title: "Bunyi Lidah 'TH' (Tebal vs Tipis)",
-        focusHighlight: "The, This, That (Tebal) VS Think, Thank, Three (Tipis)",
-        phonetic: "/ð/ (Voiced) vs /θ/ (Unvoiced)",
+        focusHighlight: "This = "D-HIS" • Think = "T-HINGK"",
+        easyPhonetic: "Panduan Ejaan Santai: This/That (Tebal) • Think/Thank (Tipis) dengan ujung lidah digigit lembut",
         explanation: "Lidah dijepit lembut di antara gigi seri atas dan bawah. Jangan dibaca 'D' (bukan 'De') dan jangan dibaca 'T' (bukan 'Tingk').",
         wrongAudio: {
           label: "BUNYI SALAH (Indoglish D/T):",
           text: "Dis, Dat, Dey • Tingk, Tengkyu",
           sampleText: "Dis and dat, dey tingk and tengkyu.",
-          explanation: "Lidah berada di dalam mulut sehingga berbunyi D atau T kasar.",
+          explanation: "Lidah tertahan di dalam mulut menghasilkan bunyi D atau T kasar.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Native TH):",
           text: "This, that, they • Think, thank, three",
           sampleText: "This and that, they think and thank you three times.",
-          explanation: "Ujung lidah keluar 2mm di antara gigi atas dan bawah menghasilkan desisan lembut.",
+          explanation: "Ujung lidah keluar sedikit di antara gigi atas dan bawah.",
         },
-        tongueTip: "Keluarkan ujung lidah sedikit, hembuskan udara untuk 'Think', tambahkan getaran pita suara untuk 'This'.",
+        tongueTip: "Keluarkan ujung lidah sekitar 2 milimeter di antara gigi seri.",
         audioDrill: {
-          prompt: "Dengarkan kedua kalimat di bawah. Manakah yang melafalkan 'Think and Thank you' dengan benar?",
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah yang melafalkan 'Think and Thank you' dengan benar?",
           options: [
-            { text: "Opsi 1: 'Tingk and tengkyu'", soundSample: "I tingk and tengkyu.", isCorrect: false },
-            { text: "Opsi 2: 'Think and thank you'", soundSample: "I think and thank you.", isCorrect: true },
+            {
+              text: "Pelafalan 'Think and thank you'",
+              subtext: "Desisan lidah /TH/ halus di gigi seri",
+              soundSample: "I think and thank you.",
+              isCorrect: true,
+            },
+            {
+              text: "Pelafalan 'Tingk and tengkyu'",
+              subtext: "Bunyi huruf T biasa khas Indonesia",
+              soundSample: "I tingk and tengkyu.",
+              isCorrect: false,
+            },
           ],
-          explanation: "Kata 'Think' dan 'Thank' harus diawali desisan lidah /θ/, bukan bunyi huruf T.",
+          explanation: "Kata 'Think' dan 'Thank' wajib diawali desisan jepit lidah, bukan huruf T biasa.",
         },
       },
       {
-        title: "Bunyi 'V' vs 'F' vs 'P'",
-        focusHighlight: "Favorite, Video (V) VS Phone, Fast (F) VS Party (P)",
-        phonetic: "/v/ vs /f/ vs /p/",
+        title: "Bunyi 'V' vs 'P'",
+        focusHighlight: "Favorite Video = "FE-VE-RIT VI-DI-O"",
+        easyPhonetic: "Panduan Ejaan Santai: Huruf V wajib menghasilkan getaran di bibir bawah",
         explanation: "Huruf V bergetar pada bibir bawah (Voice Vibration). Jangan pernah sebut 'Pavorite' atau 'Pideo'!",
         wrongAudio: {
           label: "BUNYI SALAH (Tertukar P/F):",
           text: "Pavorite pideo, pery good",
           sampleText: "My pavorite pideo is pery good.",
-          explanation: "Dua bibir menutup sehingga menghasilkan bunyi P bukannya getaran V.",
+          explanation: "Kedua bibir menutup sehingga menghasilkan bunyi P bukannya getaran V.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Vibrating V):",
@@ -328,64 +350,121 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah pengucapan kata 'Favorite Video' yang benar?",
           options: [
-            { text: "Opsi 1: 'Favorite video'", soundSample: "This is my favorite video.", isCorrect: true },
-            { text: "Opsi 2: 'Pavorite pideo'", soundSample: "This is my pavorite pideo.", isCorrect: false },
+            {
+              text: "Pelafalan 'Favorite video'",
+              subtext: "Gigi atas menyentuh bibir bawah + getaran suara",
+              soundSample: "This is my favorite video.",
+              isCorrect: true,
+            },
+            {
+              text: "Pelafalan 'Pavorite pideo'",
+              subtext: "Bibir menutup rapat menghasilkan bunyi huruf P",
+              soundSample: "This is my pavorite pideo.",
+              isCorrect: false,
+            },
           ],
-          explanation: "Huruf V wajib menghasilkan getaran bibir, jangan ditekan menjadi huruf P.",
+          explanation: "Huruf V wajib menghasilkan getaran bibir, tidak boleh ditekan menjadi huruf P.",
         },
       },
       {
-        title: "Rahasia Huruf Bisu: 'Island' & 'Doubt'",
-        focusHighlight: "Island [Ailand - S bisu] • Doubt [Daut - B bisu] • Receipt [Resit - P bisu]",
-        phonetic: "/ˈaɪ.lənd/ • /daʊt/ • /rɪˈsiːt/",
-        explanation: "Banyak huruf dalam bahasa Inggris yang tertulis tetapi HARAM disuarakan saat dibaca!",
+        title: "Huruf Bisu S pada kata 'Island' (Pulau)",
+        focusHighlight: "Island = "AI-LEND" (Huruf S Jangan Dibaca)",
+        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni "AI-LEND" (Huruf S adalah Silent Letter)",
+        explanation: "Huruf S pada kata 'Island' (pulau) berstatus bisu (silent letter) dan HARAM disuarakan!",
         wrongAudio: {
-          label: "BUNYI SALAH (Huruf Bisu Dibaca):",
-          text: "Is-land, Dowbt, Re-ceipt",
-          sampleText: "Is-land and dowbt with receipt.",
-          explanation: "Membaca huruf S pada island, B pada doubt, atau P pada receipt.",
+          label: "BUNYI SALAH (S Dibaca Jelas):",
+          text: "Is-land (s bersuara)",
+          sampleText: "We visit the is-land.",
+          explanation: "Membaca huruf S seperti 'Es-land'.",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Silent Letters):",
-          text: "Eye-land, Daut, Re-sit",
-          sampleText: "There is no doubt on the island, here is the receipt.",
-          explanation: "Huruf bisu dilewati sepenuhnya tanpa bersuara.",
+          label: "BUNYI BENAR (S Bisu):",
+          text: "Eye-land (s tidak bersuara)",
+          sampleText: "We visit the island.",
+          explanation: "Murni melafalkan kata 'Eye' (mata) disambung 'land'.",
         },
-        tongueTip: "Ingat: Pada kata 'Island', huruf S sama sekali tidak berbunyi.",
+        tongueTip: "Ingat: Huruf S pada 'Island' sama sekali tidak berbunyi.",
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah cara membaca kata 'Island' (pulau) yang benar?",
           options: [
-            { text: "Opsi 1: 'Is-land' (S dibaca jelas)", soundSample: "We visit the is-land.", isCorrect: false },
-            { text: "Opsi 2: 'Eye-land' (S bisu/tidak bersuara)", soundSample: "We visit the island.", isCorrect: true },
+            {
+              text: "Pelafalan 'Eye-land'",
+              subtext: "Huruf S bisu dan tidak bersuara (Benar)",
+              soundSample: "We visit the island.",
+              isCorrect: true,
+            },
+            {
+              text: "Pelafalan 'Is-land'",
+              subtext: "Huruf S dibaca jelas seperti es (Salah)",
+              soundSample: "We visit the is-land.",
+              isCorrect: false,
+            },
           ],
           explanation: "Huruf S pada 'Island' adalah silent letter, dibaca murni 'Eye-land'.",
+        },
+      },
+      {
+        title: "Huruf Bisu B pada kata 'Doubt' (Ragu)",
+        focusHighlight: "Doubt = "DA-UT" (Huruf B Jangan Dibaca)",
+        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni "DA-UT" (Huruf B tidak berbunyi)",
+        explanation: "Huruf B pada kata 'Doubt' (ragu) dan 'Debt' (utang) adalah silent letter yang tidak berbunyi.",
+        wrongAudio: {
+          label: "BUNYI SALAH (B Dibaca):",
+          text: "Dowbt / Dobt",
+          sampleText: "I have dowbt.",
+          explanation: "Membunyikan huruf B.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (B Bisu):",
+          text: "Daut (murni vokal au)",
+          sampleText: "I have no doubt.",
+          explanation: "Murni dibaca 'Daut'.",
+        },
+        tongueTip: "Cukup lafalkan 'Da-ut' tanpa menutup bibir untuk huruf B.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah cara membaca kata 'Doubt' yang benar?",
+          options: [
+            {
+              text: "Pelafalan 'Daut'",
+              subtext: "Huruf B bisu dan tidak bersuara (Benar)",
+              soundSample: "I have no doubt.",
+              isCorrect: true,
+            },
+            {
+              text: "Pelafalan 'Dowbt'",
+              subtext: "Huruf B dibaca dengan letupan bibir (Salah)",
+              soundSample: "I have dowbt.",
+              isCorrect: false,
+            },
+          ],
+          explanation: "Huruf B pada 'doubt' dan 'debt' tidak pernah disuarakan sama sekali.",
         },
       },
     ],
     exam: [
       {
-        question: "Dengarkan audio di bawah. Manakah pelafalan huruf 'H' yang benar?",
+        question: "Dengarkan audio di bawah. Manakah pelafalan abjad 'H' yang benar?",
         options: [
-          { text: "Eitch (tanpa bunyi H di awal)", soundSample: "H is pronounced Eitch." },
-          { text: "Hek (dengan bunyi H kasar)", soundSample: "Hek is wrong." },
+          { text: "Eitch (tanpa bunyi H di awal)", subtext: "Ejaan: 'EITCH'", soundSample: "H is pronounced Eitch." },
+          { text: "Hek (dengan bunyi H kasar)", subtext: "Ejaan: 'HEK'", soundSample: "Hek is wrong." },
         ],
         correctIndex: 0,
-        explanation: "Huruf H dibaca murni 'Eitch' (/eɪtʃ/).",
+        explanation: "Huruf H dibaca murni 'Eitch'.",
       },
       {
-        question: "Dengarkan audio di bawah. Manakah pelafalan kata 'Island' yang tepat?",
+        question: "Dengarkan audio di bawah. Manakah pelafalan kata 'Island' (pulau) yang tepat?",
         options: [
-          { text: "Is-land (s bersuara)", soundSample: "Is-land" },
-          { text: "Eye-land (s bisu)", soundSample: "Island" },
+          { text: "Eye-land (s bisu)", subtext: "Ejaan: 'AI-LEND'", soundSample: "Island" },
+          { text: "Is-land (s bersuara jelas)", subtext: "Ejaan: 'IS-LEND'", soundSample: "Is-land" },
         ],
-        correctIndex: 1,
+        correctIndex: 0,
         explanation: "Huruf S pada kata 'Island' adalah silent letter, dibaca 'Eye-land'.",
       },
       {
-        question: "Dengarkan audio di bawah. Manakah kalimat dengan bunyi 'TH' yang benar?",
+        question: "Dengarkan audio di bawah. Manakah kalimat dengan bunyi desisan lidah 'TH' yang benar?",
         options: [
-          { text: "This and that, thank you", soundSample: "This and that, thank you." },
-          { text: "Dis and dat, tengkyu", soundSample: "Dis and dat, tengkyu." },
+          { text: "This and that, thank you", subtext: "Desisan lembut di antara gigi seri", soundSample: "This and that, thank you." },
+          { text: "Dis and dat, tengkyu", subtext: "Bunyi huruf D dan T biasa", soundSample: "Dis and dat, tengkyu." },
         ],
         correctIndex: 0,
         explanation: "Bunyi TH membutuhkan posisi lidah di antara gigi atas dan bawah.",
@@ -401,9 +480,9 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     summary: "Penutur asli menyambungkan konsonan ke vokal dan mereduksi kata agar kalimat mengalir mulus tanpa terputus-putus.",
     steps: [
       {
-        title: "Menyambung Konsonan ke Vokal (Linking)",
-        focusHighlight: "Hold on → 'Hol-don' • Pick it up → 'Pi-ki-tap'",
-        phonetic: "/ˈhoʊl.dɒn/ • /ˈpɪk.ɪt.ʌp/",
+        title: "Menyambung Konsonan ke Vokal: 'Hold on'",
+        focusHighlight: "Hold on → "HOL-DON" • Pick it up → "PI-KI-TAP"",
+        easyPhonetic: "Panduan Ejaan Santai: Huruf mati di ujung kata pertama langsung menyambung ke huruf hidup kata berikutnya",
         explanation: "Konsonan di akhir kata pertama langsung disambungkan ke huruf vokal kata berikutnya tanpa jeda.",
         wrongAudio: {
           label: "BUNYI SALAH (Terputus-putus):",
@@ -421,16 +500,26 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah yang terdengar mengalir seperti penutur asli?",
           options: [
-            { text: "Opsi 1: 'Hold on, pick it up' (Tersambung mulus)", soundSample: "Hold on, pick it up.", isCorrect: true },
-            { text: "Opsi 2: 'Hold... on... pick... it... up' (Terputus kaku)", soundSample: "Hold on please pick it up slowly.", isCorrect: false },
+            {
+              text: "Pelafalan 'Hold on, pick it up'",
+              subtext: "Menyambung konsonan ke vokal ('Hol-don', 'Pi-ki-tap')",
+              soundSample: "Hold on, pick it up.",
+              isCorrect: true,
+            },
+            {
+              text: "Pelafalan 'Hold... on... pick... it... up'",
+              subtext: "Terputus kata demi kata kaku",
+              soundSample: "Hold on please pick it up slowly.",
+              isCorrect: false,
+            },
           ],
           explanation: "Connected speech menyambung konsonan ke vokal menjadi 'Hol-don' dan 'Pi-ki-tap'.",
         },
       },
       {
         title: "Reduksi Percakapan: 'Gonna' & 'Wanna'",
-        focusHighlight: "Going to → Gonna • Want to → Wanna • Got to → Gotta",
-        phonetic: "/ˈɡɒn.ə/ • /ˈwɒn.ə/ • /ˈɡɒt.ə/",
+        focusHighlight: "Going to = "GONNA" • Want to = "WANNA"",
+        easyPhonetic: "Panduan Ejaan Santai: "AI'M GONNA TEL YU WHAT AI WANNA DU"",
         explanation: "Reduksi ini dipakai secara alami oleh penutur asli saat mengobrol santai dan mengalir cepat.",
         wrongAudio: {
           label: "BUNYI KAKU (Terlalu Formal):",
@@ -448,8 +537,18 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah ungkapan santai yang paling alami?",
           options: [
-            { text: "Opsi 1: 'I'm gonna tell you what I wanna do'", soundSample: "I am gonna tell you what I wanna do.", isCorrect: true },
-            { text: "Opsi 2: 'I am going to want to do'", soundSample: "I am going to want to do that.", isCorrect: false },
+            {
+              text: "Ungkapan 'I'm gonna tell you what I wanna do'",
+              subtext: "Mengalir luwes dan santai (Native Style)",
+              soundSample: "I am gonna tell you what I wanna do.",
+              isCorrect: true,
+            },
+            {
+              text: "Ungkapan 'I am going to want to do'",
+              subtext: "Kaku dan terputus-putus",
+              soundSample: "I am going to want to do that.",
+              isCorrect: false,
+            },
           ],
           explanation: "'Gonna' dan 'Wanna' membuat ritme bicara terasa rileks dan luwes.",
         },
@@ -459,8 +558,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Dengarkan audio di bawah. Manakah sambungan kata 'Hold on' yang benar?",
         options: [
-          { text: "Hol-don (tersambung konsonan ke vokal)", soundSample: "Hold on" },
-          { text: "Hold... on (terputus kaku)", soundSample: "Hold on slowly" },
+          { text: "Hol-don (tersambung konsonan ke vokal)", subtext: "Ejaan: 'HOL-DON'", soundSample: "Hold on" },
+          { text: "Hold... on (terputus kaku)", subtext: "Ejaan: 'HOLD... ON'", soundSample: "Hold on slowly" },
         ],
         correctIndex: 0,
         explanation: "Konsonan D di akhir 'Hold' menyambung ke 'on', dibaca 'Hol-don'.",
@@ -468,8 +567,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Bentuk reduksi santai dari frasa 'Want to' yang umum digunakan penutur asli adalah:",
         options: [
-          { text: "Wanna", soundSample: "I wanna go" },
-          { text: "Wanto", soundSample: "I want to" },
+          { text: "Wanna", subtext: "Ejaan: 'WANNA'", soundSample: "I wanna go" },
+          { text: "Wanto", subtext: "Ejaan: 'WAN-TO'", soundSample: "I want to" },
         ],
         correctIndex: 0,
         explanation: "'Want to' melebur menjadi 'Wanna' dalam percakapan santai.",
@@ -486,8 +585,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     steps: [
       {
         title: "Larangan Keras: 'I am agree'",
-        focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' / 'I disagree'",
-        phonetic: "/aɪ əˈɡriː/",
+        focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' = "AI E-GRI"",
+        easyPhonetic: "Panduan Ejaan Santai: Langsung ucapkan 'I agree' (Tanpa kata 'am')",
         explanation: "'Agree' adalah kata kerja (verb), bukan kata sifat. Jadi TIDAK BOLEH memakai to be 'am'!",
         wrongAudio: {
           label: "BUNYI SALAH (Indoglish Fatal):",
@@ -505,8 +604,18 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah kalimat persetujuan yang benar secara tata bahasa?",
           options: [
-            { text: "Opsi 1: 'I agree with your proposal'", soundSample: "I agree with your proposal completely.", isCorrect: true },
-            { text: "Opsi 2: 'I am agree with your proposal'", soundSample: "I am agree with your proposal.", isCorrect: false },
+            {
+              text: "Kalimat 'I agree with your proposal'",
+              subtext: "Subjek langsung diikuti kata kerja tanpa 'am' (Benar)",
+              soundSample: "I agree with your proposal completely.",
+              isCorrect: true,
+            },
+            {
+              text: "Kalimat 'I am agree with your proposal'",
+              subtext: "Salah fatal karena menambahkan 'am' sebelum verb (Salah)",
+              soundSample: "I am agree with your proposal.",
+              isCorrect: false,
+            },
           ],
           explanation: "'Agree' adalah verb (kata kerja), jadi langsung 'I agree' tanpa to be 'am'.",
         },
@@ -514,7 +623,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Larangan Keras: 'Thanks before'",
         focusHighlight: "JANGAN: 'Thanks before' → GUNAKAN: 'Thanks in advance'",
-        phonetic: "/θæŋks ɪn ədˈvɑːns/",
+        easyPhonetic: "Panduan Ejaan Santai: "TENGKS IN ED-VANS" (Standar Baku Terima Kasih di Awal)",
         explanation: "Penutur asli tidak mengenal frasa 'thanks before'. Untuk ucapan terima kasih di awal bantuan, gunakan 'Thanks in advance'.",
         wrongAudio: {
           label: "BUNYI SALAH (Terjemahan Harfiah):",
@@ -532,16 +641,26 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah ucapan terima kasih di awal yang benar?",
           options: [
-            { text: "Opsi 1: 'Thanks in advance for your help'", soundSample: "Thanks in advance for your help.", isCorrect: true },
-            { text: "Opsi 2: 'Thanks before for your help'", soundSample: "Thanks before for your help.", isCorrect: false },
+            {
+              text: "Ucapan 'Thanks in advance for your help'",
+              subtext: "Standar baku profesional internasional (Benar)",
+              soundSample: "Thanks in advance for your help.",
+              isCorrect: true,
+            },
+            {
+              text: "Ucapan 'Thanks before for your help'",
+              subtext: "Terjemahan kata per kata yang rancu (Salah)",
+              soundSample: "Thanks before for your help.",
+              isCorrect: false,
+            },
           ],
           explanation: "'Thanks in advance' adalah ungkapan resmi dan baku dalam bahasa Inggris.",
         },
       },
       {
         title: "Larangan Keras: 'Join with us'",
-        focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' / 'Join our team'",
-        phonetic: "/dʒɔɪn ʌs/",
+        focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' = "JOIN AS"",
+        easyPhonetic: "Panduan Ejaan Santai: Langsung ucapkan 'Join us' (Tanpa kata 'with')",
         explanation: "Kata kerja 'Join' sudah otomatis berarti 'bergabung dengan'. Jangan menambahkan kata 'with'!",
         wrongAudio: {
           label: "BUNYI SALAH (Pemborosan Kata):",
@@ -559,8 +678,18 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah ajakan bergabung yang benar?",
           options: [
-            { text: "Opsi 1: 'Please join our team for lunch'", soundSample: "Please join our team for lunch.", isCorrect: true },
-            { text: "Opsi 2: 'Please join with our team for lunch'", soundSample: "Please join with our team for lunch.", isCorrect: false },
+            {
+              text: "Ajakan 'Please join our team for lunch'",
+              subtext: "Langsung menyebutkan objek tanpa 'with' (Benar)",
+              soundSample: "Please join our team for lunch.",
+              isCorrect: true,
+            },
+            {
+              text: "Ajakan 'Please join with our team for lunch'",
+              subtext: "Pemborosan kata 'with' (Salah)",
+              soundSample: "Please join with our team for lunch.",
+              isCorrect: false,
+            },
           ],
           explanation: "Kata 'Join' tidak membutuhkan preposisi 'with'. Cukup 'Join our team'.",
         },
@@ -570,8 +699,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Dengarkan audio di bawah. Manakah kalimat persetujuan yang benar?",
         options: [
-          { text: "I agree with your decision", soundSample: "I agree with your decision." },
-          { text: "I am agree with your decision", soundSample: "I am agree with your decision." },
+          { text: "I agree with your decision", subtext: "Ejaan: 'AI E-GRI'", soundSample: "I agree with your decision." },
+          { text: "I am agree with your decision", subtext: "Ejaan keliru dengan 'am'", soundSample: "I am agree with your decision." },
         ],
         correctIndex: 0,
         explanation: "'Agree' adalah kata kerja, jadi langsung 'I agree'.",
@@ -579,8 +708,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Dengarkan audio di bawah. Manakah ucapan 'terima kasih sebelumnya' yang benar?",
         options: [
-          { text: "Thanks in advance for your support", soundSample: "Thanks in advance for your support." },
-          { text: "Thanks before for your support", soundSample: "Thanks before for your support." },
+          { text: "Thanks in advance for your support", subtext: "Ejaan: 'TENGKS IN ED-VANS'", soundSample: "Thanks in advance for your support." },
+          { text: "Thanks before for your support", subtext: "Terjemahan harfiah keliru", soundSample: "Thanks before for your support." },
         ],
         correctIndex: 0,
         explanation: "'Thanks in advance' adalah standar baku universal.",
@@ -596,9 +725,9 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     summary: "Bicara spontan dengan 3 pola waktu utama dan kuasai cara meminta tolong atau menolak dengan sopan ala profesional.",
     steps: [
       {
-        title: "Pola Masa Lalu Spontan (Verb 2 / Did)",
-        focusHighlight: "Yesterday → Selalu gunakan Verb 2 (Went, Met, Saw, Bought)",
-        phonetic: "/wɛnt/ • /mɛt/ • /sɔː/ • /bɔːt/",
+        title: "Pola Masa Lalu Spontan (Verb 2)",
+        focusHighlight: "Yesterday → Gunakan Verb 2 (Went, Met, Saw, Bought)",
+        easyPhonetic: "Panduan Ejaan Santai: Cerita masa lalu langsung reflek pakai kata kerja lampau",
         explanation: "Saat menceritakan apa yang terjadi tadi pagi atau kemarin, ubah kata kerja ke bentuk lampau secara otomatis.",
         wrongAudio: {
           label: "BUNYI SALAH (Tenses Keliru):",
@@ -616,16 +745,26 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah cerita masa lalu yang benar?",
           options: [
-            { text: "Opsi 1: 'Yesterday I went to the office and met our client'", soundSample: "Yesterday I went to the office and met our client.", isCorrect: true },
-            { text: "Opsi 2: 'Yesterday I go to the office and meet our client'", soundSample: "Yesterday I go to the office and meet our client.", isCorrect: false },
+            {
+              text: "Cerita 'Yesterday I went to the office and met our client'",
+              subtext: "Menggunakan Verb 2 (went & met) secara tepat (Benar)",
+              soundSample: "Yesterday I went to the office and met our client.",
+              isCorrect: true,
+            },
+            {
+              text: "Cerita 'Yesterday I go to the office and meet our client'",
+              subtext: "Menggunakan Verb 1 sekarang untuk masa lalu (Salah)",
+              soundSample: "Yesterday I go to the office and meet our client.",
+              isCorrect: false,
+            },
           ],
           explanation: "Masa lalu wajib menggunakan bentuk lampau: 'went' dan 'met'.",
         },
       },
       {
         title: "Pola Bertanya & Meminta Sangat Sopan",
-        focusHighlight: "Could you please...? • Would you mind...? • I was wondering if...",
-        phonetic: "/kʊd juː pliːz/ • /wʊd juː maɪnd/",
+        focusHighlight: "Could you please...? = "KUD YU PLIZ...?"",
+        easyPhonetic: "Panduan Ejaan Santai: Gunakan 'Could you please...' untuk meminta tolong dengan anggun",
         explanation: "Hindari kalimat perintah langsung 'I want' atau 'Give me'. Gunakan modal verbs yang anggun.",
         wrongAudio: {
           label: "BUNYI KASAR (Perintah Langsung):",
@@ -643,8 +782,18 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah permintaan tolong yang paling sopan?",
           options: [
-            { text: "Opsi 1: 'Could you please review this draft whenever you have time?'", soundSample: "Could you please review this draft whenever you have time?", isCorrect: true },
-            { text: "Opsi 2: 'Give me your draft review now'", soundSample: "Give me your draft review now.", isCorrect: false },
+            {
+              text: "Permintaan 'Could you please review this draft whenever you have time?'",
+              subtext: "Bahasa santun dan sangat profesional (Benar)",
+              soundSample: "Could you please review this draft whenever you have time?",
+              isCorrect: true,
+            },
+            {
+              text: "Permintaan 'Give me your draft review now'",
+              subtext: "Perintah kasar dan tidak sopan (Salah)",
+              soundSample: "Give me your draft review now.",
+              isCorrect: false,
+            },
           ],
           explanation: "'Could you please...' adalah bentuk permintaan tolong yang santun dan profesional.",
         },
@@ -654,8 +803,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Dengarkan audio di bawah. Manakah kalimat permintaan tolong yang paling sopan?",
         options: [
-          { text: "Could you please help me with this when you are free?", soundSample: "Could you please help me with this when you are free?" },
-          { text: "You must help me right now", soundSample: "You must help me right now." },
+          { text: "Could you please help me with this when you are free?", subtext: "Permintaan santun dengan 'Could you please'", soundSample: "Could you please help me with this when you are free?" },
+          { text: "You must help me right now", subtext: "Perintah menuntut dan kasar", soundSample: "You must help me right now." },
         ],
         correctIndex: 0,
         explanation: "'Could you please help me...' adalah standar emas komunikasi sopan.",
@@ -672,8 +821,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     steps: [
       {
         title: "Frasa Meeting Online & Kerja Remote",
-        focusHighlight: "Can you hear me? • Can everyone see my screen? • You are on mute!",
-        phonetic: "/kæn juː hɪər miː/ • /juː ɑːr ɒn mjuːt/",
+        focusHighlight: "Can everyone see my screen? • You are on mute!",
+        easyPhonetic: "Panduan Ejaan Santai: "KEN EV-RI-WAN SI MAI SKRIN? YU AR ON MYUT"",
         explanation: "Kuasai frasa penting saat memimpin atau mengikuti meeting online jarak jauh.",
         wrongAudio: {
           label: "BUNYI KELIRU:",
@@ -691,8 +840,18 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah frasa meeting online yang tepat?",
           options: [
-            { text: "Opsi 1: 'Can everyone see my screen? You are currently on mute.'", soundSample: "Can everyone see my screen? You are currently on mute.", isCorrect: true },
-            { text: "Opsi 2: 'Look to my screen all, your mic is broken'", soundSample: "Look to my screen all, your mic is broken.", isCorrect: false },
+            {
+              text: "Frasa 'Can everyone see my screen? You are currently on mute.'",
+              subtext: "Standar universal meeting online internasional (Benar)",
+              soundSample: "Can everyone see my screen? You are currently on mute.",
+              isCorrect: true,
+            },
+            {
+              text: "Frasa 'Look to my screen all, your mic is broken'",
+              subtext: "Tata bahasa rancu dan tidak baku (Salah)",
+              soundSample: "Look to my screen all, your mic is broken.",
+              isCorrect: false,
+            },
           ],
           explanation: "'Can everyone see my screen?' dan 'You are on mute' adalah standar universal.",
         },
@@ -702,8 +861,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Saat memesan kopi dan ingin dibungkus bawa pulang, apa yang harus kamu katakan?",
         options: [
-          { text: "Can I get an iced latte to go, please?", soundSample: "Can I get an iced latte to go, please?" },
-          { text: "I want coffee wrap to home", soundSample: "I want coffee wrap to home." },
+          { text: "Can I get an iced latte to go, please?", subtext: "Frasa 'to go' untuk pesanan bungkus", soundSample: "Can I get an iced latte to go, please?" },
+          { text: "I want coffee wrap to home", subtext: "Terjemahan harfiah keliru", soundSample: "I want coffee wrap to home." },
         ],
         correctIndex: 0,
         explanation: "'To go' adalah istilah universal untuk makanan/minuman yang dibawa pulang.",
@@ -721,7 +880,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Instruksi Ujian Akhir",
         focusHighlight: "Uji seluruh materi: Fonetik, Connected Speech, Larangan Indoglish & Frasa Profesional",
-        phonetic: "/ˈmɑːs.tər ˈɡrædʒ.u.eɪ.ʃən/",
+        easyPhonetic: "Panduan Ejaan Santai: Dengarkan dengan saksama dan pilih kalimat yang 100% akurat",
         explanation: "Dengarkan rekaman audio di bawah dengan teliti untuk membuktikan kelayakanmu sebagai 100% English Master.",
         wrongAudio: {
           label: "CONTOH KELIRU:",
@@ -739,8 +898,18 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah kalimat master yang 100% sempurna?",
           options: [
-            { text: "Opsi 1: 'Could you please lend me the report? Thanks in advance.'", soundSample: "Could you please lend me the report? Thanks in advance.", isCorrect: true },
-            { text: "Opsi 2: 'Please borrow me the report and thanks before.'", soundSample: "Please borrow me the report and thanks before.", isCorrect: false },
+            {
+              text: "Kalimat 'Could you please lend me the report? Thanks in advance.'",
+              subtext: "Menggunakan 'lend', 'could you please', dan 'thanks in advance' (Sempurna)",
+              soundSample: "Could you please lend me the report? Thanks in advance.",
+              isCorrect: true,
+            },
+            {
+              text: "Kalimat 'Please borrow me the report and thanks before.'",
+              subtext: "Tertukar 'borrow' dan memakai 'thanks before' (Salah)",
+              soundSample: "Please borrow me the report and thanks before.",
+              isCorrect: false,
+            },
           ],
           explanation: "Kalimat opsi 1 menggunakan 'lend', 'could you please', dan 'thanks in advance' secara sempurna.",
         },
@@ -750,8 +919,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Dengarkan audio di bawah. Manakah kalimat yang 100% BENAR secara tata bahasa dan etika profesional?",
         options: [
-          { text: "Could you please lend me the project report when you have a moment?", soundSample: "Could you please lend me the project report when you have a moment?" },
-          { text: "I am agree with you and thanks before for your help", soundSample: "I am agree with you and thanks before for your help." },
+          { text: "Could you please lend me the project report when you have a moment?", subtext: "Tata bahasa & kesopanan sempurna", soundSample: "Could you please lend me the project report when you have a moment?" },
+          { text: "I am agree with you and thanks before for your help", subtext: "Kesalahan Indoglish fatal", soundSample: "I am agree with you and thanks before for your help." },
         ],
         correctIndex: 0,
         explanation: "'Could you please lend me...' adalah kalimat sempurna tanpa kesalahan Indoglish.",
@@ -1775,20 +1944,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                 {/* Big Interactive Focus Arena */}
                 <div className="rounded-3xl border border-ember/30 bg-gradient-to-b from-surface-raised to-surface p-4 sm:p-6 space-y-5 shadow-md">
-                  {/* Focus Header */}
-                  <div className="space-y-1 border-b border-hairline/60 pb-3">
-                    <p className="text-micro font-bold text-muted uppercase tracking-wider">Fokus Pelafalan &amp; Bunyi:</p>
+                  {/* Focus Header without IPA Jargon */}
+                  <div className="space-y-1.5 border-b border-hairline/60 pb-3.5">
+                    <p className="text-micro font-bold text-muted uppercase tracking-wider">Fokus Bunyi &amp; Pelafalan:</p>
                     <h4 className="font-display text-base sm:text-xl font-bold text-ember">
                       {activeStep.focusHighlight}
                     </h4>
-                    <p className="text-xs font-mono text-muted">{activeStep.phonetic}</p>
-                    <p className="text-xs text-ink/90 mt-1 leading-relaxed">{activeStep.explanation}</p>
+                    <p className="text-xs font-medium text-ink bg-surface-raised px-3 py-1.5 rounded-xl border border-hairline inline-block">
+                      {activeStep.easyPhonetic}
+                    </p>
+                    <p className="text-xs text-muted mt-1 leading-relaxed">{activeStep.explanation}</p>
                   </div>
 
                   {/* DUAL-AUDIO COMPARISON (DENGARKAN BUNYI SALAH VS BUNYI BENAR) */}
                   <div className="space-y-2">
                     <span className="text-micro font-bold text-muted uppercase tracking-wider block">
-                      Dengarkan Perbandingan Suara (Klik Tombol Suara):
+                      Dengarkan Perbandingan Suara (Klik Tombol di Bawah):
                     </span>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {/* WRONG AUDIO CARD */}
@@ -1807,7 +1978,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText)}
-                          className="h-10 px-4 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                          className="h-10 px-4 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -1833,13 +2004,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText)}
-                          className="btn-ember h-10 px-4 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                          className="btn-ember h-10 px-4 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md hover:brightness-105 cursor-pointer"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          {currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Sedang Memutar..." : "Putar Bunyi Benar (Native)"}
+                          {currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Sedang Memutar..." : "Putar Bunyi Benar (Bule)"}
                         </button>
                       </div>
                     </div>
@@ -1848,60 +2019,84 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   {/* Tongue Tip */}
                   <div className="rounded-2xl border border-hairline bg-surface-raised p-3 text-xs text-muted flex items-start gap-2">
                     <span className="text-ember font-bold shrink-0">💡</span>
-                    <p><b>Tips Posisi Lidah:</b> {activeStep.tongueTip}</p>
+                    <p><b>Tips Emas Posisi Lidah:</b> {activeStep.tongueTip}</p>
                   </div>
 
-                  {/* INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
-                  <div className="rounded-2xl border border-ember/25 bg-surface-raised/60 p-4 space-y-3">
+                  {/* LUMINOUS ALIVE INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
+                  <div className="rounded-3xl border border-ember/35 bg-surface-raised/80 p-4 sm:p-5 space-y-3.5 shadow-sm">
                     <div>
-                      <span className="text-micro font-bold text-ember uppercase tracking-wider">
-                        Validasi Telinga &amp; Pemahaman Bunyi:
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ember uppercase tracking-wider">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                        Uji Pemahaman Suara (Klik Kartu Jawaban):
                       </span>
-                      <p className="font-display text-xs sm:text-sm font-bold text-ink mt-0.5">
+                      <p className="font-display text-xs sm:text-sm font-bold text-ink mt-1 leading-relaxed">
                         {activeStep.audioDrill.prompt}
                       </p>
                     </div>
 
-                    <div className="space-y-2">
+                    {/* Highly Interactive, Alive Choice Cards */}
+                    <div className="space-y-2.5">
                       {activeStep.audioDrill.options.map((opt, optIdx) => {
                         const isChosen = drillAnswer === optIdx;
                         const isRight = opt.isCorrect;
 
-                        let style = "border-hairline bg-surface text-ink hover:border-hairline/90";
+                        let cardStyle = "border-hairline/90 bg-surface hover:border-ember/70 hover:bg-surface-raised hover:shadow-md";
                         if (drillAnswer !== null) {
-                          if (isRight) style = "border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold";
-                          else if (isChosen) style = "border-rose-500 bg-rose-500/20 text-rose-400 font-bold";
-                          else style = "border-hairline/40 opacity-50";
+                          if (isRight) cardStyle = "border-emerald-500 bg-emerald-500/20 shadow-md ring-2 ring-emerald-500/40 text-emerald-300 font-bold";
+                          else if (isChosen) cardStyle = "border-rose-500 bg-rose-500/20 shadow-md ring-2 ring-rose-500/40 text-rose-300 font-bold";
+                          else cardStyle = "border-hairline/40 bg-surface/40 opacity-50";
                         }
 
                         return (
                           <div
                             key={optIdx}
-                            className={`rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all ${style}`}
+                            onClick={() => {
+                              if (drillAnswer === null) setDrillAnswer(optIdx);
+                            }}
+                            className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all cursor-pointer group ${cardStyle}`}
                           >
-                            <button
-                              type="button"
-                              disabled={drillAnswer !== null}
-                              onClick={() => setDrillAnswer(optIdx)}
-                              className="text-left flex-1 text-xs"
-                            >
-                              <span className="font-mono font-bold mr-2 text-muted">{String.fromCharCode(65 + optIdx)}.</span>
-                              <span>{opt.text}</span>
-                            </button>
+                            <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                              {/* Round Badge Indicator */}
+                              <div
+                                className={`size-8 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
+                                  drillAnswer !== null && isRight
+                                    ? "bg-emerald-400 text-obsidian font-bold"
+                                    : drillAnswer !== null && isChosen
+                                    ? "bg-rose-500 text-white font-bold"
+                                    : "bg-surface-raised border border-hairline group-hover:border-ember group-hover:text-ember text-muted"
+                                }`}
+                              >
+                                {drillAnswer !== null && isRight ? "✓" : drillAnswer !== null && isChosen ? "✕" : String.fromCharCode(65 + optIdx)}
+                              </div>
 
+                              <div className="min-w-0 flex-1 space-y-0.5">
+                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                                  {opt.text}
+                                </p>
+                                <p className="text-[11px] text-muted leading-tight">
+                                  {opt.subtext}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Prominent Audio Trigger Button */}
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 playSpeechAudio(opt.soundSample);
                               }}
-                              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ember bg-ember/15 border border-ember/30 px-3 py-1.5 rounded-lg hover:bg-ember/25 transition-all shrink-0 self-start sm:self-auto"
+                              className="btn-ember h-9 px-3.5 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
                             >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                               </svg>
-                              Putar Suara
+                              <span>{currentlyPlayingAudioText === opt.soundSample ? "Memutar..." : "Putar Suara"}</span>
                             </button>
                           </div>
                         );
@@ -1909,12 +2104,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     </div>
 
                     {drillAnswer !== null && (
-                      <div className="rounded-xl border border-hairline bg-surface p-3 text-xs leading-relaxed animate-in fade-in duration-200">
-                        <p className={`font-bold mb-1 ${activeStep.audioDrill.options[drillAnswer].isCorrect ? "text-emerald-400" : "text-rose-400"}`}>
-                          {activeStep.audioDrill.options[drillAnswer].isCorrect ? "Jawaban Valid & Tepat!" : "Jawaban Kurang Tepat!"}
+                      <div className="rounded-2xl border border-hairline bg-surface p-4 text-xs leading-relaxed animate-in fade-in duration-200 space-y-1">
+                        <p className={`font-display text-sm font-bold ${activeStep.audioDrill.options[drillAnswer].isCorrect ? "text-emerald-400" : "text-rose-400"}`}>
+                          {activeStep.audioDrill.options[drillAnswer].isCorrect ? "Jawaban 100% Valid & Tepat!" : "Jawaban Kurang Tepat!"}
                         </p>
                         <p className="text-muted">
-                          <b>Penjelasan:</b> {activeStep.audioDrill.explanation}
+                          <b>Penjelasan Lengkap:</b> {activeStep.audioDrill.explanation}
                         </p>
                       </div>
                     )}
@@ -1928,7 +2123,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         setActiveStepIndex((prev) => prev - 1);
                         setDrillAnswer(null);
                       }}
-                      className="h-10 px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30"
+                      className="h-10 px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer"
                     >
                       ← Langkah Sebelumnya
                     </button>
@@ -1939,7 +2134,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           setActiveStepIndex((prev) => prev + 1);
                           setDrillAnswer(null);
                         }}
-                        className="btn-ember h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md"
+                        className="btn-ember h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer"
                       >
                         Langkah Berikutnya →
                       </button>
@@ -1950,7 +2145,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           setExamSubmitted(false);
                           setExamAnswers({});
                         }}
-                        className="btn-ember h-10 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse"
+                        className="btn-ember h-10 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer"
                       >
                         Mulai Ujian Kelulusan {activeStage.badge} →
                       </button>
@@ -1971,16 +2166,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   </div>
                   <button
                     onClick={() => setIsExamMode(false)}
-                    className="h-8 px-3 rounded-lg border border-hairline bg-surface text-xs font-bold text-muted hover:text-ink"
+                    className="h-8 px-3 rounded-lg border border-hairline bg-surface text-xs font-bold text-muted hover:text-ink cursor-pointer"
                   >
                     Kembali ke Materi
                   </button>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   {activeStage.exam.map((q, qIdx) => (
-                    <div key={qIdx} className="rounded-2xl border border-hairline bg-surface-raised p-4 space-y-3">
-                      <h4 className="font-display text-sm font-bold text-ink">
+                    <div key={qIdx} className="rounded-2xl border border-hairline bg-surface-raised p-4 sm:p-5 space-y-3">
+                      <h4 className="font-display text-sm font-bold text-ink leading-relaxed">
                         {qIdx + 1}. {q.question}
                       </h4>
                       <div className="space-y-2">
@@ -1988,29 +2183,36 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           const isSelected = examAnswers[qIdx] === optIdx;
                           const isCorrect = optIdx === q.correctIndex;
 
-                          let style = "border-hairline bg-surface text-ink hover:border-hairline/90";
+                          let style = "border-hairline/90 bg-surface hover:border-ember/70 hover:bg-surface-raised";
                           if (examSubmitted) {
                             if (isCorrect) style = "border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold";
                             else if (isSelected) style = "border-rose-500 bg-rose-500/20 text-rose-400 font-bold";
                             else style = "border-hairline/40 opacity-50";
                           } else if (isSelected) {
-                            style = "border-ember bg-ember/15 text-ember font-bold";
+                            style = "border-ember bg-ember/15 text-ember font-bold ring-1 ring-ember/50";
                           }
 
                           return (
                             <div
                               key={optIdx}
-                              className={`rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${style}`}
+                              onClick={() => {
+                                if (!examSubmitted) setExamAnswers((prev) => ({ ...prev, [qIdx]: optIdx }));
+                              }}
+                              className={`rounded-2xl border p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer ${style}`}
                             >
-                              <button
-                                type="button"
-                                disabled={examSubmitted}
-                                onClick={() => setExamAnswers((prev) => ({ ...prev, [qIdx]: optIdx }))}
-                                className="text-left flex-1 text-xs"
-                              >
-                                <span className="font-mono font-bold mr-2 text-muted">{String.fromCharCode(65 + optIdx)}.</span>
-                                <span>{opt.text}</span>
-                              </button>
+                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div
+                                  className={`size-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 ${
+                                    isSelected ? "bg-ember text-obsidian" : "bg-surface-raised border border-hairline text-muted"
+                                  }`}
+                                >
+                                  {String.fromCharCode(65 + optIdx)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-bold text-ink">{opt.text}</p>
+                                  {opt.subtext && <p className="text-[10px] text-muted">{opt.subtext}</p>}
+                                </div>
+                              </div>
 
                               {opt.soundSample && (
                                 <button
@@ -2019,7 +2221,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                     e.stopPropagation();
                                     playSpeechAudio(opt.soundSample || opt.text);
                                   }}
-                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-ember bg-ember/15 border border-ember/30 px-2.5 py-1 rounded-lg hover:bg-ember/25 transition-all shrink-0 self-start sm:self-auto"
+                                  className="btn-ember h-8 px-3 rounded-lg text-obsidian text-[11px] font-bold transition-all flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs hover:brightness-105"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2033,7 +2235,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         })}
                       </div>
                       {examSubmitted && (
-                        <p className="text-[11px] text-muted pt-1 border-t border-hairline/40 leading-relaxed">
+                        <p className="text-[11px] text-muted pt-2 border-t border-hairline/40 leading-relaxed">
                           <b>Pembahasan:</b> {q.explanation}
                         </p>
                       )}
@@ -2047,7 +2249,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <button
                       disabled={Object.keys(examAnswers).length < activeStage.exam.length}
                       onClick={() => submitGateExam(activeStage)}
-                      className="btn-ember h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md disabled:opacity-50 w-full sm:w-auto"
+                      className="btn-ember h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md disabled:opacity-50 w-full sm:w-auto cursor-pointer"
                     >
                       Kirim Jawaban &amp; Evaluasi Kelulusan →
                     </button>
@@ -2063,7 +2265,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setExamAnswers({});
                             setDrillAnswer(null);
                           }}
-                          className="btn-ember h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md"
+                          className="btn-ember h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer"
                         >
                           Lanjut ke Tahap {activeStage.id + 1} →
                         </button>
@@ -2075,7 +2277,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setExamAnswers({});
                             setDrillAnswer(null);
                           }}
-                          className="h-11 px-6 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised"
+                          className="h-11 px-6 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised cursor-pointer"
                         >
                           Ulangi Ujian
                         </button>
