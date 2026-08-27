@@ -133,9 +133,9 @@ ATURAN PENILAIAN FONETIK & AKURASI:
 }`;
 
   try {
-    const rawAiOutput = await generate(prompt, {
-      temperature: 0.3,
-      maxOutputTokens: 1000,
+    const rawAiOutput = await generate({
+      prompt,
+      tier: "free",
     });
 
     const cleanedText = rawAiOutput

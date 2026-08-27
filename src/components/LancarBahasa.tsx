@@ -1297,7 +1297,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       }
 
       const payload = await res.json();
-      const valResult: VoiceValidationResult = payload.data;
+      const valResult: VoiceValidationResponse = payload.data;
       setVoiceExamResult(valResult);
 
       if (valResult.isPassed) {
