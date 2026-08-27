@@ -59,18 +59,23 @@ Thumbs.db
 # graphify: rebuilt from src/ by AST at zero LLM cost, so it is a build artifact
 graphify-out/
 
-# Working notes — process docs, not product. Kept local.
+# Working notes & process docs — kept local
 .notes/
+scratch/
 
-# Agent tooling installed per-machine by `npx skills add`. These are the
-# operator's toolbox, not the product — they are re-installable, they are large
-# (a few hundred files), and committing them buries a real diff. `.claude/` is
-# excluded except launch.json, which is project config and was already tracked.
+# Agent tooling, skills, prompt archives & AI configurations
 .agents/
 .hermes/
+.claude/
+.gemini/
 skills-lock.json
-.claude/*
-!.claude/launch.json
+AGENTS.md
+GEMINI.md
+CLAUDE.md
+ANTIGRAVITY_PROMPT.md
+MALESAN_MASTER_PROMPT.md
+docs/superpowers/
 __pycache__/
 *.pyc
+
 

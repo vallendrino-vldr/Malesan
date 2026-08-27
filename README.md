@@ -1,65 +1,84 @@
-# Malesan
+# Malesan 🚀
 
 **Males mikirnya. Bukan bikinnya.**
 
-AI content-ideation tool for Indonesian creators. It removes the blank-page moment — the
-bottleneck is not filming or editing, it is deciding *what* to make, *how* to hook, and *what*
-to say.
+Malesan adalah platform all-in-one AI content workspace modern yang dirancang khusus untuk kreator konten, affiliate marketer, dan video editor di Indonesia. Malesan membantu menghilangkan *blank-page syndrome* dengan mengotomasi riset ide viral, perumusan hook, penulisan script, pembuatan visual carousel, hingga subtitling video otomatis dengan sinkronisasi kata presisi tinggi.
 
-Malesan is for people who are lazy about the **thinking**, not the craft. The user still
-films, edits and performs.
+🌐 **Live URL:** [malesan.my.id](https://malesan.my.id)
 
 ---
 
-## Status
+## ⚡ Fitur Utama
 
-Step **1 of 13**. Landing page and design system only — no auth, no database, no AI yet.
-See [`ROADMAP.md`](ROADMAP.md) for the build order and [`HANDOFF.md`](HANDOFF.md) for exactly
-where things stand.
+- **Ide Hari Ini & Idea Engine**: Generator ide konten berbasis tren Indonesia terkini dengan analisis formula viral dan target audiens.
+- **Hook Lab**: Pembuat hook pembuka video dengan retensi tinggi untuk TikTok, Instagram Reels, dan YouTube Shorts.
+- **Script Studio**: Penulisan naskah video terstruktur (Hook, Retain, Payoff, CTA) dengan dukungan autosave dan tab completion.
+- **Content Repurpose & Thread Engine**: Mengubah satu ide menjadi berbagai format konten (X thread, carousel slide, script pendek, caption panjang).
+- **Video Auto-CC Editor**: Subtitling video otomatis berbasis WebCodecs & Groq Whisper dengan rendering GPU client-side, efek pop/karaoke per kata, dan zero video server upload (100% aman dan privat di browser pengguna).
+- **Creator DNA & Otak Kedua**: Sistem personalisasi gaya bahasa, target audiens, dan referensi materi milik kreator.
+- **Pipeline Kanban & Posting Slot**: Manajemen alur kerja konten dari ide, draft, review, hingga jadwal tayang optimal.
 
-## Stack
+---
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS v4 · Framer Motion · Supabase ·
-Google Gemini · Vercel
+## 🛠️ Tech Stack
 
-## Running it
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/) & React 19
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & Framer Motion
+- **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL dengan Row Level Security)
+- **Audio & Video Processing**: WebCodecs API, `@ffmpeg/ffmpeg` (WebAssembly), Web Audio API
+- **AI Infrastructure**: Google Gemini API & Groq Whisper
+- **Deployment**: [Vercel](https://vercel.com/)
 
+---
+
+## 🚀 Memulai Pengembangan Lokal
+
+### Prasyarat
+- Node.js $\ge 20.x$
+- npm atau pnpm
+
+### Instalasi
+
+1. Clone repositori:
+```bash
+git clone https://github.com/vallendrino-vldr/Malesan.git
+cd Malesan
+```
+
+2. Instal dependensi:
 ```bash
 npm install
+```
+
+3. Siapkan variabel lingkungan (`.env.local`):
+```bash
+cp .env.example .env.local
+```
+Isi konfigurasi Supabase dan API keys yang diperlukan pada `.env.local`.
+
+4. Jalankan server pengembangan lokal:
+```bash
 npm run dev
 ```
+Buka browser di `http://localhost:3000`.
 
-Then open http://localhost:3000.
+---
+
+## 🧪 Pengujian & Build
 
 ```bash
-npm run build      # production build
-npm run lint       # eslint
-npm run typecheck  # tsc --noEmit
+# Menjalankan pengujian unit & invarian
+npm test
+
+# Menjalankan linter ESLint
+npm run lint
+
+# Kompilasi build produksi
+npm run build
 ```
 
-## Configuration
+---
 
-Copy `.env.example` to `.env.local` and fill it in. `.env.local` is gitignored and must stay
-that way — no key of any kind belongs in a commit.
+## 📄 Lisensi & Hak Cipta
 
-Nothing in the app is runnable against real services yet; steps 2–4 wire up Supabase and
-Gemini.
-
-## For agents
-
-**Read [`AGENTS.md`](AGENTS.md) first.** It is the canonical instruction file — the hard
-rules, the working protocol, and the reading order. `CLAUDE.md` only points there.
-
-The short version: one roadmap step per session, self-test it, update `HANDOFF.md`, commit,
-stop. Never invent a feature that is not in `ROADMAP.md` — write it in PROPOSALS instead.
-
-| File | What it holds |
-|---|---|
-| [`AGENTS.md`](AGENTS.md) | Rules every agent must obey |
-| [`HANDOFF.md`](HANDOFF.md) | Live session state — start here, then next action |
-| [`DECISIONS.md`](DECISIONS.md) | Append-only log of *why* choices were made |
-| [`PRD.md`](PRD.md) | Product requirements, credit economy, anti-abuse |
-| [`SCHEMA.md`](SCHEMA.md) | Tables, SQL functions, RLS policies |
-| [`DESIGN.md`](DESIGN.md) | Tokens, typography, motion, copy voice |
-| [`PROMPTS.md`](PROMPTS.md) | AI prompt library (Indonesian) |
-| [`ROADMAP.md`](ROADMAP.md) | 14 build steps and their status |
+Hak Cipta © 2026 Malesan. Seluruh hak cipta dilindungi undang-undang.
