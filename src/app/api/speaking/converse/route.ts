@@ -208,6 +208,7 @@ ATURAN FORMATTING KETAT:
   try {
     const rawAi = await generate({ prompt, schema, tier: "free" });
     const parsed = JSON.parse(rawAi.trim());
+    const replyEn = parsed.replyEn || "That is interesting! Tell me more about it.";
     const audioData = await getPollyAudio(replyEn, persona);
     const audioUrl = audioData.audioDataUri || audioData.audioUrl || null;
 
