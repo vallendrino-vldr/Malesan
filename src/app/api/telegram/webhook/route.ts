@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { sendTelegramMessage, sendChatAction, getTelegramConfig } from "@/lib/telegram";
+import {
+  sendTelegramMessage,
+  sendChatAction,
+  getTelegramConfig,
+  createTelegramForumTopic,
+} from "@/lib/telegram";
 import { processTelegramAIMessage, executePendingTelegramAction } from "@/lib/telegram-ai";
 
 export const runtime = "nodejs";
@@ -21,9 +26,17 @@ interface TelegramUser {
   username?: string;
 }
 
+interface TelegramChat {
+  id: number;
+  type: string;
+  title?: string;
+}
+
 interface TelegramMessage {
   message_id: number;
   from?: TelegramUser;
+  chat?: TelegramChat;
+  message_thread_id?: number;
   text?: string;
 }
 
@@ -61,40 +74,40 @@ export async function POST(request: NextRequest) {
 
   const supabase = getAdminSupabase();
 
-  // 2. Handle Inline Keyboard Button Callbacks
+  // 2. Handle Inline Button Callbacks
   if (body.callback_query) {
-    const cb = body.callback_query;
-    const fromId = String(cb.from?.id);
-    const data = String(cb.data || "");
-    const callbackQueryId = cb.id;
+    const cq = body.callback_query;
+    const fromId = String(cq.from.id);
+    const data = cq.data || "";
+    const callbackChatId = cq.message?.chat?.id ? String(cq.message.chat.id) : fromId;
+    const callbackThreadId = cq.message?.message_thread_id;
 
-    // Answer callback query so Telegram spinner stops
-    await answerCallbackQuery(callbackQueryId);
-
-    // Whitelist check
     if (fromId !== adminChatId) {
-      await sendTelegramMessage("⛔ <i>Akses ditolak. Lo bukan admin Malesan.</i>", { chatId: fromId });
+      console.warn(`[telegram-webhook] unauthorized callback query: ${fromId}`);
       return json({ ok: true });
     }
 
     if (data.startsWith("approve_topup:")) {
       const topupId = data.replace("approve_topup:", "");
-      await handleApproveTopup(topupId, supabase);
+      await handleApproveTopup(topupId, supabase, callbackChatId, callbackThreadId);
     } else if (data.startsWith("reject_topup:")) {
       const topupId = data.replace("reject_topup:", "");
-      await handleRejectTopup(topupId, supabase);
+      await handleRejectTopup(topupId, supabase, callbackChatId, callbackThreadId);
     } else if (data.startsWith("exec_action:")) {
       const actionId = data.replace("exec_action:", "");
       const resMsg = await executePendingTelegramAction(actionId, supabase);
-      await sendTelegramMessage(resMsg, { chatId: fromId });
+      await sendTelegramMessage(resMsg, { chatId: callbackChatId, messageThreadId: callbackThreadId });
     } else if (data.startsWith("cancel_action:")) {
       const actionId = data.replace("cancel_action:", "");
       await supabase.from("app_config").delete().eq("key", `tele_act:${actionId}`);
-      await sendTelegramMessage("❌ <b>Tindakan telah dibatalkan oleh Bos.</b>", { chatId: fromId });
+      await sendTelegramMessage("❌ <b>Tindakan telah dibatalkan oleh Bos.</b>", {
+        chatId: callbackChatId,
+        messageThreadId: callbackThreadId,
+      });
     } else if (data === "action:stats") {
-      await handleStatsCommand(fromId, supabase);
+      await handleStatsCommand(callbackChatId, supabase, callbackThreadId);
     } else if (data === "action:topups") {
-      await handleListPendingTopups(fromId, supabase);
+      await handleListPendingTopups(callbackChatId, supabase, callbackThreadId);
     }
 
     return json({ ok: true });
@@ -108,60 +121,130 @@ export async function POST(request: NextRequest) {
 
   const fromId = String(message.from?.id);
   const text = message.text.trim();
+  const chatId = message.chat?.id ? String(message.chat.id) : fromId;
+  const messageThreadId = message.message_thread_id;
+  const isGroup = chatId.startsWith("-100") || message.chat?.type === "supergroup" || message.chat?.type === "group";
 
   // Whitelist verification: ONLY respond to the owner
   if (fromId !== adminChatId) {
     console.warn(`[telegram-webhook] unauthorized user access attempt: ${fromId}`);
-    await sendTelegramMessage("⛔ <i>Akses Ditolak. Bot ini khusus owner @malesan_my_id.</i>", { chatId: fromId });
+    if (!isGroup) {
+      await sendTelegramMessage("⛔ <i>Akses Ditolak. Bot ini khusus owner @malesan_my_id.</i>", { chatId: fromId });
+    }
     return json({ ok: true });
   }
 
-  // Trigger real-time "typing..." indicator in Telegram app header
-  sendChatAction(fromId, "typing").catch(() => {});
+  // Trigger real-time "typing..." indicator in Telegram app header / topic
+  sendChatAction(chatId, "typing", messageThreadId).catch(() => {});
 
   // If text starts with a known slash command, handle quickly:
   if (text.startsWith("/")) {
     const [cmd, ...args] = text.split(/\s+/);
     switch (cmd.toLowerCase()) {
+      case "/sethq":
+      case "/setup_forum":
+      case "/setup": {
+        if (!isGroup) {
+          await sendTelegramMessage(
+            "⚠️ Perintah <code>/sethq</code> harus dikirim di dalam <b>Grup Forum MALESAN HQ</b>, bukan di chat DM pribadi, Bos!",
+            { chatId: fromId },
+          );
+          return json({ ok: true });
+        }
+
+        await sendTelegramMessage("⏳ <b>Sedang mengonfigurasi MALESAN HQ Forum Topics...</b>", {
+          chatId,
+          messageThreadId,
+        });
+
+        // 1. Save group ID
+        await supabase.from("app_config").upsert({
+          key: "telegram_group_chat_id",
+          value: chatId,
+          updated_at: new Date().toISOString(),
+        });
+
+        // 2. Automatically create Forum Topics via Telegram Bot API
+        const topicsConfig: Record<string, number> = {};
+
+        const topicDefs = [
+          { key: "executive", name: "👑 Executive Chat", color: 16766590 },
+          { key: "topup", name: "💳 Topup & Transaksi", color: 7322096 },
+          { key: "users", name: "👋 User Activity", color: 9367192 },
+          { key: "generation", name: "⚡ Generasi Konten", color: 16478047 },
+          { key: "feedback", name: "⭐ Feedback & Review", color: 16749490 },
+          { key: "error", name: "🚨 Error Sentry", color: 13338331 },
+          { key: "otak_kedua", name: "📥 Otak Kedua", color: 7322096 },
+        ];
+
+        for (const t of topicDefs) {
+          const res = await createTelegramForumTopic(chatId, t.name, t.color);
+          if (res.ok && res.messageThreadId) {
+            topicsConfig[t.key] = res.messageThreadId;
+            await sendTelegramMessage(
+              `🚀 <b>Kamar ${t.name} Siap!</b>\nNotifikasi dan obrolan untuk topik ini akan mendarat di sini.`,
+              {
+                chatId,
+                messageThreadId: res.messageThreadId,
+              },
+            );
+          }
+        }
+
+        // 3. Save forum topics mapping
+        await supabase.from("app_config").upsert({
+          key: "telegram_forum_topics",
+          value: topicsConfig,
+          updated_at: new Date().toISOString(),
+        });
+
+        await sendTelegramMessage(
+          "🎉 <b>MALESAN HQ FORUM BERHASIL DI-SETUP LENGKAP!</b>\n\nSemua notifikasi website (topup, user baru, generasi konten, error, dan feedback) sekarang sudah otomatis terbagi ke kamar topik masing-masing, Bos! 🚀👑",
+          { chatId, messageThreadId },
+        );
+
+        return json({ ok: true });
+      }
+
       case "/start":
       case "/help":
       case "/menu": {
-        await handleMenuCommand(fromId);
+        await handleMenuCommand(chatId, messageThreadId);
         return json({ ok: true });
       }
       case "/stats": {
-        await handleStatsCommand(fromId, supabase);
+        await handleStatsCommand(chatId, supabase, messageThreadId);
         return json({ ok: true });
       }
       case "/topups": {
-        await handleListPendingTopups(fromId, supabase);
+        await handleListPendingTopups(chatId, supabase, messageThreadId);
         return json({ ok: true });
       }
       case "/voucher": {
-        await handleCreateVoucher(fromId, args, supabase);
+        await handleCreateVoucher(chatId, args, supabase, messageThreadId);
         return json({ ok: true });
       }
       case "/broadcast": {
-        await handleBroadcastCommand(fromId, args.join(" "), supabase);
+        await handleBroadcastCommand(chatId, args.join(" "), supabase, messageThreadId);
         return json({ ok: true });
       }
       case "/clearnotice": {
-        await handleClearNoticeCommand(fromId, supabase);
+        await handleClearNoticeCommand(chatId, supabase, messageThreadId);
         return json({ ok: true });
       }
       case "/ban": {
-        await handleBanUser(fromId, args[0], true, supabase);
+        await handleBanUser(chatId, args[0], true, supabase, messageThreadId);
         return json({ ok: true });
       }
       case "/unban": {
-        await handleBanUser(fromId, args[0], false, supabase);
+        await handleBanUser(chatId, args[0], false, supabase, messageThreadId);
         return json({ ok: true });
       }
     }
   }
 
   // 4. Autonomous Conversational AI Brain: Handles any natural language chat / orders!
-  await processTelegramAIMessage(text, fromId);
+  await processTelegramAIMessage(text, chatId, messageThreadId);
 
   return json({ ok: true });
 }
@@ -170,19 +253,22 @@ export async function POST(request: NextRequest) {
 // Command Handlers
 // -------------------------------------------------------------
 
-async function handleMenuCommand(chatId: string) {
+async function handleMenuCommand(chatId: string, messageThreadId?: number) {
   const menuText = `🎛 <b>MALESAN MISSION CONTROL & AI BRAIN</b> 🚀\n
-Halo Bos! Bot ini sekarang dilengkapi <b>Autonomous AI Brain</b>. Lo bisa chat bebas bahasa Indonesia apa aja (gak perlu pakai garis miring / slash lagi):
+Halo Bos! Bot ini sekarang dilengkapi <b>Autonomous AI Brain</b> dan dukungan <b>Forum Topics</b>:
+
+💡 <b>Setup Forum Grup:</b>
+• Ketik <code>/sethq</code> di grup Forum untuk auto-create semua kamar topik!
 
 💬 <b>Contoh Obrolan Bebas:</b>
 • <i>"Hapus broadcast sekarang"</i>
 • <i>"Pasang banner: Diskon 50% sampai besok malam"</i>
+• <i>"Siapa aja user yang terdaftar?"</i>
+• <i>"Cek user vadlyvldr@gmail.com"</i>
 • <i>"Ada komplain apa hari ini?"</i>
-• <i>"Berapa total user yang aktif hari ini?"</i>
-• <i>"Kasih 50 kredit buat user budi@gmail.com"</i>
-• <i>"Bikinin ide konten viral buat promo Malesan"</i>
+• <i>"Bikinin ide konten TikTok hook tentang AI"</i>
 
-<i>Atau klik menu cepat di bawah ini:</i>`;
+⚡ <i>Gunakan tombol cepat di bawah jika perlu:</i>`;
 
   const inlineKeyboard = {
     inline_keyboard: [
@@ -191,301 +277,294 @@ Halo Bos! Bot ini sekarang dilengkapi <b>Autonomous AI Brain</b>. Lo bisa chat b
         { text: "💳 Antrean Topup", callback_data: "action:topups" },
       ],
       [
-        { text: "🌐 Buka Malesan.my.id", url: "https://malesan.my.id/app" },
-        { text: "👑 Admin Panel", url: "https://malesan.my.id/admin" },
+        { text: "🌐 Buka Malesan.my.id", url: "https://www.malesan.my.id" },
+        { text: "👑 Admin Panel", url: "https://www.malesan.my.id/admin" },
       ],
     ],
   };
 
-  await sendTelegramMessage(menuText, { chatId, replyMarkup: inlineKeyboard });
+  await sendTelegramMessage(menuText, {
+    chatId,
+    messageThreadId,
+    replyMarkup: inlineKeyboard,
+  });
 }
 
-async function handleStatsCommand(chatId: string, supabase: SupabaseClient) {
-  try {
-    const { count: totalUsers } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true });
+async function handleStatsCommand(chatId: string, supabase: SupabaseClient, messageThreadId?: number) {
+  const [usersRes, topupsRes, genRes] = await Promise.all([
+    supabase.from("profiles").select("id, is_pro, created_at"),
+    supabase.from("topups").select("id, amount, status, created_at").eq("status", "pending"),
+    supabase.from("generations").select("id, created_at").gte("created_at", new Date(Date.now() - 24 * 3600 * 1000).toISOString()),
+  ]);
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+  const totalUsers = usersRes.data?.length || 0;
+  const proUsers = usersRes.data?.filter((u) => u.is_pro).length || 0;
+  const pendingTopups = topupsRes.data?.length || 0;
+  const gensToday = genRes.data?.length || 0;
 
-    const { count: gensToday } = await supabase
-      .from("generations")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", startOfDay.toISOString());
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 
-    const { count: pendingTopups } = await supabase
-      .from("topups")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "pending");
+  const text = `📊 <b>STATUS PLATFORM MALESAN</b> 📈\n
+👥 <b>Total Pengguna:</b> <b>${totalUsers}</b> (⭐ ${proUsers} Pro)
+💳 <b>Topup Pending:</b> <b>${pendingTopups}</b> request
+⚡ <b>Generasi Hari Ini:</b> <b>${gensToday}</b> konten
+⏰ <b>Waktu Server:</b> ${now} WIB
 
-    const { data: todayTopups } = await supabase
-      .from("topups")
-      .select("amount_idr")
-      .eq("status", "approved")
-      .gte("created_at", startOfDay.toISOString());
+<i>Gunakan tombol /topups untuk memproses pembayaran pending.</i>`;
 
-    const totalRevenueToday = (todayTopups || []).reduce((acc: number, t: { amount_idr?: number }) => acc + (t.amount_idr || 0), 0);
+  await sendTelegramMessage(text, { chatId, messageThreadId });
+}
 
-    const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+async function handleListPendingTopups(chatId: string, supabase: SupabaseClient, messageThreadId?: number) {
+  const { data: topups } = await supabase
+    .from("topups")
+    .select("id, amount, credits, proof_url, user_id, profiles(email), created_at")
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
 
-    const statsText = `📊 <b>RINGKASAN STATISTIK MALESAN</b>
-⏰ <i>Update: ${now} WIB</i>
+  if (!topups || topups.length === 0) {
+    await sendTelegramMessage("✅ <b>Tidak ada antrean topup pending saat ini, Bos!</b>", {
+      chatId,
+      messageThreadId,
+    });
+    return;
+  }
 
-👥 <b>Total Pengguna:</b> <b>${totalUsers || 0} Akun</b>
-⚡ <b>Generasi Konten Hari Ini:</b> <b>${gensToday || 0} Kali</b>
-💳 <b>Topup Pending:</b> <b>${pendingTopups || 0} Transaksi</b>
-💰 <b>Pemasukan Hari Ini:</b> <b>Rp ${totalRevenueToday.toLocaleString("id-ID")}</b>
+  await sendTelegramMessage(`💳 <b>Ditemukan ${topups.length} Topup Menunggu Persetujuan:</b>`, {
+    chatId,
+    messageThreadId,
+  });
 
-🛡 <b>Server Health:</b> 🟢 <b>Normal / Optimal</b>`;
+  for (const t of topups) {
+    const profile = Array.isArray(t.profiles) ? t.profiles[0] : t.profiles;
+    const email = (profile as { email?: string })?.email || "user@malesan";
+    const formattedRp = Number(t.amount || 0).toLocaleString("id-ID");
+
+    const caption = `🧾 <b>Topup ID:</b> <code>${t.id}</code>\n👤 <b>User:</b> <code>${escapeHtml(email)}</code>\n💵 <b>Nominal:</b> <b>Rp ${formattedRp}</b>\n💎 <b>Paket:</b> <b>${t.credits} Kredit</b>`;
 
     const inlineKeyboard = {
       inline_keyboard: [
         [
-          { text: "🔄 Refresh Stats", callback_data: "action:stats" },
-          { text: "💳 Cek Topup", callback_data: "action:topups" },
+          { text: "✅ Setujui (Approve)", callback_data: `approve_topup:${t.id}` },
+          { text: "❌ Tolak (Reject)", callback_data: `reject_topup:${t.id}` },
         ],
       ],
     };
 
-    await sendTelegramMessage(statsText, { chatId, replyMarkup: inlineKeyboard });
-  } catch (err) {
-    console.error("[telegram-stats] failed:", err);
-    await sendTelegramMessage("❌ Gagal mengambil data statistik database.", { chatId });
-  }
-}
-
-async function handleListPendingTopups(chatId: string, supabase: SupabaseClient) {
-  try {
-    const { data: pending } = await supabase
-      .from("topups")
-      .select("id, user_id, amount_idr, credits, proof_url, created_at, profiles(email)")
-      .eq("status", "pending")
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    if (!pending || pending.length === 0) {
-      await sendTelegramMessage("✅ <b>Semua Bersih!</b> Tidak ada antrean topup pending saat ini.", { chatId });
-      return;
-    }
-
-    for (const item of pending as Array<{ id: string; user_id: string; amount_idr?: number; credits: number; profiles?: { email?: string } | { email?: string }[] }>) {
-      const email = Array.isArray(item.profiles) ? item.profiles[0]?.email : item.profiles?.email || item.user_id;
-      const formattedRp = Number(item.amount_idr || 0).toLocaleString("id-ID");
-      const caption = `💳 <b>ANTREAN TOPUP PENDING</b>\n\n👤 <b>User:</b> <code>${escapeHtml(email || "User")}</code>\n💵 <b>Nominal:</b> Rp ${formattedRp}\n💎 <b>Paket:</b> ${item.credits} Kredit\n🧾 <b>ID:</b> <code>${item.id}</code>`;
-
-      const inlineKeyboard = {
-        inline_keyboard: [
-          [
-            { text: "✅ Setujui", callback_data: `approve_topup:${item.id}` },
-            { text: "❌ Tolak", callback_data: `reject_topup:${item.id}` },
-          ],
-        ],
-      };
-
-      await sendTelegramMessage(caption, { chatId, replyMarkup: inlineKeyboard });
-    }
-  } catch (err) {
-    console.error("[telegram-topups] failed:", err);
-    await sendTelegramMessage("❌ Gagal mengambil antrean topup.", { chatId });
-  }
-}
-
-async function handleApproveTopup(topupId: string, supabase: SupabaseClient) {
-  try {
-    const { data: topup, error: fetchErr } = await supabase
-      .from("topups")
-      .select("id, user_id, credits, amount_idr, status, profiles(email)")
-      .eq("id", topupId)
-      .single();
-
-    if (fetchErr || !topup) {
-      await sendTelegramMessage(`❌ Topup ID <code>${topupId}</code> tidak ditemukan.`);
-      return;
-    }
-
-    if (topup.status !== "pending") {
-      await sendTelegramMessage(`ℹ️ Topup ini sudah berstatus: <b>${String(topup.status).toUpperCase()}</b>.`);
-      return;
-    }
-
-    // 1. Grant credits first atomically via database function
-    const { error: grantErr } = await supabase.rpc("grant_credits", {
-      p_user: topup.user_id,
-      p_amount: topup.credits,
-      p_bucket: "paid",
-      p_reason: `telegram_topup_${topupId}`,
+    await sendTelegramMessage(caption, {
+      chatId,
+      messageThreadId,
+      replyMarkup: inlineKeyboard,
     });
-
-    if (grantErr) {
-      console.error("[telegram-approve] grant_credits RPC failed:", grantErr);
-      await sendTelegramMessage(`❌ Gagal menambahkan kredit ke database: ${grantErr.message}`);
-      return;
-    }
-
-    // 2. Update status to approved
-    await supabase.from("topups").update({
-      status: "approved",
-      reviewed_at: new Date().toISOString(),
-    }).eq("id", topupId);
-
-    const userEmail = (topup.profiles as { email?: string } | null)?.email || topup.user_id;
-    const confirmationText = `✅ <b>TOPUP BERHASIL DISETUJUI!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(userEmail)}</code>\n💎 <b>Kredit Ditambahkan:</b> +${topup.credits} Kredit\n💵 <b>Nominal:</b> Rp ${Number(topup.amount_idr || 0).toLocaleString("id-ID")}`;
-
-    await sendTelegramMessage(confirmationText);
-  } catch (err) {
-    console.error("[telegram-approve] error:", err);
-    await sendTelegramMessage(`❌ Gagal menyetujui topup: ${String(err)}`);
   }
 }
 
-async function handleRejectTopup(topupId: string, supabase: SupabaseClient) {
-  try {
-    await supabase.from("topups").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("id", topupId);
-    await sendTelegramMessage(`❌ <b>TOPUP DITOLAK</b>\nID: <code>${topupId}</code> telah ditandai ditolak.`);
-  } catch (err) {
-    console.error("[telegram-reject] error:", err);
-    await sendTelegramMessage(`❌ Gagal menolak topup: ${String(err)}`);
+async function handleApproveTopup(
+  topupId: string,
+  supabase: SupabaseClient,
+  chatId: string,
+  messageThreadId?: number,
+) {
+  const { data: topup } = await supabase.from("topups").select("*").eq("id", topupId).single();
+  if (!topup || topup.status !== "pending") {
+    await sendTelegramMessage("⚠️ Topup ini sudah pernah diproses sebelumnya.", {
+      chatId,
+      messageThreadId,
+    });
+    return;
   }
+
+  // Grant credits
+  const { error: grantErr } = await supabase.rpc("grant_credits", {
+    p_user: topup.user_id,
+    p_amount: topup.credits,
+    p_bucket: "paid",
+    p_reason: `topup_${topupId}`,
+  });
+
+  if (grantErr) {
+    await sendTelegramMessage(`❌ Gagal menambahkan kredit: ${grantErr.message}`, {
+      chatId,
+      messageThreadId,
+    });
+    return;
+  }
+
+  await supabase
+    .from("topups")
+    .update({ status: "approved", approved_at: new Date().toISOString() })
+    .eq("id", topupId);
+
+  await sendTelegramMessage(
+    `✅ <b>TOPUP DISETUJUI!</b>\n\nID: <code>${topupId}</code>\n💎 <b>+${topup.credits} Kredit</b> telah masuk ke akun user.`,
+    { chatId, messageThreadId },
+  );
 }
 
-async function handleCreateVoucher(chatId: string, args: string[], supabase: SupabaseClient) {
-  if (args.length < 2) {
+async function handleRejectTopup(
+  topupId: string,
+  supabase: SupabaseClient,
+  chatId: string,
+  messageThreadId?: number,
+) {
+  const { data: topup } = await supabase.from("topups").select("*").eq("id", topupId).single();
+  if (!topup || topup.status !== "pending") {
+    await sendTelegramMessage("⚠️ Topup ini sudah pernah diproses sebelumnya.", {
+      chatId,
+      messageThreadId,
+    });
+    return;
+  }
+
+  await supabase
+    .from("topups")
+    .update({ status: "rejected", rejected_at: new Date().toISOString(), reject_reason: "Ditolak oleh admin via Telegram" })
+    .eq("id", topupId);
+
+  await sendTelegramMessage(`❌ <b>Topup ID <code>${topupId}</code> telah DITOLAK.</b>`, {
+    chatId,
+    messageThreadId,
+  });
+}
+
+async function handleCreateVoucher(
+  chatId: string,
+  args: string[],
+  supabase: SupabaseClient,
+  messageThreadId?: number,
+) {
+  const [code, creditsStr] = args;
+  if (!code || !creditsStr) {
     await sendTelegramMessage(
-      `⚠️ <b>Format Salah!</b>\n\nKetik: <code>/voucher KODE JUMLAH_KREDIT [MAX_CLAIM]</code>\n<i>Contoh: /voucher PROMO50 50 10</i>`,
-      { chatId },
+      "⚠️ <b>Format salah.</b>\nGunakan: <code>/voucher &lt;KODE&gt; &lt;JUMLAH_KREDIT&gt;</code>\nContoh: <code>/voucher DISKON50 50</code>",
+      { chatId, messageThreadId },
     );
     return;
   }
 
-  const code = args[0].toUpperCase().trim();
-  const credits = parseInt(args[1], 10);
-
+  const credits = parseInt(creditsStr, 10);
   if (isNaN(credits) || credits <= 0) {
-    await sendTelegramMessage("⚠️ Jumlah kredit harus berupa angka positif!", { chatId });
+    await sendTelegramMessage("⚠️ Jumlah kredit harus berupa angka positif.", {
+      chatId,
+      messageThreadId,
+    });
     return;
   }
 
-  try {
-    const { error } = await supabase.from("vouchers").insert({
-      code,
-      credits,
-      is_redeemed: false,
-      created_at: new Date().toISOString(),
+  const cleanCode = code.trim().toUpperCase();
+
+  const { error } = await supabase.from("vouchers").insert({
+    code: cleanCode,
+    credits,
+    is_redeemed: false,
+  });
+
+  if (error) {
+    await sendTelegramMessage(`❌ Gagal membuat voucher: ${error.message}`, {
+      chatId,
+      messageThreadId,
     });
-
-    if (error) {
-      await sendTelegramMessage(`❌ Gagal membuat voucher: ${error.message}`, { chatId });
-      return;
-    }
-
-    const successText = `🎟 <b>VOUCHER BERHASIL DIBUAT!</b>\n\n🔑 <b>Kode:</b> <code>${code}</code>\n💎 <b>Hadiah:</b> <b>+${credits} Kredit</b>\n\n<i>Tinggal salin kode di atas dan bagikan ke user!</i>`;
-
-    await sendTelegramMessage(successText, { chatId });
-  } catch (err) {
-    console.error("[telegram-voucher] error:", err);
-    await sendTelegramMessage("❌ Terjadi kesalahan saat menyimpan voucher.", { chatId });
-  }
-}
-
-async function handleBroadcastCommand(chatId: string, message: string, supabase: SupabaseClient) {
-  if (!message.trim()) {
-    await sendTelegramMessage(
-      `⚠️ <b>Format Salah!</b>\n\nKetik: <code>/broadcast Pesan pengumuman disini</code>\n<i>Contoh: /broadcast Halo kreator, server sedang maintenance 10 menit ya!</i>`,
-      { chatId },
-    );
     return;
   }
 
-  try {
-    await supabase.from("app_config").upsert({
-      key: "dashboard_notice",
-      value: message.trim(),
-      updated_at: new Date().toISOString(),
-    });
-
-    await sendTelegramMessage(
-      `📢 <b>PENGUMUMAN BERHASIL DIPASANG!</b>\n\nPesan berikut sekarang tampil di dashboard seluruh user:\n<i>"${escapeHtml(message.trim())}"</i>\n\nKetik /clearnotice untuk menghapus.`,
-      { chatId },
-    );
-  } catch (err) {
-    console.error("[telegram-broadcast] error:", err);
-    await sendTelegramMessage("❌ Gagal memasang broadcast.", { chatId });
-  }
+  await sendTelegramMessage(
+    `🎟 <b>VOUCHER BERHASIL DIBUAT!</b>\n\n🔑 <b>Kode:</b> <code>${cleanCode}</code>\n💎 <b>Nominal:</b> <b>+${credits} Kredit Paid</b>\n\n<i>User bisa langsung klaim kode ini di dashboard Malesan.</i>`,
+    { chatId, messageThreadId },
+  );
 }
 
-async function handleClearNoticeCommand(chatId: string, supabase: SupabaseClient) {
-  try {
-    await supabase.from("app_config").upsert({
-      key: "dashboard_notice",
-      value: "",
-      updated_at: new Date().toISOString(),
-    });
-
-    await sendTelegramMessage("🧹 <b>Banner pengumuman berhasil dihapus dari dashboard.</b>", { chatId });
-  } catch (err) {
-    console.error("[telegram-clearnotice] error:", err);
-    await sendTelegramMessage("❌ Gagal menghapus notice.", { chatId });
-  }
-}
-
-async function handleBanUser(chatId: string, email: string, isBanned: boolean, supabase: SupabaseClient) {
-  if (!email || !email.includes("@")) {
+async function handleBroadcastCommand(
+  chatId: string,
+  message: string,
+  supabase: SupabaseClient,
+  messageThreadId?: number,
+) {
+  if (!message || message.trim().length === 0) {
     await sendTelegramMessage(
-      `⚠️ <b>Format Salah!</b>\n\nKetik: <code>${isBanned ? "/ban" : "/unban"} user@email.com</code>`,
-      { chatId },
+      "⚠️ <b>Format salah.</b>\nGunakan: <code>/broadcast &lt;Pesan pengumuman&gt;</code>",
+      { chatId, messageThreadId },
     );
     return;
   }
 
-  try {
-    const { data: user, error: findErr } = await supabase
-      .from("profiles")
-      .select("id, email")
-      .eq("email", email.trim().toLowerCase())
-      .single();
+  const text = message.trim();
 
-    if (findErr || !user) {
-      await sendTelegramMessage(`❌ User dengan email <code>${escapeHtml(email)}</code> tidak ditemukan.`, { chatId });
-      return;
-    }
+  await supabase.from("app_config").upsert({
+    key: "dashboard_notice",
+    value: text,
+    updated_at: new Date().toISOString(),
+  });
 
-    await supabase.from("profiles").update({ is_banned: isBanned }).eq("id", user.id);
-
-    const actionText = isBanned ? "🚫 <b>AKUN DIBEKUKAN (BANNED)!</b>" : "🔓 <b>AKUN DIBUKA KEMBALI (UNBANNED)!</b>";
-    await sendTelegramMessage(
-      `${actionText}\n\n👤 <b>User:</b> <code>${escapeHtml(email)}</code>\nStatus telah diperbarui di database.`,
-      { chatId },
-    );
-  } catch (err) {
-    console.error("[telegram-ban] error:", err);
-    await sendTelegramMessage("❌ Gagal memperbarui status user.", { chatId });
-  }
+  await sendTelegramMessage(
+    `📢 <b>BANNER PENGUMUMAN BERHASIL DIPASANG!</b>\n\n<i>"${escapeHtml(text)}"</i>\n\nBanner ini sekarang muncul di bagian atas dashboard seluruh user.`,
+    { chatId, messageThreadId },
+  );
 }
 
-async function answerCallbackQuery(callbackQueryId: string) {
-  const config = await getTelegramConfig();
-  const token = config.token || process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) return;
-  try {
-    await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ callback_query_id: callbackQueryId }),
+async function handleClearNoticeCommand(chatId: string, supabase: SupabaseClient, messageThreadId?: number) {
+  await supabase.from("app_config").upsert({
+    key: "dashboard_notice",
+    value: "",
+    updated_at: new Date().toISOString(),
+  });
+
+  await sendTelegramMessage("📢 <b>Banner pengumuman dashboard telah BERHASIL DIHAPUS.</b>", {
+    chatId,
+    messageThreadId,
+  });
+}
+
+async function handleBanUser(
+  chatId: string,
+  emailArg: string | undefined,
+  isBan: boolean,
+  supabase: SupabaseClient,
+  messageThreadId?: number,
+) {
+  if (!emailArg) {
+    await sendTelegramMessage("⚠️ Mohon sebutkan email user yang ingin diatur.", {
+      chatId,
+      messageThreadId,
     });
-  } catch {
-    // Ignore callback ack failure
+    return;
   }
+
+  const cleanEmail = emailArg.trim().toLowerCase();
+
+  const { data: user } = await supabase
+    .from("profiles")
+    .select("id, email")
+    .ilike("email", `%${cleanEmail}%`)
+    .maybeSingle();
+
+  if (!user) {
+    await sendTelegramMessage(`❌ User dengan email <code>${escapeHtml(cleanEmail)}</code> tidak ditemukan.`, {
+      chatId,
+      messageThreadId,
+    });
+    return;
+  }
+
+  await supabase
+    .from("profiles")
+    .update({ is_banned: isBan, ban_reason: isBan ? "Moderasi via Telegram Bot" : null })
+    .eq("id", user.id);
+
+  const statusText = isBan ? "🚫 <b>DIBLOKIR / BANNED</b>" : "🔓 <b>DIBUKA KEMBALI</b>";
+  await sendTelegramMessage(`Akun user <code>${escapeHtml(user.email)}</code> telah ${statusText}.`, {
+    chatId,
+    messageThreadId,
+  });
 }
 
-function json(body: unknown) {
-  return new Response(JSON.stringify(body), {
-    status: 200,
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
     headers: { "Content-Type": "application/json" },
   });
 }
 
-function escapeHtml(str: string): string {
+function escapeHtml(str?: string | null): string {
   return String(str || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

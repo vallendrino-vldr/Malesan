@@ -61,11 +61,15 @@ interface AIIntentResult {
   needsConfirmation: boolean;
 }
 
-export async function processTelegramAIMessage(userText: string, chatId: string) {
+export async function processTelegramAIMessage(
+  userText: string,
+  chatId: string,
+  messageThreadId?: number,
+) {
   const supabase = getAdminSupabase();
 
-  // Send real-time typing indicator to Telegram app
-  sendChatAction(chatId, "typing").catch(() => {});
+  // Send real-time typing indicator to Telegram app / topic
+  sendChatAction(chatId, "typing", messageThreadId).catch(() => {});
 
   // 1. Gather comprehensive platform snapshot
   let snapshotContext = "";
@@ -194,7 +198,10 @@ Instruksi Output:
       parsed = JSON.parse(rawRes.trim()) as AIIntentResult;
     } catch {
       console.warn("[telegram-ai] Failed to parse JSON response:", rawRes);
-      await sendTelegramMessage(rawRes || "Siap Bos, ada yang bisa saya bantu?", { chatId });
+      await sendTelegramMessage(rawRes || "Siap Bos, ada yang bisa saya bantu?", {
+        chatId,
+        messageThreadId,
+      });
       return;
     }
 
@@ -237,6 +244,7 @@ Instruksi Output:
 
       await sendTelegramMessage(proposalText, {
         chatId,
+        messageThreadId,
         replyMarkup: {
           inline_keyboard: [
             [
@@ -259,7 +267,10 @@ Instruksi Output:
           .limit(15);
 
         if (uErr || !users || users.length === 0) {
-          await sendTelegramMessage("👥 <b>Daftar User:</b> Belum ada user terdaftar di database.", { chatId });
+          await sendTelegramMessage("👥 <b>Daftar User:</b> Belum ada user terdaftar di database.", {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
@@ -274,18 +285,20 @@ Instruksi Output:
           .join("\n\n");
 
         const message = `👥 <b>DAFTAR PENGGUNA TERDAFTAR (Total: ${users.length} Akun Terkini)</b>\n\n${userRows}\n\n<i>Ketik <code>Cek user &lt;email&gt;</code> untuk inspeksi mendalam satu user.</i>`;
-        await sendTelegramMessage(message, { chatId });
+        await sendTelegramMessage(message, { chatId, messageThreadId });
         return;
       }
 
       case "inspect_user": {
         const query = String(parsed.payload?.email || "").trim().toLowerCase();
         if (!query) {
-          await sendTelegramMessage("⚠️ Mohon sebutkan email user yang ingin dicek.", { chatId });
+          await sendTelegramMessage("⚠️ Mohon sebutkan email user yang ingin dicek.", {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
-        // Resilient lookup: exact match or partial match on email / display_name
         const { data: users } = await supabase
           .from("profiles")
           .select("id, email, display_name, role, is_pro, is_banned, ban_reason, credits_free, credits_paid, created_at")
@@ -295,7 +308,10 @@ Instruksi Output:
         const user = users?.[0];
 
         if (!user) {
-          await sendTelegramMessage(`❌ User <code>${escapeHtml(query)}</code> tidak ditemukan di database.\nKetik <b>"Daftar user"</b> untuk melihat semua akun yang ada, Bos!`, { chatId });
+          await sendTelegramMessage(`❌ User <code>${escapeHtml(query)}</code> tidak ditemukan di database.\nKetik <b>"Daftar user"</b> untuk melihat semua akun yang ada, Bos!`, {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
@@ -310,7 +326,7 @@ Instruksi Output:
 
         const userCard = `👤 <b>DETAIL PROFIL PENGGUNA</b>\n\n📧 <b>Email:</b> <code>${escapeHtml(user.email)}</code>\n🏷 <b>Nama:</b> ${escapeHtml(user.display_name || "Tanpa Nama")}\n🛡 <b>Peran:</b> ${roleText}\n💎 <b>Paket:</b> ${user.is_pro ? "⭐ <b>PRO TIER</b>" : "Free Tier"}\n💰 <b>Total Kredit:</b> ${totalCredits} (Free: ${user.credits_free || 0}, Paid: ${user.credits_paid || 0})\n⚡ <b>Generasi Konten:</b> ${genCount || 0} kali\n📅 <b>Terdaftar:</b> ${joined}\n🚦 <b>Status Akun:</b> ${user.is_banned ? `🚫 <b>BANNED (${escapeHtml(user.ban_reason || "-")})</b>` : "🟢 <b>Aktif Normal</b>"}`;
 
-        await sendTelegramMessage(userCard, { chatId });
+        await sendTelegramMessage(userCard, { chatId, messageThreadId });
         return;
       }
 
@@ -322,7 +338,10 @@ Instruksi Output:
           .limit(5);
 
         if (!errs || errs.length === 0) {
-          await sendTelegramMessage("✅ <b>Semua Sistem Sehat!</b> Tidak ada error tercatat dalam riwayat.", { chatId });
+          await sendTelegramMessage("✅ <b>Semua Sistem Sehat!</b> Tidak ada error tercatat dalam riwayat.", {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
@@ -333,7 +352,10 @@ Instruksi Output:
           )
           .join("\n\n");
 
-        await sendTelegramMessage(`⚠️ <b>LOG ERROR TERAKHIR:</b>\n\n${errList}`, { chatId });
+        await sendTelegramMessage(`⚠️ <b>LOG ERROR TERAKHIR:</b>\n\n${errList}`, {
+          chatId,
+          messageThreadId,
+        });
         return;
       }
 
@@ -345,7 +367,10 @@ Instruksi Output:
           .limit(5);
 
         if (!fbs || fbs.length === 0) {
-          await sendTelegramMessage("💌 Belum ada feedback baru yang masuk.", { chatId });
+          await sendTelegramMessage("💌 Belum ada feedback baru yang masuk.", {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
@@ -357,7 +382,10 @@ Instruksi Output:
           })
           .join("\n\n");
 
-        await sendTelegramMessage(`💌 <b>FEEDBACK TERBARU USER:</b>\n\n${fbList}`, { chatId });
+        await sendTelegramMessage(`💌 <b>FEEDBACK TERBARU USER:</b>\n\n${fbList}`, {
+          chatId,
+          messageThreadId,
+        });
         return;
       }
 
@@ -369,7 +397,10 @@ Instruksi Output:
           .limit(10);
 
         if (!vouchers || vouchers.length === 0) {
-          await sendTelegramMessage("🎟 Belum ada voucher yang dibuat.", { chatId });
+          await sendTelegramMessage("🎟 Belum ada voucher yang dibuat.", {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
@@ -380,7 +411,10 @@ Instruksi Output:
           )
           .join("\n");
 
-        await sendTelegramMessage(`🎟 <b>DAFTAR VOUCHER TERBARU:</b>\n\n${list}`, { chatId });
+        await sendTelegramMessage(`🎟 <b>DAFTAR VOUCHER TERBARU:</b>\n\n${list}`, {
+          chatId,
+          messageThreadId,
+        });
         return;
       }
 
@@ -395,13 +429,16 @@ Instruksi Output:
         });
 
         if (error) {
-          await sendTelegramMessage(`❌ Gagal membuat voucher: ${error.message}`, { chatId });
+          await sendTelegramMessage(`❌ Gagal membuat voucher: ${error.message}`, {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
 
         await sendTelegramMessage(
           `🎟 <b>VOUCHER BERHASIL DIBUAT!</b>\n\n🔑 <b>Kode:</b> <code>${code}</code>\n💎 <b>Nominal:</b> +${credits} Kredit Paid\n\n<i>Bagikan kode ini ke user atau komunitas!</i>`,
-          { chatId },
+          { chatId, messageThreadId },
         );
         return;
       }
@@ -412,14 +449,20 @@ Instruksi Output:
           value: "",
           updated_at: new Date().toISOString(),
         });
-        await sendTelegramMessage("📢 <b>Banner pengumuman dashboard telah BERHASIL DIHAPUS.</b>", { chatId });
+        await sendTelegramMessage("📢 <b>Banner pengumuman dashboard telah BERHASIL DIHAPUS.</b>", {
+          chatId,
+          messageThreadId,
+        });
         return;
       }
 
       case "set_broadcast": {
         const msg = String(parsed.payload?.message || "").trim();
         if (!msg) {
-          await sendTelegramMessage("⚠️ Pesan pengumuman kosong.", { chatId });
+          await sendTelegramMessage("⚠️ Pesan pengumuman kosong.", {
+            chatId,
+            messageThreadId,
+          });
           return;
         }
         await supabase.from("app_config").upsert({
@@ -429,7 +472,7 @@ Instruksi Output:
         });
         await sendTelegramMessage(
           `📢 <b>BANNER PENGUMUMAN DIPASANG!</b>\n\n<i>"${escapeHtml(msg)}"</i>\n\nSemua user sekarang melihat pengumuman ini di dashboard.`,
-          { chatId },
+          { chatId, messageThreadId },
         );
         return;
       }
@@ -439,7 +482,10 @@ Instruksi Output:
         if (email) {
           await supabase.from("profiles").update({ is_banned: false, ban_reason: null }).ilike("email", `%${email}%`);
         }
-        await sendTelegramMessage(`🔓 <b>${parsed.replyText}</b>`, { chatId });
+        await sendTelegramMessage(`🔓 <b>${parsed.replyText}</b>`, {
+          chatId,
+          messageThreadId,
+        });
         return;
       }
 
@@ -447,7 +493,10 @@ Instruksi Output:
       case "topups":
       case "none":
       default: {
-        await sendTelegramMessage(parsed.replyText, { chatId });
+        await sendTelegramMessage(parsed.replyText, {
+          chatId,
+          messageThreadId,
+        });
         return;
       }
     }
@@ -455,7 +504,7 @@ Instruksi Output:
     console.error("[telegram-ai] error:", err);
     await sendTelegramMessage(
       `Halo Bos! Pesan diterima: "${escapeHtml(userText)}".\nKetik /help atau coba beri instruksi yang lebih rinci ya!`,
-      { chatId },
+      { chatId, messageThreadId },
     );
   }
 }
@@ -564,3 +613,7 @@ function escapeHtml(str?: string | null): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+`;
+
+fs.writeFileSync(path.resolve("src/lib/telegram-ai.ts"), aiContent, "utf8");
+console.log("Successfully wrote updated src/lib/telegram-ai.ts");
