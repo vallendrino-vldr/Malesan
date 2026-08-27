@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 type Level = "beginner" | "intermediate" | "advanced";
@@ -1097,7 +1097,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   // Pop-up Window (Modal Dialog) State
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState<boolean>(false);
   const [modalType, setModalType] = useState<"step" | "exam">("step");
-  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const isMounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   // Exam Real Voice Recording Validation States
   const [isRecordingVoiceExam, setIsRecordingVoiceExam] = useState<boolean>(false);
@@ -1171,12 +1175,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     } catch {
       return [];
     }
-  });
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Lock body scroll when modal is open
   useEffect(() => {
     if (isVoiceModalOpen) {
