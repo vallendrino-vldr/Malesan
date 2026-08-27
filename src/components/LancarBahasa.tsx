@@ -54,6 +54,7 @@ interface ScenarioItem {
   id: string;
   title: string;
   partner: Persona;
+  partnerRole: string;
   context: string;
   missions: string[];
 }
@@ -94,11 +95,15 @@ interface SpeechRecognitionInstanceLike {
   onend: (() => void) | null;
 }
 
-const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string }> = [
-  { id: "sarah", name: "Sarah", tag: "British Casual", desc: "Ramah, sopan, aksen London natural" },
-  { id: "alex", name: "Alex", tag: "American Slang", desc: "Santai, banyak ungkapan modern California" },
-  { id: "david", name: "David", tag: "Tech Recruiter", desc: "Wawancara kerja profesional & tajam" },
-  { id: "emma", name: "Emma", tag: "IELTS Coach", desc: "Latihan speaking & alur berpikir kritis" },
+function makeId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string; accent: string }> = [
+  { id: "sarah", name: "Sarah", tag: "British Casual", accent: "London", desc: "Ramah, sopan, aksen British mengalir alami" },
+  { id: "alex", name: "Alex", tag: "American Slang", accent: "California", desc: "Santai, banyak ungkapan gaul modern & ceria" },
+  { id: "david", name: "David", tag: "Tech Recruiter", accent: "Executive", desc: "Wawancara kerja profesional, tajam & suportif" },
+  { id: "emma", name: "Emma", tag: "IELTS Coach", accent: "Academic", desc: "Melatih struktur berpikir kritis & kelancaran" },
 ];
 
 const SCENARIOS: ScenarioItem[] = [
@@ -106,7 +111,8 @@ const SCENARIOS: ScenarioItem[] = [
     id: "job_interview",
     title: "Wawancara Kerja Global",
     partner: "david",
-    context: "Kamu sedang diwawancarai oleh Senior Tech Recruiter untuk posisi internasional.",
+    partnerRole: "Senior Tech Recruiter",
+    context: "Kamu sedang diwawancarai oleh Senior Tech Recruiter untuk posisi internasional jarak jauh.",
     missions: [
       "Perkenalkan diri dan keahlian utamamu",
       "Jelaskan pengalaman proyek yang paling membanggakan",
@@ -115,9 +121,10 @@ const SCENARIOS: ScenarioItem[] = [
   },
   {
     id: "airport_immigration",
-    title: "Pemeriksaan Bandara & Imigrasi",
+    title: "Pemeriksaan Imigrasi Bandara",
     partner: "sarah",
-    context: "Kamu baru mendarat di London Heathrow dan petugas menanyakan tujuan perjalananmu.",
+    partnerRole: "Immigration Officer",
+    context: "Kamu baru mendarat di London Heathrow dan petugas imigrasi menanyakan tujuan kunjunganmu.",
     missions: [
       "Jawab tujuan kedatangan dan lama tinggal",
       "Tunjukkan tempat menginap / reservasi hotel",
@@ -128,42 +135,46 @@ const SCENARIOS: ScenarioItem[] = [
     id: "ordering_cafe",
     title: "Pesan Kopi & Makanan di Kafe",
     partner: "alex",
-    context: "Kamu sedang antre di kafe hipster San Francisco dan memesan minuman khusus.",
+    partnerRole: "Barista Kafe Hipster",
+    context: "Kamu sedang antre di kafe San Francisco dan ingin memesan minuman kustom.",
     missions: [
       "Pesan kopi dengan susu oat dan sedikit gula",
-      "Tanya rekomendasi roti/pastry terbaik",
-      "Bayar menggunakan kartu non-tunai",
+      "Tanya rekomendasi roti atau pastry terbaik",
+      "Selesaikan pembayaran non-tunai",
     ],
   },
   {
     id: "salary_negotiation",
     title: "Negosiasi Kenaikan Gaji",
     partner: "david",
-    context: "Kamu melakukan sesi 1-on-1 dengan manajer untuk meminta penyesuaian kompensasi.",
+    partnerRole: "Engineering Manager",
+    context: "Sesi 1-on-1 dengan manajer untuk membahas pencapaian tahunan dan penyesuaian kompensasi.",
     missions: [
       "Ungkapkan kontribusi dan hasil kerjamu tahun ini",
-      "Tunjukkan riset standar gaji industri",
-      "Capai kesepakatan win-win yang memuaskan",
+      "Tunjukkan riset standar gaji industri terkini",
+      "Capai kesepakatan nilai yang saling menguntungkan",
     ],
   },
   {
     id: "hotel_checkin",
-    title: "Check-in Hotel & Request Kamar",
+    title: "Check-in Hotel & Permintaan Kamar",
     partner: "emma",
-    context: "Kamu tiba di hotel bintang lima dan ingin check-in dengan request lantai tinggi.",
+    partnerRole: "Front Desk Concierge",
+    context: "Kamu tiba di hotel bintang lima dan ingin check-in dengan request lantai tinggi pemandangan kota.",
     missions: [
       "Sebutkan nama reservasi dan tunjukkan paspor",
-      "Minta kamar bebas rokok dengan pemandangan kota",
+      "Minta kamar bebas rokok lantai atas",
       "Tanyakan jadwal sarapan dan fasilitas gym",
     ],
   },
   {
     id: "freelance_client",
-    title: "Diskusi Proyek Klien Freelance",
+    title: "Diskusi Proyek Klien Internasional",
     partner: "alex",
-    context: "Klien luar negeri menghubungimu untuk merekrut jasamu dalam proyek kreatif.",
+    partnerRole: "Product Owner Luar Negeri",
+    context: "Klien luar negeri menghubungimu untuk merekrut keahlianmu dalam proyek digital.",
     missions: [
-      "Jelaskan alur kerjamu dan estimasi waktu pengerjaan",
+      "Jelaskan alur kerjamu dan estimasi waktu selesai",
       "Sampaikan rate harga jasa dan opsi revisi",
       "Sepakati tenggat waktu dan pembayaran deposit",
     ],
@@ -177,10 +188,6 @@ const ESSAY_TOPICS = [
   "Apakah gelar sarjana masih relevan untuk sukses di industri teknologi?",
   "Pengaruh media sosial terhadap kesehatan mental generasi muda",
 ];
-
-function makeId(prefix: string): string {
-  return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
-}
 
 export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits?: number }) {
   const [mode, setMode] = useState<Mode>("voice");
@@ -357,7 +364,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               : isPlayingAudio
               ? "#10b981"
               : isProcessing
-              ? "#3b82f6"
+              ? "#f59e0b"
               : "#3f3f46";
             ctx.fillRect(x, y, barWidth, barHeight);
           }
@@ -404,7 +411,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       : chosenPersona === "sarah"
       ? "Hello there! So lovely to talk with you today. How is your day going so far?"
       : chosenPersona === "alex"
-      ? "Hey what is up! Super stoked to chat. What have you been working on lately?"
+      ? "Hey what is up! Super stoked to chat with you. What have you been working on lately?"
       : chosenPersona === "david"
       ? "Good day. Thank you for joining this session. Could you briefly introduce yourself?"
       : "Welcome to today's speaking preparation. Let us begin with your thoughts on our topic.";
@@ -843,94 +850,173 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     .slice(0, 4);
 
   return (
-    <div className="w-full space-y-6">
-      {/* GLOBAL FEEDBACK BANNER */}
+    <div className="w-full space-y-5">
+      {/* GLOBAL NOTIFICATION NOTICE */}
       {feedbackNotice && (
-        <div className="rounded-2xl border border-ember/40 bg-ember/15 p-4 text-xs sm:text-sm font-medium text-ember flex items-center justify-between animate-in fade-in duration-200">
+        <div className="rounded-2xl border border-ember/40 bg-ember/15 p-3.5 sm:p-4 text-xs sm:text-sm font-medium text-ember flex items-center justify-between animate-in fade-in duration-200">
           <span>{feedbackNotice}</span>
           <button
             onClick={() => setFeedbackNotice(null)}
-            className="text-micro font-bold underline hover:opacity-80 ml-4"
+            className="text-micro font-bold underline hover:opacity-80 ml-4 shrink-0"
           >
             Tutup
           </button>
         </div>
       )}
 
-      {/* HEADER BAR */}
-      <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/80 p-5 sm:p-6 backdrop-blur-xl shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/15 px-3 py-0.5 text-[11px] font-bold text-ember uppercase tracking-wider">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+      {/* TOP HEADER CONTAINER (PIXEL-PERFECT, ZERO OVERFLOW) */}
+      <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/85 p-5 sm:p-6 backdrop-blur-xl shadow-lg space-y-5">
+        {/* Title & Level Selector Row */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/35 bg-ember/15 px-3 py-0.5 text-[11px] font-bold text-ember uppercase tracking-wider">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember">
                   <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   <line x1="12" x2="12" y1="19" y2="22" />
                 </svg>
                 AI English Master Studio
               </span>
-              <span className="text-micro font-mono text-muted bg-surface-raised px-2 py-0.5 rounded-md border border-hairline">
+              <span className="text-[11px] font-mono font-bold text-muted bg-surface-raised px-2.5 py-0.5 rounded-md border border-hairline">
                 {cost} Kredit / Sesi
               </span>
             </div>
-            <h1 className="mt-2 font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+
+            <h1 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
               Lancar Inggris
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-muted leading-relaxed">
-              Speaking AI native, roleplay skenario nyata, kuis interaktif, dan evaluasi tulisan dengan analitik progres belajar.
+            <p className="text-xs sm:text-sm text-muted leading-relaxed">
+              Speaking AI native, simulasi skenario nyata, kuis interaktif, dan evaluasi tulisan dengan analitik progres belajar.
             </p>
           </div>
 
-          {/* LEVEL SELECTION PILLS */}
-          <div className="flex items-center gap-1.5 rounded-2xl border border-hairline bg-surface-raised p-1.5">
-            {[
-              { id: "beginner", label: "Pemula (A1-A2)" },
-              { id: "intermediate", label: "Menengah (B1-B2)" },
-              { id: "advanced", label: "Mahir (C1-C2)" },
-            ].map((lvl) => (
-              <button
-                key={lvl.id}
-                onClick={() => setLevel(lvl.id as Level)}
-                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                  level === lvl.id
-                    ? "bg-ember text-obsidian shadow-sm"
-                    : "text-muted hover:text-ink hover:bg-surface"
-                }`}
-              >
-                {lvl.label}
-              </button>
-            ))}
+          {/* LEVEL SELECTOR SEGMENTED CONTROL (NO TEXT-WRAP, PERFECT PROPORTIONS) */}
+          <div className="w-full lg:w-auto shrink-0">
+            <div className="grid grid-cols-3 lg:flex items-center gap-1 rounded-2xl border border-hairline bg-surface-raised/90 p-1 shadow-xs">
+              {[
+                { id: "beginner", name: "Pemula", cefr: "A1-A2" },
+                { id: "intermediate", name: "Menengah", cefr: "B1-B2" },
+                { id: "advanced", name: "Mahir", cefr: "C1-C2" },
+              ].map((lvl) => {
+                const isActive = level === lvl.id;
+                return (
+                  <button
+                    key={lvl.id}
+                    onClick={() => setLevel(lvl.id as Level)}
+                    className={`h-10 px-3.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                      isActive
+                        ? "bg-ember text-obsidian shadow-sm ring-1 ring-ember/50 font-display"
+                        : "text-muted hover:text-ink hover:bg-surface"
+                    }`}
+                  >
+                    <span>{lvl.name}</span>
+                    <span
+                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
+                        isActive ? "bg-obsidian/20 text-obsidian font-bold" : "bg-surface text-muted/80 border border-hairline/60"
+                      }`}
+                    >
+                      {lvl.cefr}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* 5 SUB-MODULE NAVIGATION TABS */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 border-t border-hairline/60 pt-4">
-          {[
-            { id: "voice", label: "Panggilan Suara", sub: "Live Speaking" },
-            { id: "scenario", label: "Simulasi Skenario", sub: "Roleplay Chamber" },
-            { id: "quiz", label: "Kuis Kilat Pro", sub: "Interactive Arena" },
-            { id: "essay", label: "Ujian Esai", sub: "IELTS Evaluator" },
-            { id: "progress", label: "Rapor & Riwayat", sub: "Learning Tracker" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                if (isCalling) endCall();
-                setMode(tab.id as Mode);
-              }}
-              className={`flex flex-col items-start rounded-2xl border p-3 transition-all text-left w-full ${
-                mode === tab.id
-                  ? "border-ember/60 bg-ember/10 text-ink shadow-sm"
-                  : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
-              }`}
-            >
-              <span className={`text-xs font-bold truncate w-full ${mode === tab.id ? "text-ember" : "text-ink"}`}>
-                {tab.label}
-              </span>
-              <span className="text-[10px] text-muted truncate w-full">{tab.sub}</span>
-            </button>
-          ))}
+        {/* 5 SUB-MODULE NAVIGATION TABS (RESPONSIVE SCROLL / GRID, ZERO WEIRD WRAPPING) */}
+        <div className="border-t border-hairline/60 pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+            {[
+              {
+                id: "voice",
+                label: "Panggilan Suara",
+                sub: "Live Speaking AI",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" x2="12" y1="19" y2="22" />
+                  </svg>
+                ),
+              },
+              {
+                id: "scenario",
+                label: "Simulasi Skenario",
+                sub: "Roleplay Chamber",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                ),
+              },
+              {
+                id: "quiz",
+                label: "Kuis Kilat Pro",
+                sub: "Interactive Arena",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                ),
+              },
+              {
+                id: "essay",
+                label: "Ujian Esai",
+                sub: "IELTS Evaluator",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                ),
+              },
+              {
+                id: "progress",
+                label: "Rapor & Riwayat",
+                sub: "Learning Tracker",
+                icon: (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <path d="M3 3v18h18" />
+                    <path d="m19 9-5 5-4-4-3 3" />
+                  </svg>
+                ),
+              },
+            ].map((tab) => {
+              const isCurrent = mode === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    if (isCalling) endCall();
+                    setMode(tab.id as Mode);
+                  }}
+                  className={`h-14 rounded-2xl border p-2.5 transition-all text-left flex items-center gap-3 w-full ${
+                    isCurrent
+                      ? "border-ember/70 bg-ember/15 text-ink shadow-sm ring-1 ring-ember/30"
+                      : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
+                  }`}
+                >
+                  <div
+                    className={`size-8 shrink-0 rounded-xl flex items-center justify-center ${
+                      isCurrent ? "bg-ember text-obsidian font-bold" : "bg-surface-raised border border-hairline text-muted"
+                    }`}
+                  >
+                    {tab.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className={`text-xs font-bold block truncate ${isCurrent ? "text-ember" : "text-ink"}`}>
+                      {tab.label}
+                    </span>
+                    <span className="text-[10px] text-muted block truncate">{tab.sub}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -947,13 +1033,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     Pilih Partner Bicara AI
                   </h3>
                   <p className="text-xs text-muted mt-0.5">
-                    Setiap partner memiliki kepribadian, dialek, dan aksen native yang khas.
+                    Setiap partner memiliki dialek native, tempo bicara, dan kepribadian yang unik.
                   </p>
                 </div>
 
-                {/* Speed selector for beginners */}
-                <div className="flex items-center gap-2 rounded-xl border border-hairline bg-surface-raised px-3 py-1.5">
-                  <span className="text-[11px] font-bold text-muted">Tempo Suara:</span>
+                {/* Tempo selector for beginners */}
+                <div className="flex items-center gap-2 rounded-xl border border-hairline bg-surface-raised px-3 py-1.5 self-start sm:self-auto">
+                  <span className="text-[11px] font-bold text-muted whitespace-nowrap">Tempo Suara:</span>
                   {[
                     { val: 0.75, label: "0.75x (Pelan)" },
                     { val: 1.0, label: "1.0x (Normal)" },
@@ -961,7 +1047,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <button
                       key={s.val}
                       onClick={() => setPlaybackSpeed(s.val)}
-                      className={`rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all ${
+                      className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all whitespace-nowrap ${
                         playbackSpeed === s.val ? "bg-ember text-obsidian" : "text-muted hover:text-ink"
                       }`}
                     >
@@ -971,45 +1057,53 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </div>
               </div>
 
+              {/* Persona Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {PERSONAS.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setPersona(p.id)}
-                    className={`rounded-2xl border p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between ${
-                      persona === p.id
-                        ? "border-ember bg-ember/10 shadow-md ring-1 ring-ember/30"
-                        : "border-hairline bg-surface-raised/60 hover:border-hairline/90"
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-display text-sm font-bold text-ink">{p.name}</span>
-                        <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md">
-                          {p.tag}
-                        </span>
+                {PERSONAS.map((p) => {
+                  const isSelected = persona === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setPersona(p.id)}
+                      className={`rounded-2xl border p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between h-36 ${
+                        isSelected
+                          ? "border-ember bg-ember/10 shadow-md ring-1 ring-ember/30"
+                          : "border-hairline bg-surface-raised/60 hover:border-hairline/90"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-display text-sm font-bold text-ink truncate">{p.name}</span>
+                          <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md shrink-0">
+                            {p.accent}
+                          </span>
+                        </div>
+                        <p className="text-micro text-muted mt-2 leading-relaxed line-clamp-2">{p.desc}</p>
                       </div>
-                      <p className="text-micro text-muted mt-2 leading-relaxed">{p.desc}</p>
-                    </div>
-                    {persona === p.id && (
-                      <span className="mt-3 inline-flex items-center gap-1 text-[10px] font-bold text-ember">
-                        <span className="size-1.5 rounded-full bg-ember" /> Dipilih
-                      </span>
-                    )}
-                  </button>
-                ))}
+                      <div className="flex items-center justify-between pt-2 border-t border-hairline/40">
+                        <span className="text-[10px] font-medium text-muted">{p.tag}</span>
+                        {isSelected && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-ember">
+                            <span className="size-1.5 rounded-full bg-ember" /> Dipilih
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div>
-                  <h4 className="text-xs font-bold text-ink">Bebas Bicara Tanpa Takut Salah:</h4>
-                  <p className="text-micro text-muted mt-0.5">
-                    Tersedia tombol terjemahan instan &amp; contekan jawaban cepat jika lo pemula dan bingung mau merespons apa.
+              {/* Action Banner */}
+              <div className="rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="space-y-0.5 text-center sm:text-left">
+                  <h4 className="text-xs sm:text-sm font-bold text-ink">Bebas Bicara Tanpa Takut Salah</h4>
+                  <p className="text-micro sm:text-xs text-muted">
+                    Tersedia tombol terjemahan instan &amp; contekan kalimat pintar jika lo bingung mau merespons apa.
                   </p>
                 </div>
                 <button
                   onClick={() => startCall()}
-                  className="btn-ember shrink-0 h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105"
+                  className="btn-ember shrink-0 h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 w-full sm:w-auto"
                 >
                   Mulai Panggilan Suara →
                 </button>
@@ -1017,36 +1111,36 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           ) : isCalling ? (
             /* ACTIVE PHONE CALL SCREEN */
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Call Top Bar */}
               <div className="flex items-center justify-between border-b border-hairline/60 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-full border border-ember/40 bg-ember/20 flex items-center justify-center text-ember font-display font-bold text-sm">
+                  <div className="size-10 rounded-full border border-ember/40 bg-ember/20 flex items-center justify-center text-ember font-display font-bold text-sm shrink-0">
                     {persona.charAt(0).toUpperCase()}
                   </div>
                   <div>
                     <h3 className="font-display text-sm font-bold text-ink capitalize">
                       {persona} ({PERSONAS.find((p) => p.id === persona)?.tag})
                     </h3>
-                    <p className="text-micro text-emerald-400 font-mono flex items-center gap-1">
+                    <p className="text-micro text-emerald-400 font-mono flex items-center gap-1.5">
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
                       Terhubung • {formatSeconds(callDuration)}
-                      {isPlayingAudio && <span className="text-ember font-bold ml-1.5">• Sedang bersuara...</span>}
+                      {isPlayingAudio && <span className="text-ember font-bold ml-1">• Bersuara...</span>}
                     </p>
                   </div>
                 </div>
 
                 <button
                   onClick={endCall}
-                  className="h-9 px-4 rounded-xl border border-rose-500/40 bg-rose-500/15 text-rose-400 text-xs font-bold hover:bg-rose-500/25 transition-all"
+                  className="h-9 px-4 rounded-xl border border-rose-500/40 bg-rose-500/15 text-rose-400 text-xs font-bold hover:bg-rose-500/25 transition-all shrink-0"
                 >
                   Akhiri Panggilan
                 </button>
               </div>
 
-              {/* Real-time Tips & Roast Alert Badges */}
+              {/* Real-time Tips & Roast Badges */}
               {(activeTip || activeRoast) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-200">
                   {activeTip && (
                     <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-3 text-xs">
                       <p className="font-bold text-sky-400 text-micro uppercase tracking-wider">Koreksi Grammar Halus:</p>
@@ -1070,7 +1164,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
+                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
                         m.role === "user"
                           ? "bg-ember text-obsidian font-medium rounded-tr-xs"
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
@@ -1129,16 +1223,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <span className="text-micro font-bold text-muted uppercase tracking-wider">
                     Contekan Jawaban Cepat (Klik untuk kirim):
                   </span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {messages[messages.length - 1].suggestedReplies?.map((hint, idx) => (
                       <button
                         key={idx}
                         onClick={() => submitTextMessage(hint.en)}
                         disabled={isProcessing}
-                        className="rounded-xl border border-hairline bg-surface px-3 py-1.5 text-left text-xs hover:border-ember/60 hover:bg-surface-raised transition-all group max-w-full"
+                        className="rounded-xl border border-hairline bg-surface p-2.5 text-left hover:border-ember/60 hover:bg-surface-raised transition-all group"
                       >
-                        <span className="font-bold text-ink group-hover:text-ember block truncate">{hint.en}</span>
-                        <span className="text-[10px] text-muted block truncate">{hint.id}</span>
+                        <span className="font-bold text-xs text-ink group-hover:text-ember block truncate">{hint.en}</span>
+                        <span className="text-[10px] text-muted block truncate mt-0.5">{hint.id}</span>
                       </button>
                     ))}
                   </div>
@@ -1147,7 +1241,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
               {/* Kinetic Waveform Canvas */}
               <div className="rounded-2xl border border-hairline/60 bg-surface-raised p-3 flex flex-col items-center justify-center">
-                <canvas ref={canvasRef} width={400} height={50} className="w-full h-12" />
+                <canvas ref={canvasRef} width={400} height={46} className="w-full h-10" />
                 <p className="text-[11px] font-mono text-muted mt-1">
                   {isRecording
                     ? "Mendengarkan suara lo secara live... Klik tombol merah untuk kirim"
@@ -1155,18 +1249,18 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     ? "Partner AI sedang berbicara..."
                     : isProcessing
                     ? "AI sedang memikirkan balasan..."
-                    : "Bicara lewat tombol mikrofon di bawah atau ketik di kolom teks"}
+                    : "Bicara lewat tombol mikrofon atau ketik pesan teks"}
                 </p>
               </div>
 
               {/* Controls Bar: Dual-Mode Audio Mic + Quick Text Box */}
               <div className="space-y-3">
-                <div className="flex items-center justify-center gap-4">
+                <div className="flex items-center justify-center">
                   <button
                     type="button"
                     onClick={toggleRecording}
                     disabled={isProcessing}
-                    className={`h-14 px-8 rounded-2xl font-display text-sm font-bold transition-all flex items-center gap-2.5 shadow-lg ${
+                    className={`h-13 px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center gap-2.5 shadow-lg ${
                       isRecording
                         ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
                         : isProcessing
@@ -1174,7 +1268,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
                     }`}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 sm:size-5">
                       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                       <line x1="12" x2="12" y1="19" y2="22" />
@@ -1199,7 +1293,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         submitTextMessage();
                       }
                     }}
-                    placeholder="Atau ketik pesan bahasa Inggris di sini..."
+                    placeholder="Atau ketik kalimat bahasa Inggris di sini..."
                     disabled={isProcessing}
                     className="flex-1 bg-transparent px-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none"
                   />
@@ -1207,7 +1301,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     type="button"
                     onClick={() => submitTextMessage()}
                     disabled={!textInput.trim() || isProcessing}
-                    className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50"
+                    className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
                   >
                     Kirim
                   </button>
@@ -1295,29 +1389,33 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Scenario Cards Grid (Clean proportions, fully readable text) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {SCENARIOS.map((s) => (
                   <div
                     key={s.id}
-                    className="rounded-2xl border border-hairline bg-surface-raised p-4 flex flex-col justify-between space-y-4 hover:border-ember/40 transition-all group"
+                    className="rounded-2xl border border-hairline bg-surface-raised p-4 sm:p-5 flex flex-col justify-between space-y-4 hover:border-ember/40 transition-all group"
                   >
-                    <div>
-                      <div className="flex items-center justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-2">
                         <h4 className="font-display text-sm font-bold text-ink group-hover:text-ember transition-colors">
                           {s.title}
                         </h4>
-                        <span className="text-micro font-mono text-muted bg-surface px-2 py-0.5 rounded-md border border-hairline capitalize">
+                        <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md border border-ember/30 shrink-0 capitalize">
                           {s.partner}
                         </span>
                       </div>
-                      <p className="text-micro text-muted mt-1 leading-relaxed">{s.context}</p>
+                      <p className="text-xs text-muted leading-relaxed line-clamp-2">{s.context}</p>
 
-                      {/* Missions list */}
-                      <div className="mt-3 space-y-1">
+                      {/* Missions list (fully readable, no ellipsis truncation) */}
+                      <div className="space-y-1.5 pt-1 border-t border-hairline/40">
                         <p className="text-[10px] font-bold text-ember uppercase tracking-wider">Target Misi:</p>
-                        <ul className="text-[11px] text-ink/80 space-y-0.5 list-disc list-inside">
+                        <ul className="text-xs text-ink/85 space-y-1">
                           {s.missions.map((m, i) => (
-                            <li key={i} className="truncate">{m}</li>
+                            <li key={i} className="flex items-start gap-1.5 leading-snug">
+                              <span className="text-ember font-bold shrink-0">•</span>
+                              <span>{m}</span>
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -1327,7 +1425,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       onClick={() => startCall(s)}
                       className="btn-ember w-full h-10 rounded-xl text-xs font-bold text-obsidian shadow-sm hover:brightness-105"
                     >
-                      Masuk Simulasi ({s.title}) →
+                      Mulai Simulasi →
                     </button>
                   </div>
                 ))}
@@ -1335,19 +1433,19 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           ) : (
             /* ACTIVE ROLEPLAY CHAMBER VIEW (STAYS IN SCENARIO TAB!) */
-            <div className="space-y-6">
+            <div className="space-y-5">
               {/* Scenario Context & Objectives Header */}
-              <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
-                    <h3 className="font-display text-sm font-bold text-ink">
+              <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 sm:p-5 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="size-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
+                    <h3 className="font-display text-sm sm:text-base font-bold text-ink truncate">
                       Skenario: {activeScenario?.title}
                     </h3>
                   </div>
                   <button
                     onClick={endCall}
-                    className="h-8 px-3 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 text-micro font-bold hover:bg-rose-500/25"
+                    className="h-8 px-3 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 text-micro font-bold hover:bg-rose-500/25 shrink-0"
                   >
                     Selesaikan Simulasi
                   </button>
@@ -1355,17 +1453,17 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <p className="text-xs text-muted leading-relaxed">{activeScenario?.context}</p>
 
                 {/* Live Mission Checklist */}
-                <div className="border-t border-hairline/60 pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="border-t border-hairline/60 pt-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {activeScenario?.missions.map((m, idx) => (
                     <div
                       key={idx}
-                      className={`rounded-xl border p-2 text-xs flex items-center gap-2 ${
+                      className={`rounded-xl border p-2.5 text-xs flex items-center gap-2 ${
                         completedMissions[idx]
                           ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 font-bold"
                           : "border-hairline bg-surface text-muted"
                       }`}
                     >
-                      <span className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
+                      <span className={`size-4 rounded-full flex items-center justify-center text-[10px] shrink-0 ${
                         completedMissions[idx] ? "bg-emerald-400 text-obsidian font-bold" : "border border-hairline"
                       }`}>
                         {completedMissions[idx] ? "✓" : idx + 1}
@@ -1384,7 +1482,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
+                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
                         m.role === "user"
                           ? "bg-ember text-obsidian font-medium rounded-tr-xs"
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
@@ -1432,29 +1530,29 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 ))}
               </div>
 
-              {/* Hints */}
+              {/* Beginner Hint Chips */}
               {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
                 <div className="space-y-1.5 animate-in fade-in duration-200">
                   <span className="text-micro font-bold text-muted uppercase tracking-wider">
                     Opsi Jawaban Skenario (Klik untuk kirim):
                   </span>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {messages[messages.length - 1].suggestedReplies?.map((hint, idx) => (
                       <button
                         key={idx}
                         onClick={() => submitTextMessage(hint.en)}
                         disabled={isProcessing}
-                        className="rounded-xl border border-hairline bg-surface px-3 py-1.5 text-left text-xs hover:border-ember/60 hover:bg-surface-raised transition-all group max-w-full"
+                        className="rounded-xl border border-hairline bg-surface p-2.5 text-left hover:border-ember/60 hover:bg-surface-raised transition-all group"
                       >
-                        <span className="font-bold text-ink group-hover:text-ember block truncate">{hint.en}</span>
-                        <span className="text-[10px] text-muted block truncate">{hint.id}</span>
+                        <span className="font-bold text-xs text-ink group-hover:text-ember block truncate">{hint.en}</span>
+                        <span className="text-[10px] text-muted block truncate mt-0.5">{hint.id}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Roleplay controls */}
+              {/* Roleplay input controls */}
               <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-surface-raised p-1.5 focus-within:border-ember/60 transition-all">
                 <input
                   type="text"
@@ -1466,7 +1564,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       submitTextMessage();
                     }
                   }}
-                  placeholder="Ketik balasan untuk skenario ini..."
+                  placeholder="Ketik balasan untuk percakapan ini..."
                   disabled={isProcessing}
                   className="flex-1 bg-transparent px-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none"
                 />
@@ -1474,7 +1572,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   type="button"
                   onClick={() => submitTextMessage()}
                   disabled={!textInput.trim() || isProcessing}
-                  className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50"
+                  className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
                 >
                   Kirim
                 </button>
@@ -1501,7 +1599,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               </div>
 
               {/* Topic Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   { id: "grammar_tenses", title: "Tenses & Grammar", desc: "Past, Present, Perfect, & Conditionals" },
                   { id: "idioms_phrases", title: "Idioms & Phrasal Verbs", desc: "Ungkapan sehari-hari penutur asli" },
@@ -1512,41 +1610,43 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <button
                     key={t.id}
                     onClick={() => setQuizTopic(t.id)}
-                    className={`rounded-2xl border p-4 text-left transition-all ${
+                    className={`rounded-2xl border p-4 text-left transition-all h-24 flex flex-col justify-between ${
                       quizTopic === t.id
                         ? "border-ember bg-ember/10 shadow-sm ring-1 ring-ember/30"
                         : "border-hairline bg-surface-raised/60 hover:border-hairline/90"
                     }`}
                   >
                     <p className="font-display text-sm font-bold text-ink">{t.title}</p>
-                    <p className="text-micro text-muted mt-1">{t.desc}</p>
+                    <p className="text-micro text-muted line-clamp-2">{t.desc}</p>
                   </button>
                 ))}
               </div>
 
-              {/* Question Count Selector */}
-              <div className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface-raised p-3">
-                <span className="text-xs font-bold text-ink">Jumlah Soal:</span>
-                {[5, 10, 15].map((cnt) => (
-                  <button
-                    key={cnt}
-                    onClick={() => setQuizCount(cnt)}
-                    className={`rounded-xl px-3 py-1 text-xs font-bold transition-all ${
-                      quizCount === cnt ? "bg-ember text-obsidian" : "text-muted hover:text-ink bg-surface"
-                    }`}
-                  >
-                    {cnt} Soal
-                  </button>
-                ))}
-              </div>
+              {/* Question Count Selector & Start Button Row */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-hairline/60 pt-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-xs font-bold text-ink whitespace-nowrap">Jumlah Soal:</span>
+                  {[5, 10, 15].map((cnt) => (
+                    <button
+                      key={cnt}
+                      onClick={() => setQuizCount(cnt)}
+                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
+                        quizCount === cnt ? "bg-ember text-obsidian" : "text-muted hover:text-ink bg-surface border border-hairline"
+                      }`}
+                    >
+                      {cnt} Soal
+                    </button>
+                  ))}
+                </div>
 
-              <button
-                onClick={handleGenerateQuiz}
-                disabled={quizLoading}
-                className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105"
-              >
-                {quizLoading ? "Menyiapkan Soal Kuis Segar..." : `Mulai Kuis ${quizCount} Soal Baru →`}
-              </button>
+                <button
+                  onClick={handleGenerateQuiz}
+                  disabled={quizLoading}
+                  className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 w-full sm:w-auto"
+                >
+                  {quizLoading ? "Menyiapkan Soal Kuis Segar..." : `Mulai Kuis ${quizCount} Soal Baru →`}
+                </button>
+              </div>
             </div>
           ) : !quizFinished ? (
             /* ACTIVE QUIZ QUESTION */
