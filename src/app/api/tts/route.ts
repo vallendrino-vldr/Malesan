@@ -44,11 +44,12 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const rawText = typeof body.text === "string" ? body.text : "";
+    const lang = typeof body.lang === "string" ? body.lang : "id";
     if (!rawText.trim()) {
       return NextResponse.json({ error: "Teks tidak boleh kosong" }, { status: 400 });
     }
 
-    const cleanText = normalizeIndonesianSpeech(rawText);
+    const cleanText = lang.startsWith("id") ? normalizeIndonesianSpeech(rawText) : rawText.trim();
     const chunks = splitIntoChunks(cleanText, 160);
 
     if (chunks.length === 0) {
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     for (const chunk of activeChunks) {
       const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(
         chunk,
-      )}&tl=id&client=tw-ob`;
+      )}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
 
       const res = await fetch(url, {
         headers: {

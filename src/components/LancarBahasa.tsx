@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 type Level = "beginner" | "intermediate" | "advanced";
 type Mode = "voice" | "quiz" | "essay" | "scenario";
@@ -75,15 +75,19 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [isCalling, setIsCalling] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeTip, setActiveTip] = useState<string | null>(null);
   const [activeRoast, setActiveRoast] = useState<string | null>(null);
   const [showCallSummary, setShowCallSummary] = useState(false);
+  const [textInput, setTextInput] = useState("");
+  const [liveTranscript, setLiveTranscript] = useState("");
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const currentAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Quiz States
@@ -99,6 +103,59 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [essayText, setEssayText] = useState("");
   const [essayLoading, setEssayLoading] = useState(false);
   const [essayResult, setEssayResult] = useState<EssayEvaluation | null>(null);
+
+  // Play Speech Audio via /api/tts with browser fallback
+  const playSpeechAudio = useCallback(
+    async (text: string) => {
+      try {
+        if (currentAudioElementRef.current) {
+          currentAudioElementRef.current.pause();
+          currentAudioElementRef.current = null;
+        }
+
+        setIsPlayingAudio(true);
+        const langCode = persona === "sarah" || persona === "emma" ? "en-GB" : "en-US";
+
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, lang: langCode }),
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          currentAudioElementRef.current = audio;
+          audio.onended = () => {
+            setIsPlayingAudio(false);
+            URL.revokeObjectURL(url);
+          };
+          audio.onerror = () => {
+            setIsPlayingAudio(false);
+          };
+          await audio.play();
+          return;
+        }
+      } catch (err) {
+        console.warn("API TTS playback failed, falling back to Web Speech:", err);
+      }
+
+      // Fallback: Web Speech Synthesis
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = persona === "sarah" || persona === "emma" ? "en-GB" : "en-US";
+        utterance.rate = level === "beginner" ? 0.85 : 1.0;
+        utterance.onend = () => setIsPlayingAudio(false);
+        utterance.onerror = () => setIsPlayingAudio(false);
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setIsPlayingAudio(false);
+      }
+    },
+    [persona, level],
+  );
 
   // Timer Effect for Call
   useEffect(() => {
@@ -131,7 +188,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           for (let i = 0; i < barCount; i++) {
             const freq = Math.sin(time + i * 0.3) * 0.5 + 0.5;
             const barHeight = isRecording
-              ? Math.max(4, freq * (height * 0.75))
+              ? Math.max(6, freq * (height * 0.85))
+              : isPlayingAudio
+              ? Math.max(6, Math.sin(time * 3 + i * 0.4) * (height * 0.75))
               : isProcessing
               ? Math.max(4, Math.sin(time * 2 + i * 0.2) * (height * 0.45))
               : 4;
@@ -139,7 +198,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             const x = i * (barWidth + gap);
             const y = (height - barHeight) / 2;
 
-            ctx.fillStyle = isRecording ? "#f97316" : isProcessing ? "#3b82f6" : "#27272a";
+            ctx.fillStyle = isRecording
+              ? "#ef4444"
+              : isPlayingAudio
+              ? "#10b981"
+              : isProcessing
+              ? "#3b82f6"
+              : "#3f3f46";
             ctx.fillRect(x, y, barWidth, barHeight);
           }
         }
@@ -149,9 +214,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
     animId = requestAnimationFrame(renderWaveform);
     return () => cancelAnimationFrame(animId);
-  }, [isCalling, isRecording, isProcessing]);
+  }, [isCalling, isRecording, isProcessing, isPlayingAudio]);
 
-  // Start Voice Call
+  // Start Voice Call & Play Opening Audio
   const startCall = (customScenario?: string) => {
     if (credits < cost) {
       setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
@@ -162,20 +227,27 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setIsCalling(true);
     setShowCallSummary(false);
     setFeedbackNotice(null);
+    setLiveTranscript("");
+
+    const initialText =
+      persona === "sarah"
+        ? "Hello there! So lovely to talk with you today. How is your day going so far?"
+        : persona === "alex"
+        ? "Hey what is up! Super stoked to chat. What have you been working on lately?"
+        : persona === "david"
+        ? "Good day. Thank you for joining this interview session. Could you briefly introduce yourself?"
+        : "Welcome to today's speaking preparation. Let us begin with your thoughts on our topic.";
+
     setMessages([
       {
         id: "msg_init",
         role: "assistant",
-        text:
-          persona === "sarah"
-            ? "Hello there! So lovely to talk with you today. How is your day going so far?"
-            : persona === "alex"
-            ? "Hey what is up! Super stoked to chat. What have you been working on lately?"
-            : persona === "david"
-            ? "Good day. Thank you for joining this interview session. Could you briefly introduce yourself?"
-            : "Welcome to today's speaking preparation. Let us begin with your thoughts on our topic.",
+        text: initialText,
       },
     ]);
+
+    // Auto-play voice greeting
+    playSpeechAudio(initialText);
   };
 
   // End Voice Call
@@ -183,12 +255,19 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
     }
+    if (currentAudioElementRef.current) {
+      currentAudioElementRef.current.pause();
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
     setIsRecording(false);
     setIsCalling(false);
+    setIsPlayingAudio(false);
     setShowCallSummary(true);
   };
 
-  // Record Voice Chunk via MediaRecorder
+  // Toggle Recording via MediaRecorder
   const toggleRecording = async () => {
     if (isProcessing) return;
 
@@ -202,7 +281,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       // Start Recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const mediaRecorder = new MediaRecorder(stream);
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
+          ? "audio/ogg;codecs=opus"
+          : "";
+
+        const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
         mediaRecorderRef.current = mediaRecorder;
         audioChunksRef.current = [];
 
@@ -214,26 +299,29 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach((track) => track.stop());
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/ogg" });
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: mediaRecorder.mimeType || "audio/webm",
+          });
           await submitAudioChunk(audioBlob);
         };
 
         mediaRecorder.start();
         setIsRecording(true);
+        setFeedbackNotice(null);
       } catch (err) {
         console.error("Mic access error:", err);
-        setFeedbackNotice("Gagal mengakses mikrofon. Pastikan izin mikrofon sudah aktif di browser.");
+        setFeedbackNotice("Izin mikrofon belum aktif. Lo juga bisa ketik pesan langsung di kolom teks bawah.");
       }
     }
   };
 
-  // Send Audio to Serverless Handler
+  // Submit Audio Blob to /api/speaking/converse
   const submitAudioChunk = async (audioBlob: Blob) => {
     setIsProcessing(true);
     setFeedbackNotice(null);
     try {
       const formData = new FormData();
-      formData.append("audio", audioBlob, "user_voice.oga");
+      formData.append("audio", audioBlob, "user_voice.webm");
       formData.append("persona", persona);
       formData.append("level", level);
       formData.append("scenario", scenario);
@@ -275,19 +363,71 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       ];
 
       setMessages(newMessages);
-
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      // Play audio response with Web Speech Synthesis if available
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(data.replyEn);
-        utterance.lang = persona === "sarah" ? "en-GB" : "en-US";
-        utterance.rate = level === "beginner" ? 0.85 : 1.0;
-        window.speechSynthesis.speak(utterance);
-      }
+      // Play audio response
+      playSpeechAudio(data.replyEn);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Submit Text Input fallback
+  const submitTextMessage = async () => {
+    if (!textInput.trim() || isProcessing) return;
+    const userText = textInput.trim();
+    setTextInput("");
+    setIsProcessing(true);
+    setFeedbackNotice(null);
+
+    try {
+      const res = await fetch("/api/speaking/converse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: userText,
+          persona,
+          level,
+          scenario,
+          history: messages.map((m) => ({ role: m.role, text: m.text })),
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Gagal memproses percakapan.");
+      }
+
+      const data = await res.json();
+
+      const newMessages: ChatMessage[] = [
+        ...messages,
+        {
+          id: `usr_${Date.now()}`,
+          role: "user",
+          text: userText,
+        },
+        {
+          id: `ast_${Date.now()}`,
+          role: "assistant",
+          text: data.replyEn,
+          tip: data.correctionTip,
+          roast: data.roastComment,
+          score: data.fluencyScore,
+        },
+      ];
+
+      setMessages(newMessages);
+      if (data.correctionTip) setActiveTip(data.correctionTip);
+      if (data.roastComment) setActiveRoast(data.roastComment);
+
+      // Play audio response
+      playSpeechAudio(data.replyEn);
+    } catch (err) {
+      setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses percakapan.");
     } finally {
       setIsProcessing(false);
     }
@@ -503,7 +643,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <div>
                   <h4 className="text-xs font-bold text-ink">Tips Latihan Suara:</h4>
                   <p className="text-micro text-muted mt-0.5">
-                    Bicara santai tanpa takut salah. AI akan membetulkan grammar secara halus di layar tanpa memotong obrolan suara lo.
+                    Bicara santai tanpa takut salah. AI akan langsung membalas dengan suara dan memberikan koreksi halus di layar.
                   </p>
                 </div>
                 <button
@@ -530,6 +670,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <p className="text-micro text-emerald-400 font-mono flex items-center gap-1">
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
                       Terhubung • {formatSeconds(callDuration)}
+                      {isPlayingAudio && <span className="text-ember font-bold ml-1.5">• Sedang berbicara...</span>}
                     </p>
                   </div>
                 </div>
@@ -574,7 +715,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
                       }`}
                     >
-                      {m.text}
+                      <div className="flex items-start justify-between gap-3">
+                        <span>{m.text}</span>
+                        {m.role === "assistant" && (
+                          <button
+                            type="button"
+                            onClick={() => playSpeechAudio(m.text)}
+                            title="Putar suara"
+                            className="shrink-0 text-muted hover:text-ember transition-colors p-0.5"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {m.score && m.role === "assistant" && (
                       <span className="text-[10px] text-muted mt-1 px-1 font-mono">
@@ -590,33 +746,68 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <canvas ref={canvasRef} width={400} height={50} className="w-full h-12" />
                 <p className="text-[11px] font-mono text-muted mt-1">
                   {isRecording
-                    ? "Mendengarkan suara lo... Tekan tombol untuk kirim"
+                    ? "Mendengarkan suara lo... Tekan tombol merah untuk kirim"
+                    : isPlayingAudio
+                    ? "Partner AI sedang berbicara..."
                     : isProcessing
                     ? "AI sedang memikirkan balasan..."
-                    : "Tekan mikrofon untuk berbicara"}
+                    : "Bicara lewat mikrofon atau ketik pesan di bawah"}
                 </p>
               </div>
 
-              {/* Controls Bar */}
-              <div className="flex items-center justify-center gap-4">
-                <button
-                  onClick={toggleRecording}
-                  disabled={isProcessing}
-                  className={`h-14 px-8 rounded-2xl font-display text-sm font-bold transition-all flex items-center gap-2 shadow-lg ${
-                    isRecording
-                      ? "bg-rose-500 text-white animate-pulse"
+              {/* Controls Bar: Dual-Mode Audio Mic + Quick Text Box */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    onClick={toggleRecording}
+                    disabled={isProcessing}
+                    className={`h-14 px-8 rounded-2xl font-display text-sm font-bold transition-all flex items-center gap-2.5 shadow-lg ${
+                      isRecording
+                        ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
+                        : isProcessing
+                        ? "bg-surface-raised text-muted cursor-not-allowed border border-hairline"
+                        : "bg-ember text-obsidian hover:brightness-105"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" x2="12" y1="19" y2="22" />
+                    </svg>
+                    {isRecording
+                      ? "Selesai Bicara (Kirim Obrolan)"
                       : isProcessing
-                      ? "bg-surface-raised text-muted cursor-not-allowed"
-                      : "bg-ember text-obsidian hover:brightness-105"
-                  }`}
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" x2="12" y1="19" y2="22" />
-                  </svg>
-                  {isRecording ? "Selesai Bicara (Kirim)" : isProcessing ? "Memproses..." : "Mulai Bicara"}
-                </button>
+                      ? "Memproses Suara..."
+                      : "Tekan untuk Mulai Bicara"}
+                  </button>
+                </div>
+
+                {/* Instant Text Input Alternative */}
+                <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-surface-raised p-1.5 focus-within:border-ember/60 transition-all">
+                  <input
+                    type="text"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        submitTextMessage();
+                      }
+                    }}
+                    placeholder="Atau ketik pesan bahasa Inggris di sini..."
+                    disabled={isProcessing}
+                    className="flex-1 bg-transparent px-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={submitTextMessage}
+                    disabled={!textInput.trim() || isProcessing}
+                    className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50"
+                  >
+                    Kirim
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
