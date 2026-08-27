@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { generateDetailed, generateStream, type Tier } from "@/lib/gemini/client";
 import type { InlineImage } from "@/lib/gemini/providers";
-import { getModel, getUsdToIdr, getAdminChargeMode } from "@/lib/config";
+import { getModel, getUsdToIdr } from "@/lib/config";
 import { resolveRoute } from "./router";
 import { getFleet, markProviderResult, resolveProviderKey } from "./registry";
 import { costIdr } from "./cost";
