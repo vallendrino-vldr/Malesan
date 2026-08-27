@@ -37,6 +37,7 @@ interface AIIntentResult {
     | "unban_user"
     | "create_voucher"
     | "list_vouchers"
+    | "list_users"
     | "inspect_user"
     | "get_errors"
     | "get_feedback"
@@ -108,24 +109,25 @@ TUGAS KAMU:
 Analisis pesan dari Boss dan tentukan apakah itu perintah aksi (action/proposal) atau obrolan/konsultasi strategi/marketing (chat).
 
 Daftar Tool / Aksi yang Tersedia:
-1. clear_broadcast: menghapus banner pengumuman di dashboard. (needsConfirmation: false)
-2. set_broadcast: pasang banner pengumuman (payload: { message: "isi pengumuman" }). (needsConfirmation: false)
-3. stats: ringkasan statistik komprehensif, performa, revenue, & top module. (needsConfirmation: false)
-4. topups: cek antrean topup manual pending. (needsConfirmation: false)
-5. inspect_user: cek detail user tertentu (payload: { email: "user@email.com" }). (needsConfirmation: false)
-6. get_errors: cek error log / issue teknis terkini di sistem. (needsConfirmation: false)
-7. get_feedback: baca feedback & review dari user. (needsConfirmation: false)
-8. list_vouchers: lihat daftar voucher aktif. (needsConfirmation: false)
-9. create_voucher: buat voucher baru (payload: { code: "KODE", credits: 50 }). (needsConfirmation: false)
-10. unban_user: buka blokir akun user (payload: { email: "user@email.com" }). (needsConfirmation: false)
+1. list_users: melihat daftar seluruh user terdaftar di platform (email, nama, status pro, kredit). Gunakan ini jika Boss bertanya "siapa aja?", "daftar user", "list user", "user yang terdaftar". (needsConfirmation: false)
+2. inspect_user: cek detail user tertentu (payload: { email: "user@email.com" atau keyword nama/email }). (needsConfirmation: false)
+3. clear_broadcast: menghapus banner pengumuman di dashboard. (needsConfirmation: false)
+4. set_broadcast: pasang banner pengumuman (payload: { message: "isi pengumuman" }). (needsConfirmation: false)
+5. stats: ringkasan statistik komprehensif, performa, revenue, & top module. (needsConfirmation: false)
+6. topups: cek antrean topup manual pending. (needsConfirmation: false)
+7. get_errors: cek error log / issue teknis terkini di sistem. (needsConfirmation: false)
+8. get_feedback: baca feedback & review dari user. (needsConfirmation: false)
+9. list_vouchers: lihat daftar voucher aktif. (needsConfirmation: false)
+10. create_voucher: buat voucher baru (payload: { code: "KODE", credits: 50 }). (needsConfirmation: false)
+11. unban_user: buka blokir akun user (payload: { email: "user@email.com" }). (needsConfirmation: false)
 
 Aksi Sensitif (Wajib needsConfirmation = true):
-11. grant_credits: tambah saldo kredit manual ke user (payload: { email: "user@email.com", amount: 100, reason: "bonus" }). (needsConfirmation: true jika > 50 kredit, false jika <= 50)
-12. ban_user: bekukan akun user nakal (payload: { email: "user@email.com", reason: "spam/abuse" }). (needsConfirmation: true)
-13. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true)
-14. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
-15. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" / "groq" }). (needsConfirmation: true)
-16. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
+12. grant_credits: tambah saldo kredit manual ke user (payload: { email: "user@email.com", amount: 100, reason: "bonus" }). (needsConfirmation: true jika > 50 kredit, false jika <= 50)
+13. ban_user: bekukan akun user nakal (payload: { email: "user@email.com", reason: "spam/abuse" }). (needsConfirmation: true)
+14. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true)
+15. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
+16. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" / "groq" }). (needsConfirmation: true)
+17. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
 
 Pesan dari Boss:
 "${userText}"
@@ -141,18 +143,19 @@ Instruksi Output:
       actionType: {
         type: "STRING",
         enum: [
+          "list_users",
+          "inspect_user",
           "clear_broadcast",
           "set_broadcast",
           "stats",
           "topups",
-          "inspect_user",
-          "get_errors",
-          "get_feedback",
-          "list_vouchers",
-          "create_voucher",
           "grant_credits",
           "ban_user",
           "unban_user",
+          "create_voucher",
+          "list_vouchers",
+          "get_errors",
+          "get_feedback",
           "set_module_cost",
           "toggle_module",
           "set_ai_provider",
@@ -182,16 +185,24 @@ Instruksi Output:
 
   try {
     const rawRes = await generate({
+      systemInstruction: "You are the Malesan Executive AI Telegram Controller. Return strict JSON only.",
       prompt,
-      tier: "free",
-      schema,
+      responseSchema: schema,
+      temperature: 0.1,
     });
 
-    const parsed = JSON.parse(rawRes) as AIIntentResult;
+    let parsed: AIIntentResult;
+    try {
+      parsed = JSON.parse(rawRes.text.trim()) as AIIntentResult;
+    } catch {
+      console.warn("[telegram-ai] Failed to parse JSON response:", rawRes.text);
+      await sendTelegramMessage(rawRes.text || "Siap Bos, ada yang bisa saya bantu?", { chatId });
+      return;
+    }
 
-    // A. Handle Sensitive Actions with Interactive Proposal Confirmation
+    // A. Human-In-The-Loop Confirmation Flow
     if (parsed.needsConfirmation && parsed.actionType !== "none") {
-      const actionId = "act_" + Math.random().toString(36).substring(2, 10);
+      const actionId = `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
       await supabase.from("app_config").upsert({
         key: `tele_act:${actionId}`,
@@ -203,46 +214,92 @@ Instruksi Output:
         updated_at: new Date().toISOString(),
       });
 
-      const confirmText = `🤖 <b>PROPOSAL KONFIRMASI TINDAKAN</b>\n\n${parsed.replyText}\n\n⚠️ <b>Tindakan:</b> <code>${parsed.actionType}</code>\n📋 <b>Parameter:</b>\n<code>${JSON.stringify(parsed.payload || {}, null, 2)}</code>\n\n<i>Apakah lo setuju untuk mengeksekusi tindakan ini sekarang, Bos?</i>`;
+      let summary = "";
+      switch (parsed.actionType) {
+        case "grant_credits":
+          summary = `Tambah <b>${parsed.payload?.amount} Kredit</b> ke <code>${escapeHtml(parsed.payload?.email)}</code>`;
+          break;
+        case "ban_user":
+          summary = `Blokir/Ban user <code>${escapeHtml(parsed.payload?.email)}</code> (Alasan: ${escapeHtml(parsed.payload?.reason || "-")})`;
+          break;
+        case "set_module_cost":
+          summary = `Ubah tarif modul <b>${MODULE_LABELS[parsed.payload?.moduleKey || ""] || parsed.payload?.moduleKey}</b> jadi <b>${parsed.payload?.cost} Kredit</b>`;
+          break;
+        case "toggle_module":
+          summary = `Ubah status modul <b>${MODULE_LABELS[parsed.payload?.moduleKey || ""] || parsed.payload?.moduleKey}</b> jadi <b>${parsed.payload?.enabled ? "AKTIF" : "NONAKTIF (KILL-SWITCH)"}</b>`;
+          break;
+        case "set_ai_provider":
+          summary = `Ganti AI Provider utama ke <b>${escapeHtml(parsed.payload?.provider?.toUpperCase())}</b>`;
+          break;
+        default:
+          summary = `Eksekusi ${parsed.actionType}`;
+      }
 
-      const inlineKeyboard = {
-        inline_keyboard: [
-          [
-            { text: "✅ Ya, Eksekusi Sekarang", callback_data: `exec_action:${actionId}` },
-            { text: "❌ Batalkan", callback_data: `cancel_action:${actionId}` },
+      const proposalText = `⚠️ <b>KONFIRMASI TINDAKAN SENSITIF</b>\n\n${parsed.replyText}\n\n🎯 <b>Rincian Aksi:</b>\n${summary}\n\n<i>Tekan tombol di bawah untuk menyetujui atau membatalkan:</i>`;
+
+      await sendTelegramMessage(proposalText, {
+        chatId,
+        replyMarkup: {
+          inline_keyboard: [
+            [
+              { text: "✅ Ya, Eksekusi Sekarang", callback_data: `exec_action:${actionId}` },
+              { text: "❌ Batalkan", callback_data: `cancel_action:${actionId}` },
+            ],
           ],
-        ],
-      };
-
-      await sendTelegramMessage(confirmText, { chatId, replyMarkup: inlineKeyboard });
+        },
+      });
       return;
     }
 
     // B. Direct Execution of Safe / Read Operations
     switch (parsed.actionType) {
+      case "list_users": {
+        const { data: users, error: uErr } = await supabase
+          .from("profiles")
+          .select("id, email, display_name, role, is_pro, is_banned, credits_free, credits_paid, created_at")
+          .order("created_at", { ascending: false })
+          .limit(15);
+
+        if (uErr || !users || users.length === 0) {
+          await sendTelegramMessage("👥 <b>Daftar User:</b> Belum ada user terdaftar di database.", { chatId });
+          return;
+        }
+
+        const userRows = users
+          .map((u, i) => {
+            const roleBadge = u.role === "admin" ? "👑 Admin" : "👤 User";
+            const proBadge = u.is_pro ? "⭐ <b>PRO</b>" : "Free";
+            const statusBadge = u.is_banned ? "🚫 <i>Banned</i>" : "🟢 Aktif";
+            const totalCredits = (u.credits_free || 0) + (u.credits_paid || 0);
+            return `<b>${i + 1}. ${escapeHtml(u.display_name || "Tanpa Nama")}</b> (<code>${escapeHtml(u.email)}</code>)\n   ${roleBadge} • ${proBadge} • 💰 ${totalCredits} Kredit (Free: ${u.credits_free || 0}, Paid: ${u.credits_paid || 0}) • ${statusBadge}`;
+          })
+          .join("\n\n");
+
+        const message = `👥 <b>DAFTAR PENGGUNA TERDAFTAR (Total: ${users.length} Akun Terkini)</b>\n\n${userRows}\n\n<i>Ketik <code>Cek user &lt;email&gt;</code> untuk inspeksi mendalam satu user.</i>`;
+        await sendTelegramMessage(message, { chatId });
+        return;
+      }
+
       case "inspect_user": {
-        const email = String(parsed.payload?.email || "").trim().toLowerCase();
-        if (!email) {
+        const query = String(parsed.payload?.email || "").trim().toLowerCase();
+        if (!query) {
           await sendTelegramMessage("⚠️ Mohon sebutkan email user yang ingin dicek.", { chatId });
           return;
         }
 
-        const { data: user } = await supabase
+        // Resilient lookup: exact match or partial match on email / display_name
+        const { data: users } = await supabase
           .from("profiles")
-          .select("id, email, is_pro, is_banned, created_at, full_name")
-          .eq("email", email)
-          .maybeSingle();
+          .select("id, email, display_name, role, is_pro, is_banned, ban_reason, credits_free, credits_paid, created_at")
+          .or(`email.ilike.%${query}%,display_name.ilike.%${query}%`)
+          .limit(1);
+
+        const user = users?.[0];
 
         if (!user) {
-          await sendTelegramMessage(`❌ User <code>${escapeHtml(email)}</code> tidak ditemukan di database.`, { chatId });
+          await sendTelegramMessage(`❌ User <code>${escapeHtml(query)}</code> tidak ditemukan di database.\nKetik <b>"Daftar user"</b> untuk melihat semua akun yang ada, Bos!`, { chatId });
           return;
         }
-
-        const { data: credits } = await supabase
-          .from("credits")
-          .select("free_balance, paid_balance, bonus_balance")
-          .eq("user_id", user.id)
-          .maybeSingle();
 
         const { count: genCount } = await supabase
           .from("generations")
@@ -250,8 +307,10 @@ Instruksi Output:
           .eq("user_id", user.id);
 
         const joined = new Date(user.created_at).toLocaleDateString("id-ID", { dateStyle: "medium" });
+        const totalCredits = (user.credits_free || 0) + (user.credits_paid || 0);
+        const roleText = user.role === "admin" ? "👑 <b>Admin (Owner)</b>" : "👤 Kreator";
 
-        const userCard = `👤 <b>DETAIL PENGGUNA</b>\n\n📧 <b>Email:</b> <code>${escapeHtml(user.email)}</code>\n🏷 <b>Nama:</b> ${escapeHtml(user.full_name || "Tanpa Nama")}\n💎 <b>Paket:</b> ${user.is_pro ? "⭐ <b>PRO</b>" : "Free Tier"}\n💰 <b>Kredit:</b> ${(credits?.free_balance || 0) + (credits?.paid_balance || 0) + (credits?.bonus_balance || 0)} (Free: ${credits?.free_balance || 0}, Paid: ${credits?.paid_balance || 0})\n⚡ <b>Generasi Konten:</b> ${genCount || 0} kali\n📅 <b>Terdaftar:</b> ${joined}\n🛡 <b>Status:</b> ${user.is_banned ? "🚫 <b>BANNED</b>" : "🟢 <b>Aktif</b>"}`;
+        const userCard = `👤 <b>DETAIL PROFIL PENGGUNA</b>\n\n📧 <b>Email:</b> <code>${escapeHtml(user.email)}</code>\n🏷 <b>Nama:</b> ${escapeHtml(user.display_name || "Tanpa Nama")}\n🛡 <b>Peran:</b> ${roleText}\n💎 <b>Paket:</b> ${user.is_pro ? "⭐ <b>PRO TIER</b>" : "Free Tier"}\n💰 <b>Total Kredit:</b> ${totalCredits} (Free: ${user.credits_free || 0}, Paid: ${user.credits_paid || 0})\n⚡ <b>Generasi Konten:</b> ${genCount || 0} kali\n📅 <b>Terdaftar:</b> ${joined}\n🚦 <b>Status Akun:</b> ${user.is_banned ? `🚫 <b>BANNED (${escapeHtml(user.ban_reason || "-")})</b>` : "🟢 <b>Aktif Normal</b>"}`;
 
         await sendTelegramMessage(userCard, { chatId });
         return;
@@ -300,28 +359,52 @@ Instruksi Output:
           })
           .join("\n\n");
 
-        await sendTelegramMessage(`💌 <b>FEEDBACK PENGGUNA TERBARU:</b>\n\n${fbList}`, { chatId });
+        await sendTelegramMessage(`💌 <b>FEEDBACK TERBARU USER:</b>\n\n${fbList}`, { chatId });
         return;
       }
 
       case "list_vouchers": {
-        const { data: vchs } = await supabase
+        const { data: vouchers } = await supabase
           .from("vouchers")
           .select("code, credits, is_redeemed, created_at")
-          .eq("is_redeemed", false)
           .order("created_at", { ascending: false })
           .limit(10);
 
-        if (!vchs || vchs.length === 0) {
-          await sendTelegramMessage("🎟 Tidak ada voucher aktif yang belum terpakai saat ini.", { chatId });
+        if (!vouchers || vouchers.length === 0) {
+          await sendTelegramMessage("🎟 Belum ada voucher yang dibuat.", { chatId });
           return;
         }
 
-        const vchList = vchs
-          .map((v) => `• <code>${escapeHtml(v.code)}</code> — <b>+${v.credits} Kredit</b>`)
+        const list = vouchers
+          .map(
+            (v, i) =>
+              `<b>${i + 1}. <code>${escapeHtml(v.code)}</code></b> - ${v.credits} Kredit [${v.is_redeemed ? "❌ Terpakai" : "🟢 Aktif"}]`,
+          )
           .join("\n");
 
-        await sendTelegramMessage(`🎟 <b>DAFTAR VOUCHER AKTIF (BELUM TERPAKAI):</b>\n\n${vchList}`, { chatId });
+        await sendTelegramMessage(`🎟 <b>DAFTAR VOUCHER TERBARU:</b>\n\n${list}`, { chatId });
+        return;
+      }
+
+      case "create_voucher": {
+        const code = String(parsed.payload?.code || `PROMO${Math.random().toString(36).slice(2, 6).toUpperCase()}`).trim().toUpperCase();
+        const credits = Number(parsed.payload?.credits || 50);
+
+        const { error } = await supabase.from("vouchers").insert({
+          code,
+          credits,
+          is_redeemed: false,
+        });
+
+        if (error) {
+          await sendTelegramMessage(`❌ Gagal membuat voucher: ${error.message}`, { chatId });
+          return;
+        }
+
+        await sendTelegramMessage(
+          `🎟 <b>VOUCHER BERHASIL DIBUAT!</b>\n\n🔑 <b>Kode:</b> <code>${code}</code>\n💎 <b>Nominal:</b> +${credits} Kredit Paid\n\n<i>Bagikan kode ini ke user atau komunitas!</i>`,
+          { chatId },
+        );
         return;
       }
 
@@ -331,32 +414,23 @@ Instruksi Output:
           value: "",
           updated_at: new Date().toISOString(),
         });
-        await sendTelegramMessage(`🧹 <b>${parsed.replyText}</b>\n\nBanner pengumuman di web sekarang sudah bersih total.`, { chatId });
+        await sendTelegramMessage("📢 <b>Banner pengumuman dashboard telah BERHASIL DIHAPUS.</b>", { chatId });
         return;
       }
 
       case "set_broadcast": {
-        const msg = parsed.payload?.message || userText;
+        const msg = String(parsed.payload?.message || "").trim();
+        if (!msg) {
+          await sendTelegramMessage("⚠️ Pesan pengumuman kosong.", { chatId });
+          return;
+        }
         await supabase.from("app_config").upsert({
           key: "dashboard_notice",
           value: msg,
           updated_at: new Date().toISOString(),
         });
-        await sendTelegramMessage(`📢 <b>${parsed.replyText}</b>\n\nPesan berikut sekarang live di dashboard:\n<i>"${escapeHtml(msg)}"</i>`, { chatId });
-        return;
-      }
-
-      case "create_voucher": {
-        const code = (parsed.payload?.code || "PROMO" + Math.floor(Math.random() * 1000)).toUpperCase().trim();
-        const credits = parsed.payload?.credits || 50;
-        await supabase.from("vouchers").insert({
-          code,
-          credits,
-          is_redeemed: false,
-          created_at: new Date().toISOString(),
-        });
         await sendTelegramMessage(
-          `🎟 <b>${parsed.replyText}</b>\n\n🔑 <b>Kode Voucher:</b> <code>${code}</code>\n💎 <b>Hadiah:</b> +${credits} Kredit\n\n<i>Tinggal salin kodenya dan bagikan!</i>`,
+          `📢 <b>BANNER PENGUMUMAN DIPASANG!</b>\n\n<i>"${escapeHtml(msg)}"</i>\n\nSemua user sekarang melihat pengumuman ini di dashboard.`,
           { chatId },
         );
         return;
@@ -365,7 +439,7 @@ Instruksi Output:
       case "unban_user": {
         const email = String(parsed.payload?.email || "").trim().toLowerCase();
         if (email) {
-          await supabase.from("profiles").update({ is_banned: false }).eq("email", email);
+          await supabase.from("profiles").update({ is_banned: false, ban_reason: null }).ilike("email", `%${email}%`);
         }
         await sendTelegramMessage(`🔓 <b>${parsed.replyText}</b>`, { chatId });
         return;
@@ -415,7 +489,7 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
       const reason = String(actionData.payload?.reason || "telegram_admin_bonus");
       if (!email || !amount) return "❌ Data email atau nominal kredit tidak valid.";
 
-      const { data: user } = await supabase.from("profiles").select("id").eq("email", email).maybeSingle();
+      const { data: user } = await supabase.from("profiles").select("id").ilike("email", `%${email}%`).maybeSingle();
       if (!user) return `❌ User dengan email <code>${escapeHtml(email)}</code> tidak ditemukan.`;
 
       const { error: grantErr } = await supabase.rpc("grant_credits", {
@@ -432,7 +506,7 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
     case "ban_user": {
       const email = String(actionData.payload?.email || "").trim().toLowerCase();
       if (!email) return "❌ Email tidak valid.";
-      await supabase.from("profiles").update({ is_banned: true }).eq("email", email);
+      await supabase.from("profiles").update({ is_banned: true, ban_reason: actionData.payload?.reason || "Admin moderation via Telegram" }).ilike("email", `%${email}%`);
       return `🚫 <b>AKUN DIBEKUKAN!</b>\n\nUser <code>${escapeHtml(email)}</code> telah dibanned dari platform.`;
     }
 
@@ -468,19 +542,19 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
     }
 
     case "set_ai_provider": {
-      const provider = String(actionData.payload?.provider || "").trim().toLowerCase();
-      if (!provider) return "❌ Provider tidak valid.";
+      const provider = String(actionData.payload?.provider || "gemini").toLowerCase();
+      if (!["gemini", "groq"].includes(provider)) return "❌ Provider tidak valid. Pilih gemini atau groq.";
 
       await supabase.from("app_config").upsert({
         key: "ai_provider",
         value: provider,
         updated_at: new Date().toISOString(),
       });
-      return `🔄 <b>AI PROVIDER DIGANTI!</b>\n\nProvider AI utama Malesan sekarang beralih ke <b>${provider.toUpperCase()}</b>.`;
+      return `⚡ <b>AI PROVIDER DIGANTI!</b>\n\nPlatform sekarang menggunakan <b>${provider.toUpperCase()}</b> sebagai engine utama.`;
     }
 
     default:
-      return "✅ Tindakan berhasil dieksekusi.";
+      return "⚠️ Tindakan tidak dikenali.";
   }
 }
 
