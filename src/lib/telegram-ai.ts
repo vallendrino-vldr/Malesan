@@ -44,6 +44,9 @@ interface AIIntentResult {
     | "set_module_cost"
     | "toggle_module"
     | "set_ai_provider"
+    | "generate_hooks"
+    | "roast_hook"
+    | "save_otak_kedua"
     | "none";
   payload?: {
     message?: string;
@@ -56,6 +59,9 @@ interface AIIntentResult {
     enabled?: boolean;
     provider?: string;
     reason?: string;
+    topic?: string;
+    hookText?: string;
+    referenceText?: string;
   };
   replyText: string;
   needsConfirmation: boolean;
@@ -65,6 +71,7 @@ export async function processTelegramAIMessage(
   userText: string,
   chatId: string,
   messageThreadId?: number,
+  isVoiceNote = false,
 ) {
   const supabase = getAdminSupabase();
 
@@ -103,17 +110,19 @@ export async function processTelegramAIMessage(
 - Status Modul Aktif: ${JSON.stringify(modulesStatus)}`;
   } catch {}
 
+  const voicePrefix = isVoiceNote ? "(Pesan ini dikirim via Voice Note oleh Bos)\n" : "";
+
   const prompt = `Kamu adalah "Malesan Executive AI" — asisten pribadi Chief of Staff super cerdas, strategis, proaktif, dan setia milik Boss / Owner platform Malesan (aplikasi AI content creation workspace kreator Indonesia).
 Boss berbicara santai dalam bahasa Indonesia sehari-hari.
 
 ${snapshotContext}
 ${currentConfigSummary}
 
-TUGAS KAMU:
+${voicePrefix}TUGAS KAMU:
 Analisis pesan dari Boss dan tentukan apakah itu perintah aksi (action/proposal) atau obrolan/konsultasi strategi/marketing (chat).
 
 Daftar Tool / Aksi yang Tersedia:
-1. list_users: melihat daftar seluruh user terdaftar di platform (email, nama, status pro, kredit). Gunakan ini jika Boss bertanya "siapa aja?", "daftar user", "list user", "user yang terdaftar". (needsConfirmation: false)
+1. list_users: melihat daftar seluruh user terdaftar di platform (email, nama, status pro, kredit). (needsConfirmation: false)
 2. inspect_user: cek detail user tertentu (payload: { email: "user@email.com" atau keyword nama/email }). (needsConfirmation: false)
 3. clear_broadcast: menghapus banner pengumuman di dashboard. (needsConfirmation: false)
 4. set_broadcast: pasang banner pengumuman (payload: { message: "isi pengumuman" }). (needsConfirmation: false)
@@ -125,19 +134,24 @@ Daftar Tool / Aksi yang Tersedia:
 10. create_voucher: buat voucher baru (payload: { code: "KODE", credits: 50 }). (needsConfirmation: false)
 11. unban_user: buka blokir akun user (payload: { email: "user@email.com" }). (needsConfirmation: false)
 
+Fitur Studio & Knowledge In-Chat:
+12. generate_hooks: buatkan 3 hook video viral untuk topik tertentu (payload: { topic: "topik konten" }). (needsConfirmation: false)
+13. roast_hook: uji dan bedah kelemahan hook konten, prediksi retensi %, dan berikan versi perbaikan (payload: { hookText: "teks hook" }). (needsConfirmation: false)
+14. save_otak_kedua: simpan catatan, ide, atau tautan referensi ke Otak Kedua / DNA Akun Owner (payload: { referenceText: "isi catatan / link referensi" }). (needsConfirmation: false)
+
 Aksi Sensitif (Wajib needsConfirmation = true):
-12. grant_credits: tambah saldo kredit manual ke user (payload: { email: "user@email.com", amount: 100, reason: "bonus" }). (needsConfirmation: true jika > 50 kredit, false jika <= 50)
-13. ban_user: bekukan akun user nakal (payload: { email: "user@email.com", reason: "spam/abuse" }). (needsConfirmation: true)
-14. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true)
-15. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
-16. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" / "groq" }). (needsConfirmation: true)
-17. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
+15. grant_credits: tambah saldo kredit manual ke user (payload: { email: "user@email.com", amount: 100, reason: "bonus" }). (needsConfirmation: true jika > 50 kredit, false jika <= 50)
+16. ban_user: bekukan akun user nakal (payload: { email: "user@email.com", reason: "spam/abuse" }). (needsConfirmation: true)
+17. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true)
+18. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
+19. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" / "groq" }). (needsConfirmation: true)
+20. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
 
 Pesan dari Boss:
 "${userText}"
 
 ATURAN GAYA & FORMATTING KETAT:
-- DILARANG MENGGUNAKAN BANYAK EMOJI/EMOTIKON. Jaga tampilan tetap clean, minimalis, profesional, elegan, ala executive terminal/COO.
+- DILARANG KERAS MENGGUNAKAN EMOJI APAPUN. Tampilan harus clean, minimalis, profesional, elegan, ala executive terminal/COO.
 - Gunakan struktur tipografi yang rapi: Header kapital/bold, bullet point standar •, code block monospace.
 - Panggil "Bos", gunakan bahasa Indonesia santai tapi berbobot, tajam, dan solutif.
 - Output HANYA JSON sesuai format schema.`;
@@ -165,6 +179,9 @@ ATURAN GAYA & FORMATTING KETAT:
           "set_module_cost",
           "toggle_module",
           "set_ai_provider",
+          "generate_hooks",
+          "roast_hook",
+          "save_otak_kedua",
           "none",
         ],
       },
@@ -181,6 +198,9 @@ ATURAN GAYA & FORMATTING KETAT:
           enabled: { type: "BOOLEAN" },
           provider: { type: "STRING" },
           reason: { type: "STRING" },
+          topic: { type: "STRING" },
+          hookText: { type: "STRING" },
+          referenceText: { type: "STRING" },
         },
       },
       replyText: { type: "STRING" },
@@ -261,6 +281,63 @@ ATURAN GAYA & FORMATTING KETAT:
 
     // B. Direct Execution of Safe / Read Operations
     switch (parsed.actionType) {
+      case "generate_hooks": {
+        const topic = parsed.payload?.topic || userText;
+        const hookPrompt = `Buat 3 opsi hook video pendek viral (TikTok/Reels) tentang topik: "${topic}".
+Format output:
+1. Hook Pola Penasaran (Curiosity Gap) + Estimasi Retensi %
+2. Hook Pola Kontras / Tamparan Realita + Estimasi Retensi %
+3. Hook Pola Solusi Instan (Problem-Action) + Estimasi Retensi %
+DILARANG MENGGUNAKAN EMOJI.`;
+
+        const hookResult = await generate({ prompt: hookPrompt });
+        const cleanHooks = hookResult.replace(/[🌀-🧿☀-⛿✀-➿🇠-🇿🨀-🫿]/gu, "");
+        const responseMsg = `<b>[HASIL HOOK LAB IN-CHAT]</b>\n• <b>Topik:</b> ${escapeHtml(topic)}\n\n${cleanHooks}`;
+        await sendTelegramMessage(responseMsg, { chatId, messageThreadId });
+        return;
+      }
+
+      case "roast_hook": {
+        const hook = parsed.payload?.hookText || userText;
+        const roastPrompt = `Bedah dan uji kelemahan hook konten ini terhadap psikologi penonton Indonesia:
+"${hook}"
+
+Berikan:
+1. Skor Prediksi Retensi 3 Detik Awal (1-100%)
+2. Analisis Kelemahan (Kenapa audiens bisa skip)
+3. 2 Versi Revisi Lebih Tajam & Nendang
+DILARANG MENGGUNAKAN EMOJI.`;
+
+        const roastResult = await generate({ prompt: roastPrompt });
+        const cleanRoast = roastResult.replace(/[🌀-🧿☀-⛿✀-➿🇠-🇿🨀-🫿]/gu, "");
+        const responseMsg = `<b>[EVALUASI HOOK & PREDIKSI RETENSI]</b>\n• <b>Hook Diuji:</b> "<i>${escapeHtml(hook)}</i>"\n\n${cleanRoast}`;
+        await sendTelegramMessage(responseMsg, { chatId, messageThreadId });
+        return;
+      }
+
+      case "save_otak_kedua": {
+        const ref = parsed.payload?.referenceText || userText;
+        // Fetch admin user
+        const { data: adminProfile } = await supabase.from("profiles").select("id").eq("role", "admin").limit(1).maybeSingle();
+        if (adminProfile) {
+          const { data: existingDna } = await supabase.from("creator_dna").select("brand_notes").eq("user_id", adminProfile.id).maybeSingle();
+          const oldNotes = existingDna?.brand_notes || "";
+          const newNotes = oldNotes ? `${oldNotes}\n\n• [${new Date().toLocaleDateString("id-ID")}] ${ref}` : `• [${new Date().toLocaleDateString("id-ID")}] ${ref}`;
+
+          await supabase.from("creator_dna").upsert({
+            user_id: adminProfile.id,
+            brand_notes: newNotes,
+            updated_at: new Date().toISOString(),
+          });
+        }
+
+        await sendTelegramMessage(
+          `<b>[OTAK KEDUA DIPERBARUI]</b>\n\n• <b>Catatan Disimpan:</b>\n<i>"${escapeHtml(ref)}"</i>\n\nReferensi ini otomatis terintegrasi ke dalam AI Studio Malesan lo, Bos.`,
+          { chatId, messageThreadId },
+        );
+        return;
+      }
+
       case "list_users": {
         const { data: users, error: uErr } = await supabase
           .from("profiles")

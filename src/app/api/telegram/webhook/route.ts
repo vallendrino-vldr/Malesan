@@ -7,6 +7,7 @@ import {
   createTelegramForumTopic,
 } from "@/lib/telegram";
 import { processTelegramAIMessage, executePendingTelegramAction } from "@/lib/telegram-ai";
+import { transcribeTelegramVoice } from "@/lib/telegram-voice";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -32,12 +33,21 @@ interface TelegramChat {
   title?: string;
 }
 
+interface TelegramVoice {
+  file_id: string;
+  duration: number;
+  mime_type?: string;
+}
+
 interface TelegramMessage {
   message_id: number;
   from?: TelegramUser;
   chat?: TelegramChat;
   message_thread_id?: number;
   text?: string;
+  caption?: string;
+  voice?: TelegramVoice;
+  audio?: TelegramVoice;
 }
 
 interface TelegramCallbackQuery {
@@ -113,14 +123,13 @@ export async function POST(request: NextRequest) {
     return json({ ok: true });
   }
 
-  // 3. Handle Text Messages & Slash Commands
+  // 3. Handle Voice Notes, Audio, Text Messages & Slash Commands
   const message = body.message;
-  if (!message || !message.text) {
+  if (!message) {
     return json({ ok: true });
   }
 
   const fromId = String(message.from?.id);
-  const text = message.text.trim();
   const chatId = message.chat?.id ? String(message.chat.id) : fromId;
   const messageThreadId = message.message_thread_id;
   const isGroup = chatId.startsWith("-100") || message.chat?.type === "supergroup" || message.chat?.type === "group";
@@ -131,6 +140,31 @@ export async function POST(request: NextRequest) {
     if (!isGroup) {
       await sendTelegramMessage("<b>[AKSES DITOLAK]</b> Bot ini khusus owner @malesan_my_id.", { chatId: fromId });
     }
+    return json({ ok: true });
+  }
+
+  // A. Voice Note / Audio Command Center
+  const voiceFileId = message.voice?.file_id || message.audio?.file_id;
+  if (voiceFileId) {
+    sendChatAction(chatId, "typing", messageThreadId).catch(() => {});
+    const transcribedText = await transcribeTelegramVoice(voiceFileId);
+
+    if (!transcribedText) {
+      await sendTelegramMessage(
+        "<b>[VOICE NOTE]</b> Suara tidak terdengar jelas atau gagal ditranskrip. Coba kirim ulang ya, Bos.",
+        { chatId, messageThreadId },
+      );
+      return json({ ok: true });
+    }
+
+    // Process the voice transcription as AI instruction
+    await processTelegramAIMessage(transcribedText, chatId, messageThreadId, true);
+    return json({ ok: true });
+  }
+
+  // B. Text Messages & Captions
+  const text = (message.text || message.caption || "").trim();
+  if (!text) {
     return json({ ok: true });
   }
 
@@ -243,7 +277,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 4. Autonomous Conversational AI Brain: Handles any natural language chat / orders!
+  // 4. Autonomous Conversational AI Brain: Handles Voice Note transcripts & natural language chat / orders!
   await processTelegramAIMessage(text, chatId, messageThreadId);
 
   return json({ ok: true });
@@ -255,7 +289,10 @@ export async function POST(request: NextRequest) {
 
 async function handleMenuCommand(chatId: string, messageThreadId?: number) {
   const menuText = `<b>[MALESAN MISSION CONTROL & AI BRAIN]</b>\n
-Halo Bos. Sistem beroperasi penuh dengan Autonomous AI Brain dan dukungan Forum Topics:
+Halo Bos. Sistem beroperasi penuh dengan Autonomous AI Brain, Voice Note Transcriber, dan Forum Topics:
+
+• <b>Voice Note Command Center:</b>
+  Kirim pesan suara / Voice Note langsung untuk memberi perintah tanpa perlu mengetik.
 
 • <b>Setup Forum Grup:</b>
   Ketik <code>/sethq</code> di grup Forum untuk auto-create seluruh kanal topik.
@@ -265,8 +302,9 @@ Halo Bos. Sistem beroperasi penuh dengan Autonomous AI Brain dan dukungan Forum 
   — <i>"Pasang banner: Diskon 50% sampai besok malam"</i>
   — <i>"Siapa aja user yang terdaftar?"</i>
   — <i>"Cek user vadlyvldr@gmail.com"</i>
-  — <i>"Ada komplain apa hari ini?"</i>
-  — <i>"Bikinin ide hook konten edukasi AI"</i>`;
+  — <i>"Buatkan 3 ide hook tentang AI kreator"</i>
+  — <i>"Uji hook: 90% kreator bakal gagal di tahun 2026 kalau gak pakai AI"</i>
+  — <i>"Simpan ke otak kedua: Riset tren video short 2026"</i>`;
 
   const inlineKeyboard = {
     inline_keyboard: [
