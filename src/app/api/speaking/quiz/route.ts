@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     level = String(body.level || "intermediate");
     topic = String(body.topic || "grammar_tenses");
+    count = Math.min(15, Math.max(5, Number(body.count) || 5));
   } catch {
     // default
   }
@@ -50,6 +51,8 @@ export async function POST(request: NextRequest) {
     "Obrolan santai di pesta atau networking dinner dengan ekspatriat",
     "Membahas tren AI, teknologi masa depan, dan pekerjaan konten kreator",
     "Salah kaprah kosakata gaul sehari-hari yang sering bikin bule bingung",
+    "Pemberian feedback proyek desain, software engineering, dan deadline",
+    "Diskusi negosiasi harga jasa freelance dan kontrak kerja internasional",
   ];
 
   const randomContext = contextPool[Math.floor(Math.random() * contextPool.length)];
@@ -58,11 +61,12 @@ export async function POST(request: NextRequest) {
   const prompt = `Kamu adalah Master English Quiz Creator untuk pengguna Indonesia.
 Level: ${level} (beginner / intermediate / advanced)
 Topik Utama: ${topic}
+Jumlah Soal yang Diminta: ${count} Soal
 Konteks Suasana/Tema Kali Ini: "${randomContext}"
 Kode Unik Regenerasi: ${randomEntropy}
 
 INSTRUKSI KHUSUS KEBARUAN (ANTI-REPETISI & ANTI-DUMMY):
-- Hasilkan 5 SOAL KUIS PILIHAN GANDA (A, B, C, D) yang 100% BARU, SEGAR, KREATIF, DAN TIDAK PERNAH SAMA DENGAN KUIS SEBELUMNYA.
+- Hasilkan TEPAT ${count} SOAL KUIS PILIHAN GANDA (A, B, C, D) yang 100% BARU, SEGAR, KREATIF, DAN TIDAK PERNAH SAMA DENGAN KUIS SEBELUMNYA.
 - DILARANG membuat soal klasik standar buku pelajaran jadul (seperti "She go to school", "I have two apples", dsb).
 - Gunakan kalimat bernuansa percakapan nyata zaman sekarang (modern colloquial, work life, travel, internet culture, atau daily dilemmas).
 - Pastikan tingkat kesulitan sesuai dengan level (${level}).
@@ -100,8 +104,8 @@ ATURAN KETAT:
           },
           required: ["question", "options", "correctIndex", "explanation", "roastWrong"],
         },
-        minItems: 5,
-        maxItems: 5,
+        minItems: count,
+        maxItems: count,
       },
     },
     required: ["title", "questions"],

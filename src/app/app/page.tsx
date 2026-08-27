@@ -534,7 +534,7 @@ export default async function AppPage({
                 }
               />
 
-              {/* WIDE FLAGSHIP CARD: LANCAR BAHASA (Client Component, Server/Client boundary safe) */}
+              {/* WIDE FLAGSHIP CARD: LANCAR INGGRIS (Client Component, Server/Client boundary safe) */}
               <StudioWideTile mod="lancar_bahasa" cost={costLancarBahasa} />
             </div>
           </section>

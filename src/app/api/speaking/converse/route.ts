@@ -110,14 +110,18 @@ Pesan Pengguna Baru:
 
 TUGAS KAMU:
 1. Berikan respons percakapan balasan dalam bahasa Inggris (replyEn) yang alami, relevan, dan mengajak pengguna terus berbicara (1-3 kalimat).
-2. Periksa ucapan pengguna: Apakah ada kesalahan grammar, pilihan kata, atau kebiasaan buruk?
+2. Terjemahkan respons bahasa Inggris kamu ke dalam bahasa Indonesia (translateId) yang luwes dan natural agar pemula bisa langsung memahami artinya.
+3. Berikan 3 CONTEKAN JAWABAN CEPAT (suggestedReplies) yang bisa diucapkan/dikirim pengguna berikutnya dalam bahasa Inggris beserta arti singkat Indonesianya.
+4. Periksa ucapan pengguna: Apakah ada kesalahan grammar, pilihan kata, atau kebiasaan buruk?
    - Jika ADA kesalahan, buat tip koreksi halus (correctionTip) dalam bahasa Indonesia yang ringkas (contoh: "Gunakan 'went' untuk masa lampau: I went to the store").
+   - Identifikasi KATEGORI KELEMAHAN (pitfallTag) yang ringkas (misal: "Past Tense (V2)", "Preposition (in/at/on)", "Subject-Verb Agreement", "Vocabulary Choice", "Pronunciation Hint").
    - Jika BENAR, kosongkan (null).
-3. HUMOR & ROASTING ENGINE (Wajib ada jika ada kesalahan konyol / bahasa Indonesia):
+5. HUMOR & ROASTING ENGINE (Wajib ada jika ada kesalahan konyol / bahasa Indonesia):
    - Jika pengguna membuat kesalahan lucu (seperti salah tenses parah, pakai bahasa Indonesia dicampur Inggris ga pas, atau idiom aneh), buat 1 kalimat roasting santai & lucu dalam bahasa Indonesia sehari-hari yang menghibur (roastComment).
    - Jika pengguna bicara lancar dan bagus, berikan pujian santai tanpa lebay.
-4. Berikan estimasi skor kelancaran percakapan ini (fluencyScore: 1-100).
-5. Sebutkan 1 kosakata atau frasa keren yang relevan dengan topik ini (newVocab).
+6. Berikan estimasi skor kelancaran percakapan ini (fluencyScore: 1-100).
+7. Sebutkan 1 kosakata atau frasa keren yang relevan dengan topik ini (newVocab).
+8. Jika ini skenario simulasi, periksa apakah tujuan percakapan sudah tercapai (missionAccomplished: boolean).
 
 ATURAN FORMATTING KETAT:
 - DILARANG MENGGUNAKAN EMOJI APAPUN.
@@ -128,12 +132,28 @@ ATURAN FORMATTING KETAT:
     properties: {
       userTranscribedText: { type: "STRING" },
       replyEn: { type: "STRING" },
+      translateId: { type: "STRING" },
+      suggestedReplies: {
+        type: "ARRAY",
+        items: {
+          type: "OBJECT",
+          properties: {
+            en: { type: "STRING" },
+            id: { type: "STRING" },
+          },
+          required: ["en", "id"],
+        },
+        minItems: 3,
+        maxItems: 3,
+      },
       correctionTip: { type: "STRING" },
+      pitfallTag: { type: "STRING" },
       roastComment: { type: "STRING" },
       fluencyScore: { type: "NUMBER" },
       newVocab: { type: "STRING" },
+      missionAccomplished: { type: "BOOLEAN" },
     },
-    required: ["replyEn", "fluencyScore"],
+    required: ["replyEn", "translateId", "suggestedReplies", "fluencyScore"],
   };
 
   try {
@@ -144,10 +164,20 @@ ATURAN FORMATTING KETAT:
       ok: true,
       userTranscribedText: textInput,
       replyEn: parsed.replyEn || "That is interesting! Tell me more about it.",
+      translateId: parsed.translateId || "Itu sangat menarik! Ceritakan lebih banyak tentang hal itu.",
+      suggestedReplies: Array.isArray(parsed.suggestedReplies) && parsed.suggestedReplies.length > 0
+        ? parsed.suggestedReplies
+        : [
+            { en: "I would like to know more.", id: "Saya ingin tahu lebih lanjut." },
+            { en: "That makes a lot of sense.", id: "Itu sangat masuk akal." },
+            { en: "Could you explain that again?", id: "Bisakah kamu jelaskan lagi?" },
+          ],
       correctionTip: parsed.correctionTip || null,
+      pitfallTag: parsed.pitfallTag || null,
       roastComment: parsed.roastComment || null,
       fluencyScore: parsed.fluencyScore || 80,
       newVocab: parsed.newVocab || null,
+      missionAccomplished: Boolean(parsed.missionAccomplished),
       creditsSpent: cost,
     });
   } catch (err) {
@@ -157,10 +187,18 @@ ATURAN FORMATTING KETAT:
         ok: true,
         userTranscribedText: textInput,
         replyEn: "I hear you! That sounds really interesting. What do you think we should explore next?",
+        translateId: "Aku mendengarmu! Itu terdengar sangat menarik. Apa yang ingin kita bahas berikutnya?",
+        suggestedReplies: [
+          { en: "Let us talk about daily hobbies.", id: "Mari kita bicara tentang hobi sehari-hari." },
+          { en: "I want to improve my speaking confidence.", id: "Saya ingin meningkatkan kepercayaan diri berbicara." },
+          { en: "Can we practice a job interview?", id: "Bisakah kita latihan wawancara kerja?" },
+        ],
         correctionTip: null,
+        pitfallTag: null,
         roastComment: null,
         fluencyScore: 75,
         newVocab: null,
+        missionAccomplished: false,
         creditsSpent: cost,
       },
       200,

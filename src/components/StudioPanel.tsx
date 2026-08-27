@@ -50,7 +50,7 @@ const CarouselGenerator = dynamic(() => import("./CarouselGenerator").then((m) =
   loading: () => <StudioSkeleton label="AI Carousel Studio" />,
 });
 const LancarBahasa = dynamic(() => import("./LancarBahasa").then((m) => m.LancarBahasa), {
-  loading: () => <StudioSkeleton label="Lancar Bahasa" />,
+  loading: () => <StudioSkeleton label="Lancar Inggris" />,
 });
 
 type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video" | "affiliate" | "carousel" | "lancar_bahasa";
@@ -305,24 +305,24 @@ export function StudioWideTile({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
-                  Lancar Bahasa
+                  Lancar Inggris
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-ember uppercase tracking-wider">
-                  Fitur Baru
+                  AI Master
                 </span>
                 <span className="rounded-md bg-surface px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-ember border border-hairline">
                   {cost} kredit
                 </span>
               </div>
               <p className="mt-0.5 text-[11px] sm:text-xs text-muted leading-tight truncate sm:whitespace-normal">
-                Latihan bicara suara AI, kuis kilat &amp; ujian esai dengan koreksi real-time.
+                Speaking AI native, roleplay skenario nyata, kuis interaktif &amp; evaluasi esai.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="text-micro font-bold text-muted group-hover:text-ember transition-colors hidden md:inline">
-              Buka Latihan
+              Buka Studio
             </span>
             <span className="inline-flex size-6 sm:size-7 items-center justify-center rounded-lg bg-surface border border-hairline text-muted group-hover:border-ember group-hover:bg-ember group-hover:text-obsidian transition-all">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3 sm:size-3.5">

@@ -111,10 +111,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-lancar-bahasa",
-        title: "Lancar Bahasa (Speaking, Kuis & Esai)",
+        title: "Lancar Inggris (Speaking, Kuis, Esai & Roleplay)",
         category: "Studio",
-        subtitle: "Panggilan suara AI, kuis interaktif, dan evaluasi esai",
-        badge: "AI Coach",
+        subtitle: "Speaking AI native, simulasi skenario, kuis & evaluasi esai",
+        badge: "AI Master",
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />

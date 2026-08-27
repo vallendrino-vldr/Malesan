@@ -3,8 +3,25 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
 type Level = "beginner" | "intermediate" | "advanced";
-type Mode = "voice" | "quiz" | "essay" | "scenario";
+type Mode = "voice" | "scenario" | "quiz" | "essay" | "progress";
 type Persona = "sarah" | "alex" | "david" | "emma";
+
+interface SuggestedReply {
+  en: string;
+  id: string;
+}
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  translateId?: string | null;
+  suggestedReplies?: SuggestedReply[];
+  tip?: string | null;
+  pitfallTag?: string | null;
+  roast?: string | null;
+  score?: number;
+}
 
 interface QuizQuestion {
   question: string;
@@ -33,16 +50,25 @@ interface EssayEvaluation {
   perfectedDraft: string;
 }
 
-interface ChatMessage {
+interface ScenarioItem {
   id: string;
-  role: "user" | "assistant";
-  text: string;
-  tip?: string | null;
-  roast?: string | null;
-  score?: number;
+  title: string;
+  partner: Persona;
+  context: string;
+  missions: string[];
 }
 
-// Global interface declaration for Web Speech API
+interface SessionRecord {
+  id: string;
+  timestamp: number;
+  type: "voice" | "scenario" | "quiz" | "essay";
+  title: string;
+  score: number;
+  durationSeconds?: number;
+  pitfalls?: string[];
+}
+
+// Global Speech Recognition API Interfaces
 interface SpeechRecognitionEventLike {
   resultIndex: number;
   results: {
@@ -75,12 +101,73 @@ const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string }> 
   { id: "emma", name: "Emma", tag: "IELTS Coach", desc: "Latihan speaking & alur berpikir kritis" },
 ];
 
-const SCENARIOS = [
-  { id: "job_interview", title: "Wawancara Kerja", desc: "Pertanyaan background, kelemahan, dan ekspektasi gaji" },
-  { id: "airport_immigration", title: "Bandara & Imigrasi", desc: "Pemeriksaan paspor, visa, dan tujuan perjalanan" },
-  { id: "ordering_cafe", title: "Pesan Kopi di Kafe", desc: "Pilihan beans, customize minuman, dan pembayaran" },
-  { id: "salary_negotiation", title: "Negosiasi Gaji", desc: "Menyampaikan value dan meminta penawaran lebih tinggi" },
-  { id: "hotel_checkin", title: "Check-in Hotel", desc: "Konfirmasi reservasi, request kamar, dan fasilitas" },
+const SCENARIOS: ScenarioItem[] = [
+  {
+    id: "job_interview",
+    title: "Wawancara Kerja Global",
+    partner: "david",
+    context: "Kamu sedang diwawancarai oleh Senior Tech Recruiter untuk posisi internasional.",
+    missions: [
+      "Perkenalkan diri dan keahlian utamamu",
+      "Jelaskan pengalaman proyek yang paling membanggakan",
+      "Sampaikan ekspektasi gaji dan gaya kerjamu",
+    ],
+  },
+  {
+    id: "airport_immigration",
+    title: "Pemeriksaan Bandara & Imigrasi",
+    partner: "sarah",
+    context: "Kamu baru mendarat di London Heathrow dan petugas menanyakan tujuan perjalananmu.",
+    missions: [
+      "Jawab tujuan kedatangan dan lama tinggal",
+      "Tunjukkan tempat menginap / reservasi hotel",
+      "Jelaskan pekerjaanmu di Indonesia",
+    ],
+  },
+  {
+    id: "ordering_cafe",
+    title: "Pesan Kopi & Makanan di Kafe",
+    partner: "alex",
+    context: "Kamu sedang antre di kafe hipster San Francisco dan memesan minuman khusus.",
+    missions: [
+      "Pesan kopi dengan susu oat dan sedikit gula",
+      "Tanya rekomendasi roti/pastry terbaik",
+      "Bayar menggunakan kartu non-tunai",
+    ],
+  },
+  {
+    id: "salary_negotiation",
+    title: "Negosiasi Kenaikan Gaji",
+    partner: "david",
+    context: "Kamu melakukan sesi 1-on-1 dengan manajer untuk meminta penyesuaian kompensasi.",
+    missions: [
+      "Ungkapkan kontribusi dan hasil kerjamu tahun ini",
+      "Tunjukkan riset standar gaji industri",
+      "Capai kesepakatan win-win yang memuaskan",
+    ],
+  },
+  {
+    id: "hotel_checkin",
+    title: "Check-in Hotel & Request Kamar",
+    partner: "emma",
+    context: "Kamu tiba di hotel bintang lima dan ingin check-in dengan request lantai tinggi.",
+    missions: [
+      "Sebutkan nama reservasi dan tunjukkan paspor",
+      "Minta kamar bebas rokok dengan pemandangan kota",
+      "Tanyakan jadwal sarapan dan fasilitas gym",
+    ],
+  },
+  {
+    id: "freelance_client",
+    title: "Diskusi Proyek Klien Freelance",
+    partner: "alex",
+    context: "Klien luar negeri menghubungimu untuk merekrut jasamu dalam proyek kreatif.",
+    missions: [
+      "Jelaskan alur kerjamu dan estimasi waktu pengerjaan",
+      "Sampaikan rate harga jasa dan opsi revisi",
+      "Sepakati tenggat waktu dan pembayaran deposit",
+    ],
+  },
 ];
 
 const ESSAY_TOPICS = [
@@ -88,16 +175,17 @@ const ESSAY_TOPICS = [
   "Pentingnya kemampuan konten kreator di era ekonomi digital",
   "Kelebihan dan kekurangan sistem kerja Work From Home (WFH)",
   "Apakah gelar sarjana masih relevan untuk sukses di industri teknologi?",
+  "Pengaruh media sosial terhadap kesehatan mental generasi muda",
 ];
 
 export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits?: number }) {
   const [mode, setMode] = useState<Mode>("voice");
   const [level, setLevel] = useState<Level>("intermediate");
   const [persona, setPersona] = useState<Persona>("sarah");
-  const [scenario, setScenario] = useState<string>("daily");
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
 
-  // Voice Call States
+  // Voice & Roleplay Call States
   const [isCalling, setIsCalling] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -108,6 +196,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [activeRoast, setActiveRoast] = useState<string | null>(null);
   const [showCallSummary, setShowCallSummary] = useState(false);
   const [textInput, setTextInput] = useState("");
+  const [showTranslations, setShowTranslations] = useState<Record<string, boolean>>({});
+
+  // Active Roleplay Scenario State
+  const [activeScenario, setActiveScenario] = useState<ScenarioItem | null>(null);
+  const [completedMissions, setCompletedMissions] = useState<Record<number, boolean>>({});
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -124,6 +217,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [quizFinished, setQuizFinished] = useState(false);
   const [quizTopic, setQuizTopic] = useState("grammar_tenses");
+  const [quizCount, setQuizCount] = useState<number>(5);
 
   // Essay States
   const [essayTopic, setEssayTopic] = useState(ESSAY_TOPICS[0]);
@@ -131,9 +225,39 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [essayLoading, setEssayLoading] = useState(false);
   const [essayResult, setEssayResult] = useState<EssayEvaluation | null>(null);
 
+  // Progress & Learning Analytics State (Stored in LocalStorage)
+  const [records, setRecords] = useState<SessionRecord[]>([]);
+
+  // Load records from LocalStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("malesan_english_records");
+      if (saved) {
+        setRecords(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
+
+  // Save record helper
+  const saveSessionRecord = useCallback((rec: Omit<SessionRecord, "id" | "timestamp">) => {
+    const newRec: SessionRecord = {
+      ...rec,
+      id: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: Date.now(),
+    };
+    setRecords((prev) => {
+      const updated = [newRec, ...prev].slice(0, 50);
+      try {
+        localStorage.setItem("malesan_english_records", JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+  }, []);
+
   // Play Speech Audio via /api/tts with browser fallback
   const playSpeechAudio = useCallback(
-    async (text: string) => {
+    async (text: string, customPersona?: Persona) => {
+      const activeP = customPersona || persona;
       try {
         if (currentAudioElementRef.current) {
           currentAudioElementRef.current.pause();
@@ -141,7 +265,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         }
 
         setIsPlayingAudio(true);
-        const langCode = persona === "sarah" || persona === "emma" ? "en-GB" : "en-US";
+        const langCode = activeP === "sarah" || activeP === "emma" ? "en-GB" : "en-US";
 
         const res = await fetch("/api/tts", {
           method: "POST",
@@ -153,6 +277,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
+          audio.playbackRate = playbackSpeed;
           currentAudioElementRef.current = audio;
           audio.onended = () => {
             setIsPlayingAudio(false);
@@ -172,8 +297,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = persona === "sarah" || persona === "emma" ? "en-GB" : "en-US";
-        utterance.rate = level === "beginner" ? 0.85 : 1.0;
+        utterance.lang = activeP === "sarah" || activeP === "emma" ? "en-GB" : "en-US";
+        utterance.rate = playbackSpeed * (level === "beginner" ? 0.85 : 1.0);
         utterance.onend = () => setIsPlayingAudio(false);
         utterance.onerror = () => setIsPlayingAudio(false);
         window.speechSynthesis.speak(utterance);
@@ -181,10 +306,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         setIsPlayingAudio(false);
       }
     },
-    [persona, level],
+    [persona, level, playbackSpeed],
   );
 
-  // Timer Effect for Call
+  // Timer Effect for Active Call / Roleplay
   useEffect(() => {
     if (!isCalling) return;
     const interval = setInterval(() => {
@@ -243,13 +368,20 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     return () => cancelAnimationFrame(animId);
   }, [isCalling, isRecording, isProcessing, isPlayingAudio]);
 
-  // Start Voice Call & Play Opening Audio
-  const startCall = (customScenario?: string) => {
+  // Start Voice Call or Scenario Chamber
+  const startCall = (scenarioItem?: ScenarioItem) => {
     if (credits < cost) {
       setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
       return;
     }
-    if (customScenario) setScenario(customScenario);
+    const chosenPersona = scenarioItem ? scenarioItem.partner : persona;
+    if (scenarioItem) {
+      setActiveScenario(scenarioItem);
+      setCompletedMissions({});
+    } else {
+      setActiveScenario(null);
+    }
+
     setCallDuration(0);
     setIsCalling(true);
     setShowCallSummary(false);
@@ -257,28 +389,55 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setTextInput("");
     capturedTextRef.current = "";
 
-    const initialText =
-      persona === "sarah"
-        ? "Hello there! So lovely to talk with you today. How is your day going so far?"
-        : persona === "alex"
-        ? "Hey what is up! Super stoked to chat. What have you been working on lately?"
-        : persona === "david"
-        ? "Good day. Thank you for joining this interview session. Could you briefly introduce yourself?"
-        : "Welcome to today's speaking preparation. Let us begin with your thoughts on our topic.";
+    const initialText = scenarioItem
+      ? scenarioItem.id === "job_interview"
+        ? "Hello and welcome. Thank you for joining our interview today. To start, could you please tell me about yourself and your professional background?"
+        : scenarioItem.id === "airport_immigration"
+        ? "Good day. Passport and entry declaration, please. What is the main purpose of your visit to London today?"
+        : scenarioItem.id === "ordering_cafe"
+        ? "Hey there! Welcome to Blue Bottle. What can I get started for you today?"
+        : scenarioItem.id === "salary_negotiation"
+        ? "Good morning. Thanks for setting up this 1-on-1 meeting. What would you like to discuss regarding your compensation?"
+        : `Hello! Welcome to our ${scenarioItem.title}. How may I help you today?`
+      : chosenPersona === "sarah"
+      ? "Hello there! So lovely to talk with you today. How is your day going so far?"
+      : chosenPersona === "alex"
+      ? "Hey what is up! Super stoked to chat. What have you been working on lately?"
+      : chosenPersona === "david"
+      ? "Good day. Thank you for joining this session. Could you briefly introduce yourself?"
+      : "Welcome to today's speaking preparation. Let us begin with your thoughts on our topic.";
+
+    const initialTranslate = scenarioItem
+      ? "Halo dan selamat datang. Ceritakan tentang dirimu dan latar belakang pekerjaanmu untuk memulai."
+      : "Halo! Senang bisa berbicara denganmu hari ini. Bagaimana harimu sejauh ini?";
+
+    const initialSuggestions: SuggestedReply[] = scenarioItem
+      ? [
+          { en: "I am a content creator and digital specialist.", id: "Saya seorang konten kreator dan spesialis digital." },
+          { en: "I have worked on several global marketing projects.", id: "Saya telah mengerjakan beberapa proyek pemasaran global." },
+          { en: "Could you tell me more about the role?", id: "Bisakah Anda jelaskan lebih banyak tentang posisi ini?" },
+        ]
+      : [
+          { en: "I am doing great today, thanks for asking!", id: "Kabar saya sangat baik hari ini, terima kasih sudah bertanya!" },
+          { en: "I have been quite busy with work today.", id: "Saya lumayan sibuk dengan pekerjaan hari ini." },
+          { en: "Everything is going smoothly so far.", id: "Semuanya berjalan lancar sejauh ini." },
+        ];
 
     setMessages([
       {
         id: "msg_init",
         role: "assistant",
         text: initialText,
+        translateId: initialTranslate,
+        suggestedReplies: initialSuggestions,
       },
     ]);
 
     // Auto-play voice greeting
-    playSpeechAudio(initialText);
+    playSpeechAudio(initialText, chosenPersona);
   };
 
-  // End Voice Call
+  // End Call & Save Progress
   const endCall = () => {
     if (speechRecognitionRef.current) {
       try {
@@ -300,14 +459,31 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setIsCalling(false);
     setIsPlayingAudio(false);
     setShowCallSummary(true);
+
+    // Save record to local progress analytics
+    const userMsgs = messages.filter((m) => m.role === "user");
+    const assistantScores = messages.filter((m) => m.score).map((m) => m.score as number);
+    const avgScore = assistantScores.length
+      ? Math.round(assistantScores.reduce((a, b) => a + b, 0) / assistantScores.length)
+      : 80;
+    const collectedPitfalls = messages.filter((m) => m.pitfallTag).map((m) => m.pitfallTag as string);
+
+    if (userMsgs.length > 0) {
+      saveSessionRecord({
+        type: activeScenario ? "scenario" : "voice",
+        title: activeScenario ? activeScenario.title : `Panggilan Suara (${persona.toUpperCase()})`,
+        score: avgScore,
+        durationSeconds: callDuration,
+        pitfalls: collectedPitfalls,
+      });
+    }
   };
 
-  // Toggle Recording with Native Web Speech API & MediaRecorder Hybrid
+  // Toggle Recording with Web Speech API & MediaRecorder Hybrid
   const toggleRecording = async () => {
     if (isProcessing) return;
 
     if (isRecording) {
-      // STOP RECORDING
       setIsRecording(false);
 
       if (speechRecognitionRef.current) {
@@ -322,16 +498,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         } catch {}
       }
 
-      // If speech recognition captured text live, send it immediately
       const recognized = capturedTextRef.current.trim() || textInput.trim();
       if (recognized) {
         await submitTextMessage(recognized);
       }
     } else {
-      // START RECORDING
       capturedTextRef.current = "";
       setTextInput("");
       setFeedbackNotice(null);
+
+      const activeP = activeScenario ? activeScenario.partner : persona;
 
       // 1. Try Native Web Speech Recognition
       const SpeechRecognition =
@@ -345,7 +521,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           const recognition = new SpeechRecognition();
           recognition.continuous = true;
           recognition.interimResults = true;
-          recognition.lang = persona === "sarah" || persona === "emma" ? "en-GB" : "en-US";
+          recognition.lang = activeP === "sarah" || activeP === "emma" ? "en-GB" : "en-US";
 
           recognition.onresult = (event: SpeechRecognitionEventLike) => {
             let transcript = "";
@@ -356,10 +532,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               capturedTextRef.current = transcript.trim();
               setTextInput(transcript.trim());
             }
-          };
-
-          recognition.onerror = (err) => {
-            console.warn("Web Speech API error, relying on audio stream:", err);
           };
 
           recognition.start();
@@ -376,8 +548,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           ? "audio/webm;codecs=opus"
           : MediaRecorder.isTypeSupported("audio/webm")
           ? "audio/webm"
-          : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
-          ? "audio/ogg;codecs=opus"
           : "";
 
         const mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
@@ -392,7 +562,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach((track) => track.stop());
-          // If no text was recognized by Web Speech API, send audio blob to Whisper
           if (!capturedTextRef.current.trim() && audioChunksRef.current.length > 0) {
             const audioBlob = new Blob(audioChunksRef.current, {
               type: mediaRecorder.mimeType || "audio/webm",
@@ -405,7 +574,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         setIsRecording(true);
       } catch (err) {
         console.warn("Mic getUserMedia failed:", err);
-        setIsRecording(true); // Web Speech may still work
+        setIsRecording(true);
       }
     }
   };
@@ -414,12 +583,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const submitAudioChunk = async (audioBlob: Blob) => {
     setIsProcessing(true);
     setFeedbackNotice(null);
+    const activeP = activeScenario ? activeScenario.partner : persona;
+    const activeScenTitle = activeScenario ? activeScenario.title : "daily";
+
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "user_voice.webm");
-      formData.append("persona", persona);
+      formData.append("persona", activeP);
       formData.append("level", level);
-      formData.append("scenario", scenario);
+      formData.append("scenario", activeScenTitle);
       formData.append(
         "history",
         JSON.stringify(
@@ -450,7 +622,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           id: `ast_${Date.now()}`,
           role: "assistant",
           text: data.replyEn,
+          translateId: data.translateId,
+          suggestedReplies: data.suggestedReplies,
           tip: data.correctionTip,
+          pitfallTag: data.pitfallTag,
           roast: data.roastComment,
           score: data.fluencyScore,
         },
@@ -460,7 +635,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      playSpeechAudio(data.replyEn);
+      // Auto-check mission progress for scenarios
+      if (activeScenario) {
+        const userMsgCount = newMessages.filter((m) => m.role === "user").length;
+        if (userMsgCount >= 1) setCompletedMissions((prev) => ({ ...prev, 0: true }));
+        if (userMsgCount >= 2) setCompletedMissions((prev) => ({ ...prev, 1: true }));
+        if (userMsgCount >= 3) setCompletedMissions((prev) => ({ ...prev, 2: true }));
+      }
+
+      playSpeechAudio(data.replyEn, activeP);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
     } finally {
@@ -478,15 +661,18 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setIsProcessing(true);
     setFeedbackNotice(null);
 
+    const activeP = activeScenario ? activeScenario.partner : persona;
+    const activeScenTitle = activeScenario ? activeScenario.title : "daily";
+
     try {
       const res = await fetch("/api/speaking/converse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: userText,
-          persona,
+          persona: activeP,
           level,
-          scenario,
+          scenario: activeScenTitle,
           history: messages.map((m) => ({ role: m.role, text: m.text })),
         }),
       });
@@ -509,7 +695,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           id: `ast_${Date.now()}`,
           role: "assistant",
           text: data.replyEn,
+          translateId: data.translateId,
+          suggestedReplies: data.suggestedReplies,
           tip: data.correctionTip,
+          pitfallTag: data.pitfallTag,
           roast: data.roastComment,
           score: data.fluencyScore,
         },
@@ -519,7 +708,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      playSpeechAudio(data.replyEn);
+      // Auto-check mission progress for scenarios
+      if (activeScenario) {
+        const userMsgCount = newMessages.filter((m) => m.role === "user").length;
+        if (userMsgCount >= 1) setCompletedMissions((prev) => ({ ...prev, 0: true }));
+        if (userMsgCount >= 2) setCompletedMissions((prev) => ({ ...prev, 1: true }));
+        if (userMsgCount >= 3) setCompletedMissions((prev) => ({ ...prev, 2: true }));
+      }
+
+      playSpeechAudio(data.replyEn, activeP);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses percakapan.");
     } finally {
@@ -527,7 +724,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   };
 
-  // Generate 100% Fresh Quiz
+  // Generate Dynamic Fresh Quiz
   const handleGenerateQuiz = async () => {
     if (credits < cost) {
       setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
@@ -545,6 +742,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         body: JSON.stringify({
           level,
           topic: quizTopic,
+          count: quizCount,
           seed: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         }),
       });
@@ -559,6 +757,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     } finally {
       setQuizLoading(false);
     }
+  };
+
+  // Complete Quiz & Record Progress
+  const finishQuiz = () => {
+    setQuizFinished(true);
+    let correctCount = 0;
+    quizQuestions.forEach((q, idx) => {
+      if (selectedAnswers[idx] === q.correctIndex) correctCount++;
+    });
+    const finalScore = Math.round((correctCount / quizQuestions.length) * 100);
+
+    saveSessionRecord({
+      type: "quiz",
+      title: `Kuis Kilat (${quizTopic})`,
+      score: finalScore,
+    });
   };
 
   // Evaluate Essay
@@ -588,6 +802,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       const data = await res.json();
       setEssayResult(data.data);
       setFeedbackNotice("Evaluasi esai berhasil diselesaikan.");
+
+      saveSessionRecord({
+        type: "essay",
+        title: `Ujian Esai: ${essayTopic.slice(0, 24)}...`,
+        score: data.data.overallScore100 || 80,
+      });
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Gagal mengevaluasi esai.");
     } finally {
@@ -600,6 +820,25 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     const s = sec % 60;
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
+
+  // Aggregated Analytics
+  const totalMinutesSpoken = Math.round(
+    records.filter((r) => r.durationSeconds).reduce((a, b) => a + (b.durationSeconds || 0), 0) / 60,
+  );
+  const avgOverallScore = records.length
+    ? Math.round(records.reduce((a, b) => a + b.score, 0) / records.length)
+    : 82;
+
+  // Most common grammar pitfall tags
+  const pitfallCounts: Record<string, number> = {};
+  records.forEach((r) => {
+    r.pitfalls?.forEach((p) => {
+      pitfallCounts[p] = (pitfallCounts[p] || 0) + 1;
+    });
+  });
+  const topPitfalls = Object.entries(pitfallCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
 
   return (
     <div className="w-full space-y-6">
@@ -627,26 +866,26 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   <line x1="12" x2="12" y1="19" y2="22" />
                 </svg>
-                AI Language Studio
+                AI English Master Studio
               </span>
               <span className="text-micro font-mono text-muted bg-surface-raised px-2 py-0.5 rounded-md border border-hairline">
                 {cost} Kredit / Sesi
               </span>
             </div>
             <h1 className="mt-2 font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
-              Lancar Bahasa
+              Lancar Inggris
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted leading-relaxed">
-              Latihan bicara suara interaktif, kuis kilat, dan ujian esai dengan koreksi real-time &amp; humor cerdas.
+              Speaking AI native, roleplay skenario nyata, kuis interaktif, dan evaluasi tulisan dengan analitik progres belajar.
             </p>
           </div>
 
           {/* LEVEL SELECTION PILLS */}
           <div className="flex items-center gap-1.5 rounded-2xl border border-hairline bg-surface-raised p-1.5">
             {[
-              { id: "beginner", label: "Pemula" },
-              { id: "intermediate", label: "Menengah" },
-              { id: "advanced", label: "Mahir" },
+              { id: "beginner", label: "Pemula (A1-A2)" },
+              { id: "intermediate", label: "Menengah (B1-B2)" },
+              { id: "advanced", label: "Mahir (C1-C2)" },
             ].map((lvl) => (
               <button
                 key={lvl.id}
@@ -663,13 +902,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
         </div>
 
-        {/* MODE NAVIGATION TABS */}
-        <div className="mt-6 flex flex-wrap gap-2 border-t border-hairline/60 pt-4">
+        {/* 5 SUB-MODULE NAVIGATION TABS */}
+        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 border-t border-hairline/60 pt-4">
           {[
-            { id: "voice", label: "Panggilan Suara", sub: "Live Speaking Call" },
-            { id: "quiz", label: "Kuis Kilat", sub: "Multiple Choice Quiz" },
-            { id: "essay", label: "Ujian Esai", sub: "Writing & IELTS Evaluator" },
-            { id: "scenario", label: "Simulasi Skenario", sub: "Real Roleplay" },
+            { id: "voice", label: "Panggilan Suara", sub: "Live Speaking" },
+            { id: "scenario", label: "Simulasi Skenario", sub: "Roleplay Chamber" },
+            { id: "quiz", label: "Kuis Kilat Pro", sub: "Interactive Arena" },
+            { id: "essay", label: "Ujian Esai", sub: "IELTS Evaluator" },
+            { id: "progress", label: "Rapor & Riwayat", sub: "Learning Tracker" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -677,16 +917,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 if (isCalling) endCall();
                 setMode(tab.id as Mode);
               }}
-              className={`flex flex-col items-start rounded-2xl border px-4 py-2.5 transition-all text-left min-w-[140px] sm:min-w-[160px] ${
+              className={`flex flex-col items-start rounded-2xl border p-3 transition-all text-left w-full ${
                 mode === tab.id
                   ? "border-ember/60 bg-ember/10 text-ink shadow-sm"
                   : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
               }`}
             >
-              <span className={`text-xs font-bold ${mode === tab.id ? "text-ember" : "text-ink"}`}>
+              <span className={`text-xs font-bold truncate w-full ${mode === tab.id ? "text-ember" : "text-ink"}`}>
                 {tab.label}
               </span>
-              <span className="text-[10px] text-muted">{tab.sub}</span>
+              <span className="text-[10px] text-muted truncate w-full">{tab.sub}</span>
             </button>
           ))}
         </div>
@@ -699,13 +939,34 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
           {!isCalling && !showCallSummary ? (
             <div className="space-y-6">
-              <div>
-                <h3 className="font-display text-base font-bold text-ink">
-                  Pilih Partner Bicara AI
-                </h3>
-                <p className="text-xs text-muted mt-0.5">
-                  Setiap karakter memiliki aksen dan gaya bahasa yang berbeda.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-display text-base font-bold text-ink">
+                    Pilih Partner Bicara AI
+                  </h3>
+                  <p className="text-xs text-muted mt-0.5">
+                    Setiap partner memiliki kepribadian, dialek, dan aksen native yang khas.
+                  </p>
+                </div>
+
+                {/* Speed selector for beginners */}
+                <div className="flex items-center gap-2 rounded-xl border border-hairline bg-surface-raised px-3 py-1.5">
+                  <span className="text-[11px] font-bold text-muted">Tempo Suara:</span>
+                  {[
+                    { val: 0.75, label: "0.75x (Pelan)" },
+                    { val: 1.0, label: "1.0x (Normal)" },
+                  ].map((s) => (
+                    <button
+                      key={s.val}
+                      onClick={() => setPlaybackSpeed(s.val)}
+                      className={`rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all ${
+                        playbackSpeed === s.val ? "bg-ember text-obsidian" : "text-muted hover:text-ink"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -739,9 +1000,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
               <div className="rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
-                  <h4 className="text-xs font-bold text-ink">Tips Latihan Suara:</h4>
+                  <h4 className="text-xs font-bold text-ink">Bebas Bicara Tanpa Takut Salah:</h4>
                   <p className="text-micro text-muted mt-0.5">
-                    Bicara santai tanpa takut salah. AI akan langsung membalas dengan suara dan memberikan koreksi halus di layar.
+                    Tersedia tombol terjemahan instan &amp; contekan jawaban cepat jika lo pemula dan bingung mau merespons apa.
                   </p>
                 </div>
                 <button
@@ -768,7 +1029,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <p className="text-micro text-emerald-400 font-mono flex items-center gap-1">
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
                       Terhubung • {formatSeconds(callDuration)}
-                      {isPlayingAudio && <span className="text-ember font-bold ml-1.5">• Sedang berbicara...</span>}
+                      {isPlayingAudio && <span className="text-ember font-bold ml-1.5">• Sedang bersuara...</span>}
                     </p>
                   </div>
                 </div>
@@ -800,14 +1061,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               )}
 
               {/* Chat / Transcript Stream */}
-              <div className="h-64 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 space-y-3 custom-scrollbar">
+              <div className="h-64 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 space-y-3.5 custom-scrollbar">
                 {messages.map((m) => (
                   <div
                     key={m.id}
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed ${
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
                         m.role === "user"
                           ? "bg-ember text-obsidian font-medium rounded-tr-xs"
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
@@ -829,6 +1090,27 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           </button>
                         )}
                       </div>
+
+                      {/* Beginner Feature: Tap to view Indonesian Translation */}
+                      {m.role === "assistant" && m.translateId && (
+                        <div className="border-t border-hairline/50 pt-1.5">
+                          {showTranslations[m.id] ? (
+                            <p className="text-[11px] text-muted font-normal italic">
+                              Arti: &ldquo;{m.translateId}&rdquo;
+                            </p>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowTranslations((prev) => ({ ...prev, [m.id]: true }))
+                              }
+                              className="text-[10px] font-bold text-ember hover:underline"
+                            >
+                              Lihat Terjemahan Indo
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {m.score && m.role === "assistant" && (
                       <span className="text-[10px] text-muted mt-1 px-1 font-mono">
@@ -838,6 +1120,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   </div>
                 ))}
               </div>
+
+              {/* Beginner Feature: Smart Hint Suggestion Pills */}
+              {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
+                <div className="space-y-1.5 animate-in fade-in duration-200">
+                  <span className="text-micro font-bold text-muted uppercase tracking-wider">
+                    Contekan Jawaban Cepat (Klik untuk kirim):
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {messages[messages.length - 1].suggestedReplies?.map((hint, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => submitTextMessage(hint.en)}
+                        disabled={isProcessing}
+                        className="rounded-xl border border-hairline bg-surface px-3 py-1.5 text-left text-xs hover:border-ember/60 hover:bg-surface-raised transition-all group max-w-full"
+                      >
+                        <span className="font-bold text-ink group-hover:text-ember block truncate">{hint.en}</span>
+                        <span className="text-[10px] text-muted block truncate">{hint.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Kinetic Waveform Canvas */}
               <div className="rounded-2xl border border-hairline/60 bg-surface-raised p-3 flex flex-col items-center justify-center">
@@ -935,7 +1239,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </div>
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
                   <p className="text-micro font-bold text-emerald-400 uppercase tracking-wider">Rata-rata Skor</p>
-                  <p className="font-display text-2xl font-bold text-emerald-400 mt-1">82/100</p>
+                  <p className="font-display text-2xl font-bold text-emerald-400 mt-1">
+                    {messages.filter((m) => m.score).length
+                      ? Math.round(
+                          messages.filter((m) => m.score).reduce((a, b) => a + (b.score || 0), 0) /
+                            messages.filter((m) => m.score).length,
+                        )
+                      : 80}
+                    /100
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 text-center">
                   <p className="text-micro font-bold text-ember uppercase tracking-wider">Koreksi Diberikan</p>
@@ -966,7 +1278,212 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       )}
 
       {/* ========================================================================= */}
-      {/* MODE 2: KUIS KILAT (MULTIPLE CHOICE QUIZ) */}
+      {/* MODE 2: SIMULASI SKENARIO (ROLEPLAY CHAMBER - STAYS IN TAB!) */}
+      {/* ========================================================================= */}
+      {mode === "scenario" && (
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+          {!isCalling ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-display text-base font-bold text-ink">
+                  Chamber Simulasi Skenario Dunia Nyata
+                </h3>
+                <p className="text-xs text-muted mt-0.5">
+                  Latihan situasi spesifik dengan misi objektif, alur cerita, dan lawan bicara AI yang realistis.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {SCENARIOS.map((s) => (
+                  <div
+                    key={s.id}
+                    className="rounded-2xl border border-hairline bg-surface-raised p-4 flex flex-col justify-between space-y-4 hover:border-ember/40 transition-all group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-display text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                          {s.title}
+                        </h4>
+                        <span className="text-micro font-mono text-muted bg-surface px-2 py-0.5 rounded-md border border-hairline capitalize">
+                          {s.partner}
+                        </span>
+                      </div>
+                      <p className="text-micro text-muted mt-1 leading-relaxed">{s.context}</p>
+
+                      {/* Missions list */}
+                      <div className="mt-3 space-y-1">
+                        <p className="text-[10px] font-bold text-ember uppercase tracking-wider">Target Misi:</p>
+                        <ul className="text-[11px] text-ink/80 space-y-0.5 list-disc list-inside">
+                          {s.missions.map((m, i) => (
+                            <li key={i} className="truncate">{m}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => startCall(s)}
+                      className="btn-ember w-full h-10 rounded-xl text-xs font-bold text-obsidian shadow-sm hover:brightness-105"
+                    >
+                      Masuk Simulasi ({s.title}) →
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* ACTIVE ROLEPLAY CHAMBER VIEW (STAYS IN SCENARIO TAB!) */
+            <div className="space-y-6">
+              {/* Scenario Context & Objectives Header */}
+              <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
+                    <h3 className="font-display text-sm font-bold text-ink">
+                      Skenario: {activeScenario?.title}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={endCall}
+                    className="h-8 px-3 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 text-micro font-bold hover:bg-rose-500/25"
+                  >
+                    Selesaikan Simulasi
+                  </button>
+                </div>
+                <p className="text-xs text-muted leading-relaxed">{activeScenario?.context}</p>
+
+                {/* Live Mission Checklist */}
+                <div className="border-t border-hairline/60 pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {activeScenario?.missions.map((m, idx) => (
+                    <div
+                      key={idx}
+                      className={`rounded-xl border p-2 text-xs flex items-center gap-2 ${
+                        completedMissions[idx]
+                          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 font-bold"
+                          : "border-hairline bg-surface text-muted"
+                      }`}
+                    >
+                      <span className={`size-4 rounded-full flex items-center justify-center text-[10px] ${
+                        completedMissions[idx] ? "bg-emerald-400 text-obsidian font-bold" : "border border-hairline"
+                      }`}>
+                        {completedMissions[idx] ? "✓" : idx + 1}
+                      </span>
+                      <span className="truncate">{m}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Chat Transcript */}
+              <div className="h-64 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 space-y-3.5 custom-scrollbar">
+                {messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
+                        m.role === "user"
+                          ? "bg-ember text-obsidian font-medium rounded-tr-xs"
+                          : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span>{m.text}</span>
+                        {m.role === "assistant" && (
+                          <button
+                            type="button"
+                            onClick={() => playSpeechAudio(m.text, activeScenario?.partner)}
+                            title="Putar suara"
+                            className="shrink-0 text-muted hover:text-ember transition-colors p-0.5"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Indonesian translation toggle */}
+                      {m.role === "assistant" && m.translateId && (
+                        <div className="border-t border-hairline/50 pt-1.5">
+                          {showTranslations[m.id] ? (
+                            <p className="text-[11px] text-muted font-normal italic">
+                              Arti: &ldquo;{m.translateId}&rdquo;
+                            </p>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowTranslations((prev) => ({ ...prev, [m.id]: true }))
+                              }
+                              className="text-[10px] font-bold text-ember hover:underline"
+                            >
+                              Lihat Terjemahan Indo
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Hints */}
+              {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
+                <div className="space-y-1.5 animate-in fade-in duration-200">
+                  <span className="text-micro font-bold text-muted uppercase tracking-wider">
+                    Opsi Jawaban Skenario (Klik untuk kirim):
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {messages[messages.length - 1].suggestedReplies?.map((hint, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => submitTextMessage(hint.en)}
+                        disabled={isProcessing}
+                        className="rounded-xl border border-hairline bg-surface px-3 py-1.5 text-left text-xs hover:border-ember/60 hover:bg-surface-raised transition-all group max-w-full"
+                      >
+                        <span className="font-bold text-ink group-hover:text-ember block truncate">{hint.en}</span>
+                        <span className="text-[10px] text-muted block truncate">{hint.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Roleplay controls */}
+              <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-surface-raised p-1.5 focus-within:border-ember/60 transition-all">
+                <input
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      submitTextMessage();
+                    }
+                  }}
+                  placeholder="Ketik balasan untuk skenario ini..."
+                  disabled={isProcessing}
+                  className="flex-1 bg-transparent px-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => submitTextMessage()}
+                  disabled={!textInput.trim() || isProcessing}
+                  className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50"
+                >
+                  Kirim
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODE 3: KUIS KILAT PRO (INTERACTIVE ARENA) */}
       {/* ========================================================================= */}
       {mode === "quiz" && (
         <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
@@ -974,18 +1491,21 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             <div className="space-y-6">
               <div>
                 <h3 className="font-display text-base font-bold text-ink">
-                  Kuis Kilat Bahasa Inggris
+                  Kuis Kilat Bahasa Inggris Pro
                 </h3>
                 <p className="text-xs text-muted mt-0.5">
-                  Uji pemahaman tenses, idiom, dan perbaikan kalimat dengan kuis cerdas 5 soal yang selalu baru dan acak.
+                  Uji pemahaman tenses, idiom, kosakata bisnis, dan perbaikan kalimat dengan soal yang 100% segar &amp; anti-repetisi.
                 </p>
               </div>
 
+              {/* Topic Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   { id: "grammar_tenses", title: "Tenses & Grammar", desc: "Past, Present, Perfect, & Conditionals" },
                   { id: "idioms_phrases", title: "Idioms & Phrasal Verbs", desc: "Ungkapan sehari-hari penutur asli" },
                   { id: "error_spotting", title: "Error Spotting", desc: "Cari letak kesalahan dalam kalimat" },
+                  { id: "business_pro", title: "Business English", desc: "Email profesional, meeting & negosiasi" },
+                  { id: "slang_pop", title: "Slang & Pop Culture", desc: "Bahasa gaul internet & tongkrongan global" },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -1002,12 +1522,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 ))}
               </div>
 
+              {/* Question Count Selector */}
+              <div className="flex items-center gap-3 rounded-2xl border border-hairline bg-surface-raised p-3">
+                <span className="text-xs font-bold text-ink">Jumlah Soal:</span>
+                {[5, 10, 15].map((cnt) => (
+                  <button
+                    key={cnt}
+                    onClick={() => setQuizCount(cnt)}
+                    className={`rounded-xl px-3 py-1 text-xs font-bold transition-all ${
+                      quizCount === cnt ? "bg-ember text-obsidian" : "text-muted hover:text-ink bg-surface"
+                    }`}
+                  >
+                    {cnt} Soal
+                  </button>
+                ))}
+              </div>
+
               <button
                 onClick={handleGenerateQuiz}
                 disabled={quizLoading}
                 className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105"
               >
-                {quizLoading ? "Menyiapkan Soal Kuis Segar..." : "Mulai Kuis 5 Soal Baru →"}
+                {quizLoading ? "Menyiapkan Soal Kuis Segar..." : `Mulai Kuis ${quizCount} Soal Baru →`}
               </button>
             </div>
           ) : !quizFinished ? (
@@ -1089,10 +1625,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     ) : (
                       <button
                         disabled={selectedAnswers[currentQuestionIdx] === undefined}
-                        onClick={() => setQuizFinished(true)}
+                        onClick={finishQuiz}
                         className="btn-ember h-10 px-5 rounded-xl text-xs font-bold text-obsidian disabled:opacity-50"
                       >
-                        Lihat Skor Akhir →
+                        Lihat Skor &amp; Catat Rapor →
                       </button>
                     )}
                   </div>
@@ -1108,7 +1644,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 quizQuestions.forEach((q, idx) => {
                   if (selectedAnswers[idx] === q.correctIndex) correctCount++;
                 });
-                const score = (correctCount / quizQuestions.length) * 100;
+                const score = Math.round((correctCount / quizQuestions.length) * 100);
 
                 return (
                   <div className="space-y-4">
@@ -1135,7 +1671,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       )}
 
       {/* ========================================================================= */}
-      {/* MODE 3: UJIAN ESAI (ESSAY EVALUATION) */}
+      {/* MODE 4: UJIAN ESAI (ESSAY EVALUATION) */}
       {/* ========================================================================= */}
       {mode === "essay" && (
         <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
@@ -1270,40 +1806,115 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       )}
 
       {/* ========================================================================= */}
-      {/* MODE 4: SIMULASI SKENARIO (ROLEPLAY) */}
+      {/* MODE 5: RAPOR & RIWAYAT BELAJAR (LEARNING ANALYTICS & RECOMMENDATIONS) */}
       {/* ========================================================================= */}
-      {mode === "scenario" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+      {mode === "progress" && (
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6 animate-in fade-in duration-300">
           <div>
             <h3 className="font-display text-base font-bold text-ink">
-              Pilih Skenario Percakapan Nyata
+              Rapor &amp; Analitik Progres Belajar Lo
             </h3>
             <p className="text-xs text-muted mt-0.5">
-              Latihan situasi realistis di dunia nyata untuk meningkatkan kepercayaan diri bicara.
+              Pantau perkembangan skor kelancaran, durasi latihan bicara, dan rekomendasi materi yang perlu dilatih.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {SCENARIOS.map((s) => (
-              <div
-                key={s.id}
-                className="rounded-2xl border border-hairline bg-surface-raised p-4 flex flex-col justify-between space-y-3 hover:border-ember/40 transition-all"
-              >
-                <div>
-                  <h4 className="font-display text-sm font-bold text-ink">{s.title}</h4>
-                  <p className="text-micro text-muted mt-1 leading-relaxed">{s.desc}</p>
+          {/* Metric Highlights */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="rounded-2xl border border-hairline bg-surface-raised p-4 text-center">
+              <p className="text-micro font-bold text-muted uppercase tracking-wider">Total Menit Bicara</p>
+              <p className="font-display text-2xl font-bold text-ink mt-1">{totalMinutesSpoken} Menit</p>
+            </div>
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
+              <p className="text-micro font-bold text-emerald-400 uppercase tracking-wider">Rata-rata Skor</p>
+              <p className="font-display text-2xl font-bold text-emerald-400 mt-1">{avgOverallScore}/100</p>
+            </div>
+            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 text-center">
+              <p className="text-micro font-bold text-ember uppercase tracking-wider">Total Aktivitas</p>
+              <p className="font-display text-2xl font-bold text-ember mt-1">{records.length} Sesi</p>
+            </div>
+            <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-4 text-center">
+              <p className="text-micro font-bold text-sky-400 uppercase tracking-wider">Status Level</p>
+              <p className="font-display text-2xl font-bold text-sky-400 mt-1 capitalize">{level}</p>
+            </div>
+          </div>
+
+          {/* Personalized Weakness & Recommendations */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 space-y-3">
+              <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider">
+                Kelemahan Grammar yang Sering Muncul:
+              </h4>
+              {topPitfalls.length > 0 ? (
+                <div className="space-y-2">
+                  {topPitfalls.map(([tag, count], idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs bg-surface/50 rounded-xl p-2.5">
+                      <span className="font-bold text-ink">{tag}</span>
+                      <span className="font-mono text-rose-400 font-bold">{count}x Terdeteksi</span>
+                    </div>
+                  ))}
                 </div>
-                <button
-                  onClick={() => {
-                    setMode("voice");
-                    startCall(s.title);
-                  }}
-                  className="btn-ember h-9 px-4 rounded-xl text-micro font-bold text-obsidian shadow-sm hover:brightness-105"
-                >
-                  Mulai Simulasi →
-                </button>
+              ) : (
+                <p className="text-xs text-muted italic">
+                  Belum ada catatan kesalahan berulang. Terus latihan bicara dan kerjakan kuis!
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 space-y-3">
+              <h4 className="text-xs font-bold text-ember uppercase tracking-wider">
+                Rekomendasi Langkah Belajar:
+              </h4>
+              <ul className="text-xs text-ink space-y-2 list-disc list-inside">
+                <li>
+                  {level === "beginner"
+                    ? "Fokus latihan Past Tense (V2) dan tanyakan menu di Simulasi Kafe."
+                    : level === "intermediate"
+                    ? "Latih transisi argumen di Ujian Esai dan perbanyak Idiom sehari-hari."
+                    : "Asah spontanitas di Skenario Wawancara Kerja & Negosiasi Gaji tingkat tinggi."}
+                </li>
+                <li>
+                  {topPitfalls.length > 0
+                    ? `Coba Kuis Kilat topik "${topPitfalls[0][0]}" untuk memperbaiki titik lemah utama.`
+                    : "Lakukan sesi berbicara minimal 5 menit per hari untuk melatih reflek bicara."}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Session History Feed */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-ink uppercase tracking-wider">Riwayat Sesi Belajar:</h4>
+            {records.length > 0 ? (
+              <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-4 space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar">
+                {records.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-3 rounded-xl border border-hairline bg-surface text-xs"
+                  >
+                    <div>
+                      <span className="font-bold text-ink block">{r.title}</span>
+                      <span className="text-[10px] text-muted font-mono">
+                        {new Date(r.timestamp).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {r.durationSeconds ? ` • ${formatSeconds(r.durationSeconds)}` : ""}
+                      </span>
+                    </div>
+                    <span className="font-mono font-bold text-ember bg-ember/15 px-2.5 py-1 rounded-lg border border-ember/30">
+                      {r.score}/100
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-8 text-center text-xs text-muted">
+                Belum ada riwayat aktivitas. Mulai panggilan suara, simulasi skenario, atau kuis kilat untuk mencatat progres lo!
+              </div>
+            )}
           </div>
         </div>
       )}
