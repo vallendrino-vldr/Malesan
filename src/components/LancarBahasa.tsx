@@ -257,7 +257,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     steps: [
       {
         title: "Abjad 'H' & 'R' yang Sering Salah Dibaca",
-        focusHighlight: "Huruf H = "EITCH" • Huruf R = "AR" (Lidah Melengkung)",
+        focusHighlight: "Huruf H = 'EITCH' • Huruf R = 'AR' (Lidah Melengkung)",
         easyPhonetic: "Panduan Ejaan Santai: H dibaca 'EITCH' (Bukan Hek) • R dibaca 'AR' lembut tanpa getar",
         explanation: "Orang Indonesia sering membaca huruf H menjadi 'Hek'. Huruf H murni dibaca 'Eitch'. Huruf R dibaca dengan menarik lidah ke belakang tanpa bergetar keras.",
         wrongAudio: {
@@ -294,7 +294,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Bunyi Lidah 'TH' (Tebal vs Tipis)",
-        focusHighlight: "This = "D-HIS" • Think = "T-HINGK"",
+        focusHighlight: "This = 'D-HIS' • Think = 'T-HINGK'",
         easyPhonetic: "Panduan Ejaan Santai: This/That (Tebal) • Think/Thank (Tipis) dengan ujung lidah digigit lembut",
         explanation: "Lidah dijepit lembut di antara gigi seri atas dan bawah. Jangan dibaca 'D' (bukan 'De') dan jangan dibaca 'T' (bukan 'Tingk').",
         wrongAudio: {
@@ -331,7 +331,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Bunyi 'V' vs 'P'",
-        focusHighlight: "Favorite Video = "FE-VE-RIT VI-DI-O"",
+        focusHighlight: "Favorite Video = 'FE-VE-RIT VI-DI-O'",
         easyPhonetic: "Panduan Ejaan Santai: Huruf V wajib menghasilkan getaran di bibir bawah",
         explanation: "Huruf V bergetar pada bibir bawah (Voice Vibration). Jangan pernah sebut 'Pavorite' atau 'Pideo'!",
         wrongAudio: {
@@ -368,8 +368,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Huruf Bisu S pada kata 'Island' (Pulau)",
-        focusHighlight: "Island = "AI-LEND" (Huruf S Jangan Dibaca)",
-        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni "AI-LEND" (Huruf S adalah Silent Letter)",
+        focusHighlight: "Island = 'AI-LEND' (Huruf S Jangan Dibaca)",
+        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni 'AI-LEND' (Huruf S adalah Silent Letter)",
         explanation: "Huruf S pada kata 'Island' (pulau) berstatus bisu (silent letter) dan HARAM disuarakan!",
         wrongAudio: {
           label: "BUNYI SALAH (S Dibaca Jelas):",
@@ -405,8 +405,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Huruf Bisu B pada kata 'Doubt' (Ragu)",
-        focusHighlight: "Doubt = "DA-UT" (Huruf B Jangan Dibaca)",
-        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni "DA-UT" (Huruf B tidak berbunyi)",
+        focusHighlight: "Doubt = 'DA-UT' (Huruf B Jangan Dibaca)",
+        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni 'DA-UT' (Huruf B tidak berbunyi)",
         explanation: "Huruf B pada kata 'Doubt' (ragu) dan 'Debt' (utang) adalah silent letter yang tidak berbunyi.",
         wrongAudio: {
           label: "BUNYI SALAH (B Dibaca):",
@@ -481,7 +481,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     steps: [
       {
         title: "Menyambung Konsonan ke Vokal: 'Hold on'",
-        focusHighlight: "Hold on → "HOL-DON" • Pick it up → "PI-KI-TAP"",
+        focusHighlight: "Hold on → 'HOL-DON' • Pick it up → 'PI-KI-TAP'",
         easyPhonetic: "Panduan Ejaan Santai: Huruf mati di ujung kata pertama langsung menyambung ke huruf hidup kata berikutnya",
         explanation: "Konsonan di akhir kata pertama langsung disambungkan ke huruf vokal kata berikutnya tanpa jeda.",
         wrongAudio: {
@@ -518,8 +518,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Reduksi Percakapan: 'Gonna' & 'Wanna'",
-        focusHighlight: "Going to = "GONNA" • Want to = "WANNA"",
-        easyPhonetic: "Panduan Ejaan Santai: "AI'M GONNA TEL YU WHAT AI WANNA DU"",
+        focusHighlight: "Going to = 'GONNA' • Want to = 'WANNA'",
+        easyPhonetic: "Panduan Ejaan Santai: 'AI'M GONNA TEL YU WHAT AI WANNA DU'",
         explanation: "Reduksi ini dipakai secara alami oleh penutur asli saat mengobrol santai dan mengalir cepat.",
         wrongAudio: {
           label: "BUNYI KAKU (Terlalu Formal):",
@@ -585,7 +585,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     steps: [
       {
         title: "Larangan Keras: 'I am agree'",
-        focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' = "AI E-GRI"",
+        focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' = 'AI E-GRI'",
         easyPhonetic: "Panduan Ejaan Santai: Langsung ucapkan 'I agree' (Tanpa kata 'am')",
         explanation: "'Agree' adalah kata kerja (verb), bukan kata sifat. Jadi TIDAK BOLEH memakai to be 'am'!",
         wrongAudio: {
@@ -623,7 +623,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Larangan Keras: 'Thanks before'",
         focusHighlight: "JANGAN: 'Thanks before' → GUNAKAN: 'Thanks in advance'",
-        easyPhonetic: "Panduan Ejaan Santai: "TENGKS IN ED-VANS" (Standar Baku Terima Kasih di Awal)",
+        easyPhonetic: "Panduan Ejaan Santai: 'TENGKS IN ED-VANS' (Standar Baku Terima Kasih di Awal)",
         explanation: "Penutur asli tidak mengenal frasa 'thanks before'. Untuk ucapan terima kasih di awal bantuan, gunakan 'Thanks in advance'.",
         wrongAudio: {
           label: "BUNYI SALAH (Terjemahan Harfiah):",
@@ -659,7 +659,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Larangan Keras: 'Join with us'",
-        focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' = "JOIN AS"",
+        focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' = 'JOIN AS'",
         easyPhonetic: "Panduan Ejaan Santai: Langsung ucapkan 'Join us' (Tanpa kata 'with')",
         explanation: "Kata kerja 'Join' sudah otomatis berarti 'bergabung dengan'. Jangan menambahkan kata 'with'!",
         wrongAudio: {
@@ -763,7 +763,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       },
       {
         title: "Pola Bertanya & Meminta Sangat Sopan",
-        focusHighlight: "Could you please...? = "KUD YU PLIZ...?"",
+        focusHighlight: "Could you please...? = 'KUD YU PLIZ...?'",
         easyPhonetic: "Panduan Ejaan Santai: Gunakan 'Could you please...' untuk meminta tolong dengan anggun",
         explanation: "Hindari kalimat perintah langsung 'I want' atau 'Give me'. Gunakan modal verbs yang anggun.",
         wrongAudio: {
@@ -822,7 +822,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Frasa Meeting Online & Kerja Remote",
         focusHighlight: "Can everyone see my screen? • You are on mute!",
-        easyPhonetic: "Panduan Ejaan Santai: "KEN EV-RI-WAN SI MAI SKRIN? YU AR ON MYUT"",
+        easyPhonetic: "Panduan Ejaan Santai: 'KEN EV-RI-WAN SI MAI SKRIN? YU AR ON MYUT'",
         explanation: "Kuasai frasa penting saat memimpin atau mengikuti meeting online jarak jauh.",
         wrongAudio: {
           label: "BUNYI KELIRU:",
@@ -2710,7 +2710,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="size-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                    <h3 className="font-display text-sm sm:text-base font-bold text-ink truncate">
+                    <h3 className="font-display text-sm sm:base font-bold text-ink truncate">
                       Skenario: {activeScenario?.title}
                     </h3>
                   </div>
