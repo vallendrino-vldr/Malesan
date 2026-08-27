@@ -237,6 +237,15 @@ export async function redeemVoucher(code: string) {
   }
 
   revalidatePath("/app");
+
+  import("@/lib/telegram").then(({ notifyVoucherRedeemed }) => {
+    notifyVoucherRedeemed({
+      email: user.email || "user@malesan",
+      code: clean,
+      credits: voucher.credits,
+    }).catch(() => {});
+  }).catch(() => {});
+
   return voucher.credits;
 }
 

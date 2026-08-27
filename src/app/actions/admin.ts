@@ -60,6 +60,15 @@ export async function setProStatus(userId: string, isPro: boolean) {
 
   if (error) throw new Error(error.message);
   await audit(adminId, isPro ? "user.promote_pro" : "user.demote_free", userId, { is_pro: isPro });
+  
+  import("@/lib/supabase/server").then(async ({ createServiceRoleClient }) => {
+    const { data: user } = await createServiceRoleClient().from("profiles").select("email").eq("id", userId).maybeSingle();
+    if (user?.email) {
+      const { notifyUserProUpgrade } = await import("@/lib/telegram");
+      notifyUserProUpgrade({ email: user.email, isPro }).catch(() => {});
+    }
+  }).catch(() => {});
+
   revalidatePath("/admin/users");
 }
 

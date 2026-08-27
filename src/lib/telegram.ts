@@ -50,6 +50,33 @@ export async function getTelegramConfig(): Promise<{ token?: string; chatId?: st
 }
 
 /**
+ * Sends a typing/action indicator to Telegram so the user sees "typing..." in real-time.
+ */
+export async function sendChatAction(
+  chatId?: string | number,
+  action: "typing" | "upload_photo" | "record_video" | "choose_sticker" = "typing",
+): Promise<boolean> {
+  const config = await getTelegramConfig();
+  const token = config.token;
+  const targetChatId = chatId || config.chatId;
+
+  if (!token || !targetChatId) return false;
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendChatAction`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: targetChatId, action }),
+      signal: AbortSignal.timeout(3000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Sends a message to the owner's Telegram chat.
  * Fails safely without throwing so user requests in Next.js never break.
  */
@@ -194,12 +221,30 @@ export function notifyTopupRequest(data: {
   return sendTelegramMessage(caption, { replyMarkup: inlineKeyboard });
 }
 
+export function notifyVoucherRedeemed(data: { email: string; code: string; credits: number }) {
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+  const text = `🎟 <b>VOUCHER DIKLAIM!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n🔑 <b>Kode:</b> <code>${escapeHtml(data.code)}</code>\n💎 <b>Hadiah:</b> +${data.credits} Kredit Paid\n⏰ <b>Waktu:</b> ${now} WIB`;
+
+  return sendTelegramMessage(text);
+}
+
+export function notifyUserProUpgrade(data: { email: string; isPro: boolean }) {
+  const status = data.isPro ? "⭐ <b>PRO STATUS DIAKTIFKAN!</b>" : "ℹ️ <b>PRO STATUS DINONAKTIFKAN</b>";
+  const text = `${status}\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>`;
+  return sendTelegramMessage(text);
+}
+
+export function notifyCriticalError(data: { module: string; message: string; userEmail?: string }) {
+  const text = `🚨 <b>CRITICAL SYSTEM ALERT!</b>\n\n🛠 <b>Modul:</b> ${escapeHtml(data.module)}\n👤 <b>User:</b> ${escapeHtml(data.userEmail || "System/Anonymous")}\n⚠️ <b>Pesan:</b>\n<code>${escapeHtml(data.message.slice(0, 300))}</code>`;
+  return sendTelegramMessage(text);
+}
+
 export function notifySystemAlert(data: { title: string; message: string }) {
   const text = `⚠️ <b>SYSTEM ALERT: ${escapeHtml(data.title)}</b>\n\n${escapeHtml(data.message)}`;
   return sendTelegramMessage(text);
 }
 
-function escapeHtml(str: string): string {
+function escapeHtml(str?: string | null): string {
   return String(str || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

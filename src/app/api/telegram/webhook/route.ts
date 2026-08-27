@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { sendTelegramMessage, getTelegramConfig } from "@/lib/telegram";
+import { sendTelegramMessage, sendChatAction, getTelegramConfig } from "@/lib/telegram";
 import { processTelegramAIMessage, executePendingTelegramAction } from "@/lib/telegram-ai";
 
 export const runtime = "nodejs";
@@ -115,6 +115,9 @@ export async function POST(request: NextRequest) {
     await sendTelegramMessage("⛔ <i>Akses Ditolak. Bot ini khusus owner @malesan_my_id.</i>", { chatId: fromId });
     return json({ ok: true });
   }
+
+  // Trigger real-time "typing..." indicator in Telegram app header
+  sendChatAction(fromId, "typing").catch(() => {});
 
   // If text starts with a known slash command, handle quickly:
   if (text.startsWith("/")) {

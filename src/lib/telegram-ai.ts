@@ -2,7 +2,7 @@ import "server-only";
 import { generate } from "@/lib/gemini/client";
 import { buildSnapshot } from "@/lib/admin/snapshot";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { sendTelegramMessage } from "@/lib/telegram";
+import { sendTelegramMessage, sendChatAction } from "@/lib/telegram";
 
 function getAdminSupabase(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -63,6 +63,9 @@ interface AIIntentResult {
 export async function processTelegramAIMessage(userText: string, chatId: string) {
   const supabase = getAdminSupabase();
 
+  // Send real-time typing indicator to Telegram app
+  sendChatAction(chatId, "typing").catch(() => {});
+
   // 1. Gather comprehensive platform snapshot
   let snapshotContext = "";
   try {
@@ -95,7 +98,7 @@ export async function processTelegramAIMessage(userText: string, chatId: string)
 - Status Modul Aktif: ${JSON.stringify(modulesStatus)}`;
   } catch {}
 
-  const prompt = `Kamu adalah "Malesan Executive AI" — asisten pribadi super cerdas, strategis, proaktif, dan setia milik Boss / Owner platform Malesan (aplikasi AI content creation workspace kreator Indonesia).
+  const prompt = `Kamu adalah "Malesan Executive AI" — asisten pribadi Chief of Staff super cerdas, strategis, proaktif, dan setia milik Boss / Owner platform Malesan (aplikasi AI content creation workspace kreator Indonesia).
 Boss berbicara santai dalam bahasa Indonesia sehari-hari.
 
 ${snapshotContext}
@@ -128,7 +131,7 @@ Pesan dari Boss:
 "${userText}"
 
 Instruksi Output:
-- replyText: Jelaskan jawaban / tindakan dengan gaya eksekutif cerdas, ramah, panggil "Bos", gunakan bahasa Indonesia santai tapi presisi. Jika diminta ide konten/marketing, berikan draf yang aplikatif dan tajam.
+- replyText: Jelaskan jawaban / tindakan dengan gaya eksekutif cerdas, berwawasan tinggi (ala Strategic AI Co-Founder), panggil "Bos", gunakan bahasa Indonesia santai tapi tajam, berbobot, dan proaktif. Gunakan formatting HTML (tebal, miring, list) agar rapi di Telegram.
 - Output HANYA JSON sesuai format schema.`;
 
   const schema = {
