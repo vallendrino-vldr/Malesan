@@ -2816,22 +2816,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* HIGH-END ISOLATED VOICE VALIDATION POP-UP WINDOW (DIALOG PORTAL) */}
       {/* ========================================================================= */}
       {isMounted && isVoiceModalOpen && createPortal(
-        <div className="fixed inset-0 z-[99999] bg-obsidian/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-lg bg-surface border border-ember/40 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3.5 sm:space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[99999] bg-obsidian/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-surface-raised/95 border border-hairline/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl space-y-3.5 max-h-[90vh] overflow-y-auto custom-scrollbar relative ring-1 ring-ember/25 animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
-              <div className="min-w-0 pr-2">
-                <span className="text-[10px] font-mono font-bold text-ember uppercase">
-                  {modalType === "step" ? `Langkah ${activeStepIndex + 1}/${activeStage.steps.length}` : `Ujian ${activeStage.badge}`}
-                </span>
-                <h3 className="font-display text-sm sm:text-base font-bold text-ink truncate mt-0.5">
-                  {modalType === "step" ? `Uji Suara: ${activeStep.title}` : `Ujian Suara: ${activeStage.title}`}
+            <div className="flex items-start justify-between gap-2 border-b border-hairline/60 pb-2.5">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-ember/35 bg-ember/15 px-2 py-0.5 text-[10px] font-mono font-bold text-ember uppercase">
+                    <span className="size-1.5 rounded-full bg-ember" />
+                    {modalType === "step" ? `Langkah ${activeStepIndex + 1}/${activeStage.steps.length}` : `Ujian ${activeStage.badge}`}
+                  </span>
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Validasi Suara AI</span>
+                </div>
+                <h3 className="font-display text-xs sm:text-sm font-bold text-ink truncate mt-1">
+                  {modalType === "step" ? activeStep.title : activeStage.title}
                 </h3>
               </div>
 
               <button
+                type="button"
                 onClick={() => setIsVoiceModalOpen(false)}
-                className="size-8 rounded-full bg-surface-raised border border-hairline flex items-center justify-center hover:bg-surface text-muted hover:text-ink transition-colors cursor-pointer shrink-0"
+                className="size-7 rounded-full bg-surface border border-hairline/80 flex items-center justify-center hover:bg-surface-raised hover:border-ember text-muted hover:text-ink transition-colors cursor-pointer shrink-0 mt-0.5"
+                title="Tutup jendela"
               >
                 ✕
               </button>
@@ -2847,51 +2853,62 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
               return (
                 <div className="space-y-3">
-                  <div className="rounded-2xl border border-hairline bg-surface-raised p-3.5 sm:p-4 space-y-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0">
-                        <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
-                          Ucapkan Kalimat Ini:
-                        </span>
-                        <h4 className="font-display text-sm sm:text-base font-bold text-ember leading-snug">
-                          &ldquo;{currentChallenge.targetSentence}&rdquo;
-                        </h4>
-                        <p className="text-[11px] sm:text-xs font-mono font-medium text-ink bg-surface px-2 py-0.5 rounded border border-hairline inline-block">
-                          {currentChallenge.easyPronunciation}
-                        </p>
-                      </div>
+                  {/* Hero Sentence Target Card */}
+                  <div className="rounded-2xl border border-ember/30 bg-gradient-to-b from-ember/10 via-surface to-surface p-3.5 sm:p-4 space-y-2.5 text-center shadow-xs">
+                    <span className="text-[10px] font-bold text-ember uppercase tracking-widest block">
+                      Ucapkan Kalimat Target:
+                    </span>
+                    <h4 className="font-display text-sm sm:text-base font-bold text-ink leading-snug">
+                      &ldquo;{currentChallenge.targetSentence}&rdquo;
+                    </h4>
 
+                    <div className="inline-block max-w-full">
+                      <p className="text-[10px] sm:text-[11px] font-mono font-medium text-muted bg-surface-raised/90 px-3 py-1 rounded-xl border border-hairline/80 truncate">
+                        🗣️ {currentChallenge.easyPronunciation}
+                      </p>
+                    </div>
+
+                    <div className="pt-0.5">
                       <button
                         type="button"
                         onClick={() => playSpeechAudio(currentChallenge.sampleAudio)}
-                        className="btn-ember h-8 px-2.5 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center gap-1 shadow-xs hover:brightness-105 shrink-0 cursor-pointer"
+                        className="btn-ember h-8 px-3.5 rounded-xl text-obsidian text-[11px] font-bold transition-all inline-flex items-center gap-1.5 mx-auto shadow-sm hover:brightness-105 cursor-pointer"
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                         </svg>
-                        <span>{currentlyPlayingAudioText === currentChallenge.sampleAudio ? "Memutar..." : "Contoh Bule"}</span>
+                        <span>{currentlyPlayingAudioText === currentChallenge.sampleAudio ? "Memutar..." : "Dengarkan Contoh Native"}</span>
                       </button>
                     </div>
 
-                    <p className="text-[10px] sm:text-[11px] text-muted border-t border-hairline/50 pt-2">
-                      <b>Kunci Lulus:</b> {currentChallenge.focusTips}
+                    <p className="text-[10px] sm:text-[11px] text-muted border-t border-hairline/50 pt-2 text-center leading-tight">
+                      💡 <b>Kunci:</b> {currentChallenge.focusTips}
                     </p>
                   </div>
 
-                  {/* Waveform Visualizer Canvas inside Modal */}
-                  <div className="rounded-xl border border-hairline bg-surface-raised p-2 flex flex-col items-center justify-center">
-                    <canvas ref={modalCanvasRef} width={400} height={36} className="w-full h-7" />
-                    <p className="text-[10px] font-mono text-muted mt-0.5 text-center">
-                      {isRec
-                        ? "Mendengarkan... Klik tombol merah untuk selesai & kirim"
-                        : isTranscribing
-                        ? "AI sedang membedah fonetik & intonasi suara lo..."
-                        : "Tekan tombol di bawah untuk mulai rekam"}
-                    </p>
+                  {/* Waveform Visualizer */}
+                  <div className="rounded-xl border border-hairline bg-surface p-2 flex flex-col items-center justify-center space-y-1">
+                    <canvas ref={modalCanvasRef} width={380} height={32} className="w-full h-6" />
+                    <div className="text-[10px] font-mono text-center">
+                      {isRec ? (
+                        <span className="text-rose-400 font-bold flex items-center justify-center gap-1">
+                          <span className="size-1.5 rounded-full bg-rose-500 animate-ping" />
+                          Mendengarkan... Tekan tombol merah untuk selesai &amp; kirim
+                        </span>
+                      ) : isTranscribing ? (
+                        <span className="text-amber-400 font-bold flex items-center justify-center gap-1">
+                          <span className="size-1.5 rounded-full bg-amber-400 animate-spin" />
+                          AI sedang membedah fonetik suara lo...
+                        </span>
+                      ) : (
+                        <span className="text-muted">Tekan tombol di bawah lalu ucapkan kalimat di atas</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Big Glowing Mic Recorder Button */}
-                  <div className="flex flex-col items-center justify-center space-y-1.5 pt-1">
+                  <div className="space-y-1.5">
                     <button
                       type="button"
                       disabled={isTranscribing}
@@ -2902,15 +2919,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           toggleVoiceExamRecording(activeStage);
                         }
                       }}
-                      className={`h-12 sm:h-14 px-6 sm:px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2.5 shadow-xl w-full cursor-pointer ${
+                      className={`h-11 sm:h-12 px-6 rounded-xl font-display text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg w-full cursor-pointer ${
                         isRec
                           ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/40"
                           : isTranscribing
-                          ? "bg-surface-raised text-muted border border-hairline cursor-not-allowed"
-                          : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
+                          ? "bg-surface text-muted border border-hairline cursor-not-allowed opacity-60"
+                          : "btn-ember text-obsidian hover:brightness-105 active:scale-95"
                       }`}
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 sm:size-5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                         <line x1="12" x2="12" y1="19" y2="22" />
@@ -2920,50 +2937,50 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           ? "Selesai Rekam (Kirim ke AI) ⏹"
                           : isTranscribing
                           ? "AI Sedang Menganalisis Suara..."
-                          : "🎙️ Tekan & Rekam Pelafalan Suara Lo"}
+                          : "Tekan & Rekam Pelafalan Suara Lo"}
                       </span>
                     </button>
 
                     {recText && (
-                      <p className="text-[11px] font-mono text-muted text-center animate-in fade-in">
-                        Suara Terdengar: &ldquo;{recText}&rdquo;
+                      <p className="text-[10px] font-mono text-muted text-center truncate animate-in fade-in px-1">
+                        Terdengar: &ldquo;{recText}&rdquo;
                       </p>
                     )}
                   </div>
 
-                  {/* Validation Result Inside Modal */}
+                  {/* Validation Result Box */}
                   {currentResult && (
-                    <div className={`rounded-2xl border p-3.5 sm:p-4 space-y-2.5 animate-in fade-in duration-300 ${
+                    <div className={`rounded-xl sm:rounded-2xl border p-3 sm:p-3.5 space-y-2 animate-in fade-in duration-200 ${
                       currentResult.isPassed
-                        ? "border-emerald-500/50 bg-emerald-500/15"
-                        : "border-rose-500/50 bg-rose-500/15"
+                        ? "border-emerald-500/40 bg-emerald-500/10"
+                        : "border-rose-500/40 bg-rose-500/10"
                     }`}>
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className={`size-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                        <div className="flex items-center gap-1.5">
+                          <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                             currentResult.isPassed ? "bg-emerald-400 text-obsidian" : "bg-rose-500 text-white"
                           }`}>
                             {currentResult.isPassed ? "✓" : "✕"}
                           </span>
-                          <span className={`font-display text-xs sm:text-sm font-bold ${
+                          <span className={`font-display text-xs font-bold ${
                             currentResult.isPassed ? "text-emerald-400" : "text-rose-400"
                           }`}>
-                            {currentResult.isPassed ? "LULUS UJI SUARA!" : "BELUM LULUS — COBA REKAM LAGI"}
+                            {currentResult.isPassed ? "LULUS UJI SUARA!" : "BELUM LULUS — REKAM ULANG"}
                           </span>
                         </div>
-                        <span className="font-display text-sm sm:text-base font-bold text-ink font-mono">
+                        <span className="font-display text-xs sm:text-sm font-bold text-ink font-mono">
                           Skor: {currentResult.score}/100
                         </span>
                       </div>
 
-                      <div className="rounded-xl bg-surface/80 p-2.5 text-xs space-y-1 border border-hairline/60">
+                      <div className="rounded-lg bg-surface/90 p-2 text-[11px] space-y-0.5 border border-hairline/60">
                         <p className="text-muted">
                           <b>Terdengar:</b> &ldquo;{currentResult.transcribedText}&rdquo;
                         </p>
                       </div>
 
-                      <div className="rounded-xl bg-surface-raised p-2.5 text-xs border border-hairline">
-                        <p className="font-bold text-ember uppercase text-[10px] tracking-wider mb-0.5">
+                      <div className="rounded-lg bg-surface p-2 text-[11px] border border-hairline">
+                        <p className="font-bold text-ember uppercase text-[9px] tracking-wider mb-0.5">
                           Catatan Humor Malesan AI:
                         </p>
                         <p className="text-ink font-medium leading-relaxed italic">
@@ -2973,16 +2990,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     </div>
                   )}
 
-                  {/* Modal Action Controls */}
-                  <div className="pt-2 border-t border-hairline/60 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsVoiceModalOpen(false)}
-                      className="h-10 px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-muted hover:text-ink cursor-pointer"
-                    >
-                      Tutup
-                    </button>
-
+                  {/* Symmetrical Modal Action Controls */}
+                  <div className="pt-2 border-t border-hairline/60">
                     {currentResult?.isPassed ? (
                       <button
                         type="button"
@@ -3003,7 +3012,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             }
                           }
                         }}
-                        className="btn-ember h-10 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer flex items-center gap-1.5"
+                        className="btn-ember h-11 w-full rounded-xl font-display text-xs sm:text-sm font-bold text-obsidian shadow-md cursor-pointer flex items-center justify-center gap-1.5 hover:brightness-105"
                       >
                         <span>
                           {modalType === "step" && activeStepIndex === activeStage.steps.length - 1
@@ -3011,23 +3020,43 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             : "Selesai & Lanjut Langkah Berikutnya →"}
                         </span>
                       </button>
-                    ) : currentResult && !currentResult.isPassed ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (modalType === "step") {
-                            setStepVoiceRecordedText("");
-                            toggleStepVoiceRecording(activeStage, activeStep, currentStepKey);
-                          } else {
-                            setVoiceExamRecordedText("");
-                            toggleVoiceExamRecording(activeStage);
-                          }
-                        }}
-                        className="h-10 px-5 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30 cursor-pointer"
-                      >
-                        🔄 Coba Rekam Ulang
-                      </button>
-                    ) : null}
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsVoiceModalOpen(false)}
+                          className="h-10 rounded-xl border border-hairline bg-surface text-xs font-bold text-muted hover:text-ink hover:bg-surface-raised cursor-pointer transition-colors"
+                        >
+                          Tutup
+                        </button>
+
+                        {currentResult && !currentResult.isPassed ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (modalType === "step") {
+                                setStepVoiceRecordedText("");
+                                toggleStepVoiceRecording(activeStage, activeStep, currentStepKey);
+                              } else {
+                                setVoiceExamRecordedText("");
+                                toggleVoiceExamRecording(activeStage);
+                              }
+                            }}
+                            className="h-10 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30 cursor-pointer transition-colors"
+                          >
+                            🔄 Rekam Ulang
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="h-10 rounded-xl border border-hairline bg-surface-raised text-xs font-bold text-muted/40 cursor-not-allowed opacity-50"
+                          >
+                            Rekam Suara Dulu
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
