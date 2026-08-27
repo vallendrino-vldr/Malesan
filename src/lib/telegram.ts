@@ -58,10 +58,10 @@ export function sanitizeTelegramHtml(html?: string | null): string {
   if (!html) return "";
 
   let cleaned = String(html)
-    .replace(/</?(ul|ol)>/gi, "")
+    .replace(/<\/?(ul|ol)>/gi, "")
     .replace(/<li>/gi, "• ")
-    .replace(/</li>/gi, "\n")
-    .replace(/</?p>/gi, "\n")
+    .replace(/<\/li>/gi, "\n")
+    .replace(/<\/?p>/gi, "\n")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/?(h[1-6]|header|div|section|article)>/gi, "\n")
     .replace(/<span(?![^>]*class=["']tg-spoiler["'])[^>]*>(.*?)<\/span>/gi, "$1");
