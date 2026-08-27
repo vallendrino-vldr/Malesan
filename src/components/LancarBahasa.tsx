@@ -135,19 +135,23 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     name: "David",
     gender: "male",
     lang: "en-US",
-    pitch: 0.82, // Masculine, deep executive resonance
-    rateMultiplier: 0.95,
+    pitch: 0.88, // Confident, masculine executive resonance
+    rateMultiplier: 1.05, // Crisp, confident, energetic executive pacing (never sluggish)
     preferredKeywords: [
       "david",
       "microsoft david",
       "google us english male",
+      "en-us-x-sfg#male",
+      "en-us-x-tpd#male",
+      "en-us-x-iol#male",
+      "en-us-x-iob#male",
       "guy",
       "male",
       "daniel",
       "george",
       "james",
-      "arthur",
-      "en-us-x-sfg#male",
+      "mark",
+      "alex",
       "en-us",
     ],
   },
@@ -155,8 +159,8 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     name: "Alex",
     gender: "male",
     lang: "en-US",
-    pitch: 0.95, // Young upbeat American male
-    rateMultiplier: 1.0,
+    pitch: 0.98, // Upbeat modern American male
+    rateMultiplier: 1.06,
     preferredKeywords: [
       "alex",
       "mark",
@@ -172,7 +176,7 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     gender: "female",
     lang: "en-GB",
     pitch: 1.05, // Refined British female
-    rateMultiplier: 0.98,
+    rateMultiplier: 1.02,
     preferredKeywords: [
       "sarah",
       "hazel",
@@ -189,7 +193,7 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     gender: "female",
     lang: "en-US",
     pitch: 1.02, // Crisp articulate academic female
-    rateMultiplier: 0.98,
+    rateMultiplier: 1.02,
     preferredKeywords: [
       "emma",
       "zira",
@@ -1329,7 +1333,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = profile.lang;
           utterance.pitch = profile.pitch;
-          utterance.rate = playbackSpeed * profile.rateMultiplier * (level === "beginner" ? 0.88 : 1.0);
+          utterance.rate = playbackSpeed * profile.rateMultiplier;
 
           const voices = window.speechSynthesis.getVoices();
           if (voices && voices.length > 0) {
@@ -2073,6 +2077,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     const activeP = activeScenario ? activeScenario.partner : persona;
     const activeScenTitle = activeScenario ? activeScenario.title : "daily";
 
+    // Optimistic UI: immediately show user's message in the chat
+    const userMsg: ChatMessage = {
+      id: makeId("usr"),
+      role: "user",
+      text: userText,
+    };
+    const updatedHistory = [...messages, userMsg];
+    setMessages(updatedHistory);
+
     try {
       const res = await fetch("/api/speaking/converse", {
         method: "POST",
@@ -2093,27 +2106,19 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
       const data = await res.json();
 
-      const newMessages: ChatMessage[] = [
-        ...messages,
-        {
-          id: makeId("usr"),
-          role: "user",
-          text: userText,
-        },
-        {
-          id: makeId("ast"),
-          role: "assistant",
-          text: data.replyEn,
-          translateId: data.translateId,
-          suggestedReplies: data.suggestedReplies,
-          tip: data.correctionTip,
-          pitfallTag: data.pitfallTag,
-          roast: data.roastComment,
-          score: data.fluencyScore,
-        },
-      ];
+      const assistantMsg: ChatMessage = {
+        id: makeId("ast"),
+        role: "assistant",
+        text: data.replyEn,
+        translateId: data.translateId,
+        suggestedReplies: data.suggestedReplies,
+        tip: data.correctionTip,
+        pitfallTag: data.pitfallTag,
+        roast: data.roastComment,
+        score: data.fluencyScore,
+      };
 
-      setMessages(newMessages);
+      setMessages((prev) => [...prev, assistantMsg]);
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
@@ -3386,6 +3391,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     </div>
                   </div>
                 ))}
+
+                {/* Animated Typing Indicator */}
+                {isProcessing && (
+                  <div className="flex flex-col items-start animate-in fade-in duration-200">
+                    <div className="rounded-2xl border border-hairline/80 bg-surface px-3.5 py-2 text-xs text-muted flex items-center gap-2 shadow-xs">
+                      <span className="flex gap-1 items-center">
+                        <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </span>
+                      <span className="text-[11px] font-mono text-muted/90 font-medium">
+                        {PERSONAS.find((p) => p.id === (activeScenario?.partner || persona))?.name || "Partner"} is thinking...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Smart Hint Suggestion Pills */}
@@ -3585,24 +3606,97 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </button>
               </div>
 
-              <div className="h-56 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 space-y-2.5 custom-scrollbar">
+              <div className="h-56 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 sm:p-4 space-y-2.5 custom-scrollbar">
                 {messages.map((m) => (
                   <div
                     key={m.id}
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[92%] sm:max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed space-y-1 ${
+                      className={`max-w-[92%] sm:max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed space-y-1.5 ${
                         m.role === "user"
                           ? "bg-ember text-obsidian font-medium rounded-tr-xs"
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
                       }`}
                     >
-                      <span>{m.text}</span>
+                      <div className="flex items-start justify-between gap-2.5">
+                        <span>{m.text}</span>
+                        {m.role === "assistant" && (
+                          <button
+                            type="button"
+                            onClick={() => playSpeechAudio(m.text, activeScenario?.partner || persona)}
+                            title="Putar suara"
+                            className="shrink-0 text-muted hover:text-ember transition-colors p-0.5 cursor-pointer"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
+
+                      {m.role === "assistant" && m.translateId && (
+                        <div className="border-t border-hairline/50 pt-1">
+                          {showTranslations[m.id] ? (
+                            <p className="text-[10px] sm:text-[11px] text-muted font-normal italic">
+                              Arti: &ldquo;{m.translateId}&rdquo;
+                            </p>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setShowTranslations((prev) => ({ ...prev, [m.id]: true }))
+                              }
+                              className="text-[10px] font-bold text-ember hover:underline"
+                            >
+                              Lihat Terjemahan Indo
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
+
+                {/* Animated Typing Indicator */}
+                {isProcessing && (
+                  <div className="flex flex-col items-start animate-in fade-in duration-200">
+                    <div className="rounded-2xl border border-hairline/80 bg-surface px-3.5 py-2 text-xs text-muted flex items-center gap-2 shadow-xs">
+                      <span className="flex gap-1 items-center">
+                        <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </span>
+                      <span className="text-[11px] font-mono text-muted/90 font-medium">
+                        {PERSONAS.find((p) => p.id === (activeScenario?.partner || persona))?.name || "Partner"} is thinking...
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* Smart Hint Suggestion Pills */}
+              {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
+                <div className="space-y-1 animate-in fade-in duration-200">
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                    Contekan Cepat (Klik untuk kirim):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {messages[messages.length - 1].suggestedReplies?.map((item, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => submitTextMessage(item.en)}
+                        disabled={isProcessing}
+                        className="text-left px-2.5 py-1 rounded-xl border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ink text-[11px] transition-all disabled:opacity-50 cursor-pointer"
+                      >
+                        <span className="font-semibold text-ember">&ldquo;{item.en}&rdquo;</span>
+                        <span className="text-muted text-[10px] block font-normal">{item.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised p-1 focus-within:border-ember/60 transition-all">
                 <input

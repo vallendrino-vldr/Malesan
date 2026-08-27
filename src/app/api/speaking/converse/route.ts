@@ -157,7 +157,7 @@ ATURAN FORMATTING KETAT:
   };
 
   try {
-    const rawAi = await generate({ prompt, schema });
+    const rawAi = await generate({ prompt, schema, tier: "free" });
     const parsed = JSON.parse(rawAi.trim());
 
     return json({
