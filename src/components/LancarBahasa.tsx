@@ -1419,7 +1419,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         setCurrentlyPlayingAudioText(null);
       }
     },
-    [persona, level, playbackSpeed],
+    [persona, playbackSpeed],
   );
 
   // =========================================================================
