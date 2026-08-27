@@ -351,13 +351,13 @@ export async function sendTelegramPhoto(
 }
 
 // -------------------------------------------------------------
-// Specialized Helper Notifications (Routed to Forum Topics)
+// Executive Notification Templates (Clean, Professional, Zero Tacky Emojis)
 // -------------------------------------------------------------
 
 export async function notifyNewUser(data: { email: string; name?: string | null; provider?: string }) {
   const config = await getTelegramConfig();
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-  const text = `👋 <b>USER BARU TERDAFTAR!</b>\n\n👤 <b>Nama:</b> ${escapeHtml(data.name || "Tanpa Nama")}\n📧 <b>Email:</b> <code>${escapeHtml(data.email)}</code>\n🌐 <b>Login:</b> ${data.provider || "Google OAuth"}\n⏰ <b>Waktu:</b> ${now} WIB`;
+  const text = `<b>[PENDAFTARAN USER BARU]</b>\n\n• <b>Nama:</b> ${escapeHtml(data.name || "Tanpa Nama")}\n• <b>Email:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Metode:</b> ${data.provider || "Google OAuth"}\n• <b>Waktu:</b> ${now} WIB`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.users,
@@ -372,7 +372,7 @@ export async function notifyGeneration(data: {
 }) {
   const config = await getTelegramConfig();
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-  const text = `⚡ <b>GENERASI KONTEN</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n🛠 <b>Modul:</b> <b>${escapeHtml(data.moduleName)}</b>\n💎 <b>Kredit:</b> -${data.creditsSpent} Kredit\n📝 <b>Topik/Info:</b> ${escapeHtml(data.details || "-")}\n⏰ <b>Waktu:</b> ${now} WIB`;
+  const text = `<b>[LOG GENERASI KONTEN]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Modul:</b> <b>${escapeHtml(data.moduleName)}</b>\n• <b>Biaya:</b> -${data.creditsSpent} Kredit\n• <b>Detail:</b> ${escapeHtml(data.details || "-")}\n• <b>Waktu:</b> ${now} WIB`;
 
   return sendTelegramMessage(text, {
     disableNotification: true,
@@ -387,8 +387,7 @@ export async function notifyFeedback(data: {
   moduleName?: string | null;
 }) {
   const config = await getTelegramConfig();
-  const stars = "⭐".repeat(Math.max(1, Math.min(5, data.rating)));
-  const text = `💌 <b>FEEDBACK DITERIMA!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n${stars} (<b>${data.rating} / 5</b>)\n🛠 <b>Fitur:</b> ${escapeHtml(data.moduleName || "Umum")}\n💬 <b>Komentar:</b>\n<i>"${escapeHtml(data.comment || "Tanpa catatan tambahan")}"</i>`;
+  const text = `<b>[FEEDBACK PENGGUNA]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Rating:</b> ${data.rating} / 5\n• <b>Modul:</b> ${escapeHtml(data.moduleName || "Umum")}\n• <b>Catatan:</b>\n<i>"${escapeHtml(data.comment || "Tanpa komentar")}"</i>`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.feedback,
@@ -404,13 +403,13 @@ export async function notifyTopupRequest(data: {
 }) {
   const config = await getTelegramConfig();
   const formattedRp = Number(data.amount || 0).toLocaleString("id-ID");
-  const caption = `🚨 <b>REQUEST TOPUP KREDIT!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n💵 <b>Nominal:</b> <b>Rp ${formattedRp}</b>\n💎 <b>Paket:</b> <b>${data.credits} Kredit</b>\n🧾 <b>ID:</b> <code>${data.topupId}</code>\n\n<i>Klik tombol di bawah untuk menyetujui langsung dari HP:</i>`;
+  const caption = `<b>[REQUEST TOPUP SALDO]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Nominal:</b> Rp ${formattedRp}\n• <b>Paket:</b> ${data.credits} Kredit\n• <b>ID Tiket:</b> <code>${data.topupId}</code>\n\n<i>Gunakan tombol di bawah untuk verifikasi:</i>`;
 
   const inlineKeyboard = {
     inline_keyboard: [
       [
-        { text: "✅ Setujui (Approve)", callback_data: `approve_topup:${data.topupId}` },
-        { text: "❌ Tolak (Reject)", callback_data: `reject_topup:${data.topupId}` },
+        { text: "Setujui (Approve)", callback_data: `approve_topup:${data.topupId}` },
+        { text: "Tolak (Reject)", callback_data: `reject_topup:${data.topupId}` },
       ],
     ],
   };
@@ -430,7 +429,7 @@ export async function notifyTopupRequest(data: {
 export async function notifyVoucherRedeemed(data: { email: string; code: string; credits: number }) {
   const config = await getTelegramConfig();
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
-  const text = `🎟 <b>VOUCHER DIKLAIM!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n🔑 <b>Kode:</b> <code>${escapeHtml(data.code)}</code>\n💎 <b>Hadiah:</b> +${data.credits} Kredit Paid\n⏰ <b>Waktu:</b> ${now} WIB`;
+  const text = `<b>[VOUCHER DIKLAIM]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Kode:</b> <code>${escapeHtml(data.code)}</code>\n• <b>Hadiah:</b> +${data.credits} Kredit Paid\n• <b>Waktu:</b> ${now} WIB`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.users,
@@ -439,8 +438,8 @@ export async function notifyVoucherRedeemed(data: { email: string; code: string;
 
 export async function notifyUserProUpgrade(data: { email: string; isPro: boolean }) {
   const config = await getTelegramConfig();
-  const status = data.isPro ? "⭐ <b>PRO STATUS DIAKTIFKAN!</b>" : "ℹ️ <b>PRO STATUS DINONAKTIFKAN</b>";
-  const text = `${status}\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>`;
+  const tierStatus = data.isPro ? "PRO TIER (Aktif)" : "Free Tier";
+  const text = `<b>[PERUBAHAN STATUS PRO]</b>\n\n• <b>User:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Status:</b> ${tierStatus}`;
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.users,
   });
@@ -448,7 +447,7 @@ export async function notifyUserProUpgrade(data: { email: string; isPro: boolean
 
 export async function notifyCriticalError(data: { module: string; message: string; userEmail?: string }) {
   const config = await getTelegramConfig();
-  const text = `🚨 <b>CRITICAL SYSTEM ALERT!</b>\n\n🛠 <b>Modul:</b> ${escapeHtml(data.module)}\n👤 <b>User:</b> ${escapeHtml(data.userEmail || "System/Anonymous")}\n⚠️ <b>Pesan:</b>\n<code>${escapeHtml(data.message.slice(0, 300))}</code>`;
+  const text = `<b>[CRITICAL SYSTEM ALERT]</b>\n\n• <b>Modul:</b> ${escapeHtml(data.module)}\n• <b>User:</b> ${escapeHtml(data.userEmail || "System/Anonymous")}\n• <b>Log:</b>\n<code>${escapeHtml(data.message.slice(0, 300))}</code>`;
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.error,
   });
@@ -456,7 +455,7 @@ export async function notifyCriticalError(data: { module: string; message: strin
 
 export async function notifySystemAlert(data: { title: string; message: string }) {
   const config = await getTelegramConfig();
-  const text = `⚠️ <b>SYSTEM ALERT: ${escapeHtml(data.title)}</b>\n\n${escapeHtml(data.message)}`;
+  const text = `<b>[SYSTEM ALERT: ${escapeHtml(data.title)}]</b>\n\n${escapeHtml(data.message)}`;
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.error,
   });

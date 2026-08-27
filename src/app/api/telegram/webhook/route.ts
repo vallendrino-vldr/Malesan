@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     } else if (data.startsWith("cancel_action:")) {
       const actionId = data.replace("cancel_action:", "");
       await supabase.from("app_config").delete().eq("key", `tele_act:${actionId}`);
-      await sendTelegramMessage("❌ <b>Tindakan telah dibatalkan oleh Bos.</b>", {
+      await sendTelegramMessage("<b>[DIBATALKAN]</b> Tindakan telah dibatalkan oleh Bos.", {
         chatId: callbackChatId,
         messageThreadId: callbackThreadId,
       });
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
   if (fromId !== adminChatId) {
     console.warn(`[telegram-webhook] unauthorized user access attempt: ${fromId}`);
     if (!isGroup) {
-      await sendTelegramMessage("⛔ <i>Akses Ditolak. Bot ini khusus owner @malesan_my_id.</i>", { chatId: fromId });
+      await sendTelegramMessage("<b>[AKSES DITOLAK]</b> Bot ini khusus owner @malesan_my_id.", { chatId: fromId });
     }
     return json({ ok: true });
   }
@@ -146,13 +146,13 @@ export async function POST(request: NextRequest) {
       case "/setup": {
         if (!isGroup) {
           await sendTelegramMessage(
-            "⚠️ Perintah <code>/sethq</code> harus dikirim di dalam <b>Grup Forum MALESAN HQ</b>, bukan di chat DM pribadi, Bos!",
+            "<b>[SETUP PERINGATAN]</b> Perintah <code>/sethq</code> harus dikirim di dalam <b>Grup Forum MALESAN HQ</b>, bukan di DM pribadi, Bos.",
             { chatId: fromId },
           );
           return json({ ok: true });
         }
 
-        await sendTelegramMessage("⏳ <b>Sedang mengonfigurasi MALESAN HQ Forum Topics...</b>", {
+        await sendTelegramMessage("<b>[MEMPROSES SETUP]</b> Mengonfigurasi seluruh kanal topik MALESAN HQ...", {
           chatId,
           messageThreadId,
         });
@@ -164,17 +164,17 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         });
 
-        // 2. Automatically create Forum Topics via Telegram Bot API
+        // 2. Automatically create Forum Topics via Telegram Bot API with clean names
         const topicsConfig: Record<string, number> = {};
 
         const topicDefs = [
-          { key: "executive", name: "👑 Executive Chat", color: 16766590 },
-          { key: "topup", name: "💳 Topup & Transaksi", color: 7322096 },
-          { key: "users", name: "👋 User Activity", color: 9367192 },
-          { key: "generation", name: "⚡ Generasi Konten", color: 16478047 },
-          { key: "feedback", name: "⭐ Feedback & Review", color: 16749490 },
-          { key: "error", name: "🚨 Error Sentry", color: 13338331 },
-          { key: "otak_kedua", name: "📥 Otak Kedua", color: 7322096 },
+          { key: "executive", name: "01-executive-chat", color: 16766590 },
+          { key: "topup", name: "02-topup-transaksi", color: 7322096 },
+          { key: "users", name: "03-user-growth", color: 9367192 },
+          { key: "generation", name: "04-generasi-konten", color: 16478047 },
+          { key: "feedback", name: "05-feedback-review", color: 16749490 },
+          { key: "error", name: "06-error-sentry", color: 13338331 },
+          { key: "otak_kedua", name: "07-otak-kedua", color: 7322096 },
         ];
 
         for (const t of topicDefs) {
@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
           if (res.ok && res.messageThreadId) {
             topicsConfig[t.key] = res.messageThreadId;
             await sendTelegramMessage(
-              `🚀 <b>Kamar ${t.name} Siap!</b>\nNotifikasi dan obrolan untuk topik ini akan mendarat di sini.`,
+              `<b>[KANAL ${t.name.toUpperCase()}]</b>\nKanal ini siap menerima pembaruan sistem dan interaksi khusus.`,
               {
                 chatId,
                 messageThreadId: res.messageThreadId,
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
         });
 
         await sendTelegramMessage(
-          "🎉 <b>MALESAN HQ FORUM BERHASIL DI-SETUP LENGKAP!</b>\n\nSemua notifikasi website (topup, user baru, generasi konten, error, dan feedback) sekarang sudah otomatis terbagi ke kamar topik masing-masing, Bos! 🚀👑",
+          "<b>[SETUP SELESAI]</b> Seluruh kanal topik MALESAN HQ berhasil diaktifkan. Semua notifikasi platform sekarang dialihkan otomatis sesuai kategorinya.",
           { chatId, messageThreadId },
         );
 
@@ -250,35 +250,33 @@ export async function POST(request: NextRequest) {
 }
 
 // -------------------------------------------------------------
-// Command Handlers
+// Command Handlers (Executive Minimalist Style)
 // -------------------------------------------------------------
 
 async function handleMenuCommand(chatId: string, messageThreadId?: number) {
-  const menuText = `🎛 <b>MALESAN MISSION CONTROL & AI BRAIN</b> 🚀\n
-Halo Bos! Bot ini sekarang dilengkapi <b>Autonomous AI Brain</b> dan dukungan <b>Forum Topics</b>:
+  const menuText = `<b>[MALESAN MISSION CONTROL & AI BRAIN]</b>\n
+Halo Bos. Sistem beroperasi penuh dengan Autonomous AI Brain dan dukungan Forum Topics:
 
-💡 <b>Setup Forum Grup:</b>
-• Ketik <code>/sethq</code> di grup Forum untuk auto-create semua kamar topik!
+• <b>Setup Forum Grup:</b>
+  Ketik <code>/sethq</code> di grup Forum untuk auto-create seluruh kanal topik.
 
-💬 <b>Contoh Obrolan Bebas:</b>
-• <i>"Hapus broadcast sekarang"</i>
-• <i>"Pasang banner: Diskon 50% sampai besok malam"</i>
-• <i>"Siapa aja user yang terdaftar?"</i>
-• <i>"Cek user vadlyvldr@gmail.com"</i>
-• <i>"Ada komplain apa hari ini?"</i>
-• <i>"Bikinin ide konten TikTok hook tentang AI"</i>
-
-⚡ <i>Gunakan tombol cepat di bawah jika perlu:</i>`;
+• <b>Contoh Perintah Bebas:</b>
+  — <i>"Hapus broadcast sekarang"</i>
+  — <i>"Pasang banner: Diskon 50% sampai besok malam"</i>
+  — <i>"Siapa aja user yang terdaftar?"</i>
+  — <i>"Cek user vadlyvldr@gmail.com"</i>
+  — <i>"Ada komplain apa hari ini?"</i>
+  — <i>"Bikinin ide hook konten edukasi AI"</i>`;
 
   const inlineKeyboard = {
     inline_keyboard: [
       [
-        { text: "📊 Cek Statistik", callback_data: "action:stats" },
-        { text: "💳 Antrean Topup", callback_data: "action:topups" },
+        { text: "Cek Statistik", callback_data: "action:stats" },
+        { text: "Antrean Topup", callback_data: "action:topups" },
       ],
       [
-        { text: "🌐 Buka Malesan.my.id", url: "https://www.malesan.my.id" },
-        { text: "👑 Admin Panel", url: "https://www.malesan.my.id/admin" },
+        { text: "Buka Malesan.my.id", url: "https://www.malesan.my.id" },
+        { text: "Admin Panel", url: "https://www.malesan.my.id/admin" },
       ],
     ],
   };
@@ -304,13 +302,11 @@ async function handleStatsCommand(chatId: string, supabase: SupabaseClient, mess
 
   const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
 
-  const text = `📊 <b>STATUS PLATFORM MALESAN</b> 📈\n
-👥 <b>Total Pengguna:</b> <b>${totalUsers}</b> (⭐ ${proUsers} Pro)
-💳 <b>Topup Pending:</b> <b>${pendingTopups}</b> request
-⚡ <b>Generasi Hari Ini:</b> <b>${gensToday}</b> konten
-⏰ <b>Waktu Server:</b> ${now} WIB
-
-<i>Gunakan tombol /topups untuk memproses pembayaran pending.</i>`;
+  const text = `<b>[STATUS METRIK PLATFORM]</b>\n
+• <b>Total Pengguna:</b> ${totalUsers} (${proUsers} Pro Tier)
+• <b>Topup Pending:</b> ${pendingTopups} transaksi
+• <b>Generasi 24 Jam:</b> ${gensToday} kali
+• <b>Waktu Server:</b> ${now} WIB`;
 
   await sendTelegramMessage(text, { chatId, messageThreadId });
 }
@@ -323,14 +319,14 @@ async function handleListPendingTopups(chatId: string, supabase: SupabaseClient,
     .order("created_at", { ascending: false });
 
   if (!topups || topups.length === 0) {
-    await sendTelegramMessage("✅ <b>Tidak ada antrean topup pending saat ini, Bos!</b>", {
+    await sendTelegramMessage("<b>[ANTREAN TOPUP]</b> Tidak ada topup pending saat ini.", {
       chatId,
       messageThreadId,
     });
     return;
   }
 
-  await sendTelegramMessage(`💳 <b>Ditemukan ${topups.length} Topup Menunggu Persetujuan:</b>`, {
+  await sendTelegramMessage(`<b>[ANTREAN TOPUP]</b> Ditemukan ${topups.length} transaksi menunggu persetujuan:`, {
     chatId,
     messageThreadId,
   });
@@ -340,13 +336,13 @@ async function handleListPendingTopups(chatId: string, supabase: SupabaseClient,
     const email = (profile as { email?: string })?.email || "user@malesan";
     const formattedRp = Number(t.amount || 0).toLocaleString("id-ID");
 
-    const caption = `🧾 <b>Topup ID:</b> <code>${t.id}</code>\n👤 <b>User:</b> <code>${escapeHtml(email)}</code>\n💵 <b>Nominal:</b> <b>Rp ${formattedRp}</b>\n💎 <b>Paket:</b> <b>${t.credits} Kredit</b>`;
+    const caption = `<b>[TIKET TOPUP]</b>\n\n• <b>ID:</b> <code>${t.id}</code>\n• <b>User:</b> <code>${escapeHtml(email)}</code>\n• <b>Nominal:</b> Rp ${formattedRp}\n• <b>Paket:</b> ${t.credits} Kredit`;
 
     const inlineKeyboard = {
       inline_keyboard: [
         [
-          { text: "✅ Setujui (Approve)", callback_data: `approve_topup:${t.id}` },
-          { text: "❌ Tolak (Reject)", callback_data: `reject_topup:${t.id}` },
+          { text: "Setujui (Approve)", callback_data: `approve_topup:${t.id}` },
+          { text: "Tolak (Reject)", callback_data: `reject_topup:${t.id}` },
         ],
       ],
     };
@@ -367,7 +363,7 @@ async function handleApproveTopup(
 ) {
   const { data: topup } = await supabase.from("topups").select("*").eq("id", topupId).single();
   if (!topup || topup.status !== "pending") {
-    await sendTelegramMessage("⚠️ Topup ini sudah pernah diproses sebelumnya.", {
+    await sendTelegramMessage("Topup ini sudah pernah diproses sebelumnya.", {
       chatId,
       messageThreadId,
     });
@@ -383,7 +379,7 @@ async function handleApproveTopup(
   });
 
   if (grantErr) {
-    await sendTelegramMessage(`❌ Gagal menambahkan kredit: ${grantErr.message}`, {
+    await sendTelegramMessage(`Gagal menambahkan kredit: ${grantErr.message}`, {
       chatId,
       messageThreadId,
     });
@@ -396,7 +392,7 @@ async function handleApproveTopup(
     .eq("id", topupId);
 
   await sendTelegramMessage(
-    `✅ <b>TOPUP DISETUJUI!</b>\n\nID: <code>${topupId}</code>\n💎 <b>+${topup.credits} Kredit</b> telah masuk ke akun user.`,
+    `<b>[TOPUP DISETUJUI]</b>\n\n• Tiket: <code>${topupId}</code>\n• Saldo: +${topup.credits} Kredit berhasil dikreditkan ke user.`,
     { chatId, messageThreadId },
   );
 }
@@ -409,7 +405,7 @@ async function handleRejectTopup(
 ) {
   const { data: topup } = await supabase.from("topups").select("*").eq("id", topupId).single();
   if (!topup || topup.status !== "pending") {
-    await sendTelegramMessage("⚠️ Topup ini sudah pernah diproses sebelumnya.", {
+    await sendTelegramMessage("Topup ini sudah pernah diproses sebelumnya.", {
       chatId,
       messageThreadId,
     });
@@ -421,7 +417,7 @@ async function handleRejectTopup(
     .update({ status: "rejected", rejected_at: new Date().toISOString(), reject_reason: "Ditolak oleh admin via Telegram" })
     .eq("id", topupId);
 
-  await sendTelegramMessage(`❌ <b>Topup ID <code>${topupId}</code> telah DITOLAK.</b>`, {
+  await sendTelegramMessage(`<b>[TOPUP DITOLAK]</b> Tiket <code>${topupId}</code> telah ditolak.`, {
     chatId,
     messageThreadId,
   });
@@ -436,7 +432,7 @@ async function handleCreateVoucher(
   const [code, creditsStr] = args;
   if (!code || !creditsStr) {
     await sendTelegramMessage(
-      "⚠️ <b>Format salah.</b>\nGunakan: <code>/voucher &lt;KODE&gt; &lt;JUMLAH_KREDIT&gt;</code>\nContoh: <code>/voucher DISKON50 50</code>",
+      "Format salah. Gunakan: <code>/voucher &lt;KODE&gt; &lt;JUMLAH_KREDIT&gt;</code>\nContoh: <code>/voucher DISKON50 50</code>",
       { chatId, messageThreadId },
     );
     return;
@@ -444,7 +440,7 @@ async function handleCreateVoucher(
 
   const credits = parseInt(creditsStr, 10);
   if (isNaN(credits) || credits <= 0) {
-    await sendTelegramMessage("⚠️ Jumlah kredit harus berupa angka positif.", {
+    await sendTelegramMessage("Jumlah kredit harus berupa angka positif.", {
       chatId,
       messageThreadId,
     });
@@ -460,7 +456,7 @@ async function handleCreateVoucher(
   });
 
   if (error) {
-    await sendTelegramMessage(`❌ Gagal membuat voucher: ${error.message}`, {
+    await sendTelegramMessage(`Gagal membuat voucher: ${error.message}`, {
       chatId,
       messageThreadId,
     });
@@ -468,7 +464,7 @@ async function handleCreateVoucher(
   }
 
   await sendTelegramMessage(
-    `🎟 <b>VOUCHER BERHASIL DIBUAT!</b>\n\n🔑 <b>Kode:</b> <code>${cleanCode}</code>\n💎 <b>Nominal:</b> <b>+${credits} Kredit Paid</b>\n\n<i>User bisa langsung klaim kode ini di dashboard Malesan.</i>`,
+    `<b>[VOUCHER DIBUAT]</b>\n\n• Kode: <code>${cleanCode}</code>\n• Saldo: +${credits} Kredit Paid\n\n<i>Kode voucher ini sudah aktif di sistem.</i>`,
     { chatId, messageThreadId },
   );
 }
@@ -481,7 +477,7 @@ async function handleBroadcastCommand(
 ) {
   if (!message || message.trim().length === 0) {
     await sendTelegramMessage(
-      "⚠️ <b>Format salah.</b>\nGunakan: <code>/broadcast &lt;Pesan pengumuman&gt;</code>",
+      "Format salah. Gunakan: <code>/broadcast &lt;Pesan pengumuman&gt;</code>",
       { chatId, messageThreadId },
     );
     return;
@@ -496,7 +492,7 @@ async function handleBroadcastCommand(
   });
 
   await sendTelegramMessage(
-    `📢 <b>BANNER PENGUMUMAN BERHASIL DIPASANG!</b>\n\n<i>"${escapeHtml(text)}"</i>\n\nBanner ini sekarang muncul di bagian atas dashboard seluruh user.`,
+    `<b>[BANNER DIPASANG]</b>\n\n<i>"${escapeHtml(text)}"</i>\n\nPengumuman ini aktif di bagian atas dashboard seluruh pengguna.`,
     { chatId, messageThreadId },
   );
 }
@@ -508,7 +504,7 @@ async function handleClearNoticeCommand(chatId: string, supabase: SupabaseClient
     updated_at: new Date().toISOString(),
   });
 
-  await sendTelegramMessage("📢 <b>Banner pengumuman dashboard telah BERHASIL DIHAPUS.</b>", {
+  await sendTelegramMessage("<b>[BANNER DIBERSIHKAN]</b> Banner pengumuman dashboard telah dinonaktifkan.", {
     chatId,
     messageThreadId,
   });
@@ -522,7 +518,7 @@ async function handleBanUser(
   messageThreadId?: number,
 ) {
   if (!emailArg) {
-    await sendTelegramMessage("⚠️ Mohon sebutkan email user yang ingin diatur.", {
+    await sendTelegramMessage("Mohon sebutkan email user yang ingin diatur.", {
       chatId,
       messageThreadId,
     });
@@ -538,7 +534,7 @@ async function handleBanUser(
     .maybeSingle();
 
   if (!user) {
-    await sendTelegramMessage(`❌ User dengan email <code>${escapeHtml(cleanEmail)}</code> tidak ditemukan.`, {
+    await sendTelegramMessage(`User dengan email <code>${escapeHtml(cleanEmail)}</code> tidak ditemukan.`, {
       chatId,
       messageThreadId,
     });
@@ -550,8 +546,8 @@ async function handleBanUser(
     .update({ is_banned: isBan, ban_reason: isBan ? "Moderasi via Telegram Bot" : null })
     .eq("id", user.id);
 
-  const statusText = isBan ? "🚫 <b>DIBLOKIR / BANNED</b>" : "🔓 <b>DIBUKA KEMBALI</b>";
-  await sendTelegramMessage(`Akun user <code>${escapeHtml(user.email)}</code> telah ${statusText}.`, {
+  const statusText = isBan ? "DIBLOKIR / BANNED" : "DIAKTIFKAN KEMBALI";
+  await sendTelegramMessage(`Akun user <code>${escapeHtml(user.email)}</code> telah <b>${statusText}</b>.`, {
     chatId,
     messageThreadId,
   });
