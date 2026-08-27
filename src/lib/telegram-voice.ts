@@ -28,7 +28,7 @@ export async function transcribeTelegramVoice(fileId: string): Promise<string | 
     const blob = new Blob([arrayBuffer], { type: "audio/ogg" });
 
     // 3. Transcribe via Groq Whisper with Indonesian language tuning
-    const transcript = await transcribeAudio(blob, "voice.oga", "id");
+    const transcript = await transcribeAudio(blob, "voice.oga", { language: "id" });
     return transcript.text?.trim() || null;
   } catch (err) {
     console.error("[telegram-voice] transcription error:", err);
