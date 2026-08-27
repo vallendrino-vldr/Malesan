@@ -481,7 +481,7 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
   }
 }
 
-function escapeHtml(str: string): string {
+function escapeHtml(str?: string | null): string {
   return String(str || "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
