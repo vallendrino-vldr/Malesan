@@ -25,16 +25,71 @@ const MODULE_LABELS: Record<string, string> = {
   content_strategy: "Strategi 7 Hari (AI Brain)",
 };
 
+interface TelegramSessionContext {
+  lastInspectedUser?: {
+    id: string;
+    email: string;
+    displayName: string;
+    role: string;
+    isPro: boolean;
+    isBanned: boolean;
+    creditsFree: number;
+    creditsPaid: number;
+    totalCredits: number;
+  };
+  lastAction?: string;
+  history: Array<{ role: "user" | "assistant"; text: string; timestamp: number }>;
+}
+
+async function getTelegramSessionContext(
+  supabase: SupabaseClient,
+  chatId: string,
+  messageThreadId?: number,
+): Promise<TelegramSessionContext> {
+  const key = `tele_ctx:${chatId}${messageThreadId ? `:${messageThreadId}` : ""}`;
+  try {
+    const { data } = await supabase.from("app_config").select("value").eq("key", key).maybeSingle();
+    if (data?.value) {
+      return typeof data.value === "string" ? JSON.parse(data.value) : data.value;
+    }
+  } catch {}
+  return { history: [] };
+}
+
+async function saveTelegramSessionContext(
+  supabase: SupabaseClient,
+  chatId: string,
+  ctx: TelegramSessionContext,
+  messageThreadId?: number,
+) {
+  const key = `tele_ctx:${chatId}${messageThreadId ? `:${messageThreadId}` : ""}`;
+  try {
+    if (ctx.history && ctx.history.length > 8) {
+      ctx.history = ctx.history.slice(-8);
+    }
+    await supabase.from("app_config").upsert({
+      key,
+      value: ctx,
+      updated_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error("[telegram-ai] Failed to save session context:", e);
+  }
+}
+
 interface AIIntentResult {
   intent: "action" | "chat" | "proposal";
   actionType:
     | "list_users"
     | "inspect_user"
+    | "set_user_credits"
+    | "grant_credits"
+    | "set_user_role"
+    | "set_user_pro"
     | "clear_broadcast"
     | "set_broadcast"
     | "stats"
     | "topups"
-    | "grant_credits"
     | "ban_user"
     | "unban_user"
     | "create_voucher"
@@ -54,6 +109,8 @@ interface AIIntentResult {
     amount?: number;
     code?: string;
     credits?: number;
+    role?: "admin" | "user";
+    isPro?: boolean;
     moduleKey?: string;
     cost?: number;
     enabled?: boolean;
@@ -110,42 +167,74 @@ export async function processTelegramAIMessage(
 - Status Modul Aktif: ${JSON.stringify(modulesStatus)}`;
   } catch {}
 
+  // 3. Fetch active conversation session context (last inspected user & recent turns)
+  const sessionCtx = await getTelegramSessionContext(supabase, chatId, messageThreadId);
+
+  let activeUserSection = "";
+  if (sessionCtx.lastInspectedUser) {
+    const u = sessionCtx.lastInspectedUser;
+    activeUserSection = `
+Konteks User Aktif yang Baru Saja Diinspeksi / Dibahas:
+• Email: ${u.email}
+• Nama: ${u.displayName || "Tanpa Nama"}
+• Peran: ${u.role === "admin" ? "Admin (Owner)" : "Kreator"}
+• Paket: ${u.isPro ? "PRO TIER" : "Free Tier"}
+• Saldo Saat Ini: ${u.totalCredits} Kredit (Free: ${u.creditsFree}, Paid: ${u.creditsPaid})
+• Status: ${u.isBanned ? "BANNED" : "Aktif Normal"}`;
+  }
+
+  let recentHistorySection = "";
+  if (sessionCtx.history && sessionCtx.history.length > 0) {
+    recentHistorySection = `
+Riwayat Percakapan Terakhir:
+` + sessionCtx.history.slice(-4).map(h => `- ${h.role === "user" ? "Boss" : "Asisten"}: "${h.text.replace(/\n+/g, " ").slice(0, 150)}"`).join("\n");
+  }
+
   const voicePrefix = isVoiceNote ? "(Pesan ini dikirim via Voice Note oleh Bos)\n" : "";
 
-  const prompt = `Kamu adalah "Malesan Executive AI" — asisten pribadi Chief of Staff super cerdas, strategis, proaktif, dan setia milik Boss / Owner platform Malesan (aplikasi AI content creation workspace kreator Indonesia).
+  const prompt = `Kamu adalah "Malesan Executive AI" — Chief of Staff super cerdas, strategis, proaktif, dan setia milik Boss / Owner platform Malesan (aplikasi AI content creation workspace kreator Indonesia).
 Boss berbicara santai dalam bahasa Indonesia sehari-hari.
 
 ${snapshotContext}
 ${currentConfigSummary}
+${activeUserSection}
+${recentHistorySection}
 
 ${voicePrefix}TUGAS KAMU:
 Analisis pesan dari Boss dan tentukan apakah itu perintah aksi (action/proposal) atau obrolan/konsultasi strategi/marketing (chat).
 
 Daftar Tool / Aksi yang Tersedia:
-1. list_users: melihat daftar seluruh user terdaftar di platform (email, nama, status pro, kredit). (needsConfirmation: false)
-2. inspect_user: cek detail user tertentu (payload: { email: "user@email.com" atau keyword nama/email }). (needsConfirmation: false)
-3. clear_broadcast: menghapus banner pengumuman di dashboard. (needsConfirmation: false)
-4. set_broadcast: pasang banner pengumuman (payload: { message: "isi pengumuman" }). (needsConfirmation: false)
-5. stats: ringkasan statistik komprehensif, performa, revenue, & top module. (needsConfirmation: false)
-6. topups: cek antrean topup manual pending. (needsConfirmation: false)
-7. get_errors: cek error log / issue teknis terkini di sistem. (needsConfirmation: false)
-8. get_feedback: baca feedback & review dari user. (needsConfirmation: false)
-9. list_vouchers: lihat daftar voucher aktif. (needsConfirmation: false)
-10. create_voucher: buat voucher baru (payload: { code: "KODE", credits: 50 }). (needsConfirmation: false)
-11. unban_user: buka blokir akun user (payload: { email: "user@email.com" }). (needsConfirmation: false)
+1. list_users: melihat daftar user terdaftar (needsConfirmation: false)
+2. inspect_user: cek detail user tertentu (payload: { email: "user@email.com" atau nama }). (needsConfirmation: false)
+3. set_user_credits: setel saldo kredit user ke angka target tertentu (contoh: "rubah kreditnya jadi 50", "set kredit vadlyvldr jadi 100"). (payload: { email: "user@email.com", credits: 50, reason: "alasan" }). (needsConfirmation: false jika delta <= 200, true jika delta > 200)
+4. grant_credits: tambah/kurangi saldo kredit user (payload: { email: "user@email.com", amount: 100, reason: "bonus" }). (needsConfirmation: false jika <= 100, true jika > 100)
+5. set_user_role: ubah peran user (payload: { email: "user@email.com", role: "admin" | "user" }). (needsConfirmation: true)
+6. set_user_pro: ubah status PRO user (payload: { email: "user@email.com", isPro: true | false }). (needsConfirmation: false)
+7. clear_broadcast: menghapus banner pengumuman di dashboard. (needsConfirmation: false)
+8. set_broadcast: pasang banner pengumuman (payload: { message: "isi pengumuman" }). (needsConfirmation: false)
+9. stats: ringkasan statistik komprehensif, performa, revenue, & top module. (needsConfirmation: false)
+10. topups: cek antrean topup manual pending. (needsConfirmation: false)
+11. get_errors: cek error log / issue teknis terkini di sistem. (needsConfirmation: false)
+12. get_feedback: baca feedback & review dari user. (needsConfirmation: false)
+13. list_vouchers: lihat daftar voucher aktif. (needsConfirmation: false)
+14. create_voucher: buat voucher baru (payload: { code: "KODE", credits: 50 }). (needsConfirmation: false)
+15. ban_user: bekukan akun user nakal (payload: { email: "user@email.com", reason: "spam/abuse" }). (needsConfirmation: true)
+16. unban_user: buka blokir akun user (payload: { email: "user@email.com" }). (needsConfirmation: false)
 
 Fitur Studio & Knowledge In-Chat:
-12. generate_hooks: buatkan 3 hook video viral untuk topik tertentu (payload: { topic: "topik konten" }). (needsConfirmation: false)
-13. roast_hook: uji dan bedah kelemahan hook konten, prediksi retensi %, dan berikan versi perbaikan (payload: { hookText: "teks hook" }). (needsConfirmation: false)
-14. save_otak_kedua: simpan catatan, ide, atau tautan referensi ke Otak Kedua / DNA Akun Owner (payload: { referenceText: "isi catatan / link referensi" }). (needsConfirmation: false)
+17. generate_hooks: buatkan 3 hook video viral untuk topik tertentu (payload: { topic: "topik konten" }). (needsConfirmation: false)
+18. roast_hook: uji dan bedah kelemahan hook konten, prediksi retensi %, dan berikan versi perbaikan (payload: { hookText: "teks hook" }). (needsConfirmation: false)
+19. save_otak_kedua: simpan catatan, ide, atau tautan referensi ke Otak Kedua / DNA Akun Owner (payload: { referenceText: "isi catatan / link referensi" }). (needsConfirmation: false)
 
-Aksi Sensitif (Wajib needsConfirmation = true):
-15. grant_credits: tambah saldo kredit manual ke user (payload: { email: "user@email.com", amount: 100, reason: "bonus" }). (needsConfirmation: true jika > 50 kredit, false jika <= 50)
-16. ban_user: bekukan akun user nakal (payload: { email: "user@email.com", reason: "spam/abuse" }). (needsConfirmation: true)
-17. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true)
-18. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
-19. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" / "groq" }). (needsConfirmation: true)
-20. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
+Konfigurasi Sistem:
+20. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true). PERINGATAN: HANYA gunakan jika Boss menyebutkan modul tertentu (seperti hook, script, video, ide).
+21. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
+22. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" | "groq" }). (needsConfirmation: true)
+23. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
+
+PANDUAN RESOLUSI KONTEKS & PRONOUN KETAT:
+- Jika Boss mengatakan "rubah kreditnya jadi X", "tambah 20 kredit", "banned dia", "jadikan admin" tanpa menyebut email, MAKA OTOMATIS gunakan email dari "Konteks User Aktif" di atas!
+- Pesan "rubah kreditnya jadi 50" adalah actionType "set_user_credits" dengan credits: 50. JANGAN PERNAH salah mengira ini sebagai set_module_cost!
 
 Pesan dari Boss:
 "${userText}"
@@ -165,11 +254,14 @@ ATURAN GAYA & FORMATTING KETAT:
         enum: [
           "list_users",
           "inspect_user",
+          "set_user_credits",
+          "grant_credits",
+          "set_user_role",
+          "set_user_pro",
           "clear_broadcast",
           "set_broadcast",
           "stats",
           "topups",
-          "grant_credits",
           "ban_user",
           "unban_user",
           "create_voucher",
@@ -193,6 +285,8 @@ ATURAN GAYA & FORMATTING KETAT:
           amount: { type: "NUMBER" },
           code: { type: "STRING" },
           credits: { type: "NUMBER" },
+          role: { type: "STRING", enum: ["admin", "user"] },
+          isPro: { type: "BOOLEAN" },
           moduleKey: { type: "STRING" },
           cost: { type: "NUMBER" },
           enabled: { type: "BOOLEAN" },
@@ -227,6 +321,14 @@ ATURAN GAYA & FORMATTING KETAT:
       return;
     }
 
+    // Resolve target email from session context if empty
+    if (!parsed.payload?.email && sessionCtx.lastInspectedUser?.email) {
+      if (["set_user_credits", "grant_credits", "set_user_role", "set_user_pro", "ban_user", "unban_user"].includes(parsed.actionType)) {
+        if (!parsed.payload) parsed.payload = {};
+        parsed.payload.email = sessionCtx.lastInspectedUser.email;
+      }
+    }
+
     // A. Human-In-The-Loop Confirmation Flow
     if (parsed.needsConfirmation && parsed.actionType !== "none") {
       const actionId = `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -243,8 +345,14 @@ ATURAN GAYA & FORMATTING KETAT:
 
       let summary = "";
       switch (parsed.actionType) {
+        case "set_user_credits":
+          summary = `Ubah total kredit <code>${escapeHtml(parsed.payload?.email)}</code> jadi ${parsed.payload?.credits} Kredit`;
+          break;
         case "grant_credits":
           summary = `Tambah ${parsed.payload?.amount} Kredit ke <code>${escapeHtml(parsed.payload?.email)}</code>`;
+          break;
+        case "set_user_role":
+          summary = `Ubah peran <code>${escapeHtml(parsed.payload?.email)}</code> jadi <b>${parsed.payload?.role?.toUpperCase()}</b>`;
           break;
         case "ban_user":
           summary = `Blokir akun <code>${escapeHtml(parsed.payload?.email)}</code> (Alasan: ${escapeHtml(parsed.payload?.reason || "-")})`;
@@ -279,8 +387,187 @@ ATURAN GAYA & FORMATTING KETAT:
       return;
     }
 
-    // B. Direct Execution of Safe / Read Operations
+    // B. Direct Execution of Safe / Read / Direct Operations
     switch (parsed.actionType) {
+      case "set_user_credits": {
+        const email = String(parsed.payload?.email || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
+        const targetCredits = Number(parsed.payload?.credits ?? parsed.payload?.amount ?? 0);
+
+        if (!email) {
+          await sendTelegramMessage("Mohon sebutkan email user yang ingin diubah kreditnya, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        const { data: user } = await supabase
+          .from("profiles")
+          .select("id, email, display_name, role, is_pro, is_banned, credits_free, credits_paid")
+          .or(`email.ilike.%${email}%,display_name.ilike.%${email}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (!user) {
+          await sendTelegramMessage(`User <code>${escapeHtml(email)}</code> tidak ditemukan di database.`, { chatId, messageThreadId });
+          return;
+        }
+
+        const currentFree = user.credits_free || 0;
+        const currentPaid = user.credits_paid || 0;
+        const currentTotal = currentFree + currentPaid;
+        const target = Math.max(0, targetCredits);
+        const delta = target - currentTotal;
+
+        let newFree = currentFree;
+        let newPaid = currentPaid;
+        if (target >= currentFree) {
+          newPaid = target - currentFree;
+        } else {
+          newFree = target;
+          newPaid = 0;
+        }
+
+        await supabase
+          .from("profiles")
+          .update({ credits_free: newFree, credits_paid: newPaid })
+          .eq("id", user.id);
+
+        if (delta !== 0) {
+          await supabase.from("credit_ledger").insert({
+            user_id: user.id,
+            delta: delta,
+            bucket: "paid",
+            reason: parsed.payload?.reason || "admin_set_credits_via_telegram",
+            ref_id: crypto.randomUUID(),
+            balance_after: target,
+          });
+        }
+
+        // Update session context
+        sessionCtx.lastInspectedUser = {
+          id: user.id,
+          email: user.email,
+          displayName: user.display_name || "Tanpa Nama",
+          role: user.role,
+          isPro: user.is_pro,
+          isBanned: user.is_banned,
+          creditsFree: newFree,
+          creditsPaid: newPaid,
+          totalCredits: target,
+        };
+        sessionCtx.history.push(
+          { role: "user", text: userText, timestamp: Date.now() },
+          { role: "assistant", text: `Saldo kredit ${user.email} diubah jadi ${target}`, timestamp: Date.now() },
+        );
+        await saveTelegramSessionContext(supabase, chatId, sessionCtx, messageThreadId);
+
+        const deltaText = delta > 0 ? `+${delta}` : `${delta}`;
+        const responseMsg = `<b>[SALDO KREDIT DIUBAH]</b>\n\n• <b>User:</b> <code>${escapeHtml(user.email)}</code> (${escapeHtml(user.display_name || "Tanpa Nama")})\n• <b>Saldo Lama:</b> ${currentTotal} Kredit (Free: ${currentFree}, Paid: ${currentPaid})\n• <b>Saldo Baru:</b> ${target} Kredit (Free: ${newFree}, Paid: ${newPaid})\n• <b>Penyesuaian:</b> ${deltaText} Kredit\n• <b>Status:</b> Berhasil diperbarui secara atomik di database.`;
+
+        await sendTelegramMessage(responseMsg, { chatId, messageThreadId });
+        return;
+      }
+
+      case "grant_credits": {
+        const email = String(parsed.payload?.email || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
+        const amount = Number(parsed.payload?.amount || 0);
+
+        if (!email || !amount) {
+          await sendTelegramMessage("Mohon sebutkan email user dan nominal kredit yang ingin ditambahkan, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        const { data: user } = await supabase
+          .from("profiles")
+          .select("id, email, display_name, role, is_pro, is_banned, credits_free, credits_paid")
+          .or(`email.ilike.%${email}%,display_name.ilike.%${email}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (!user) {
+          await sendTelegramMessage(`User <code>${escapeHtml(email)}</code> tidak ditemukan di database.`, { chatId, messageThreadId });
+          return;
+        }
+
+        const { error: grantErr } = await supabase.rpc("grant_credits", {
+          p_user: user.id,
+          p_amount: amount,
+          p_bucket: "paid",
+          p_reason: parsed.payload?.reason || "telegram_admin_grant",
+        });
+
+        if (grantErr) {
+          await sendTelegramMessage(`Gagal menambahkan kredit: ${grantErr.message}`, { chatId, messageThreadId });
+          return;
+        }
+
+        const newPaid = (user.credits_paid || 0) + amount;
+        const newTotal = (user.credits_free || 0) + newPaid;
+
+        sessionCtx.lastInspectedUser = {
+          id: user.id,
+          email: user.email,
+          displayName: user.display_name || "Tanpa Nama",
+          role: user.role,
+          isPro: user.is_pro,
+          isBanned: user.is_banned,
+          creditsFree: user.credits_free || 0,
+          creditsPaid: newPaid,
+          totalCredits: newTotal,
+        };
+        sessionCtx.history.push(
+          { role: "user", text: userText, timestamp: Date.now() },
+          { role: "assistant", text: `Tambah ${amount} kredit ke ${user.email}`, timestamp: Date.now() },
+        );
+        await saveTelegramSessionContext(supabase, chatId, sessionCtx, messageThreadId);
+
+        const responseMsg = `<b>[KREDIT DITAMBAHKAN]</b>\n\n• <b>User:</b> <code>${escapeHtml(user.email)}</code> (${escapeHtml(user.display_name || "Tanpa Nama")})\n• <b>Nominal Masuk:</b> +${amount} Kredit Paid\n• <b>Saldo Total Sekarang:</b> ${newTotal} Kredit\n• <b>Status:</b> Berhasil masuk ke akun user.`;
+
+        await sendTelegramMessage(responseMsg, { chatId, messageThreadId });
+        return;
+      }
+
+      case "set_user_role": {
+        const email = String(parsed.payload?.email || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
+        const role = parsed.payload?.role === "admin" ? "admin" : "user";
+
+        if (!email) {
+          await sendTelegramMessage("Mohon sebutkan email user, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        const { data: user } = await supabase.from("profiles").select("id, email, display_name").or(`email.ilike.%${email}%,display_name.ilike.%${email}%`).limit(1).maybeSingle();
+        if (!user) {
+          await sendTelegramMessage(`User <code>${escapeHtml(email)}</code> tidak ditemukan.`, { chatId, messageThreadId });
+          return;
+        }
+
+        await supabase.from("profiles").update({ role }).eq("id", user.id);
+        const responseMsg = `<b>[PERAN PENGGUNA DIUBAH]</b>\n\n• <b>User:</b> <code>${escapeHtml(user.email)}</code>\n• <b>Peran Baru:</b> <b>${role.toUpperCase()}</b>`;
+        await sendTelegramMessage(responseMsg, { chatId, messageThreadId });
+        return;
+      }
+
+      case "set_user_pro": {
+        const email = String(parsed.payload?.email || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
+        const isPro = Boolean(parsed.payload?.isPro);
+
+        if (!email) {
+          await sendTelegramMessage("Mohon sebutkan email user, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        const { data: user } = await supabase.from("profiles").select("id, email, display_name").or(`email.ilike.%${email}%,display_name.ilike.%${email}%`).limit(1).maybeSingle();
+        if (!user) {
+          await sendTelegramMessage(`User <code>${escapeHtml(email)}</code> tidak ditemukan.`, { chatId, messageThreadId });
+          return;
+        }
+
+        await supabase.from("profiles").update({ is_pro: isPro }).eq("id", user.id);
+        const statusText = isPro ? "PRO TIER (Aktif)" : "Free Tier (Reguler)";
+        const responseMsg = `<b>[STATUS PAKET DIUBAH]</b>\n\n• <b>User:</b> <code>${escapeHtml(user.email)}</code>\n• <b>Paket Baru:</b> <b>${statusText}</b>`;
+        await sendTelegramMessage(responseMsg, { chatId, messageThreadId });
+        return;
+      }
+
       case "generate_hooks": {
         const topic = parsed.payload?.topic || userText;
         const hookPrompt = `Buat 3 opsi hook video pendek viral (TikTok/Reels) tentang topik: "${topic}".
@@ -402,6 +689,24 @@ DILARANG MENGGUNAKAN EMOJI.`;
         const joined = new Date(user.created_at).toLocaleDateString("id-ID", { dateStyle: "medium" });
         const totalCredits = (user.credits_free || 0) + (user.credits_paid || 0);
         const roleText = user.role === "admin" ? "Admin (Owner)" : "Kreator";
+
+        // Record to session context for subsequent pronoun / credit modification requests
+        sessionCtx.lastInspectedUser = {
+          id: user.id,
+          email: user.email,
+          displayName: user.display_name || "Tanpa Nama",
+          role: user.role,
+          isPro: user.is_pro,
+          isBanned: user.is_banned,
+          creditsFree: user.credits_free || 0,
+          creditsPaid: user.credits_paid || 0,
+          totalCredits,
+        };
+        sessionCtx.history.push(
+          { role: "user", text: userText, timestamp: Date.now() },
+          { role: "assistant", text: `Detail user: ${user.email} (Saldo: ${totalCredits})`, timestamp: Date.now() },
+        );
+        await saveTelegramSessionContext(supabase, chatId, sessionCtx, messageThreadId);
 
         const userCard = `<b>[DETAIL PROFIL PENGGUNA]</b>\n\n• <b>Email:</b> <code>${escapeHtml(user.email)}</code>\n• <b>Nama:</b> ${escapeHtml(user.display_name || "Tanpa Nama")}\n• <b>Peran:</b> ${roleText}\n• <b>Paket:</b> ${user.is_pro ? "PRO TIER (Aktif)" : "Free Tier"}\n• <b>Saldo Kredit:</b> ${totalCredits} (Free: ${user.credits_free || 0}, Paid: ${user.credits_paid || 0})\n• <b>Generasi Konten:</b> ${genCount || 0} kali\n• <b>Terdaftar:</b> ${joined}\n• <b>Status Akun:</b> ${user.is_banned ? `BANNED (${escapeHtml(user.ban_reason || "-")})` : "Aktif Normal"}`;
 
@@ -571,6 +876,12 @@ DILARANG MENGGUNAKAN EMOJI.`;
       case "topups":
       case "none":
       default: {
+        sessionCtx.history.push(
+          { role: "user", text: userText, timestamp: Date.now() },
+          { role: "assistant", text: parsed.replyText, timestamp: Date.now() },
+        );
+        await saveTelegramSessionContext(supabase, chatId, sessionCtx, messageThreadId);
+
         await sendTelegramMessage(parsed.replyText, {
           chatId,
           messageThreadId,
@@ -608,6 +919,44 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
   await supabase.from("app_config").delete().eq("key", `tele_act:${actionId}`);
 
   switch (actionData.actionType) {
+    case "set_user_credits": {
+      const email = String(actionData.payload?.email || "").trim().toLowerCase();
+      const targetCredits = Number(actionData.payload?.credits ?? actionData.payload?.amount ?? 0);
+      if (!email) return "Email user tidak valid.";
+
+      const { data: user } = await supabase.from("profiles").select("id, email, display_name, credits_free, credits_paid").ilike("email", `%${email}%`).maybeSingle();
+      if (!user) return `User <code>${escapeHtml(email)}</code> tidak ditemukan.`;
+
+      const currentFree = user.credits_free || 0;
+      const currentPaid = user.credits_paid || 0;
+      const currentTotal = currentFree + currentPaid;
+      const target = Math.max(0, targetCredits);
+      const delta = target - currentTotal;
+
+      let newFree = currentFree;
+      let newPaid = currentPaid;
+      if (target >= currentFree) {
+        newPaid = target - currentFree;
+      } else {
+        newFree = target;
+        newPaid = 0;
+      }
+
+      await supabase.from("profiles").update({ credits_free: newFree, credits_paid: newPaid }).eq("id", user.id);
+      if (delta !== 0) {
+        await supabase.from("credit_ledger").insert({
+          user_id: user.id,
+          delta: delta,
+          bucket: "paid",
+          reason: String(actionData.payload?.reason || "admin_set_credits_via_telegram"),
+          ref_id: crypto.randomUUID(),
+          balance_after: target,
+        });
+      }
+
+      return `<b>[SALDO KREDIT DIUBAH]</b>\n\n• <b>User:</b> <code>${escapeHtml(user.email)}</code>\n• <b>Saldo Lama:</b> ${currentTotal} Kredit\n• <b>Saldo Baru:</b> ${target} Kredit (Free: ${newFree}, Paid: ${newPaid})\n• <b>Status:</b> Berhasil diperbarui secara atomik.`;
+    }
+
     case "grant_credits": {
       const email = String(actionData.payload?.email || "").trim().toLowerCase();
       const amount = Number(actionData.payload?.amount || 0);
@@ -626,6 +975,23 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
 
       if (grantErr) return `Gagal menambahkan kredit: ${grantErr.message}`;
       return `<b>[KREDIT DITAMBAHKAN]</b>\n\n+${amount} Kredit paid telah masuk ke akun <code>${escapeHtml(email)}</code>.`;
+    }
+
+    case "set_user_role": {
+      const email = String(actionData.payload?.email || "").trim().toLowerCase();
+      const role = actionData.payload?.role === "admin" ? "admin" : "user";
+      if (!email) return "Email tidak valid.";
+      await supabase.from("profiles").update({ role }).ilike("email", `%${email}%`);
+      return `<b>[PERAN PENGGUNA DIUBAH]</b>\n\nUser <code>${escapeHtml(email)}</code> sekarang memiliki peran <b>${role.toUpperCase()}</b>.`;
+    }
+
+    case "set_user_pro": {
+      const email = String(actionData.payload?.email || "").trim().toLowerCase();
+      const isPro = Boolean(actionData.payload?.isPro);
+      if (!email) return "Email tidak valid.";
+      await supabase.from("profiles").update({ is_pro: isPro }).ilike("email", `%${email}%`);
+      const statusText = isPro ? "PRO TIER (Aktif)" : "Free Tier (Reguler)";
+      return `<b>[STATUS PAKET DIUBAH]</b>\n\nUser <code>${escapeHtml(email)}</code> sekarang berstatus <b>${statusText}</b>.`;
     }
 
     case "ban_user": {
