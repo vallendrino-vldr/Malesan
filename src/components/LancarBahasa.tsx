@@ -970,7 +970,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Active Roleplay Scenario State
   const [activeScenario, setActiveScenario] = useState<ScenarioItem | null>(null);
-  const [completedMissions, setCompletedMissions] = useState<Record<number, boolean>>({});
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -1184,7 +1183,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     const chosenPersona = scenarioItem ? scenarioItem.partner : persona;
     if (scenarioItem) {
       setActiveScenario(scenarioItem);
-      setCompletedMissions({});
     } else {
       setActiveScenario(null);
     }
@@ -1442,13 +1440,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      if (activeScenario) {
-        const userMsgCount = newMessages.filter((m) => m.role === "user").length;
-        if (userMsgCount >= 1) setCompletedMissions((prev) => ({ ...prev, 0: true }));
-        if (userMsgCount >= 2) setCompletedMissions((prev) => ({ ...prev, 1: true }));
-        if (userMsgCount >= 3) setCompletedMissions((prev) => ({ ...prev, 2: true }));
-      }
-
       playSpeechAudio(data.replyEn, activeP);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
@@ -1513,13 +1504,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       setMessages(newMessages);
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
-
-      if (activeScenario) {
-        const userMsgCount = newMessages.filter((m) => m.role === "user").length;
-        if (userMsgCount >= 1) setCompletedMissions((prev) => ({ ...prev, 0: true }));
-        if (userMsgCount >= 2) setCompletedMissions((prev) => ({ ...prev, 1: true }));
-        if (userMsgCount >= 3) setCompletedMissions((prev) => ({ ...prev, 2: true }));
-      }
 
       playSpeechAudio(data.replyEn, activeP);
     } catch (err) {
@@ -1636,17 +1620,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Curriculum Mastery Percentage Calculation
   const masteryPercentage = Math.round((completedStages.length / 6) * 100);
-
-  // Most common grammar pitfall tags
-  const pitfallCounts: Record<string, number> = {};
-  records.forEach((r) => {
-    r.pitfalls?.forEach((p) => {
-      pitfallCounts[p] = (pitfallCounts[p] || 0) + 1;
-    });
-  });
-  const topPitfalls = Object.entries(pitfallCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4);
 
   const activeStage = AUDIO_GATED_STAGES.find((s) => s.id === activeStageId) || AUDIO_GATED_STAGES[0];
   const activeStep = activeStage.steps[activeStepIndex] || activeStage.steps[0];
@@ -2876,8 +2849,25 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </p>
           </div>
 
+          {/* Topic selection pills */}
+          <div className="flex flex-wrap gap-1.5">
+            {ESSAY_TOPICS.map((t, idx) => (
+              <button
+                key={idx}
+                onClick={() => setEssayTopic(t)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] transition-all text-left ${
+                  essayTopic === t
+                    ? "bg-ember text-obsidian font-bold"
+                    : "bg-surface-raised border border-hairline text-muted hover:text-ink"
+                }`}
+              >
+                {t.slice(0, 30)}...
+              </button>
+            ))}
+          </div>
+
           <textarea
-            rows={5}
+            rows={4}
             value={essayText}
             onChange={(e) => setEssayText(e.target.value)}
             placeholder="Write your English essay here (minimum 20 characters)..."
@@ -2891,6 +2881,23 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           >
             {essayLoading ? "Menganalisis..." : "Evaluasi Esai →"}
           </button>
+
+          {/* Essay Evaluation Result View */}
+          {essayResult && (
+            <div className="rounded-xl border border-hairline bg-surface-raised p-3.5 space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-ember uppercase">Estimasi IELTS: Band {essayResult.overallBandScore}</span>
+                <span className="font-mono font-bold text-emerald-400 text-xs">{essayResult.overallScore100}/100</span>
+              </div>
+              <p className="text-xs text-ink leading-relaxed font-medium">{essayResult.roastReview}</p>
+              {essayResult.perfectedDraft && (
+                <div className="p-3 rounded-lg bg-surface border border-hairline text-xs text-ink leading-relaxed">
+                  <p className="font-bold text-ember mb-1">Versi Sempurna:</p>
+                  <p className="italic">{essayResult.perfectedDraft}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -2925,6 +2932,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 className="h-full rounded-full bg-gradient-to-r from-amber-500 to-ember transition-all duration-500 shadow-sm"
                 style={{ width: `${Math.max(4, masteryPercentage)}%` }}
               />
+            </div>
+          </div>
+
+          {/* Activity Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-xl border border-hairline bg-surface-raised p-3 text-center">
+              <p className="text-[10px] font-bold text-muted uppercase">Menit Bicara</p>
+              <p className="font-display text-lg font-bold text-ink mt-0.5">{totalMinutesSpoken} Menit</p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase">Rata-rata Skor</p>
+              <p className="font-display text-lg font-bold text-emerald-400 mt-0.5">{avgOverallScore}/100</p>
+            </div>
+            <div className="rounded-xl border border-ember/30 bg-ember/10 p-3 text-center col-span-2 sm:col-span-1">
+              <p className="text-[10px] font-bold text-ember uppercase">Total Sesi</p>
+              <p className="font-display text-lg font-bold text-ember mt-0.5">{records.length} Sesi</p>
             </div>
           </div>
         </div>
