@@ -523,19 +523,6 @@ export default async function AppPage({
                 }
               />
               <StudioTile
-                mod="lancar_bahasa"
-                title="Lancar Bahasa"
-                subtitle="Bicara, kuis & esai"
-                cost={costLancarBahasa}
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
-                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                    <line x1="12" x2="12" y1="19" y2="22" />
-                  </svg>
-                }
-              />
-              <StudioTile
                 href="/app/draft"
                 title="Draft Bebas"
                 subtitle="Nulis & AI Tab"
@@ -546,6 +533,57 @@ export default async function AppPage({
                   </svg>
                 }
               />
+
+              {/* WIDE FLAGSHIP CARD: LANCAR BAHASA (Spans full width: col-span-2 on mobile, col-span-5 on desktop) */}
+              <div className="col-span-2 lg:col-span-5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "lancar_bahasa" }))
+                  }
+                  className="group relative w-full overflow-hidden rounded-2xl border border-ember/35 bg-gradient-to-r from-surface-raised via-surface to-ember/10 p-3.5 sm:p-4 text-left shadow-xs transition-all duration-200 hover:border-ember/65 hover:shadow-md active:scale-[0.995]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl border border-ember/40 bg-ember/15 text-ember transition-transform group-hover:scale-105">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 sm:size-5">
+                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                          <line x1="12" x2="12" y1="19" y2="22" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                          <span className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                            Lancar Bahasa
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-ember uppercase tracking-wider">
+                            Fitur Baru
+                          </span>
+                          <span className="rounded-md bg-surface px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-ember border border-hairline">
+                            {costLancarBahasa} kredit
+                          </span>
+                        </div>
+                        <p className="mt-0.5 text-[11px] sm:text-xs text-muted leading-tight truncate sm:whitespace-normal">
+                          Latihan bicara suara AI, kuis kilat &amp; ujian esai dengan koreksi real-time.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-micro font-bold text-muted group-hover:text-ember transition-colors hidden md:inline">
+                        Buka Latihan
+                      </span>
+                      <span className="inline-flex size-6 sm:size-7 items-center justify-center rounded-lg bg-surface border border-hairline text-muted group-hover:border-ember group-hover:bg-ember group-hover:text-obsidian transition-all">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3 sm:size-3.5">
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
           </section>
 
