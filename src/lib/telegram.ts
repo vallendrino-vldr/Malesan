@@ -39,7 +39,7 @@ export async function getTelegramConfig(): Promise<TelegramConfig> {
   const envToken = process.env.TELEGRAM_BOT_TOKEN;
   const envChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
-  if (cachedConfig && Date.now() - cachedConfig.at < 30_000) {
+  if (cachedConfig && Date.now() - cachedConfig.at < 15_000) {
     return cachedConfig;
   }
 
@@ -155,7 +155,6 @@ export function splitTelegramMessage(text: string, maxLen = 3800): string[] {
  */
 export function stripExcessiveEmojis(text: string): string {
   if (!text) return "";
-  // Strip emojis, pictographs, and emoticons while preserving letters, numbers, punctuation and standard bullet points
   return text.replace(/[🌀-🧿☀-⛿✀-➿🇠-🇿🨀-🫿🀀-🀯🂠-🃿]/gu, "").trim();
 }
 
@@ -216,69 +215,77 @@ export async function sendChatAction(
 }
 
 /**
- * Sends a single chunk message to Telegram with topic support and plaintext retry fallback.
+ * Sends a single chunk message to Telegram with multi-tier fallback (Topic -> Group -> DM).
  */
 async function sendSingleTelegramMessage(
   token: string,
   chatId: string | number,
   rawText: string,
   options: SendTelegramOptions,
+  adminDmChatId?: string,
 ): Promise<{ ok: boolean; messageId?: number }> {
   const parseMode = options.parseMode || "HTML";
   const processedText = parseMode === "HTML" ? sanitizeTelegramHtml(rawText) : stripExcessiveEmojis(rawText);
-
   const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
-  try {
-    const res = await fetch(url, {
+  async function postPayload(targetChat: string | number, threadId?: number, textToSend = processedText, mode = parseMode) {
+    return fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        chat_id: chatId,
-        message_thread_id: options.messageThreadId,
-        text: processedText,
-        parse_mode: parseMode,
+        chat_id: targetChat,
+        message_thread_id: threadId,
+        text: textToSend,
+        parse_mode: mode,
         reply_markup: options.replyMarkup,
         disable_notification: options.disableNotification,
         disable_web_page_preview: true,
       }),
       signal: AbortSignal.timeout(6000),
     });
+  }
 
+  try {
+    let res = await postPayload(chatId, options.messageThreadId);
+
+    // 1. If HTML parse failed, retry in plaintext
     if (!res.ok) {
       const errBody = await res.text();
 
-      // Auto-fallback: if HTML formatting failed, strip all tags and deliver cleanly in plain text
       if (res.status === 400 && errBody.includes("can't parse entities")) {
         const plainText = processedText.replace(/<[^>]*>/g, "").trim();
-        const fallbackRes = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            message_thread_id: options.messageThreadId,
-            text: plainText,
-            reply_markup: options.replyMarkup,
-            disable_notification: options.disableNotification,
-            disable_web_page_preview: true,
-          }),
-          signal: AbortSignal.timeout(6000),
-        });
-
-        if (fallbackRes.ok) {
-          const fallbackData = (await fallbackRes.json()) as { ok: boolean; result?: { message_id: number } };
-          return { ok: true, messageId: fallbackData.result?.message_id };
-        }
+        res = await postPayload(chatId, options.messageThreadId, plainText, "Markdown");
       }
 
-      console.warn("[telegram] sendMessage failed:", res.status, errBody);
-      return { ok: false };
+      // 2. If topic not found (e.g. topic deleted), retry to main group without message_thread_id
+      if (!res.ok && options.messageThreadId && (errBody.includes("thread not found") || errBody.includes("message_thread_id"))) {
+        console.warn("[telegram] Topic thread not found, falling back to main group:", options.messageThreadId);
+        res = await postPayload(chatId, undefined);
+      }
+
+      // 3. If group chat failed (e.g. bot removed/group deleted), fallback to Admin DM
+      if (!res.ok && adminDmChatId && String(chatId) !== String(adminDmChatId)) {
+        console.warn("[telegram] Group delivery failed, falling back to Admin DM:", chatId);
+        res = await postPayload(adminDmChatId, undefined);
+      }
+
+      if (!res.ok) {
+        console.warn("[telegram] All delivery attempts failed:", res.status);
+        return { ok: false };
+      }
     }
 
     const data = (await res.json()) as { ok: boolean; result?: { message_id: number } };
     return { ok: data.ok, messageId: data.result?.message_id };
   } catch (err) {
     console.warn("[telegram] network error sending chunk:", err);
+    // Fallback attempt to DM on network error if target was group
+    if (adminDmChatId && String(chatId) !== String(adminDmChatId)) {
+      try {
+        const fallbackRes = await postPayload(adminDmChatId, undefined);
+        return { ok: fallbackRes.ok };
+      } catch {}
+    }
     return { ok: false };
   }
 }
@@ -309,7 +316,7 @@ export async function sendTelegramMessage(
       replyMarkup: isLast ? options.replyMarkup : undefined,
     };
 
-    const res = await sendSingleTelegramMessage(token, chatId, chunk, chunkOptions);
+    const res = await sendSingleTelegramMessage(token, chatId, chunk, chunkOptions, config.chatId);
     if (res.ok) {
       lastMessageId = res.messageId;
     }
@@ -352,6 +359,21 @@ export async function sendTelegramPhoto(
       signal: AbortSignal.timeout(6000),
     });
 
+    if (!res.ok && config.chatId && String(chatId) !== String(config.chatId)) {
+      // Fallback photo to DM
+      await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: config.chatId,
+          photo: photoUrl,
+          caption: processedCaption,
+          parse_mode: options.parseMode || "HTML",
+          reply_markup: options.replyMarkup,
+        }),
+      });
+    }
+
     return { ok: res.ok };
   } catch (err) {
     console.warn("[telegram] sendPhoto error:", err);
@@ -391,12 +413,13 @@ export async function notifyGeneration(data: {
 
 export async function notifyFeedback(data: {
   email: string;
-  rating: number;
+  rating?: number;
   comment?: string | null;
   moduleName?: string | null;
 }) {
   const config = await getTelegramConfig();
-  const text = `<b>[ULASAN PENGGUNA]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Skor:</b> ${data.rating} / 5\n• <b>Modul:</b> ${escapeHtml(data.moduleName || "Umum")}\n• <b>Catatan:</b>\n<i>"${escapeHtml(data.comment || "Tanpa catatan")}"</i>`;
+  const score = data.rating ? `${data.rating} / 5` : "Masukan Langsung";
+  const text = `<b>[ULASAN & MASUKAN PENGGUNA]</b>\n\n• <b>Pengguna:</b> <code>${escapeHtml(data.email)}</code>\n• <b>Kategori:</b> ${escapeHtml(data.moduleName || "Umum")}\n• <b>Skor:</b> ${score}\n• <b>Catatan:</b>\n<i>"${escapeHtml(data.comment || "Tanpa catatan")}"</i>`;
 
   return sendTelegramMessage(text, {
     messageThreadId: config.topics?.feedback,

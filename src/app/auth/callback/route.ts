@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { notifyNewUser } from "@/lib/telegram";
 
 /**
  * OAuth redirect target. Google sends the user back here with a `code`, which
@@ -41,15 +42,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Notify owner via Telegram asynchronously
+  // Notify owner via Telegram with await
   if (sessionData?.user) {
-    import("@/lib/telegram").then(({ notifyNewUser }) => {
-      notifyNewUser({
+    try {
+      await notifyNewUser({
         email: sessionData.user.email || "user@malesan",
         name: sessionData.user.user_metadata?.full_name || sessionData.user.user_metadata?.name || null,
         provider: sessionData.user.app_metadata?.provider || "Google OAuth",
-      }).catch(() => {});
-    }).catch(() => {});
+      });
+    } catch (teleErr) {
+      console.warn("[auth-callback] Telegram notification error:", teleErr);
+    }
   }
 
   // If there's a ref code, update the user's profile with referred_by

@@ -8,6 +8,7 @@ import { decryptSecret } from "@/lib/gemini/crypto";
 import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { aiRateLimit } from "@/lib/rate-limit";
+import { notifyGeneration } from "@/lib/telegram";
 import {
   normalizeTodayGoal,
   normalizeTodayPlatform,
@@ -584,14 +585,16 @@ export async function POST(request: NextRequest) {
               console.error("Failed to insert generation:", genError);
             } else {
               // Notify Telegram silently
-              import("@/lib/telegram").then(({ notifyGeneration }) => {
-                notifyGeneration({
+              try {
+                await notifyGeneration({
                   email: user.email || "user@malesan",
                   moduleName: module,
                   creditsSpent: cost,
                   details: String(input || module).slice(0, 80),
-                }).catch(() => {});
-              }).catch(() => {});
+                });
+              } catch (teleErr) {
+                console.warn("[generate] Telegram notification error:", teleErr);
+              }
             }
 
             controller.enqueue(

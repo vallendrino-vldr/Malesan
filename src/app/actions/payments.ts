@@ -5,6 +5,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import { checkProof } from "@/lib/payments/proof-check";
 import { revalidatePath } from "next/cache";
+import { notifyTopupRequest, notifyVoucherRedeemed } from "@/lib/telegram";
 
 export type CreditPackOption = {
   id: string;
@@ -171,15 +172,17 @@ export async function submitTopup(
   }
 
   // Notify owner via Telegram with inline approval buttons
-  import("@/lib/telegram").then(({ notifyTopupRequest }) => {
-    notifyTopupRequest({
+  try {
+    await notifyTopupRequest({
       topupId: insertedTopup?.id || "N/A",
       email: user.email || "User",
       amount: pack.price_idr,
       credits: pack.credits,
       proofUrl: null,
-    }).catch(() => {});
-  }).catch(() => {});
+    });
+  } catch (teleErr) {
+    console.warn("[topup] Telegram notification error:", teleErr);
+  }
 
   revalidatePath("/app/topup");
   revalidatePath("/admin/topups");
@@ -238,13 +241,15 @@ export async function redeemVoucher(code: string) {
 
   revalidatePath("/app");
 
-  import("@/lib/telegram").then(({ notifyVoucherRedeemed }) => {
-    notifyVoucherRedeemed({
+  try {
+    await notifyVoucherRedeemed({
       email: user.email || "user@malesan",
       code: clean,
       credits: voucher.credits,
-    }).catch(() => {});
-  }).catch(() => {});
+    });
+  } catch (teleErr) {
+    console.warn("[voucher] Telegram notification error:", teleErr);
+  }
 
   return voucher.credits;
 }

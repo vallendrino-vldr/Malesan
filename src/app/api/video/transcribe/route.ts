@@ -5,6 +5,7 @@ import { getVideoCostPerMin, isVideoEnabled } from "@/lib/config";
 import { transcribeAudio, TranscribeError } from "@/lib/transcribe";
 import { refineTranscriptWithAI } from "@/lib/video/refine-transcript";
 import { aiRateLimit } from "@/lib/rate-limit";
+import { notifyGeneration } from "@/lib/telegram";
 
 /**
  * Word-level transcription for the video Auto-CC editor.
@@ -152,14 +153,16 @@ export async function POST(request: NextRequest) {
   }
 
   // Notify owner via Telegram silently
-  import("@/lib/telegram").then(({ notifyGeneration }) => {
-    notifyGeneration({
+  try {
+    await notifyGeneration({
       email: user.email || "user@malesan",
       moduleName: "Video Auto-CC",
       creditsSpent: cost,
       details: `Durasi: ${Math.round(transcript.duration)}s (${finalWords.length} kata)`,
-    }).catch(() => {});
-  }).catch(() => {});
+    });
+  } catch (teleErr) {
+    console.warn("[transcribe] Telegram notification error:", teleErr);
+  }
 
   return json(
     {

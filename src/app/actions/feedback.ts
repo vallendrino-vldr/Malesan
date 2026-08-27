@@ -2,6 +2,7 @@
 
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { notifyFeedback } from "@/lib/telegram";
 
 export type FeedbackCategory = "kendala" | "saran" | "pertanyaan" | "lainnya";
 export type FeedbackStatus = "baru" | "ditinjau" | "diproses" | "selesai";
@@ -37,15 +38,17 @@ export async function submitFeedbackAction(data: {
     throw new Error("Gagal mengirim feedback. Coba lagi bentar ya.");
   }
 
-  // Notify owner via Telegram
-  import("@/lib/telegram").then(({ notifyFeedback }) => {
-    notifyFeedback({
+  // Notify owner via Telegram with await to ensure delivery in serverless environment
+  try {
+    await notifyFeedback({
       email: user.email || "user@malesan",
       rating: 5,
       comment: msg,
       moduleName: data.category,
-    }).catch(() => {});
-  }).catch(() => {});
+    });
+  } catch (teleErr) {
+    console.warn("[feedback] Telegram notification error:", teleErr);
+  }
 
   return { success: true };
 }
