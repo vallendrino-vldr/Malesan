@@ -50,7 +50,7 @@ export async function processTelegramAIMessage(userText: string, chatId: string)
 - Generasi 24 Jam: ${snap.generations.last24h} kali
 - Error 24 Jam: ${snap.errors.last24h} error
 - Quota Gemini: ${snap.quota.map((q) => `Slot ${q.keyIndex}: ${q.requests} req, ${q.errors} err`).join("; ")}`;
-  } catch (e) {
+  } catch {
     snapshotContext = "Snapshot data tidak tersedia saat ini.";
   }
 
@@ -240,7 +240,7 @@ export async function executePendingTelegramAction(actionId: string, supabase: S
     return "⚠️ Tindakan ini sudah kedaluwarsa atau sudah pernah dieksekusi sebelumnya.";
   }
 
-  let actionData: { actionType: string; payload?: any; createdAt: number };
+  let actionData: { actionType: string; payload?: Record<string, unknown>; createdAt: number };
   try {
     actionData = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
   } catch {
