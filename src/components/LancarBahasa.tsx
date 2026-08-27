@@ -1089,12 +1089,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     });
   }, []);
 
-  // Auto-scroll to top of drill chamber whenever step, stage, or exam mode changes
-  useEffect(() => {
-    if (mode === "academy" && drillChamberRef.current) {
+  // Helper to smoothly scroll back to the top of the lesson card ONLY when explicitly navigating steps
+  const scrollToDrillTop = useCallback(() => {
+    if (drillChamberRef.current) {
       drillChamberRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [activeStepIndex, activeStageId, isExamMode, mode]);
+  }, []);
 
   // Play Speech Audio via /api/tts with browser fallback
   const playSpeechAudio = useCallback(
@@ -2281,6 +2281,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       onClick={() => {
                         setActiveStepIndex((prev) => prev - 1);
                         setDrillAnswer(null);
+                        scrollToDrillTop();
                       }}
                       className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
                     >
@@ -2294,6 +2295,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           onClick={() => {
                             setActiveStepIndex((prev) => prev + 1);
                             setDrillAnswer(null);
+                            scrollToDrillTop();
                           }}
                           className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:saturate-50"
                         >
@@ -2315,6 +2317,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setExamAnswers({});
                             setVoiceExamResult(null);
                             setVoiceExamRecordedText("");
+                            scrollToDrillTop();
                           }}
                           className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none disabled:saturate-50"
                         >
@@ -2345,6 +2348,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     onClick={() => {
                       setIsExamMode(false);
                       setVoiceExamResult(null);
+                      scrollToDrillTop();
                     }}
                     className="h-8 px-2.5 sm:px-3 rounded-lg border border-hairline bg-surface text-[11px] sm:text-xs font-bold text-muted hover:text-ink cursor-pointer shrink-0"
                   >
@@ -2600,6 +2604,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           setExamAnswers({});
                           setDrillAnswer(null);
                           setVoiceExamResult(null);
+                          scrollToDrillTop();
                         }}
                         className="btn-ember h-10 sm:h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer w-full sm:w-auto"
                       >
