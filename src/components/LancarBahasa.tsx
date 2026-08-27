@@ -1160,8 +1160,51 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
 
 export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits?: number }) {
   const [mode, setMode] = useState<Mode>("academy");
-  const [level, setLevel] = useState<Level>("intermediate");
-  const [persona, setPersona] = useState<Persona>("sarah");
+
+  // User Level Selection: Defaults to "beginner" (Pemula A1-A2) and persists user choice in localStorage
+  const [level, setLevelState] = useState<Level>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_lancar_level");
+        if (saved === "beginner" || saved === "intermediate" || saved === "advanced") {
+          return saved as Level;
+        }
+      } catch {}
+    }
+    return "beginner"; // Default to Pemula (A1-A2) as natural starting point
+  });
+
+  const setLevel = useCallback((newLvl: Level) => {
+    setLevelState(newLvl);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("malesan_lancar_level", newLvl);
+      } catch {}
+    }
+  }, []);
+
+  // Voice Persona Selection: Defaults to "david" (US Male) and persists user choice in localStorage
+  const [persona, setPersonaState] = useState<Persona>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_lancar_persona");
+        if (saved === "david" || saved === "alex" || saved === "sarah" || saved === "emma") {
+          return saved as Persona;
+        }
+      } catch {}
+    }
+    return "david";
+  });
+
+  const setPersona = useCallback((newP: Persona) => {
+    setPersonaState(newP);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("malesan_lancar_persona", newP);
+      } catch {}
+    }
+  }, []);
+
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
 
@@ -2410,9 +2453,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   key={tab.id}
                   onClick={() => {
                     if (isCalling) endCall();
-                    startTransition(() => {
-                      setMode(tab.id as Mode);
-                    });
+                    setMode(tab.id as Mode);
                   }}
                   className={`h-10 sm:h-12 rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
                     isCurrent
@@ -2443,7 +2484,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* ========================================================================= */}
       {/* MODE 0: BELAJAR 0-100% (CLEAN COMPACT STEP ARENA + ISOLATED POP-UP MODAL) */}
       {/* ========================================================================= */}
-      {mode === "academy" && (
+      <div className={mode === "academy" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {/* COMPACT STAGE PROGRESSION HEADER */}
           <div className="space-y-2.5">
@@ -3219,11 +3260,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         </div>,
         document.body
       )}
+      </div>
 
       {/* ========================================================================= */}
       {/* MODE 1: BICARA AI (LIVE SPEAKING CALL) */}
       {/* ========================================================================= */}
-      {mode === "voice" && (
+      <div className={mode === "voice" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {!isCalling && !showCallSummary ? (
             <div className="space-y-4 sm:space-y-5">
@@ -3560,12 +3602,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ========================================================================= */}
       {/* MODE 2: SIMULASI SKENARIO (ROLEPLAY CHAMBER) */}
       {/* ========================================================================= */}
-      {mode === "scenario" && (
+      <div className={mode === "scenario" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {!isCalling ? (
             <div className="space-y-4 sm:space-y-5">
@@ -3735,16 +3777,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 >
                   Kirim
                 </button>
-              </div>
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ========================================================================= */}
       {/* MODE 3: KUIS KILAT PRO */}
       {/* ========================================================================= */}
-      {mode === "quiz" && (
+      <div className={mode === "quiz" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {quizQuestions.length === 0 ? (
             <div className="space-y-4 sm:space-y-5">
@@ -3884,12 +3925,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ========================================================================= */}
       {/* MODE 4: UJIAN ESAI */}
       {/* ========================================================================= */}
-      {mode === "essay" && (
+      <div className={mode === "essay" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 w-full min-w-0">
           <div>
             <h3 className="font-display text-sm sm:text-base font-bold text-ink">
@@ -3948,12 +3989,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ========================================================================= */}
       {/* MODE 5: RAPOR & RIWAYAT BELAJAR */}
       {/* ========================================================================= */}
-      {mode === "progress" && (
+      <div className={mode === "progress" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 w-full min-w-0">
           <div>
             <h3 className="font-display text-sm sm:text-base font-bold text-ink">
@@ -3999,7 +4040,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
