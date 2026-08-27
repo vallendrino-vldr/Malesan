@@ -42,6 +42,32 @@ interface ChatMessage {
   score?: number;
 }
 
+// Global interface declaration for Web Speech API
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: {
+    length: number;
+    [index: number]: {
+      isFinal: boolean;
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionInstanceLike {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+}
+
 const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string }> = [
   { id: "sarah", name: "Sarah", tag: "British Casual", desc: "Ramah, sopan, aksen London natural" },
   { id: "alex", name: "Alex", tag: "American Slang", desc: "Santai, banyak ungkapan modern California" },
@@ -85,9 +111,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const speechRecognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const currentAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const capturedTextRef = useRef<string>("");
 
   // Quiz States
   const [quizLoading, setQuizLoading] = useState(false);
@@ -187,7 +215,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           for (let i = 0; i < barCount; i++) {
             const freq = Math.sin(time + i * 0.3) * 0.5 + 0.5;
             const barHeight = isRecording
-              ? Math.max(6, freq * (height * 0.85))
+              ? Math.max(8, freq * (height * 0.9))
               : isPlayingAudio
               ? Math.max(6, Math.sin(time * 3 + i * 0.4) * (height * 0.75))
               : isProcessing
@@ -226,6 +254,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setIsCalling(true);
     setShowCallSummary(false);
     setFeedbackNotice(null);
+    setTextInput("");
+    capturedTextRef.current = "";
 
     const initialText =
       persona === "sarah"
@@ -250,8 +280,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // End Voice Call
   const endCall = () => {
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch {}
+    }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
     }
     if (currentAudioElementRef.current) {
       currentAudioElementRef.current.pause();
@@ -265,22 +302,80 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setShowCallSummary(true);
   };
 
-  // Toggle Recording via MediaRecorder
+  // Toggle Recording with Native Web Speech API & MediaRecorder Hybrid
   const toggleRecording = async () => {
     if (isProcessing) return;
 
     if (isRecording) {
-      // Stop and send audio
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
-      }
+      // STOP RECORDING
       setIsRecording(false);
+
+      if (speechRecognitionRef.current) {
+        try {
+          speechRecognitionRef.current.stop();
+        } catch {}
+      }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {}
+      }
+
+      // If speech recognition captured text live, send it immediately
+      const recognized = capturedTextRef.current.trim() || textInput.trim();
+      if (recognized) {
+        await submitTextMessage(recognized);
+      }
     } else {
-      // Start Recording
+      // START RECORDING
+      capturedTextRef.current = "";
+      setTextInput("");
+      setFeedbackNotice(null);
+
+      // 1. Try Native Web Speech Recognition
+      const SpeechRecognition =
+        typeof window !== "undefined"
+          ? (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).SpeechRecognition ||
+            (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).webkitSpeechRecognition
+          : null;
+
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = persona === "sarah" || persona === "emma" ? "en-GB" : "en-US";
+
+          recognition.onresult = (event: SpeechRecognitionEventLike) => {
+            let transcript = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript;
+            }
+            if (transcript.trim()) {
+              capturedTextRef.current = transcript.trim();
+              setTextInput(transcript.trim());
+            }
+          };
+
+          recognition.onerror = (err) => {
+            console.warn("Web Speech API error, relying on audio stream:", err);
+          };
+
+          recognition.start();
+          speechRecognitionRef.current = recognition;
+        } catch (e) {
+          console.warn("Speech recognition start failed:", e);
+        }
+      }
+
+      // 2. Also start MediaRecorder for audio backup
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+          ? "audio/webm"
           : MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")
           ? "audio/ogg;codecs=opus"
           : "";
@@ -290,30 +385,32 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         audioChunksRef.current = [];
 
         mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
+          if (event.data && event.data.size > 0) {
             audioChunksRef.current.push(event.data);
           }
         };
 
         mediaRecorder.onstop = async () => {
           stream.getTracks().forEach((track) => track.stop());
-          const audioBlob = new Blob(audioChunksRef.current, {
-            type: mediaRecorder.mimeType || "audio/webm",
-          });
-          await submitAudioChunk(audioBlob);
+          // If no text was recognized by Web Speech API, send audio blob to Whisper
+          if (!capturedTextRef.current.trim() && audioChunksRef.current.length > 0) {
+            const audioBlob = new Blob(audioChunksRef.current, {
+              type: mediaRecorder.mimeType || "audio/webm",
+            });
+            await submitAudioChunk(audioBlob);
+          }
         };
 
-        mediaRecorder.start();
+        mediaRecorder.start(200);
         setIsRecording(true);
-        setFeedbackNotice(null);
       } catch (err) {
-        console.error("Mic access error:", err);
-        setFeedbackNotice("Izin mikrofon belum aktif. Lo juga bisa ketik pesan langsung di kolom teks bawah.");
+        console.warn("Mic getUserMedia failed:", err);
+        setIsRecording(true); // Web Speech may still work
       }
     }
   };
 
-  // Submit Audio Blob to /api/speaking/converse
+  // Submit Audio Blob to /api/speaking/converse (Whisper STT backend)
   const submitAudioChunk = async (audioBlob: Blob) => {
     setIsProcessing(true);
     setFeedbackNotice(null);
@@ -342,7 +439,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
       const data = await res.json();
 
-      // Add user message & AI response
       const newMessages: ChatMessage[] = [
         ...messages,
         {
@@ -364,7 +460,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      // Play audio response
       playSpeechAudio(data.replyEn);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
@@ -373,11 +468,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   };
 
-  // Submit Text Input fallback
-  const submitTextMessage = async () => {
-    if (!textInput.trim() || isProcessing) return;
-    const userText = textInput.trim();
+  // Submit Text Input Message
+  const submitTextMessage = async (explicitText?: string) => {
+    const userText = (explicitText || textInput).trim();
+    if (!userText || isProcessing) return;
+
     setTextInput("");
+    capturedTextRef.current = "";
     setIsProcessing(true);
     setFeedbackNotice(null);
 
@@ -422,7 +519,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      // Play audio response
       playSpeechAudio(data.replyEn);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses percakapan.");
@@ -431,7 +527,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   };
 
-  // Generate Quiz
+  // Generate 100% Fresh Quiz
   const handleGenerateQuiz = async () => {
     if (credits < cost) {
       setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
@@ -446,7 +542,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       const res = await fetch("/api/speaking/quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ level, topic: quizTopic }),
+        body: JSON.stringify({
+          level,
+          topic: quizTopic,
+          seed: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        }),
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -744,12 +844,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <canvas ref={canvasRef} width={400} height={50} className="w-full h-12" />
                 <p className="text-[11px] font-mono text-muted mt-1">
                   {isRecording
-                    ? "Mendengarkan suara lo... Tekan tombol merah untuk kirim"
+                    ? "Mendengarkan suara lo secara live... Klik tombol merah untuk kirim"
                     : isPlayingAudio
                     ? "Partner AI sedang berbicara..."
                     : isProcessing
                     ? "AI sedang memikirkan balasan..."
-                    : "Bicara lewat mikrofon atau ketik pesan di bawah"}
+                    : "Bicara lewat tombol mikrofon di bawah atau ketik di kolom teks"}
                 </p>
               </div>
 
@@ -765,7 +865,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
                         : isProcessing
                         ? "bg-surface-raised text-muted cursor-not-allowed border border-hairline"
-                        : "bg-ember text-obsidian hover:brightness-105"
+                        : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
                     }`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
@@ -799,7 +899,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   />
                   <button
                     type="button"
-                    onClick={submitTextMessage}
+                    onClick={() => submitTextMessage()}
                     disabled={!textInput.trim() || isProcessing}
                     className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50"
                   >
@@ -877,7 +977,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   Kuis Kilat Bahasa Inggris
                 </h3>
                 <p className="text-xs text-muted mt-0.5">
-                  Uji pemahaman tenses, idiom, dan perbaikan kalimat dengan kuis cerdas 5 soal.
+                  Uji pemahaman tenses, idiom, dan perbaikan kalimat dengan kuis cerdas 5 soal yang selalu baru dan acak.
                 </p>
               </div>
 
@@ -907,7 +1007,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 disabled={quizLoading}
                 className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105"
               >
-                {quizLoading ? "Menyiapkan Soal Kuis..." : "Mulai Kuis 5 Soal →"}
+                {quizLoading ? "Menyiapkan Soal Kuis Segar..." : "Mulai Kuis 5 Soal Baru →"}
               </button>
             </div>
           ) : !quizFinished ? (
@@ -1023,7 +1123,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         onClick={handleGenerateQuiz}
                         className="btn-ember h-10 px-5 rounded-xl text-xs font-bold text-obsidian"
                       >
-                        Ulang Kuis Baru
+                        Mulai Kuis Baru (Soal Segar)
                       </button>
                     </div>
                   </div>

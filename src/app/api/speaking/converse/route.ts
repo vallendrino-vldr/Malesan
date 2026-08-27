@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       }
 
       if (audioFile instanceof Blob) {
-        const transcriptRes = await transcribeAudio(audioFile, "user_voice.oga", { language: "en" });
+        const transcriptRes = await transcribeAudio(audioFile, "user_voice.webm", { language: "en" });
         textInput = transcriptRes.text.trim();
       } else {
         textInput = String(formData.get("text") || "").trim();
