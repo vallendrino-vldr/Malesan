@@ -54,7 +54,10 @@ export async function POST(request: NextRequest) {
       focusPhonetics = String(formData.get("focusPhonetics") || focusPhonetics);
 
       if (audioFile instanceof Blob) {
-        const transcriptRes = await transcribeAudio(audioFile, "user_voice.webm", { language: "en" });
+        const transcriptRes = await transcribeAudio(audioFile, "user_voice.webm", {
+          language: "en",
+          prompt: targetSentence,
+        });
         textInput = transcriptRes.text.trim();
       } else {
         textInput = String(formData.get("text") || "").trim();
@@ -99,34 +102,36 @@ export async function POST(request: NextRequest) {
   }
 
   const prompt = `Anda adalah Master AI Validator Fonetik & Bahasa Inggris untuk aplikasi Malesan (khas kreator Indonesia).
-Tugas Anda adalah memvalidasi suara pelafalan pengguna asli terhadap target kalimat ujian tahap kelulusan secara presisi, cerdas, dan memberikan evaluasi berbobot yang diselingi humor santai khas Malesan (tanpa emoji, gunakan teks tajam dan segar).
+Tugas Anda adalah memvalidasi suara pelafalan pengguna asli terhadap target kalimat ujian tahap kelulusan secara cerdas, realistis, dan berbobot dengan gaya khas Malesan (tanpa emoji, gunakan teks segar dan bernas).
 
 DATA UJIAN:
 - Tahap: ${stageTitle} (Tahap ID: ${stageId})
 - Fokus Fonetik Ujian: ${focusPhonetics}
 - Target Kalimat yang Wajib Diucapkan: "${targetSentence}"
-- Kalimat yang Terdengar dari Suara Pengguna (Transkripsi Suara Asli): "${textInput}"
+- Kalimat yang Terdengar dari Suara Pengguna (Transkripsi Whisper AI): "${textInput}"
 
-ATURAN PENILAIAN FONETIK & AKURASI:
-1. Periksa apakah pengguna melafalkan kata-kata kunci dengan benar sesuai aturan fonetik materi tersebut:
-   - Jika Tahap 1 (Huruf Bisu & Fonetik): Pastikan huruf S pada 'island' TIDAK dibaca ('eye-land'), huruf B pada 'doubt' TIDAK dibaca ('da-ut'), huruf V tidak tertukar P, dan 'th' terdengar berdesis bukan 'd'/'t'.
-   - Jika Tahap 2 (Connected Speech): Pastikan sambungan kata mengalir ('hold on' -> 'hol-don', 'gonna'/'wanna').
-   - Jika Tahap 3 (Larangan Indoglish): Pastikan tidak ada 'I am agree' atau 'thanks before'.
-   - Jika Tahap 4 (Pola Refleks): Pastikan penggunaan verb lampau dan kesopanan tepat.
-   - Jika Tahap 5-6 (Frasa Global): Pastikan kejelasan dan kelancaran intonasi.
-2. Hitung SKOR AKURASI (0 sampai 100):
-   - Skor >= 70: LULUS (isPassed: true). Pengguna melafalkan kalimat target dengan benar atau hanya salah minor yang wajar.
-   - Skor < 70: TIDAK LULUS (isPassed: false). Pengguna salah membaca huruf bisu, salah kata fatal, atau kalimat yang diucapkan jauh dari target.
-3. Buat "humorRoast": Komentar evaluasi tajam, akurat, dan diselingi sedikit humor gaul Indonesia (contoh lulus: "Gokil, lidah lo udah mulai licin kayak bule London! Lulus tahap ini, jangan sombong dulu.", contoh tidak lulus: "Waduh bro, huruf B di 'Doubt' kok masih diletupin kayak mercon? Kan silent letter! Coba lafalin DA-UT lagi.").
-4. Format output WAJIB HANYA JSON MURNI tanpa markdown wrap \`\`\`json:
+ATURAN WAJIB PENILAIAN FONETIK & NORMALISASI SPEECH-TO-TEXT (STT):
+1. NORMALISASI STT WHISPER (SANGAT PENTING):
+   - Model Speech-To-Text (Whisper) otomatis mengubah bunyi kata "eitch" atau "aitch" (pelafalan huruf H) menjadi karakter teks "H". Jika transkripsi tertulis "The letter H is pronounced H...", itu artinya pengguna SUDAH melafalkan bunyi "eitch" / "aitch" dengan benar! Jangan salahkan pengguna untuk normalisasi simbol ini.
+   - Pelafalan huruf "R" sering ditulis sebagai "R" atau "are" oleh STT.
+   - Abaikan trailing noise atau desahan nafas minor di akhir rekaman (seperti suara "O", "oh", "uh", atau klik mikrofon) saat pengguna melepas tombol rekam. Jangan menganggap itu kesalahan pengguna.
+2. PENILAIAN INTI FONETIK:
+   - Jika materi Fonetik/Huruf Bisu (Tahap 1): Pastikan pengguna tidak membaca huruf bisu (contoh: "island" dibaca "eye-land", "doubt" dibaca "da-ut"), bunyi V bergetar bukan P, dan bunyi TH berdesis bukan D/T.
+   - Jika materi Connected Speech (Tahap 2): Pastikan penyambungan kata (hold on -> hol-don, gonna, wanna).
+   - Jika materi Larangan Indoglish (Tahap 3): Pastikan tidak ada "I am agree" atau "thanks before".
+   - Jika materi Pola Waktu & Kesopanan (Tahap 4-6): Pastikan kata kunci terucap dengan jelas dan tepat.
+3. SKOR AKURASI (0 sampai 100):
+   - Skor >= 70: LULUS (isPassed: true). Pengguna melafalkan kalimat target dengan benar atau hanya salah minor wajar.
+   - Skor < 70: TIDAK LULUS (isPassed: false). Pengguna salah membaca huruf bisu secara fatal, salah kata fatal, atau sama sekali berbeda dari target.
+4. Buat "humorRoast": Komentar evaluasi tajam, akurat, suportif, dan diselingi sedikit humor khas Malesan (contoh: "Mantap bos, pelafalan lo udah bersih dan lancar. Siap lanjut ke langkah berikutnya!").
+5. Format output WAJIB HANYA JSON MURNI tanpa markdown wrap \`\`\`json:
 {
   "score": 85,
   "isPassed": true,
   "transcribedText": "${textInput.replace(/"/g, '\\"')}",
   "targetSentence": "${targetSentence.replace(/"/g, '\\"')}",
   "phoneticBreakdown": [
-    { "word": "island", "isCorrect": true, "feedback": "Huruf S bisu berhasil tidak disuarakan ('eye-land')." },
-    { "word": "doubt", "isCorrect": true, "feedback": "Huruf B bisu diabaikan dengan tepat ('da-ut')." }
+    { "word": "H", "isCorrect": true, "feedback": "Pelafalan abjad H berhasil diucapkan dengan benar." }
   ],
   "humorRoast": "Pujian atau koreksi humoris Malesan di sini",
   "recommendation": "Saran langkah selanjutnya"

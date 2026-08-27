@@ -316,10 +316,10 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           explanation: "Abjad H dalam bahasa Inggris dibaca murni 'Eitch'.",
         },
         stepVoiceChallenge: {
-          targetSentence: "The letter H is pronounced Eitch and R is smooth.",
-          easyPronunciation: "D-HI LE-TER EITCH IZ PRO-NAUNST EITCH END AR IZ SMUT-H.",
+          targetSentence: "The letter H is pronounced as aitch and R is smooth.",
+          easyPronunciation: "D-HI LE-TER EITCH IZ PRO-NAUNST EZ EITCH END AR IZ SMUT-H.",
           focusTips: "Lafalkan kata 'Eitch' murni tanpa H di awal, dan huruf R lembut.",
-          sampleAudio: "The letter H is pronounced Eitch and R is smooth.",
+          sampleAudio: "The letter H is pronounced as aitch and R is smooth.",
         },
       },
       {
