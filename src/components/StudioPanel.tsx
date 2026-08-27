@@ -49,9 +49,12 @@ const AffiliateEngine = dynamic(() => import("./AffiliateEngine").then((m) => m.
 const CarouselGenerator = dynamic(() => import("./CarouselGenerator").then((m) => m.CarouselGenerator), {
   loading: () => <StudioSkeleton label="AI Carousel Studio" />,
 });
+const LancarBahasa = dynamic(() => import("./LancarBahasa").then((m) => m.LancarBahasa), {
+  loading: () => <StudioSkeleton label="Lancar Bahasa" />,
+});
 
-type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video" | "affiliate" | "carousel";
-const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video", "affiliate", "carousel"];
+type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video" | "affiliate" | "carousel" | "lancar_bahasa";
+const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video", "affiliate", "carousel", "lancar_bahasa"];
 
 export type StudioCosts = {
   ide: number;
@@ -65,6 +68,7 @@ export type StudioCosts = {
   videoNoWm?: number;
   affiliate?: number;
   carousel?: number;
+  lancar_bahasa?: number;
 };
 
 export function StudioPanel({
@@ -145,6 +149,8 @@ export function StudioPanel({
         <AffiliateEngine cost={affiliateCost} />
       ) : mod === "carousel" ? (
         <CarouselGenerator cost={costs.carousel ?? 3} credits={credits} />
+      ) : mod === "lancar_bahasa" ? (
+        <LancarBahasa cost={costs.lancar_bahasa ?? 2} credits={credits} />
       ) : (
         <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
       )}

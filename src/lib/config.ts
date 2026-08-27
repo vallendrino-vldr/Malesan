@@ -25,7 +25,8 @@ export type ModuleKey =
   | "clip"
   | "thread"
   | "affiliate"
-  | "carousel";
+  | "carousel"
+  | "speaking_coach";
 
 const FALLBACK_COST: Record<ModuleKey, number> = {
   ide_hari_ini: 1,
@@ -38,6 +39,7 @@ const FALLBACK_COST: Record<ModuleKey, number> = {
   thread: 3,
   affiliate: 3,
   carousel: 3,
+  speaking_coach: 2,
 };
 
 const TTL_MS = 30_000;

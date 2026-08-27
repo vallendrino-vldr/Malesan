@@ -190,6 +190,7 @@ export default async function AppPage({
       getVideoNoWatermarkCost(),
       getCost("affiliate"),
       getCost("carousel"),
+      getCost("speaking_coach").catch(() => 2),
     ]),
 
     // Owner-only pending topups
@@ -252,7 +253,7 @@ export default async function AppPage({
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
     .slice(0, 8)
     .map((c) => ({ id: c.id, title: c.title ?? "", created_at: c.created_at }));
-  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm, costAffiliate, costCarousel] =
+  const [costIde, costIdea, costHook, costScript, costRepurpose, costVibe, costClip, costThread, costVideo, costVideoNoWm, costAffiliate, costCarousel, costLancarBahasa] =
     costs;
 
   // Owner's live announcement. Same config cache the costs above just warmed, so
@@ -340,6 +341,7 @@ export default async function AppPage({
               videoNoWm: costVideoNoWm,
               affiliate: costAffiliate,
               carousel: costCarousel,
+              lancar_bahasa: costLancarBahasa,
             }}
             home={
         <div className="reveal relative flex flex-col gap-4 py-1">
@@ -398,7 +400,7 @@ export default async function AppPage({
           <section className="space-y-2">
             <div className="flex items-center justify-between px-0.5">
               <h2 className="eyebrow text-muted font-bold">Semua Alat Kreatif</h2>
-              <span className="text-micro font-mono text-muted">10 fitur siap pakai</span>
+              <span className="text-micro font-mono text-muted">11 fitur siap pakai</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-5">
@@ -431,8 +433,8 @@ export default async function AppPage({
               />
               <StudioTile
                 mod="carousel"
-                title="Slide Carousel"
-                subtitle="Ekspor PNG IG/LI"
+                title="Slide Gambar"
+                subtitle="Ekspor gambar IG & LI"
                 cost="Gratis"
                 icon={
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
@@ -517,6 +519,19 @@ export default async function AppPage({
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                     <line x1="8" y1="9" x2="16" y2="9" />
                     <line x1="8" y1="13" x2="13" y2="13" />
+                  </svg>
+                }
+              />
+              <StudioTile
+                mod="lancar_bahasa"
+                title="Lancar Bahasa"
+                subtitle="Bicara, kuis & esai"
+                cost={costLancarBahasa}
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" x2="12" y1="19" y2="22" />
                   </svg>
                 }
               />
