@@ -190,127 +190,205 @@ const ESSAY_TOPICS = [
 ];
 
 // =========================================================================
-// INTERACTIVE GATED CURRICULUM DRILL DATA (0% -> 100%)
+// DUAL-AUDIO EAR TRAINING DATA STRUCTURE (0% -> 100%)
 // =========================================================================
-interface LessonStep {
+interface AudioDrillOption {
+  text: string;
+  soundSample: string;
+  isCorrect: boolean;
+}
+
+interface AudioLessonStep {
   title: string;
   focusHighlight: string;
   phonetic: string;
   explanation: string;
-  wrongSample?: string;
-  correctSample: string;
-  audioText: string;
+  wrongAudio: {
+    label: string;
+    text: string;
+    sampleText: string;
+    explanation: string;
+  };
+  correctAudio: {
+    label: string;
+    text: string;
+    sampleText: string;
+    explanation: string;
+  };
   tongueTip: string;
-  drillOptions: string[];
-  correctOptionIndex: number;
+  audioDrill: {
+    prompt: string;
+    options: AudioDrillOption[];
+    explanation: string;
+  };
 }
 
-interface StageGateExamQuestion {
+interface AudioGateExamQuestion {
   question: string;
-  options: string[];
+  options: Array<{
+    text: string;
+    soundSample?: string;
+  }>;
   correctIndex: number;
   explanation: string;
 }
 
-interface GatedStage {
+interface AudioGatedStage {
   id: number;
   percentage: number;
   title: string;
   subtitle: string;
   badge: string;
   summary: string;
-  steps: LessonStep[];
-  exam: StageGateExamQuestion[];
+  steps: AudioLessonStep[];
+  exam: AudioGateExamQuestion[];
 }
 
-const GATED_STAGES: GatedStage[] = [
+const AUDIO_GATED_STAGES: AudioGatedStage[] = [
   {
     id: 1,
     percentage: 20,
     title: "Tahap 1: Alfabet & Fonetik Dasar",
     subtitle: "Cara Baca Huruf Sebenarnya, Bunyi Lidah & Silent Letters",
     badge: "0% → 20%",
-    summary: "Pelajari cara membaca abjad yang sesungguhnya, bunyi lidah yang tidak ada di bahasa Indonesia, dan rahasia huruf bisu.",
+    summary: "Dengarkan perbandingan langsung bunyi salah vs benar untuk abjad kunci, desisan lidah TH, getaran V, dan huruf bisu.",
     steps: [
       {
-        title: "Abjad Kunci yang Sering Salah Dibaca",
-        focusHighlight: "A [ei] • E [i] • I [ai] • G [ji] • J [jei] • H [eitch] • R [ar] • W [dabel-yu] • Z [zi]",
-        phonetic: "/eɪ/ • /iː/ • /aɪ/ • /dʒiː/ • /dʒeɪ/ • /eɪtʃ/ • /ɑːr/ • /ˈdʌbəl.juː/ • /ziː/",
-        explanation: "Huruf 'H' dibaca 'Eitch' (BUKAN 'Hek'). Huruf 'R' dibaca dengan lidah melengkung ke belakang tanpa getaran 'Rrr' khas Indonesia.",
-        wrongSample: "H dibaca 'Hek' / R dibaca bergetar keras",
-        correctSample: "H is pronounced 'Eitch' • R is soft with curved tongue",
-        audioText: "A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z.",
-        tongueTip: "Tarik pangkal lidah ke belakang saat membunyikan huruf R.",
-        drillOptions: ["Eitch (tanpa bunyi H di awal)", "Hek (dengan bunyi H keras)", "Het (pendek)", "Haitch"],
-        correctOptionIndex: 0,
+        title: "Huruf 'H' & 'R' yang Sering Salah Diucapkan",
+        focusHighlight: "H [eitch] & R [ar lidah melengkung]",
+        phonetic: "/eɪtʃ/ • /ɑːr/",
+        explanation: "Huruf H murni dibaca 'Eitch' tanpa bunyi hek di awal. Huruf R dibaca dengan menarik pangkal lidah ke belakang tanpa getaran keras khas Indonesia.",
+        wrongAudio: {
+          label: "BUNYI SALAH (Kaku / Terbata):",
+          text: "H dibaca 'Hek' atau 'Het'",
+          sampleText: "Hek, het, het.",
+          explanation: "Menambahkan letupan 'H' kasar di awal abjad.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Native):",
+          text: "H dibaca 'Eitch' / R dibaca 'Ar' lembut",
+          sampleText: "A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z.",
+          explanation: "Murni melafalkan vokal 'ei' diikuti desisan lembut 'tch'.",
+        },
+        tongueTip: "Tarik ujung lidah menjauh dari gigi seri dan lengkungkan ke atas langit-langit mulut saat menyebut R.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah pelafalan abjad 'H' yang benar?",
+          options: [
+            { text: "Opsi 1: Pelafalan 'Eitch' murni", soundSample: "H is pronounced Eitch.", isCorrect: true },
+            { text: "Opsi 2: Pelafalan 'Hek' dengan bunyi H kasar", soundSample: "Hek is wrong.", isCorrect: false },
+          ],
+          explanation: "Abjad H dalam bahasa Inggris dibaca 'Eitch' (/eɪtʃ/).",
+        },
       },
       {
         title: "Bunyi Lidah 'TH' (Tebal vs Tipis)",
         focusHighlight: "The, This, That (Tebal) VS Think, Thank, Three (Tipis)",
         phonetic: "/ð/ (Voiced) vs /θ/ (Unvoiced)",
         explanation: "Lidah dijepit lembut di antara gigi seri atas dan bawah. Jangan dibaca 'D' (bukan 'De') dan jangan dibaca 'T' (bukan 'Tingk').",
-        wrongSample: "Dis, Dat, Dey / Tingk, Tengkyu",
-        correctSample: "This, that, they • Think, thank, three",
-        audioText: "This and that, they think and thank you three times.",
-        tongueTip: "Keluarkan ujung lidah sekitar 2 milimeter di antara gigi seri.",
-        drillOptions: ["Lidah di belakang gigi bawah", "Lidah dijepit lembut di antara gigi atas & bawah", "Bibir dirapatkan rapat", "Lidah menyentuh langit-langit"],
-        correctOptionIndex: 1,
+        wrongAudio: {
+          label: "BUNYI SALAH (Indoglish D/T):",
+          text: "Dis, Dat, Dey • Tingk, Tengkyu",
+          sampleText: "Dis and dat, dey tingk and tengkyu.",
+          explanation: "Lidah berada di dalam mulut sehingga berbunyi D atau T kasar.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Native TH):",
+          text: "This, that, they • Think, thank, three",
+          sampleText: "This and that, they think and thank you three times.",
+          explanation: "Ujung lidah keluar 2mm di antara gigi atas dan bawah menghasilkan desisan lembut.",
+        },
+        tongueTip: "Keluarkan ujung lidah sedikit, hembuskan udara untuk 'Think', tambahkan getaran pita suara untuk 'This'.",
+        audioDrill: {
+          prompt: "Dengarkan kedua kalimat di bawah. Manakah yang melafalkan 'Think and Thank you' dengan benar?",
+          options: [
+            { text: "Opsi 1: 'Tingk and tengkyu'", soundSample: "I tingk and tengkyu.", isCorrect: false },
+            { text: "Opsi 2: 'Think and thank you'", soundSample: "I think and thank you.", isCorrect: true },
+          ],
+          explanation: "Kata 'Think' dan 'Thank' harus diawali desisan lidah /θ/, bukan bunyi huruf T.",
+        },
       },
       {
         title: "Bunyi 'V' vs 'F' vs 'P'",
-        focusHighlight: "Favorite, Very, Video (V) VS Phone, Fast (F) VS Party (P)",
+        focusHighlight: "Favorite, Video (V) VS Phone, Fast (F) VS Party (P)",
         phonetic: "/v/ vs /f/ vs /p/",
         explanation: "Huruf V bergetar pada bibir bawah (Voice Vibration). Jangan pernah sebut 'Pavorite' atau 'Pideo'!",
-        wrongSample: "Pavorite pideo / Pery good",
-        correctSample: "My favorite video is very good.",
-        audioText: "My favorite video is very popular and very fast.",
-        tongueTip: "Sentuhkan gigi seri atas ke bibir bawah bagian dalam, rasakan getaran pita suara.",
-        drillOptions: ["Favorite (gigi atas ke bibir bawah + getaran)", "Pavorite (dua bibir menutup)", "Faporit (tanpa getaran)", "Paborit"],
-        correctOptionIndex: 0,
+        wrongAudio: {
+          label: "BUNYI SALAH (Tertukar P/F):",
+          text: "Pavorite pideo, pery good",
+          sampleText: "My pavorite pideo is pery good.",
+          explanation: "Dua bibir menutup sehingga menghasilkan bunyi P bukannya getaran V.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Vibrating V):",
+          text: "Favorite video, very good",
+          sampleText: "My favorite video is very good.",
+          explanation: "Gigi seri atas menyentuh bibir bawah bagian dalam dengan getaran suara jelas.",
+        },
+        tongueTip: "Sentuhkan gigi atas ke bibir bawah bagian dalam, rasakan getaran pita suara saat bunyi V keluar.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah pengucapan kata 'Favorite Video' yang benar?",
+          options: [
+            { text: "Opsi 1: 'Favorite video'", soundSample: "This is my favorite video.", isCorrect: true },
+            { text: "Opsi 2: 'Pavorite pideo'", soundSample: "This is my pavorite pideo.", isCorrect: false },
+          ],
+          explanation: "Huruf V wajib menghasilkan getaran bibir, jangan ditekan menjadi huruf P.",
+        },
       },
       {
-        title: "Bunyi 'SH' vs 'CH'",
-        focusHighlight: "Ship, Shoes, Wish (SH) VS Chip, Choose, Watch (CH)",
-        phonetic: "/ʃ/ (Lembut) vs /tʃ/ (Letupan)",
-        explanation: "SH adalah desisan lembut 'Ssshhh', sedangkan CH adalah letupan tajam lidah 'Tch!'.",
-        wrongSample: "Tertukar antara Ship (kapal) dan Chip (keripik)",
-        correctSample: "We eat chips on the ship, and choose our shoes.",
-        audioText: "We eat chips on the big ship, and choose new shoes.",
-        tongueTip: "Membulatkan bibir untuk SH, tekan dan letupkan lidah untuk CH.",
-        drillOptions: ["Ship adalah desisan lembut, Chip adalah letupan tajam", "Keduanya dibaca persis sama", "Ship dibaca Sip, Chip dibaca Cip", "CH dibaca seperti huruf K"],
-        correctOptionIndex: 0,
-      },
-      {
-        title: "Rahasia Huruf Bisu (Silent Letters)",
-        focusHighlight: "Doubt [Daut] • Island [Ailand] • Knowledge [Nolidj] • Receipt [Resit] • Debt [Det]",
-        phonetic: "/daʊt/ • /ˈaɪ.lənd/ • /ˈnɒl.ɪdʒ/ • /rɪˈsiːt/ • /det/",
-        explanation: "Banyak huruf dalam bahasa Inggris yang TERTULIS tapi HARAM disuarakan saat dibaca!",
-        wrongSample: "Doubt (b-nya dibaca), Island (s-nya dibaca), Receipt (p-nya dibaca)",
-        correctSample: "I have no doubt on the island with this receipt.",
-        audioText: "There is no doubt on the island, here is the knowledge and receipt for the debt.",
-        tongueTip: "Huruf B pada 'doubt' dan 'debt' tidak pernah disuarakan sama sekali.",
-        drillOptions: ["Eye-land (huruf S tidak dibaca)", "Is-land (huruf S dibaca jelas)", "Is-len", "Ice-land"],
-        correctOptionIndex: 0,
+        title: "Rahasia Huruf Bisu: 'Island' & 'Doubt'",
+        focusHighlight: "Island [Ailand - S bisu] • Doubt [Daut - B bisu] • Receipt [Resit - P bisu]",
+        phonetic: "/ˈaɪ.lənd/ • /daʊt/ • /rɪˈsiːt/",
+        explanation: "Banyak huruf dalam bahasa Inggris yang tertulis tetapi HARAM disuarakan saat dibaca!",
+        wrongAudio: {
+          label: "BUNYI SALAH (Huruf Bisu Dibaca):",
+          text: "Is-land, Dowbt, Re-ceipt",
+          sampleText: "Is-land and dowbt with receipt.",
+          explanation: "Membaca huruf S pada island, B pada doubt, atau P pada receipt.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Silent Letters):",
+          text: "Eye-land, Daut, Re-sit",
+          sampleText: "There is no doubt on the island, here is the receipt.",
+          explanation: "Huruf bisu dilewati sepenuhnya tanpa bersuara.",
+        },
+        tongueTip: "Ingat: Pada kata 'Island', huruf S sama sekali tidak berbunyi.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah cara membaca kata 'Island' (pulau) yang benar?",
+          options: [
+            { text: "Opsi 1: 'Is-land' (S dibaca jelas)", soundSample: "We visit the is-land.", isCorrect: false },
+            { text: "Opsi 2: 'Eye-land' (S bisu/tidak bersuara)", soundSample: "We visit the island.", isCorrect: true },
+          ],
+          explanation: "Huruf S pada 'Island' adalah silent letter, dibaca murni 'Eye-land'.",
+        },
       },
     ],
     exam: [
       {
-        question: "Bagaimana cara membaca huruf 'H' dalam abjad bahasa Inggris?",
-        options: ["Hek", "Eitch (tanpa bunyi H di depan)", "Het", "Ha"],
-        correctIndex: 1,
+        question: "Dengarkan audio di bawah. Manakah pelafalan huruf 'H' yang benar?",
+        options: [
+          { text: "Eitch (tanpa bunyi H di awal)", soundSample: "H is pronounced Eitch." },
+          { text: "Hek (dengan bunyi H kasar)", soundSample: "Hek is wrong." },
+        ],
+        correctIndex: 0,
         explanation: "Huruf H dibaca murni 'Eitch' (/eɪtʃ/).",
       },
       {
-        question: "Manakah pelafalan yang benar untuk kata 'Island' (pulau)?",
-        options: ["Is-land", "Eye-land (S bisu)", "Is-len", "Ice-land"],
+        question: "Dengarkan audio di bawah. Manakah pelafalan kata 'Island' yang tepat?",
+        options: [
+          { text: "Is-land (s bersuara)", soundSample: "Is-land" },
+          { text: "Eye-land (s bisu)", soundSample: "Island" },
+        ],
         correctIndex: 1,
         explanation: "Huruf S pada kata 'Island' adalah silent letter, dibaca 'Eye-land'.",
       },
       {
-        question: "Di mana posisi lidah saat membunyikan 'TH' pada kata 'Think' dan 'This'?",
-        options: ["Di langit-langit mulut", "Dijepit lembut di antara gigi atas dan bawah", "Menempel di belakang gigi bawah", "Membulat di dalam tenggorokan"],
-        correctIndex: 1,
-        explanation: "Lidah harus berada di antara gigi atas dan bawah untuk menghasilkan desisan TH yang tepat.",
+        question: "Dengarkan audio di bawah. Manakah kalimat dengan bunyi 'TH' yang benar?",
+        options: [
+          { text: "This and that, thank you", soundSample: "This and that, thank you." },
+          { text: "Dis and dat, tengkyu", soundSample: "Dis and dat, tengkyu." },
+        ],
+        correctIndex: 0,
+        explanation: "Bunyi TH membutuhkan posisi lidah di antara gigi atas dan bawah.",
       },
     ],
   },
@@ -320,56 +398,80 @@ const GATED_STAGES: GatedStage[] = [
     title: "Tahap 2: Sambung Kata & Irama Kalimat",
     subtitle: "Connected Speech, Linking & Natural Reductions",
     badge: "20% → 40%",
-    summary: "Penutur asli tidak membaca kata per kata. Pelajari hukum menyambung kata agar suara lo langsung mengalir natural.",
+    summary: "Penutur asli menyambungkan konsonan ke vokal dan mereduksi kata agar kalimat mengalir mulus tanpa terputus-putus.",
     steps: [
       {
-        title: "Menyambung Konsonan ke Vokal (Consonant to Vowel Linking)",
-        focusHighlight: "Hold on → 'Hol-don' • Pick it up → 'Pi-ki-tap' • Turn off → 'Tur-noff'",
-        phonetic: "/ˈhoʊl.dɒn/ • /ˈpɪk.ɪt.ʌp/ • /ˈtɜːr.nɒf/",
-        explanation: "Konsonan di akhir kata pertama langsung digabung ke vokal kata berikutnya tanpa jeda.",
-        wrongSample: "Hold... On (terputus satu-satu seperti robot)",
-        correctSample: "Hold on, pick it up, and turn off the light.",
-        audioText: "Hold on, please pick it up, and turn off the light right now.",
-        tongueTip: "Ucapkan seolah-olah kata kedua adalah suku kata kedua dari kata pertama.",
-        drillOptions: ["Pi-ki-tap", "Pik... It... Ap", "Pick-up-it", "Pik-et-up"],
-        correctOptionIndex: 0,
+        title: "Menyambung Konsonan ke Vokal (Linking)",
+        focusHighlight: "Hold on → 'Hol-don' • Pick it up → 'Pi-ki-tap'",
+        phonetic: "/ˈhoʊl.dɒn/ • /ˈpɪk.ɪt.ʌp/",
+        explanation: "Konsonan di akhir kata pertama langsung disambungkan ke huruf vokal kata berikutnya tanpa jeda.",
+        wrongAudio: {
+          label: "BUNYI SALAH (Terputus-putus):",
+          text: "Hold... On • Pick... It... Up",
+          sampleText: "Hold... on... please pick... it... up.",
+          explanation: "Membaca kata satu per satu seperti robot.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Mengalir Natural):",
+          text: "Hol-don • Pi-ki-tap",
+          sampleText: "Hold on, please pick it up right now.",
+          explanation: "D menyambung ke O ('Hol-don'), K menyambung ke I dan T menyambung ke U ('Pi-ki-tap').",
+        },
+        tongueTip: "Ucapkan frasa dua kata seolah-olah itu adalah satu kata panjang bersambung.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah yang terdengar mengalir seperti penutur asli?",
+          options: [
+            { text: "Opsi 1: 'Hold on, pick it up' (Tersambung mulus)", soundSample: "Hold on, pick it up.", isCorrect: true },
+            { text: "Opsi 2: 'Hold... on... pick... it... up' (Terputus kaku)", soundSample: "Hold on please pick it up slowly.", isCorrect: false },
+          ],
+          explanation: "Connected speech menyambung konsonan ke vokal menjadi 'Hol-don' dan 'Pi-ki-tap'.",
+        },
       },
       {
-        title: "Reduksi Kata Percakapan Cepat",
-        focusHighlight: "Going to → Gonna • Want to → Wanna • Got to → Gotta • Kind of → Kinda",
-        phonetic: "/ˈɡɒn.ə/ • /ˈwɒn.ə/ • /ˈɡɒt.ə/ • /ˈkaɪn.də/",
-        explanation: "Reduksi ini adalah pola alami penutur asli saat berbicara santai dan mengalir.",
-        wrongSample: "I am going to want to (terlalu kaku untuk obrolan kasual)",
-        correctSample: "I am gonna tell you what I wanna do.",
-        audioText: "I am gonna tell you what I wanna do, because I gotta go now.",
-        tongueTip: "Gunakan 'gonna' dan 'wanna' pada situasi santai, meeting non-formal, atau obrolan harian.",
-        drillOptions: ["Gonna & Wanna", "Going-to & Want-to selalu", "Gont & Want", "Gon-to"],
-        correctOptionIndex: 0,
-      },
-      {
-        title: "Penggabungan T/D + You (Assimilation)",
-        focusHighlight: "Did you → 'Didja' • What did you → 'Whadja' • Nice to meet you → 'Meet-chu'",
-        phonetic: "/ˈdɪdʒ.ə/ • /ˈwɒdʒ.ə/ • /ˈmiːt.ʃuː/",
-        explanation: "Huruf D bertemu Y menghasilkan bunyi 'J', huruf T bertemu Y menghasilkan bunyi 'Ch'.",
-        wrongSample: "Did... You... (terbata-bata)",
-        correctSample: "What did you do? Nice to meet you!",
-        audioText: "What did you do yesterday? Nice to meet you today!",
-        tongueTip: "Lidah menempel lembut untuk memicu letupan 'didja'.",
-        drillOptions: ["Whadja / Didja", "What-did-you kaku", "Wad-you", "Did-u"],
-        correctOptionIndex: 0,
+        title: "Reduksi Percakapan: 'Gonna' & 'Wanna'",
+        focusHighlight: "Going to → Gonna • Want to → Wanna • Got to → Gotta",
+        phonetic: "/ˈɡɒn.ə/ • /ˈwɒn.ə/ • /ˈɡɒt.ə/",
+        explanation: "Reduksi ini dipakai secara alami oleh penutur asli saat mengobrol santai dan mengalir cepat.",
+        wrongAudio: {
+          label: "BUNYI KAKU (Terlalu Formal):",
+          text: "I am going to want to go",
+          sampleText: "I am going to want to go now.",
+          explanation: "Terlalu kaku untuk percakapan harian.",
+        },
+        correctAudio: {
+          label: "BUNYI NATIVE (Luwes & Santai):",
+          text: "I'm gonna tell you what I wanna do",
+          sampleText: "I am gonna tell you what I wanna do.",
+          explanation: "Menggunakan peluluhan kata 'gonna' dan 'wanna'.",
+        },
+        tongueTip: "Gunakan 'gonna' dan 'wanna' pada situasi santai, meeting tim, atau obrolan harian.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah ungkapan santai yang paling alami?",
+          options: [
+            { text: "Opsi 1: 'I'm gonna tell you what I wanna do'", soundSample: "I am gonna tell you what I wanna do.", isCorrect: true },
+            { text: "Opsi 2: 'I am going to want to do'", soundSample: "I am going to want to do that.", isCorrect: false },
+          ],
+          explanation: "'Gonna' dan 'Wanna' membuat ritme bicara terasa rileks dan luwes.",
+        },
       },
     ],
     exam: [
       {
-        question: "Bagaimana cara menyambung bunyi frasa 'Hold on' agar terdengar alami?",
-        options: ["Hold... On terputus", "Hol-don (tersambung konsonan D ke vokal O)", "Hol-on", "Hold-in"],
-        correctIndex: 1,
+        question: "Dengarkan audio di bawah. Manakah sambungan kata 'Hold on' yang benar?",
+        options: [
+          { text: "Hol-don (tersambung konsonan ke vokal)", soundSample: "Hold on" },
+          { text: "Hold... on (terputus kaku)", soundSample: "Hold on slowly" },
+        ],
+        correctIndex: 0,
         explanation: "Konsonan D di akhir 'Hold' menyambung ke 'on', dibaca 'Hol-don'.",
       },
       {
         question: "Bentuk reduksi santai dari frasa 'Want to' yang umum digunakan penutur asli adalah:",
-        options: ["Wanto", "Wanna", "Won-to", "Wan-it"],
-        correctIndex: 1,
+        options: [
+          { text: "Wanna", soundSample: "I wanna go" },
+          { text: "Wanto", soundSample: "I want to" },
+        ],
+        correctIndex: 0,
         explanation: "'Want to' melebur menjadi 'Wanna' dalam percakapan santai.",
       },
     ],
@@ -380,69 +482,108 @@ const GATED_STAGES: GatedStage[] = [
     title: "Tahap 3: 50 Larangan & Jebakan Fatal Indoglish",
     subtitle: "Koreksi Terjemahan Harfiah yang Paling Sering Bikin Salah",
     badge: "40% → 60%",
-    summary: "Hentikan menerjemahkan bahasa Indonesia kata per kata. Pelajari padanan baku yang benar dan alami.",
+    summary: "Hentikan menerjemahkan bahasa Indonesia kata per kata. Pelajari padanan baku yang benar dan dengarkan perbedaannya.",
     steps: [
       {
-        title: "Larangan: 'I am agree'",
-        focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' atau 'I disagree'",
+        title: "Larangan Keras: 'I am agree'",
+        focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' / 'I disagree'",
         phonetic: "/aɪ əˈɡriː/",
         explanation: "'Agree' adalah kata kerja (verb), bukan kata sifat. Jadi TIDAK BOLEH memakai to be 'am'!",
-        wrongSample: "I am agree with your opinion",
-        correctSample: "I agree with your opinion completely.",
-        audioText: "I agree with your proposal completely, and I think it is great.",
-        tongueTip: "Langsung ucapkan 'I agree' tanpa kata tambahan di tengah.",
-        drillOptions: ["I agree with you", "I am agree with you", "I am agreed", "Me agree with you"],
-        correctOptionIndex: 0,
+        wrongAudio: {
+          label: "BUNYI SALAH (Indoglish Fatal):",
+          text: "I am agree with your opinion",
+          sampleText: "I am agree with your opinion.",
+          explanation: "Menambahkan to be 'am' sebelum kata kerja adalah kesalahan fatal.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Standard English):",
+          text: "I agree with your opinion",
+          sampleText: "I agree with your opinion completely.",
+          explanation: "Langsung gunakan subjek + kata kerja: 'I agree'.",
+        },
+        tongueTip: "Cukup katakan 'I agree' atau 'I completely agree'.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah kalimat persetujuan yang benar secara tata bahasa?",
+          options: [
+            { text: "Opsi 1: 'I agree with your proposal'", soundSample: "I agree with your proposal completely.", isCorrect: true },
+            { text: "Opsi 2: 'I am agree with your proposal'", soundSample: "I am agree with your proposal.", isCorrect: false },
+          ],
+          explanation: "'Agree' adalah verb (kata kerja), jadi langsung 'I agree' tanpa to be 'am'.",
+        },
       },
       {
-        title: "Larangan: 'Thanks before'",
-        focusHighlight: "JANGAN: 'Thanks before' → GUNAKAN: 'Thanks in advance' atau 'Thank you'",
+        title: "Larangan Keras: 'Thanks before'",
+        focusHighlight: "JANGAN: 'Thanks before' → GUNAKAN: 'Thanks in advance'",
         phonetic: "/θæŋks ɪn ədˈvɑːns/",
-        explanation: "Penutur asli tidak mengenal frasa 'thanks before'. Untuk ucapan terima kasih di awal, gunakan 'Thanks in advance'.",
-        wrongSample: "Thanks before for your help",
-        correctSample: "Thanks in advance for your support and feedback.",
-        audioText: "Thanks in advance for your quick response and support.",
-        tongueTip: "Gunakan 'Thanks in advance' saat mengirim email atau chat tugas.",
-        drillOptions: ["Thanks in advance", "Thanks before", "Thank before", "Thanks previously"],
-        correctOptionIndex: 0,
+        explanation: "Penutur asli tidak mengenal frasa 'thanks before'. Untuk ucapan terima kasih di awal bantuan, gunakan 'Thanks in advance'.",
+        wrongAudio: {
+          label: "BUNYI SALAH (Terjemahan Harfiah):",
+          text: "Thanks before for your help",
+          sampleText: "Thanks before for your help.",
+          explanation: "Menerjemahkan 'terima kasih sebelumnya' kata per kata.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Professional Native):",
+          text: "Thanks in advance for your help",
+          sampleText: "Thanks in advance for your support and feedback.",
+          explanation: "Standar baku dalam komunikasi email dan chat profesional internasional.",
+        },
+        tongueTip: "Pakai 'Thanks in advance' saat meminta tolong lewat email atau chat.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah ucapan terima kasih di awal yang benar?",
+          options: [
+            { text: "Opsi 1: 'Thanks in advance for your help'", soundSample: "Thanks in advance for your help.", isCorrect: true },
+            { text: "Opsi 2: 'Thanks before for your help'", soundSample: "Thanks before for your help.", isCorrect: false },
+          ],
+          explanation: "'Thanks in advance' adalah ungkapan resmi dan baku dalam bahasa Inggris.",
+        },
       },
       {
-        title: "Larangan: 'Join with us'",
-        focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' atau 'Join the team'",
+        title: "Larangan Keras: 'Join with us'",
+        focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' / 'Join our team'",
         phonetic: "/dʒɔɪn ʌs/",
         explanation: "Kata kerja 'Join' sudah otomatis berarti 'bergabung dengan'. Jangan menambahkan kata 'with'!",
-        wrongSample: "Please join with our community",
-        correctSample: "Please join our community and join us for lunch.",
-        audioText: "Please join our creative team and join us for lunch today.",
-        tongueTip: "Langsung ikuti kata 'join' dengan orang atau grup yang dituju.",
-        drillOptions: ["Join our team (tanpa with)", "Join with our team", "Join to our team", "Join together with us"],
-        correctOptionIndex: 0,
-      },
-      {
-        title: "Larangan: 'Borrow me money'",
-        focusHighlight: "Borrow = Meminjam (mengambil) VS Lend = Meminjamkan (memberi)",
-        phonetic: "/lend miː/ vs /ˈbɒr.oʊ/",
-        explanation: "Jika kamu meminta orang lain memberi pinjaman, gunakan kata 'Lend'!",
-        wrongSample: "Can you borrow me your laptop?",
-        correctSample: "Can you lend me your laptop? (atau: Can I borrow your laptop?)",
-        audioText: "Could you please lend me your laptop for one hour?",
-        tongueTip: "'Can I borrow...?' (Bolehkah saya pinjam?) vs 'Can you lend me...?' (Bisakah kamu meminjamkan saya?).",
-        drillOptions: ["Can you lend me some money?", "Can you borrow me some money?", "Borrow me cash please", "Lend I money"],
-        correctOptionIndex: 0,
+        wrongAudio: {
+          label: "BUNYI SALAH (Pemborosan Kata):",
+          text: "Please join with our community",
+          sampleText: "Please join with our community today.",
+          explanation: "Menambahkan kata 'with' yang tidak diperlukan.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Ringkas & Tepat):",
+          text: "Please join our community / Join us",
+          sampleText: "Please join our community and join us for lunch today.",
+          explanation: "Langsung sebutkan objek setelah kata join: 'Join us', 'Join the meeting'.",
+        },
+        tongueTip: "Ingat: Join langsung diikuti nama kelompok atau orang.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah ajakan bergabung yang benar?",
+          options: [
+            { text: "Opsi 1: 'Please join our team for lunch'", soundSample: "Please join our team for lunch.", isCorrect: true },
+            { text: "Opsi 2: 'Please join with our team for lunch'", soundSample: "Please join with our team for lunch.", isCorrect: false },
+          ],
+          explanation: "Kata 'Join' tidak membutuhkan preposisi 'with'. Cukup 'Join our team'.",
+        },
       },
     ],
     exam: [
       {
-        question: "Manakah kalimat persetujuan yang 100% benar secara tata bahasa?",
-        options: ["I am agree with your decision", "I agree with your decision", "I am agreed to your decision", "Me agree for your decision"],
-        correctIndex: 1,
-        explanation: "'Agree' adalah verb, jadi langsung 'I agree'.",
+        question: "Dengarkan audio di bawah. Manakah kalimat persetujuan yang benar?",
+        options: [
+          { text: "I agree with your decision", soundSample: "I agree with your decision." },
+          { text: "I am agree with your decision", soundSample: "I am agree with your decision." },
+        ],
+        correctIndex: 0,
+        explanation: "'Agree' adalah kata kerja, jadi langsung 'I agree'.",
       },
       {
-        question: "Bagaimana cara menulis 'terima kasih sebelumnya' dalam email bahasa Inggris profesional?",
-        options: ["Thanks before", "Thanks in advance", "Thank you before", "Thanks earlier"],
-        correctIndex: 1,
-        explanation: "'Thanks in advance' adalah standar baku untuk ucapan terima kasih di awal.",
+        question: "Dengarkan audio di bawah. Manakah ucapan 'terima kasih sebelumnya' yang benar?",
+        options: [
+          { text: "Thanks in advance for your support", soundSample: "Thanks in advance for your support." },
+          { text: "Thanks before for your support", soundSample: "Thanks before for your support." },
+        ],
+        correctIndex: 0,
+        explanation: "'Thanks in advance' adalah standar baku universal.",
       },
     ],
   },
@@ -456,47 +597,68 @@ const GATED_STAGES: GatedStage[] = [
     steps: [
       {
         title: "Pola Masa Lalu Spontan (Verb 2 / Did)",
-        focusHighlight: "Yesterday / Earlier today → Selalu gunakan Verb 2 (Went, Met, Saw, Bought)",
+        focusHighlight: "Yesterday → Selalu gunakan Verb 2 (Went, Met, Saw, Bought)",
         phonetic: "/wɛnt/ • /mɛt/ • /sɔː/ • /bɔːt/",
         explanation: "Saat menceritakan apa yang terjadi tadi pagi atau kemarin, ubah kata kerja ke bentuk lampau secara otomatis.",
-        wrongSample: "Yesterday I go to office and buy lunch",
-        correctSample: "Yesterday I went to the office and bought lunch.",
-        audioText: "Yesterday I went to the office, met the client, and bought lunch.",
+        wrongAudio: {
+          label: "BUNYI SALAH (Tenses Keliru):",
+          text: "Yesterday I go to office and buy lunch",
+          sampleText: "Yesterday I go to office and buy lunch.",
+          explanation: "Memakai kata kerja waktu sekarang (V1) untuk cerita masa lalu.",
+        },
+        correctAudio: {
+          label: "BUNYI BENAR (Past Tense Refleks):",
+          text: "Yesterday I went to the office and bought lunch",
+          sampleText: "Yesterday I went to the office, met the client, and bought lunch.",
+          explanation: "Menggunakan Verb 2 (went, met, bought).",
+        },
         tongueTip: "Latihlah reflek kata kerja lampau umum: Go → Went, Make → Made, Take → Took.",
-        drillOptions: ["Yesterday I went to the office", "Yesterday I go to the office", "Yesterday I am go", "Yesterday I gone to office"],
-        correctOptionIndex: 0,
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah cerita masa lalu yang benar?",
+          options: [
+            { text: "Opsi 1: 'Yesterday I went to the office and met our client'", soundSample: "Yesterday I went to the office and met our client.", isCorrect: true },
+            { text: "Opsi 2: 'Yesterday I go to the office and meet our client'", soundSample: "Yesterday I go to the office and meet our client.", isCorrect: false },
+          ],
+          explanation: "Masa lalu wajib menggunakan bentuk lampau: 'went' dan 'met'.",
+        },
       },
       {
         title: "Pola Bertanya & Meminta Sangat Sopan",
         focusHighlight: "Could you please...? • Would you mind...? • I was wondering if...",
         phonetic: "/kʊd juː pliːz/ • /wʊd juː maɪnd/",
         explanation: "Hindari kalimat perintah langsung 'I want' atau 'Give me'. Gunakan modal verbs yang anggun.",
-        wrongSample: "Give me that report / I want your help",
-        correctSample: "Could you please share that report when you have time?",
-        audioText: "Could you please share that report whenever you have a moment?",
-        tongueTip: "'Would you mind...' selalu diikuti Verb-ING (contoh: Would you mind helping me?).",
-        drillOptions: ["Could you please check this draft?", "Give me this draft check", "I want you check this", "You must check this draft"],
-        correctOptionIndex: 0,
-      },
-      {
-        title: "Pola Menolak dengan Elegan (Professional Pushback)",
-        focusHighlight: "Apresiasi Dulu + 'However, I am afraid I cannot...' + Alasan",
-        phonetic: "/aɪ æm əˈfreɪd aɪ ˈkæn.nɒt/",
-        explanation: "Jangan menolak mentah-mentah dengan kata 'No I can't'. Gunakan formula penolakan sopan.",
-        wrongSample: "No, I don't want to do that.",
-        correctSample: "I see your point, however I am afraid I cannot take this on today.",
-        audioText: "I see your point, however I am afraid I have a tight deadline today.",
-        tongueTip: "Awali dengan 'I see your point' atau 'I appreciate the offer'.",
-        drillOptions: ["I see your point, however I am afraid I have a tight deadline", "No I can't do that today", "I reject your task", "Not possible for me"],
-        correctOptionIndex: 0,
+        wrongAudio: {
+          label: "BUNYI KASAR (Perintah Langsung):",
+          text: "Give me that report / I want your help",
+          sampleText: "Give me that report right now.",
+          explanation: "Terdengar kasar dan menuntut dalam budaya internasional.",
+        },
+        correctAudio: {
+          label: "BUNYI ANGGUN (Polite Request):",
+          text: "Could you please share that report when you have time?",
+          sampleText: "Could you please share that report whenever you have a moment?",
+          explanation: "Membuat lawan bicara merasa dihargai dan senang membantu.",
+        },
+        tongueTip: "'Could you please...' dan 'Would you mind...' adalah standar kesopanan global.",
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah permintaan tolong yang paling sopan?",
+          options: [
+            { text: "Opsi 1: 'Could you please review this draft whenever you have time?'", soundSample: "Could you please review this draft whenever you have time?", isCorrect: true },
+            { text: "Opsi 2: 'Give me your draft review now'", soundSample: "Give me your draft review now.", isCorrect: false },
+          ],
+          explanation: "'Could you please...' adalah bentuk permintaan tolong yang santun dan profesional.",
+        },
       },
     ],
     exam: [
       {
-        question: "Jika kamu ingin meminta tolong kepada rekan kerja secara sopan, kalimat mana yang paling tepat?",
-        options: ["You must help me right now", "Could you please help me with this when you are free?", "Give me your help immediately", "I want you to do this"],
-        correctIndex: 1,
-        explanation: "'Could you please help me...' adalah bentuk permintaan tolong yang santun dan profesional.",
+        question: "Dengarkan audio di bawah. Manakah kalimat permintaan tolong yang paling sopan?",
+        options: [
+          { text: "Could you please help me with this when you are free?", soundSample: "Could you please help me with this when you are free?" },
+          { text: "You must help me right now", soundSample: "You must help me right now." },
+        ],
+        correctIndex: 0,
+        explanation: "'Could you please help me...' adalah standar emas komunikasi sopan.",
       },
     ],
   },
@@ -510,34 +672,40 @@ const GATED_STAGES: GatedStage[] = [
     steps: [
       {
         title: "Frasa Meeting Online & Kerja Remote",
-        focusHighlight: "Can you hear me? • Can everyone see my screen? • You are on mute! • Let's circle back",
+        focusHighlight: "Can you hear me? • Can everyone see my screen? • You are on mute!",
         phonetic: "/kæn juː hɪər miː/ • /juː ɑːr ɒn mjuːt/",
         explanation: "Kuasai frasa penting saat memimpin atau mengikuti meeting online jarak jauh.",
-        wrongSample: "You hear me? / Look my screen",
-        correctSample: "Can everyone see my screen? Sarah, you are on mute.",
-        audioText: "Can everyone see my screen? Sarah, you are currently on mute.",
+        wrongAudio: {
+          label: "BUNYI KELIRU:",
+          text: "You hear me? / Look my screen",
+          sampleText: "You hear me? Look my screen now.",
+          explanation: "Tata bahasa janggal saat online meeting.",
+        },
+        correctAudio: {
+          label: "BUNYI PROFESIONAL:",
+          text: "Can everyone see my screen? Sarah, you are on mute.",
+          sampleText: "Can everyone see my screen? Sarah, you are currently on mute.",
+          explanation: "Frasa standar universal yang dipakai semua profesional global.",
+        },
         tongueTip: "'Let's circle back' artinya mari kita bahas topik ini lagi nanti.",
-        drillOptions: ["Can everyone see my screen?", "Look to my monitor all", "Are you looking my desktop?", "Watch screen now"],
-        correctOptionIndex: 0,
-      },
-      {
-        title: "Frasa Kafe & Restoran",
-        focusHighlight: "Can I get an iced latte to go? • For here or to go? • Keep the change!",
-        phonetic: "/fɔːr hɪər ɔːr tuː ɡoʊ/",
-        explanation: "Frasa natural saat memesan kopi atau makanan di luar negeri.",
-        wrongSample: "I buy this one coffee",
-        correctSample: "Can I get an iced latte with oat milk, please? Keep the change.",
-        audioText: "Can I get an iced latte with oat milk, to go please? Keep the change.",
-        tongueTip: "'For here' = makan di tempat, 'To go' = bungkus bawa pulang.",
-        drillOptions: ["Can I get an iced latte to go, please?", "I buy one cold coffee take out", "Give me latte to bring", "I want coffee drink"],
-        correctOptionIndex: 0,
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah frasa meeting online yang tepat?",
+          options: [
+            { text: "Opsi 1: 'Can everyone see my screen? You are currently on mute.'", soundSample: "Can everyone see my screen? You are currently on mute.", isCorrect: true },
+            { text: "Opsi 2: 'Look to my screen all, your mic is broken'", soundSample: "Look to my screen all, your mic is broken.", isCorrect: false },
+          ],
+          explanation: "'Can everyone see my screen?' dan 'You are on mute' adalah standar universal.",
+        },
       },
     ],
     exam: [
       {
         question: "Saat memesan kopi dan ingin dibungkus bawa pulang, apa yang harus kamu katakan?",
-        options: ["I want coffee wrap", "Can I get an iced latte to go, please?", "Pack this coffee to home", "Bring coffee outside"],
-        correctIndex: 1,
+        options: [
+          { text: "Can I get an iced latte to go, please?", soundSample: "Can I get an iced latte to go, please?" },
+          { text: "I want coffee wrap to home", soundSample: "I want coffee wrap to home." },
+        ],
+        correctIndex: 0,
         explanation: "'To go' adalah istilah universal untuk makanan/minuman yang dibawa pulang.",
       },
     ],
@@ -548,43 +716,45 @@ const GATED_STAGES: GatedStage[] = [
     title: "Tahap 6: Ujian Kelulusan 100% Master",
     subtitle: "Tantangan Komprehensif Mengunci Status Fluent",
     badge: "90% → 100%",
-    summary: "Selesaikan 3 tantangan komprehensif untuk membuka sertifikasi penguasaan 100% di Rapor Belajar lo!",
+    summary: "Selesaikan tantangan komprehensif untuk membuka sertifikasi penguasaan 100% di Rapor Belajar lo!",
     steps: [
       {
         title: "Instruksi Ujian Akhir",
         focusHighlight: "Uji seluruh materi: Fonetik, Connected Speech, Larangan Indoglish & Frasa Profesional",
         phonetic: "/ˈmɑːs.tər ˈɡrædʒ.u.eɪ.ʃən/",
-        explanation: "Jawablah seluruh soal ujian kelulusan di bawah dengan teliti untuk membuktikan kelayakanmu sebagai 100% English Master.",
-        wrongSample: "Ragu dan tergesa-gesa",
-        correctSample: "Fokus dan percaya diri menerapkan apa yang telah dipelajari.",
-        audioText: "Congratulations on reaching the final milestone! You are ready to speak with confidence.",
+        explanation: "Dengarkan rekaman audio di bawah dengan teliti untuk membuktikan kelayakanmu sebagai 100% English Master.",
+        wrongAudio: {
+          label: "CONTOH KELIRU:",
+          text: "I am agree with you and thanks before.",
+          sampleText: "I am agree with you and thanks before.",
+          explanation: "Kesalahan fatal Indoglish yang harus dihindari.",
+        },
+        correctAudio: {
+          label: "CONTOH MASTER 100%:",
+          text: "Could you please share the report? Thanks in advance!",
+          sampleText: "Could you please share the report? Thanks in advance!",
+          explanation: "Pengucapan dan tata bahasa sempurna ala profesional.",
+        },
         tongueTip: "Ingat kembali seluruh aturan fonetik dan larangan kata di tahap 1 sampai 5.",
-        drillOptions: ["Saya siap mengikuti Ujian Kelulusan 100%", "Kembali mengulang materi", "Tunda ujian", "Lewati ujian"],
-        correctOptionIndex: 0,
+        audioDrill: {
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah kalimat master yang 100% sempurna?",
+          options: [
+            { text: "Opsi 1: 'Could you please lend me the report? Thanks in advance.'", soundSample: "Could you please lend me the report? Thanks in advance.", isCorrect: true },
+            { text: "Opsi 2: 'Please borrow me the report and thanks before.'", soundSample: "Please borrow me the report and thanks before.", isCorrect: false },
+          ],
+          explanation: "Kalimat opsi 1 menggunakan 'lend', 'could you please', dan 'thanks in advance' secara sempurna.",
+        },
       },
     ],
     exam: [
       {
-        question: "Manakah kalimat yang 100% BENAR secara tata bahasa, pelafalan, dan etika profesional?",
+        question: "Dengarkan audio di bawah. Manakah kalimat yang 100% BENAR secara tata bahasa dan etika profesional?",
         options: [
-          "I am agree with you and thanks before for your help.",
-          "Could you please lend me the project report when you have a moment?",
-          "Please join with our community because I am boring at home.",
-          "Yesterday I see the island and buyed many souvenir."
-        ],
-        correctIndex: 1,
-        explanation: "'Could you please lend me...' adalah kalimat sempurna tanpa kesalahan Indoglish, memakai modal sopan, dan penggunaan kata kerja 'lend' yang tepat.",
-      },
-      {
-        question: "Apa arti sebenarnya dari kalimat 'I am bored' dibandingkan 'I am boring'?",
-        options: [
-          "'I am bored' = Saya sedang bosan, 'I am boring' = Saya orang yang membosankan",
-          "Keduanya memiliki arti yang persis sama",
-          "'I am bored' = Saya membosankan, 'I am boring' = Saya bosan",
-          "'I am bored' adalah bahasa gaul tidak baku"
+          { text: "Could you please lend me the project report when you have a moment?", soundSample: "Could you please lend me the project report when you have a moment?" },
+          { text: "I am agree with you and thanks before for your help", soundSample: "I am agree with you and thanks before for your help." },
         ],
         correctIndex: 0,
-        explanation: "Akhiran -ED menyatakan perasaan subjek (bored = sedang merasa bosan), akhiran -ING menyatakan sifat (boring = sifatnya membosankan).",
+        explanation: "'Could you please lend me...' adalah kalimat sempurna tanpa kesalahan Indoglish.",
       },
     ],
   },
@@ -597,13 +767,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
 
-  // Gated Academy States (0% -> 100%)
+  // Audio Gated Academy States
   const [activeStageId, setActiveStageId] = useState<number>(1);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [isExamMode, setIsExamMode] = useState<boolean>(false);
   const [examAnswers, setExamAnswers] = useState<Record<number, number>>({});
   const [examSubmitted, setExamSubmitted] = useState<boolean>(false);
   const [drillAnswer, setDrillAnswer] = useState<number | null>(null);
+  const [currentlyPlayingAudioText, setCurrentlyPlayingAudioText] = useState<string | null>(null);
 
   const [completedStages, setCompletedStages] = useState<number[]>(() => {
     if (typeof window === "undefined") return [];
@@ -686,6 +857,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const playSpeechAudio = useCallback(
     async (text: string, customPersona?: Persona) => {
       const activeP = customPersona || persona;
+      setCurrentlyPlayingAudioText(text);
       try {
         if (currentAudioElementRef.current) {
           currentAudioElementRef.current.pause();
@@ -709,10 +881,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           currentAudioElementRef.current = audio;
           audio.onended = () => {
             setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
             URL.revokeObjectURL(url);
           };
           audio.onerror = () => {
             setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
           };
           await audio.play();
           return;
@@ -727,18 +901,25 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = activeP === "sarah" || activeP === "emma" ? "en-GB" : "en-US";
         utterance.rate = playbackSpeed * (level === "beginner" ? 0.85 : 1.0);
-        utterance.onend = () => setIsPlayingAudio(false);
-        utterance.onerror = () => setIsPlayingAudio(false);
+        utterance.onend = () => {
+          setIsPlayingAudio(false);
+          setCurrentlyPlayingAudioText(null);
+        };
+        utterance.onerror = () => {
+          setIsPlayingAudio(false);
+          setCurrentlyPlayingAudioText(null);
+        };
         window.speechSynthesis.speak(utterance);
       } else {
         setIsPlayingAudio(false);
+        setCurrentlyPlayingAudioText(null);
       }
     },
     [persona, level, playbackSpeed],
   );
 
   // Complete Stage by Passing Gate Exam
-  const submitGateExam = (stage: GatedStage) => {
+  const submitGateExam = (stage: AudioGatedStage) => {
     setExamSubmitted(true);
     let correctCount = 0;
     stage.exam.forEach((q, idx) => {
@@ -936,7 +1117,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   };
 
-  // Toggle Recording with Web Speech API & MediaRecorder Hybrid
+  // Toggle Recording
   const toggleRecording = async () => {
     if (isProcessing) return;
 
@@ -1036,7 +1217,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   };
 
-  // Submit Audio Blob to /api/speaking/converse (Whisper STT backend)
+  // Submit Audio Blob
   const submitAudioChunk = async (audioBlob: Blob) => {
     setIsProcessing(true);
     setFeedbackNotice(null);
@@ -1092,7 +1273,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      // Auto-check mission progress for scenarios
       if (activeScenario) {
         const userMsgCount = newMessages.filter((m) => m.role === "user").length;
         if (userMsgCount >= 1) setCompletedMissions((prev) => ({ ...prev, 0: true }));
@@ -1165,7 +1345,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      // Auto-check mission progress for scenarios
       if (activeScenario) {
         const userMsgCount = newMessages.filter((m) => m.role === "user").length;
         if (userMsgCount >= 1) setCompletedMissions((prev) => ({ ...prev, 0: true }));
@@ -1300,11 +1479,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     .sort((a, b) => b[1] - a[1])
     .slice(0, 4);
 
-  const activeStage = GATED_STAGES.find((s) => s.id === activeStageId) || GATED_STAGES[0];
+  const activeStage = AUDIO_GATED_STAGES.find((s) => s.id === activeStageId) || AUDIO_GATED_STAGES[0];
   const activeStep = activeStage.steps[activeStepIndex] || activeStage.steps[0];
 
   return (
-    <div className="w-full space-y-5">
+    <div className="w-full space-y-4">
       {/* GLOBAL NOTIFICATION NOTICE */}
       {feedbackNotice && (
         <div className="rounded-2xl border border-ember/40 bg-ember/15 p-3.5 sm:p-4 text-xs sm:text-sm font-medium text-ember flex items-center justify-between animate-in fade-in duration-200">
@@ -1319,10 +1498,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       )}
 
       {/* TOP HEADER CONTAINER */}
-      <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/85 p-5 sm:p-6 backdrop-blur-xl shadow-lg space-y-5">
+      <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/85 p-4 sm:p-5 backdrop-blur-xl shadow-lg space-y-4">
         {/* Title & Level Selector Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="space-y-1.5 max-w-2xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/35 bg-ember/15 px-3 py-0.5 text-[11px] font-bold text-ember uppercase tracking-wider">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember">
@@ -1337,11 +1516,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               </span>
             </div>
 
-            <h1 className="font-display text-xl sm:text-2xl font-bold text-ink tracking-tight">
+            <h1 className="font-display text-lg sm:text-xl font-bold text-ink tracking-tight">
               Lancar Inggris
             </h1>
-            <p className="text-xs sm:text-sm text-muted leading-relaxed">
-              Drill interaktif 0-100%, latihan bicara suara native, roleplay skenario nyata, kuis pro, dan evaluasi tulisan.
+            <p className="text-xs text-muted leading-relaxed">
+              Drill telinga interaktif (audio salah vs benar), latihan bicara AI native, roleplay skenario nyata, dan evaluasi esai.
             </p>
           </div>
 
@@ -1358,7 +1537,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <button
                     key={lvl.id}
                     onClick={() => setLevel(lvl.id as Level)}
-                    className={`h-10 px-3.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                    className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
                       isActive
                         ? "bg-ember text-obsidian shadow-sm ring-1 ring-ember/50 font-display"
                         : "text-muted hover:text-ink hover:bg-surface"
@@ -1380,13 +1559,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         </div>
 
         {/* 6 STREAMLINED SUB-MODULE NAVIGATION TABS */}
-        <div className="border-t border-hairline/60 pt-4">
+        <div className="border-t border-hairline/60 pt-3">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {[
               {
                 id: "academy",
                 label: "Belajar 0-100%",
-                sub: "Interactive Drills",
+                sub: "Audio Drills",
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
@@ -1460,7 +1639,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     if (isCalling) endCall();
                     setMode(tab.id as Mode);
                   }}
-                  className={`h-13 rounded-2xl border p-2.5 transition-all text-left flex items-center gap-2.5 w-full ${
+                  className={`h-12 rounded-2xl border p-2 transition-all text-left flex items-center gap-2 w-full ${
                     isCurrent
                       ? "border-ember/70 bg-ember/15 text-ink shadow-sm ring-1 ring-ember/30"
                       : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
@@ -1487,28 +1666,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       </div>
 
       {/* ========================================================================= */}
-      {/* MODE 0: BELAJAR 0-100% (INTERACTIVE GATED DRILL ENGINE) */}
+      {/* MODE 0: BELAJAR 0-100% (DUAL-AUDIO EAR TRAINING DRILL ENGINE) */}
       {/* ========================================================================= */}
       {mode === "academy" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
           {/* Stage Progression Stepper Map (GATED / LOCKED SYSTEM) */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <span className="text-[11px] font-bold text-ember uppercase tracking-wider">
-                  Interactive Gated Drill Engine
+                  Ear-Training Audio Validation Engine
                 </span>
-                <h2 className="font-display text-lg sm:text-xl font-bold text-ink mt-0.5">
-                  Belajar 0% ke 100% (Wajib Lulus Per Tahap)
+                <h2 className="font-display text-base sm:text-lg font-bold text-ink mt-0.5">
+                  Belajar 0% ke 100% (Latihan Telinga &amp; Pelafalan Riil)
                 </h2>
                 <p className="text-xs text-muted mt-0.5">
-                  Dengarkan bunyi lidah, ikuti latihan pelafalan, dan luluskan tes untuk membuka tahap selanjutnya.
+                  Dengarkan perbandingan audio salah vs benar, jawab tes pemahaman suara, dan luluskan tahap untuk membuka materi berikutnya.
                 </p>
               </div>
 
               {/* Progress Metric Badge */}
-              <div className="flex items-center gap-3 rounded-2xl border border-ember/30 bg-ember/10 p-3 self-start sm:self-auto shrink-0">
-                <div className="size-10 rounded-xl bg-ember flex items-center justify-center text-obsidian font-display font-bold text-sm">
+              <div className="flex items-center gap-3 rounded-2xl border border-ember/30 bg-ember/10 p-2.5 self-start sm:self-auto shrink-0">
+                <div className="size-9 rounded-xl bg-ember flex items-center justify-center text-obsidian font-display font-bold text-xs">
                   {masteryPercentage}%
                 </div>
                 <div>
@@ -1520,7 +1699,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
             {/* Stepper Stage Tabs */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-              {GATED_STAGES.map((stg) => {
+              {AUDIO_GATED_STAGES.map((stg) => {
                 const isCompleted = completedStages.includes(stg.id);
                 const isUnlocked = stg.id === 1 || completedStages.includes(stg.id - 1) || isCompleted;
                 const isCurrent = activeStageId === stg.id;
@@ -1542,7 +1721,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       setExamAnswers({});
                       setDrillAnswer(null);
                     }}
-                    className={`rounded-2xl border p-3 text-left transition-all relative flex flex-col justify-between h-22 ${borderStyle}`}
+                    className={`rounded-2xl border p-2.5 text-left transition-all relative flex flex-col justify-between h-20 ${borderStyle}`}
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-mono font-bold text-muted">{stg.badge}</span>
@@ -1568,12 +1747,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
 
           {/* ACTIVE STAGE DRILL CHAMBER */}
-          <div className="border-t border-hairline/60 pt-5 space-y-5">
+          <div className="border-t border-hairline/60 pt-4 space-y-4">
             {!isExamMode ? (
-              /* LESSON STEP VIEW (ONE FOCUSED DRILL AT A TIME) */
-              <div className="space-y-5 animate-in fade-in duration-200">
+              /* LESSON STEP VIEW (DUAL-AUDIO COMPARISON + INTERACTIVE EAR TRAINING) */
+              <div className="space-y-4 animate-in fade-in duration-200">
                 {/* Step Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-raised/60 p-4 rounded-2xl border border-hairline">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-raised/60 p-3.5 rounded-2xl border border-hairline">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md">
@@ -1581,76 +1760,112 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       </span>
                       <span className="text-xs font-bold text-ink">{activeStage.title}</span>
                     </div>
-                    <h3 className="font-display text-base sm:text-lg font-bold text-ink mt-1">
+                    <h3 className="font-display text-sm sm:text-base font-bold text-ink mt-1">
                       {activeStep.title}
                     </h3>
                   </div>
 
                   <button
                     onClick={() => setIsExamMode(true)}
-                    className="h-8 px-3.5 rounded-xl border border-ember/40 bg-ember/10 text-ember text-xs font-bold hover:bg-ember/20 transition-all self-start sm:self-auto shrink-0"
+                    className="h-8 px-3 rounded-xl border border-ember/40 bg-ember/10 text-ember text-xs font-bold hover:bg-ember/20 transition-all self-start sm:self-auto shrink-0"
                   >
                     Langsung Ujian Tahap Ini →
                   </button>
                 </div>
 
-                {/* Big Interactive Focus Card */}
-                <div className="rounded-3xl border border-ember/30 bg-gradient-to-b from-surface-raised to-surface p-5 sm:p-7 space-y-6 shadow-md">
-                  {/* Focus text & audio trigger */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-hairline/60 pb-5">
-                    <div className="space-y-1">
-                      <p className="text-micro font-bold text-muted uppercase tracking-wider">Fokus Pelafalan &amp; Bunyi:</p>
-                      <h4 className="font-display text-lg sm:text-2xl font-bold text-ember">
-                        {activeStep.focusHighlight}
-                      </h4>
-                      <p className="text-xs font-mono text-muted">{activeStep.phonetic}</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => playSpeechAudio(activeStep.audioText || activeStep.correctSample)}
-                      className="btn-ember h-12 px-6 rounded-2xl font-display text-xs font-bold text-obsidian shadow-lg hover:brightness-105 flex items-center gap-2 shrink-0 self-start sm:self-auto"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                        <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                      </svg>
-                      Dengar Suara Bule
-                    </button>
+                {/* Big Interactive Focus Arena */}
+                <div className="rounded-3xl border border-ember/30 bg-gradient-to-b from-surface-raised to-surface p-4 sm:p-6 space-y-5 shadow-md">
+                  {/* Focus Header */}
+                  <div className="space-y-1 border-b border-hairline/60 pb-3">
+                    <p className="text-micro font-bold text-muted uppercase tracking-wider">Fokus Pelafalan &amp; Bunyi:</p>
+                    <h4 className="font-display text-base sm:text-xl font-bold text-ember">
+                      {activeStep.focusHighlight}
+                    </h4>
+                    <p className="text-xs font-mono text-muted">{activeStep.phonetic}</p>
+                    <p className="text-xs text-ink/90 mt-1 leading-relaxed">{activeStep.explanation}</p>
                   </div>
 
-                  {/* Explanation & Comparative Analysis */}
-                  <div className="space-y-3">
-                    <p className="text-xs sm:text-sm text-ink leading-relaxed font-medium">
-                      {activeStep.explanation}
-                    </p>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      {activeStep.wrongSample && (
-                        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3.5 space-y-1">
-                          <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider block">JANGAN DIBACA BEGINI:</span>
-                          <span className="text-ink font-medium block">{activeStep.wrongSample}</span>
+                  {/* DUAL-AUDIO COMPARISON (DENGARKAN BUNYI SALAH VS BUNYI BENAR) */}
+                  <div className="space-y-2">
+                    <span className="text-micro font-bold text-muted uppercase tracking-wider block">
+                      Dengarkan Perbandingan Suara (Klik Tombol Suara):
+                    </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {/* WRONG AUDIO CARD */}
+                      <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3.5 flex flex-col justify-between space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                              {activeStep.wrongAudio.label}
+                            </span>
+                            <span className="size-2 rounded-full bg-rose-500" />
+                          </div>
+                          <p className="text-xs font-bold text-ink">{activeStep.wrongAudio.text}</p>
+                          <p className="text-micro text-muted leading-relaxed">{activeStep.wrongAudio.explanation}</p>
                         </div>
-                      )}
-                      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1">
-                        <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">CARA BACA YANG BENAR:</span>
-                        <span className="text-ink font-bold block">{activeStep.correctSample}</span>
+
+                        <button
+                          type="button"
+                          onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText)}
+                          className="h-10 px-4 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                          </svg>
+                          {currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Sedang Memutar..." : "Putar Bunyi Salah"}
+                        </button>
+                      </div>
+
+                      {/* CORRECT AUDIO CARD */}
+                      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 flex flex-col justify-between space-y-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                              {activeStep.correctAudio.label}
+                            </span>
+                            <span className="size-2 rounded-full bg-emerald-400" />
+                          </div>
+                          <p className="text-xs font-bold text-ink">{activeStep.correctAudio.text}</p>
+                          <p className="text-micro text-muted leading-relaxed">{activeStep.correctAudio.explanation}</p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText)}
+                          className="btn-ember h-10 px-4 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                          </svg>
+                          {currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Sedang Memutar..." : "Putar Bunyi Benar (Native)"}
+                        </button>
                       </div>
                     </div>
-
-                    <div className="rounded-2xl border border-hairline bg-surface-raised p-3.5 text-xs text-muted flex items-start gap-2">
-                      <span className="text-ember font-bold shrink-0">💡</span>
-                      <p><b>Tips Posisi Lidah:</b> {activeStep.tongueTip}</p>
-                    </div>
                   </div>
 
-                  {/* Interactive Drill Practice */}
-                  <div className="space-y-2.5 pt-2 border-t border-hairline/60">
-                    <span className="text-micro font-bold text-ink uppercase tracking-wider">Latihan Cepat Bunyi Ini:</span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {activeStep.drillOptions.map((opt, optIdx) => {
+                  {/* Tongue Tip */}
+                  <div className="rounded-2xl border border-hairline bg-surface-raised p-3 text-xs text-muted flex items-start gap-2">
+                    <span className="text-ember font-bold shrink-0">💡</span>
+                    <p><b>Tips Posisi Lidah:</b> {activeStep.tongueTip}</p>
+                  </div>
+
+                  {/* INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
+                  <div className="rounded-2xl border border-ember/25 bg-surface-raised/60 p-4 space-y-3">
+                    <div>
+                      <span className="text-micro font-bold text-ember uppercase tracking-wider">
+                        Validasi Telinga &amp; Pemahaman Bunyi:
+                      </span>
+                      <p className="font-display text-xs sm:text-sm font-bold text-ink mt-0.5">
+                        {activeStep.audioDrill.prompt}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      {activeStep.audioDrill.options.map((opt, optIdx) => {
                         const isChosen = drillAnswer === optIdx;
-                        const isRight = optIdx === activeStep.correctOptionIndex;
+                        const isRight = opt.isCorrect;
 
                         let style = "border-hairline bg-surface text-ink hover:border-hairline/90";
                         if (drillAnswer !== null) {
@@ -1660,29 +1875,53 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         }
 
                         return (
-                          <button
+                          <div
                             key={optIdx}
-                            disabled={drillAnswer !== null}
-                            onClick={() => setDrillAnswer(optIdx)}
-                            className={`rounded-xl border p-3 text-left text-xs transition-all ${style}`}
+                            className={`rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all ${style}`}
                           >
-                            <span className="font-mono font-bold mr-2 text-muted">{String.fromCharCode(65 + optIdx)}.</span>
-                            {opt}
-                          </button>
+                            <button
+                              type="button"
+                              disabled={drillAnswer !== null}
+                              onClick={() => setDrillAnswer(optIdx)}
+                              className="text-left flex-1 text-xs"
+                            >
+                              <span className="font-mono font-bold mr-2 text-muted">{String.fromCharCode(65 + optIdx)}.</span>
+                              <span>{opt.text}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playSpeechAudio(opt.soundSample);
+                              }}
+                              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ember bg-ember/15 border border-ember/30 px-3 py-1.5 rounded-lg hover:bg-ember/25 transition-all shrink-0 self-start sm:self-auto"
+                            >
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                              </svg>
+                              Putar Suara
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
+
                     {drillAnswer !== null && (
-                      <p className={`text-xs font-bold animate-in fade-in duration-150 ${
-                        drillAnswer === activeStep.correctOptionIndex ? "text-emerald-400" : "text-rose-400"
-                      }`}>
-                        {drillAnswer === activeStep.correctOptionIndex ? "Tepat sekali!" : "Kurang tepat, perhatikan panduan posisi lidah di atas."}
-                      </p>
+                      <div className="rounded-xl border border-hairline bg-surface p-3 text-xs leading-relaxed animate-in fade-in duration-200">
+                        <p className={`font-bold mb-1 ${activeStep.audioDrill.options[drillAnswer].isCorrect ? "text-emerald-400" : "text-rose-400"}`}>
+                          {activeStep.audioDrill.options[drillAnswer].isCorrect ? "Jawaban Valid & Tepat!" : "Jawaban Kurang Tepat!"}
+                        </p>
+                        <p className="text-muted">
+                          <b>Penjelasan:</b> {activeStep.audioDrill.explanation}
+                        </p>
+                      </div>
                     )}
                   </div>
 
                   {/* Navigation Stepper Controls */}
-                  <div className="flex items-center justify-between pt-4 border-t border-hairline/60">
+                  <div className="flex items-center justify-between pt-3 border-t border-hairline/60">
                     <button
                       disabled={activeStepIndex === 0}
                       onClick={() => {
@@ -1720,15 +1959,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </div>
               </div>
             ) : (
-              /* STAGE GATEKEEPER EXAM VIEW (MUST PASS TO UNLOCK NEXT STAGE) */
-              <div className="space-y-6 animate-in fade-in duration-300">
+              /* STAGE GATEKEEPER EXAM VIEW (WITH AUDIO PLAYBACK) */
+              <div className="space-y-5 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between bg-surface-raised/50 p-4 rounded-2xl border border-hairline">
                   <div>
                     <span className="text-micro font-mono font-bold text-ember uppercase">Ujian Kelulusan {activeStage.badge}</span>
                     <h3 className="font-display text-base font-bold text-ink mt-0.5">
-                      Tes Pemahaman {activeStage.title}
+                      Tes Pemahaman &amp; Validasi Suara {activeStage.title}
                     </h3>
-                    <p className="text-xs text-muted">Jawab minimal 60% soal dengan benar untuk membuka tahap berikutnya.</p>
+                    <p className="text-xs text-muted">Dengarkan audio dan jawab minimal 60% soal dengan benar untuk membuka tahap berikutnya.</p>
                   </div>
                   <button
                     onClick={() => setIsExamMode(false)}
@@ -1740,11 +1979,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                 <div className="space-y-4">
                   {activeStage.exam.map((q, qIdx) => (
-                    <div key={qIdx} className="rounded-2xl border border-hairline bg-surface-raised p-4 sm:p-5 space-y-3">
+                    <div key={qIdx} className="rounded-2xl border border-hairline bg-surface-raised p-4 space-y-3">
                       <h4 className="font-display text-sm font-bold text-ink">
                         {qIdx + 1}. {q.question}
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="space-y-2">
                         {q.options.map((opt, optIdx) => {
                           const isSelected = examAnswers[qIdx] === optIdx;
                           const isCorrect = optIdx === q.correctIndex;
@@ -1759,15 +1998,37 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           }
 
                           return (
-                            <button
+                            <div
                               key={optIdx}
-                              disabled={examSubmitted}
-                              onClick={() => setExamAnswers((prev) => ({ ...prev, [qIdx]: optIdx }))}
-                              className={`rounded-xl border p-3 text-left text-xs transition-all ${style}`}
+                              className={`rounded-xl border p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${style}`}
                             >
-                              <span className="font-mono font-bold mr-2 text-muted">{String.fromCharCode(65 + optIdx)}.</span>
-                              {opt}
-                            </button>
+                              <button
+                                type="button"
+                                disabled={examSubmitted}
+                                onClick={() => setExamAnswers((prev) => ({ ...prev, [qIdx]: optIdx }))}
+                                className="text-left flex-1 text-xs"
+                              >
+                                <span className="font-mono font-bold mr-2 text-muted">{String.fromCharCode(65 + optIdx)}.</span>
+                                <span>{opt.text}</span>
+                              </button>
+
+                              {opt.soundSample && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    playSpeechAudio(opt.soundSample || opt.text);
+                                  }}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-ember bg-ember/15 border border-ember/30 px-2.5 py-1 rounded-lg hover:bg-ember/25 transition-all shrink-0 self-start sm:self-auto"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                  </svg>
+                                  Dengar
+                                </button>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
@@ -1832,9 +2093,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 1: BICARA AI (LIVE SPEAKING CALL) */}
       {/* ========================================================================= */}
       {mode === "voice" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
           {!isCalling && !showCallSummary ? (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-display text-base font-bold text-ink">
@@ -2185,9 +2446,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 2: SIMULASI SKENARIO (ROLEPLAY CHAMBER) */}
       {/* ========================================================================= */}
       {mode === "scenario" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
           {!isCalling ? (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
                 <h3 className="font-display text-base font-bold text-ink">
                   Chamber Simulasi Skenario Dunia Nyata
@@ -2393,9 +2654,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 3: KUIS KILAT PRO */}
       {/* ========================================================================= */}
       {mode === "quiz" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
           {quizQuestions.length === 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div>
                 <h3 className="font-display text-base font-bold text-ink">
                   Kuis Kilat Bahasa Inggris Pro
@@ -2457,7 +2718,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           ) : !quizFinished ? (
             /* ACTIVE QUIZ QUESTION */
-            <div className="space-y-6">
+            <div className="space-y-5">
               <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
                 <span className="text-xs font-bold text-ember uppercase tracking-wider">
                   Soal {currentQuestionIdx + 1} dari {quizQuestions.length}
@@ -2583,7 +2844,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 4: UJIAN ESAI */}
       {/* ========================================================================= */}
       {mode === "essay" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6">
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
           <div>
             <h3 className="font-display text-base font-bold text-ink">
               Ujian Esai &amp; Evaluasi Tulisan Bahasa Inggris
@@ -2640,7 +2901,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
           {/* Result View */}
           {essayResult && (
-            <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-5 space-y-6 animate-in fade-in duration-300">
+            <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-5 space-y-5 animate-in fade-in duration-300">
               {/* Score Badges */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                 <div className="rounded-2xl border border-ember/40 bg-ember/15 p-4 text-center">
@@ -2718,7 +2979,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 5: RAPOR & RIWAYAT BELAJAR (LEARNING ANALYTICS) */}
       {/* ========================================================================= */}
       {mode === "progress" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-5 sm:p-7 backdrop-blur-xl shadow-xl space-y-6 animate-in fade-in duration-300">
+        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5 animate-in fade-in duration-300">
           <div>
             <h3 className="font-display text-base font-bold text-ink">
               Rapor &amp; Analitik Progres Belajar Lo
@@ -2729,7 +2990,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
 
           {/* CURRICULUM MASTERY HIGHLIGHT CARD */}
-          <div className="rounded-3xl border border-ember/40 bg-gradient-to-r from-surface-raised via-surface to-ember/15 p-5 sm:p-6 space-y-4">
+          <div className="rounded-3xl border border-ember/40 bg-gradient-to-r from-surface-raised via-surface to-ember/15 p-4 sm:p-5 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ember uppercase tracking-wider">
@@ -2753,7 +3014,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
             {/* Kinetic Progress Bar */}
             <div className="space-y-1.5">
-              <div className="h-3.5 w-full rounded-full bg-surface-raised border border-hairline overflow-hidden p-0.5">
+              <div className="h-3 w-full rounded-full bg-surface-raised border border-hairline overflow-hidden p-0.5">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-amber-500 to-ember transition-all duration-500 shadow-sm"
                   style={{ width: `${Math.max(4, masteryPercentage)}%` }}
@@ -2769,21 +3030,21 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
           {/* Metric Highlights */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-            <div className="rounded-2xl border border-hairline bg-surface-raised p-4 text-center">
+            <div className="rounded-2xl border border-hairline bg-surface-raised p-3.5 text-center">
               <p className="text-micro font-bold text-muted uppercase tracking-wider">Total Menit Bicara</p>
-              <p className="font-display text-2xl font-bold text-ink mt-1">{totalMinutesSpoken} Menit</p>
+              <p className="font-display text-xl sm:text-2xl font-bold text-ink mt-1">{totalMinutesSpoken} Menit</p>
             </div>
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-center">
               <p className="text-micro font-bold text-emerald-400 uppercase tracking-wider">Rata-rata Skor</p>
-              <p className="font-display text-2xl font-bold text-emerald-400 mt-1">{avgOverallScore}/100</p>
+              <p className="font-display text-xl sm:text-2xl font-bold text-emerald-400 mt-1">{avgOverallScore}/100</p>
             </div>
-            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 text-center">
+            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-3.5 text-center">
               <p className="text-micro font-bold text-ember uppercase tracking-wider">Total Aktivitas</p>
-              <p className="font-display text-2xl font-bold text-ember mt-1">{records.length} Sesi</p>
+              <p className="font-display text-xl sm:text-2xl font-bold text-ember mt-1">{records.length} Sesi</p>
             </div>
-            <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-4 text-center">
+            <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-3.5 text-center">
               <p className="text-micro font-bold text-sky-400 uppercase tracking-wider">Status Level</p>
-              <p className="font-display text-2xl font-bold text-sky-400 mt-1 capitalize">{level}</p>
+              <p className="font-display text-xl sm:text-2xl font-bold text-sky-400 mt-1 capitalize">{level}</p>
             </div>
           </div>
 
