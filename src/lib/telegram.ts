@@ -1,0 +1,209 @@
+import "server-only";
+
+interface InlineKeyboardButton {
+  text: string;
+  callback_data?: string;
+  url?: string;
+}
+
+export interface SendTelegramOptions {
+  chatId?: string | number;
+  parseMode?: "HTML" | "Markdown" | "MarkdownV2";
+  replyMarkup?: {
+    inline_keyboard?: InlineKeyboardButton[][];
+  };
+  disableNotification?: boolean;
+}
+
+let cachedConfig: { token?: string; chatId?: string; at: number } | null = null;
+
+export async function getTelegramConfig(): Promise<{ token?: string; chatId?: string }> {
+  const envToken = process.env.TELEGRAM_BOT_TOKEN;
+  const envChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (envToken && envChatId) {
+    return { token: envToken, chatId: envChatId };
+  }
+
+  if (cachedConfig && Date.now() - cachedConfig.at < 60_000) {
+    return cachedConfig;
+  }
+
+  try {
+    const { createServiceRoleClient } = await import("@/lib/supabase/server");
+    const { data } = await createServiceRoleClient()
+      .from("app_config")
+      .select("key, value")
+      .in("key", ["telegram_bot_token", "telegram_admin_chat_id"]);
+
+    const dbToken = data?.find((r) => r.key === "telegram_bot_token")?.value as string | undefined;
+    const dbChatId = data?.find((r) => r.key === "telegram_admin_chat_id")?.value as string | undefined;
+
+    cachedConfig = {
+      token: envToken || dbToken,
+      chatId: envChatId || dbChatId,
+      at: Date.now(),
+    };
+    return cachedConfig;
+  } catch {
+    return { token: envToken, chatId: envChatId };
+  }
+}
+
+/**
+ * Sends a message to the owner's Telegram chat.
+ * Fails safely without throwing so user requests in Next.js never break.
+ */
+export async function sendTelegramMessage(
+  text: string,
+  options: SendTelegramOptions = {},
+): Promise<{ ok: boolean; messageId?: number }> {
+  const config = await getTelegramConfig();
+  const token = config.token;
+  const chatId = options.chatId || config.chatId;
+
+  if (!token || !chatId) {
+    return { ok: false };
+  }
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: options.parseMode || "HTML",
+        reply_markup: options.replyMarkup,
+        disable_notification: options.disableNotification,
+        disable_web_page_preview: true,
+      }),
+      signal: AbortSignal.timeout(4000),
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.warn("[telegram] sendMessage failed:", res.status, errBody);
+      return { ok: false };
+    }
+
+    const data = (await res.json()) as { ok: boolean; result?: { message_id: number } };
+    return { ok: data.ok, messageId: data.result?.message_id };
+  } catch (err) {
+    console.warn("[telegram] network error or timeout sending message:", err);
+    return { ok: false };
+  }
+}
+
+/**
+ * Sends a photo to the owner's Telegram chat.
+ */
+export async function sendTelegramPhoto(
+  photoUrl: string,
+  caption?: string,
+  options: SendTelegramOptions = {},
+): Promise<{ ok: boolean }> {
+  const config = await getTelegramConfig();
+  const token = config.token;
+  const chatId = options.chatId || config.chatId;
+
+  if (!token || !chatId) {
+    return { ok: false };
+  }
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendPhoto`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: photoUrl,
+        caption,
+        parse_mode: options.parseMode || "HTML",
+        reply_markup: options.replyMarkup,
+      }),
+      signal: AbortSignal.timeout(6000),
+    });
+
+    return { ok: res.ok };
+  } catch (err) {
+    console.warn("[telegram] sendPhoto error:", err);
+    return { ok: false };
+  }
+}
+
+// -------------------------------------------------------------
+// Specialized Helper Notifications
+// -------------------------------------------------------------
+
+export function notifyNewUser(data: { email: string; name?: string | null; provider?: string }) {
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+  const text = `👋 <b>USER BARU TERDAFTAR!</b>\n\n👤 <b>Nama:</b> ${escapeHtml(data.name || "Tanpa Nama")}\n📧 <b>Email:</b> <code>${escapeHtml(data.email)}</code>\n🌐 <b>Login:</b> ${data.provider || "Google OAuth"}\n⏰ <b>Waktu:</b> ${now} WIB`;
+
+  return sendTelegramMessage(text);
+}
+
+export function notifyGeneration(data: {
+  email: string;
+  moduleName: string;
+  creditsSpent: number;
+  details?: string;
+}) {
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+  const text = `⚡ <b>GENERASI KONTEN</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n🛠 <b>Modul:</b> <b>${escapeHtml(data.moduleName)}</b>\n💎 <b>Kredit:</b> -${data.creditsSpent} Kredit\n📝 <b>Topik/Info:</b> ${escapeHtml(data.details || "-")}\n⏰ <b>Waktu:</b> ${now} WIB`;
+
+  return sendTelegramMessage(text, { disableNotification: true });
+}
+
+export function notifyFeedback(data: {
+  email: string;
+  rating: number;
+  comment?: string | null;
+  moduleName?: string | null;
+}) {
+  const stars = "⭐".repeat(Math.max(1, Math.min(5, data.rating)));
+  const text = `💌 <b>FEEDBACK DITERIMA!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n${stars} (<b>${data.rating} / 5</b>)\n🛠 <b>Fitur:</b> ${escapeHtml(data.moduleName || "Umum")}\n💬 <b>Komentar:</b>\n<i>"${escapeHtml(data.comment || "Tanpa catatan tambahan")}"</i>`;
+
+  return sendTelegramMessage(text);
+}
+
+export function notifyTopupRequest(data: {
+  topupId: string;
+  email: string;
+  amount: number;
+  credits: number;
+  proofUrl?: string | null;
+}) {
+  const formattedRp = Number(data.amount || 0).toLocaleString("id-ID");
+  const caption = `🚨 <b>REQUEST TOPUP KREDIT!</b>\n\n👤 <b>User:</b> <code>${escapeHtml(data.email)}</code>\n💵 <b>Nominal:</b> <b>Rp ${formattedRp}</b>\n💎 <b>Paket:</b> <b>${data.credits} Kredit</b>\n🧾 <b>ID:</b> <code>${data.topupId}</code>\n\n<i>Klik tombol di bawah untuk menyetujui langsung dari HP:</i>`;
+
+  const inlineKeyboard = {
+    inline_keyboard: [
+      [
+        { text: "✅ Setujui (Approve)", callback_data: `approve_topup:${data.topupId}` },
+        { text: "❌ Tolak (Reject)", callback_data: `reject_topup:${data.topupId}` },
+      ],
+    ],
+  };
+
+  if (data.proofUrl) {
+    return sendTelegramPhoto(data.proofUrl, caption, { replyMarkup: inlineKeyboard });
+  }
+
+  return sendTelegramMessage(caption, { replyMarkup: inlineKeyboard });
+}
+
+export function notifySystemAlert(data: { title: string; message: string }) {
+  const text = `⚠️ <b>SYSTEM ALERT: ${escapeHtml(data.title)}</b>\n\n${escapeHtml(data.message)}`;
+  return sendTelegramMessage(text);
+}
+
+function escapeHtml(str: string): string {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}

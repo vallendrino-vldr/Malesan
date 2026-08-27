@@ -151,6 +151,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Notify owner via Telegram silently
+  import("@/lib/telegram").then(({ notifyGeneration }) => {
+    notifyGeneration({
+      email: user.email || "user@malesan",
+      moduleName: "Video Auto-CC",
+      creditsSpent: cost,
+      details: `Durasi: ${Math.round(transcript.duration)}s (${finalWords.length} kata)`,
+    }).catch(() => {});
+  }).catch(() => {});
+
   return json(
     {
       text: finalText,

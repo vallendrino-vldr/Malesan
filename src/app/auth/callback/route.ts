@@ -41,6 +41,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Notify owner via Telegram asynchronously
+  if (sessionData?.user) {
+    import("@/lib/telegram").then(({ notifyNewUser }) => {
+      notifyNewUser({
+        email: sessionData.user.email || "user@malesan",
+        name: sessionData.user.user_metadata?.full_name || sessionData.user.user_metadata?.name || null,
+        provider: sessionData.user.app_metadata?.provider || "Google OAuth",
+      }).catch(() => {});
+    }).catch(() => {});
+  }
+
   // If there's a ref code, update the user's profile with referred_by
   if (refCode && sessionData.user) {
     const { createServiceRoleClient } = await import("@/lib/supabase/server");

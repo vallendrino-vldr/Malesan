@@ -37,6 +37,16 @@ export async function submitFeedbackAction(data: {
     throw new Error("Gagal mengirim feedback. Coba lagi bentar ya.");
   }
 
+  // Notify owner via Telegram
+  import("@/lib/telegram").then(({ notifyFeedback }) => {
+    notifyFeedback({
+      email: user.email || "user@malesan",
+      rating: 5,
+      comment: msg,
+      moduleName: data.category,
+    }).catch(() => {});
+  }).catch(() => {});
+
   return { success: true };
 }
 

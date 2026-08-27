@@ -582,6 +582,16 @@ export async function POST(request: NextRequest) {
 
             if (genError) {
               console.error("Failed to insert generation:", genError);
+            } else {
+              // Notify Telegram silently
+              import("@/lib/telegram").then(({ notifyGeneration }) => {
+                notifyGeneration({
+                  email: user.email || "user@malesan",
+                  moduleName: module,
+                  creditsSpent: cost,
+                  details: typeof input === "string" ? input.slice(0, 80) : module,
+                }).catch(() => {});
+              }).catch(() => {});
             }
 
             controller.enqueue(

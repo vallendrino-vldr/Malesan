@@ -152,7 +152,7 @@ export async function submitTopup(
     expectedAmountIdr: pack.price_idr,
   });
 
-  const { error } = await serviceRole.from("topups").insert({
+  const { data: insertedTopup, error } = await serviceRole.from("topups").insert({
     user_id: user.id,
     amount_idr: pack.price_idr,
     credits: pack.credits,
@@ -163,12 +163,23 @@ export async function submitTopup(
     check_verdict: check.verdict,
     check_detail: check as unknown as Json,
     status: "pending",
-  });
+  }).select("id").single();
 
   if (error) {
     await discardUpload();
     throw new Error("Gagal nyimpen topupnya. Coba lagi bentar lagi.");
   }
+
+  // Notify owner via Telegram with inline approval buttons
+  import("@/lib/telegram").then(({ notifyTopupRequest }) => {
+    notifyTopupRequest({
+      topupId: insertedTopup?.id || "N/A",
+      email: user.email || "User",
+      amount: pack.price_idr,
+      credits: pack.credits,
+      proofUrl: null,
+    }).catch(() => {});
+  }).catch(() => {});
 
   revalidatePath("/app/topup");
   revalidatePath("/admin/topups");
