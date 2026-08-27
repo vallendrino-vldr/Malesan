@@ -9,6 +9,43 @@ import { transcribeAudio } from "@/lib/transcribe";
 export const runtime = "nodejs";
 export const maxDuration = 45;
 
+const PERSONA_POLLY_MAP: Record<string, string> = {
+  david: "Matthew",
+  alex: "Joey",
+  sarah: "Amy",
+  emma: "Joanna",
+};
+
+async function getPollyAudioUrl(text: string, persona: string): Promise<string | null> {
+  try {
+    const speaker = PERSONA_POLLY_MAP[persona] || "Matthew";
+    const form = new URLSearchParams();
+    form.append("msg", text);
+    form.append("lang", speaker);
+    form.append("source", "ttsmp3");
+
+    const res = await fetch("https://ttsmp3.com/makemp3_new.php", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        Origin: "https://ttsmp3.com",
+        Referer: "https://ttsmp3.com/",
+      },
+      body: form.toString(),
+      signal: AbortSignal.timeout(3500),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.URL as string) || null;
+  } catch (e) {
+    console.warn("[speaking-converse] Polly audioUrl error:", e);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -159,11 +196,15 @@ ATURAN FORMATTING KETAT:
   try {
     const rawAi = await generate({ prompt, schema, tier: "free" });
     const parsed = JSON.parse(rawAi.trim());
+    const replyEn = parsed.replyEn || "That is interesting! Tell me more about it.";
+
+    const audioUrl = await getPollyAudioUrl(replyEn, persona);
 
     return json({
       ok: true,
       userTranscribedText: textInput,
-      replyEn: parsed.replyEn || "That is interesting! Tell me more about it.",
+      replyEn,
+      audioUrl: audioUrl || null,
       translateId: parsed.translateId || "Itu sangat menarik! Ceritakan lebih banyak tentang hal itu.",
       suggestedReplies: Array.isArray(parsed.suggestedReplies) && parsed.suggestedReplies.length > 0
         ? parsed.suggestedReplies

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
+import { useState, useRef, useEffect, useCallback, useSyncExternalStore, startTransition } from "react";
 import { createPortal } from "react-dom";
 
 type Level = "beginner" | "intermediate" | "advanced";
@@ -1313,7 +1313,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Play Speech Audio with Authentic Human Neural Voice (David = Real US Male, Alex = Real US Male, Sarah = UK Female, Emma = US Female)
   const playSpeechAudio = useCallback(
-    async (text: string, customPersona?: Persona) => {
+    async (text: string, customPersona?: Persona, directAudioUrl?: string | null) => {
       const activeP = customPersona || persona;
       const profile = PERSONA_VOICE_PROFILES[activeP] || PERSONA_VOICE_PROFILES.david;
       setCurrentlyPlayingAudioText(text);
@@ -1329,7 +1329,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
       setIsPlayingAudio(true);
 
-      // 1. Primary: Server-Side Authentic Neural Human Voice (Real Male Matthew/Joey on ALL devices including Android & iOS)
+      // 1. Direct Audio URL playback (Instant 0ms audio sync from converse API - Zero Delay)
+      if (directAudioUrl) {
+        try {
+          const audio = new Audio(directAudioUrl);
+          audio.playbackRate = 1.14; // Energetic, brisk, confident executive cadence
+          currentAudioElementRef.current = audio;
+          audio.onended = () => {
+            setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
+          };
+          audio.onerror = () => {
+            setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
+          };
+          await audio.play();
+          return;
+        } catch (e) {
+          console.warn("Direct audio URL play error:", e);
+        }
+      }
+
+      // 2. Server-Side Authentic Neural Human Voice
       try {
         const res = await fetch("/api/tts", {
           method: "POST",
@@ -1341,7 +1362,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
-          audio.playbackRate = playbackSpeed;
+          audio.playbackRate = 1.14; // Energetic, brisk, confident executive cadence
           currentAudioElementRef.current = audio;
           audio.onended = () => {
             setIsPlayingAudio(false);
@@ -1359,13 +1380,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         console.warn("Server TTS playback error, attempting local fallback:", err);
       }
 
-      // 2. Fallback: Native Web Speech Synthesis
+      // 3. Fallback: Native Web Speech Synthesis
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         try {
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = profile.lang;
           utterance.pitch = profile.pitch;
-          utterance.rate = playbackSpeed * profile.rateMultiplier;
+          utterance.rate = playbackSpeed * 1.12;
 
           const voices = window.speechSynthesis.getVoices();
           if (voices && voices.length > 0) {
@@ -2047,7 +2068,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      playSpeechAudio(data.replyEn, activeP);
+      playSpeechAudio(data.replyEn, activeP, data.audioUrl);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
     } finally {
@@ -2113,7 +2134,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
-      playSpeechAudio(data.replyEn, activeP);
+      playSpeechAudio(data.replyEn, activeP, data.audioUrl);
     } catch (err) {
       setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses percakapan.");
     } finally {
@@ -2389,7 +2410,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   key={tab.id}
                   onClick={() => {
                     if (isCalling) endCall();
-                    setMode(tab.id as Mode);
+                    startTransition(() => {
+                      setMode(tab.id as Mode);
+                    });
                   }}
                   className={`h-10 sm:h-12 rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
                     isCurrent
