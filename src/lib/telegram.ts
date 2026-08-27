@@ -50,6 +50,47 @@ export async function getTelegramConfig(): Promise<{ token?: string; chatId?: st
 }
 
 /**
+ * Splits extra-long text (> 4000 chars) into neat paragraph/sentence chunks
+ * so messages NEVER exceed Telegram's 4096 character limit.
+ */
+export function splitTelegramMessage(text: string, maxLen = 3800): string[] {
+  if (!text || text.length <= maxLen) return [text || ""];
+
+  const chunks: string[] = [];
+  let remaining = text.trim();
+
+  while (remaining.length > 0) {
+    if (remaining.length <= maxLen) {
+      chunks.push(remaining);
+      break;
+    }
+
+    // 1. Try splitting at paragraph break
+    let splitIdx = remaining.lastIndexOf("\n\n", maxLen);
+
+    // 2. Try splitting at single newline
+    if (splitIdx === -1 || splitIdx < maxLen * 0.4) {
+      splitIdx = remaining.lastIndexOf("\n", maxLen);
+    }
+
+    // 3. Try splitting at sentence / space
+    if (splitIdx === -1 || splitIdx < maxLen * 0.4) {
+      splitIdx = remaining.lastIndexOf(" ", maxLen);
+    }
+
+    // 4. Hard fallback split
+    if (splitIdx === -1 || splitIdx === 0) {
+      splitIdx = maxLen;
+    }
+
+    chunks.push(remaining.slice(0, splitIdx).trim());
+    remaining = remaining.slice(splitIdx).trim();
+  }
+
+  return chunks.filter(Boolean);
+}
+
+/**
  * Sanitizes arbitrary HTML to only Telegram Bot API supported tags:
  * <b>, <i>, <u>, <s>, <a>, <code>, <pre>, <blockquote>, <tg-spoiler>.
  * Converts <ul>, <ol>, <li> into clean bullet points.
@@ -106,26 +147,20 @@ export async function sendChatAction(
 }
 
 /**
- * Sends a message to the owner's Telegram chat.
- * Bulletproof delivery: automatically sanitizes HTML and retries in plaintext if Telegram rejects parsing.
+ * Sends a single chunk message to Telegram with plaintext retry fallback.
  */
-export async function sendTelegramMessage(
-  text: string,
-  options: SendTelegramOptions = {},
+async function sendSingleTelegramMessage(
+  token: string,
+  chatId: string | number,
+  rawText: string,
+  options: SendTelegramOptions,
 ): Promise<{ ok: boolean; messageId?: number }> {
-  const config = await getTelegramConfig();
-  const token = config.token;
-  const chatId = options.chatId || config.chatId;
-
-  if (!token || !chatId || !text) {
-    return { ok: false };
-  }
-
   const parseMode = options.parseMode || "HTML";
-  const processedText = parseMode === "HTML" ? sanitizeTelegramHtml(text) : text;
+  const processedText = parseMode === "HTML" ? sanitizeTelegramHtml(rawText) : rawText;
+
+  const url = `https://api.telegram.org/bot${token}/sendMessage`;
 
   try {
-    const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -142,12 +177,10 @@ export async function sendTelegramMessage(
 
     if (!res.ok) {
       const errBody = await res.text();
-      console.warn("[telegram] sendMessage initial attempt failed:", res.status, errBody);
 
-      // Resilient Auto-Fallback: If HTML parsing failed, strip all tags and send clean plain text!
+      // Auto-fallback: if HTML formatting failed, strip all tags and deliver cleanly in plain text
       if (res.status === 400 && errBody.includes("can't parse entities")) {
-        console.info("[telegram] Retrying delivery with clean plaintext fallback...");
-        const plainText = text.replace(/<[^>]*>/g, "").trim();
+        const plainText = rawText.replace(/<[^>]*>/g, "").trim();
         const fallbackRes = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -167,15 +200,54 @@ export async function sendTelegramMessage(
         }
       }
 
+      console.warn("[telegram] sendMessage failed:", res.status, errBody);
       return { ok: false };
     }
 
     const data = (await res.json()) as { ok: boolean; result?: { message_id: number } };
     return { ok: data.ok, messageId: data.result?.message_id };
   } catch (err) {
-    console.warn("[telegram] network error or timeout sending message:", err);
+    console.warn("[telegram] network error sending chunk:", err);
     return { ok: false };
   }
+}
+
+/**
+ * Main delivery entry point.
+ * Supports unlimited character lengths via automatic message chunking!
+ */
+export async function sendTelegramMessage(
+  text: string,
+  options: SendTelegramOptions = {},
+): Promise<{ ok: boolean; messageId?: number }> {
+  const config = await getTelegramConfig();
+  const token = config.token;
+  const chatId = options.chatId || config.chatId;
+
+  if (!token || !chatId || !text) {
+    return { ok: false };
+  }
+
+  // Break limits: Chunk message if it exceeds Telegram's 4000 char threshold
+  const chunks = splitTelegramMessage(text, 3800);
+
+  let lastMessageId: number | undefined;
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    // Attach replyMarkup only to the final chunk
+    const isLast = i === chunks.length - 1;
+    const chunkOptions: SendTelegramOptions = {
+      ...options,
+      replyMarkup: isLast ? options.replyMarkup : undefined,
+    };
+
+    const res = await sendSingleTelegramMessage(token, chatId, chunk, chunkOptions);
+    if (res.ok) {
+      lastMessageId = res.messageId;
+    }
+  }
+
+  return { ok: true, messageId: lastMessageId };
 }
 
 /**
@@ -194,7 +266,7 @@ export async function sendTelegramPhoto(
     return { ok: false };
   }
 
-  const processedCaption = caption ? sanitizeTelegramHtml(caption) : undefined;
+  const processedCaption = caption ? sanitizeTelegramHtml(caption).slice(0, 1024) : undefined;
 
   try {
     const url = `https://api.telegram.org/bot${token}/sendPhoto`;
