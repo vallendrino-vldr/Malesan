@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { sendTelegramMessage, getTelegramConfig } from "@/lib/telegram";
+import { processTelegramAIMessage, executePendingTelegramAction } from "@/lib/telegram-ai";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -82,6 +83,14 @@ export async function POST(request: NextRequest) {
     } else if (data.startsWith("reject_topup:")) {
       const topupId = data.replace("reject_topup:", "");
       await handleRejectTopup(topupId, supabase);
+    } else if (data.startsWith("exec_action:")) {
+      const actionId = data.replace("exec_action:", "");
+      const resMsg = await executePendingTelegramAction(actionId, supabase);
+      await sendTelegramMessage(resMsg, { chatId: fromId });
+    } else if (data.startsWith("cancel_action:")) {
+      const actionId = data.replace("cancel_action:", "");
+      await supabase.from("app_config").delete().eq("key", `tele_act:${actionId}`);
+      await sendTelegramMessage("❌ <b>Tindakan telah dibatalkan oleh Bos.</b>", { chatId: fromId });
     } else if (data === "action:stats") {
       await handleStatsCommand(fromId, supabase);
     } else if (data === "action:topups") {
@@ -107,52 +116,49 @@ export async function POST(request: NextRequest) {
     return json({ ok: true });
   }
 
-  const [cmd, ...args] = text.split(/\s+/);
-
-  switch (cmd.toLowerCase()) {
-    case "/start":
-    case "/help":
-    case "/menu": {
-      await handleMenuCommand(fromId);
-      break;
-    }
-    case "/stats": {
-      await handleStatsCommand(fromId, supabase);
-      break;
-    }
-    case "/topups": {
-      await handleListPendingTopups(fromId, supabase);
-      break;
-    }
-    case "/voucher": {
-      await handleCreateVoucher(fromId, args, supabase);
-      break;
-    }
-    case "/broadcast": {
-      await handleBroadcastCommand(fromId, args.join(" "), supabase);
-      break;
-    }
-    case "/clearnotice": {
-      await handleClearNoticeCommand(fromId, supabase);
-      break;
-    }
-    case "/ban": {
-      await handleBanUser(fromId, args[0], true, supabase);
-      break;
-    }
-    case "/unban": {
-      await handleBanUser(fromId, args[0], false, supabase);
-      break;
-    }
-    default: {
-      if (text.startsWith("/")) {
-        await sendTelegramMessage(
-          `❓ Perintah <code>${escapeHtml(cmd)}</code> gak dikenali.\nKetik /help untuk melihat menu perintah yang tersedia.`,
-          { chatId: fromId },
-        );
+  // If text starts with a known slash command, handle quickly:
+  if (text.startsWith("/")) {
+    const [cmd, ...args] = text.split(/\s+/);
+    switch (cmd.toLowerCase()) {
+      case "/start":
+      case "/help":
+      case "/menu": {
+        await handleMenuCommand(fromId);
+        return json({ ok: true });
+      }
+      case "/stats": {
+        await handleStatsCommand(fromId, supabase);
+        return json({ ok: true });
+      }
+      case "/topups": {
+        await handleListPendingTopups(fromId, supabase);
+        return json({ ok: true });
+      }
+      case "/voucher": {
+        await handleCreateVoucher(fromId, args, supabase);
+        return json({ ok: true });
+      }
+      case "/broadcast": {
+        await handleBroadcastCommand(fromId, args.join(" "), supabase);
+        return json({ ok: true });
+      }
+      case "/clearnotice": {
+        await handleClearNoticeCommand(fromId, supabase);
+        return json({ ok: true });
+      }
+      case "/ban": {
+        await handleBanUser(fromId, args[0], true, supabase);
+        return json({ ok: true });
+      }
+      case "/unban": {
+        await handleBanUser(fromId, args[0], false, supabase);
+        return json({ ok: true });
       }
     }
   }
+
+  // 4. Autonomous Conversational AI Brain: Handles any natural language chat / orders!
+  await processTelegramAIMessage(text, fromId);
 
   return json({ ok: true });
 }
@@ -162,26 +168,18 @@ export async function POST(request: NextRequest) {
 // -------------------------------------------------------------
 
 async function handleMenuCommand(chatId: string) {
-  const menuText = `🎛 <b>MALESAN MISSION CONTROL</b> 🚀\n
-Halo Bos! Berikut menu perintah cepat yang bisa lo pakai:
+  const menuText = `🎛 <b>MALESAN MISSION CONTROL & AI BRAIN</b> 🚀\n
+Halo Bos! Bot ini sekarang dilengkapi <b>Autonomous AI Brain</b>. Lo bisa chat bebas bahasa Indonesia apa aja (gak perlu pakai garis miring / slash lagi):
 
-📊 <b>Monitoring & Keuangan</b>
-• /stats — Ringkasan user, transaksi & margin hari ini
-• /topups — Cek antrean pembayaran pending
+💬 <b>Contoh Obrolan Bebas:</b>
+• <i>"Hapus broadcast sekarang"</i>
+• <i>"Pasang banner: Diskon 50% sampai besok malam"</i>
+• <i>"Ada komplain apa hari ini?"</i>
+• <i>"Berapa total user yang aktif hari ini?"</i>
+• <i>"Kasih 50 kredit buat user budi@gmail.com"</i>
+• <i>"Bikinin ide konten viral buat promo Malesan"</i>
 
-🎟 <b>Voucher & Promo</b>
-• <code>/voucher KODE JUMLAH_KREDIT</code>
-  <i>Contoh: /voucher PROMO50 50</i>
-
-📢 <b>Dashboard Banner</b>
-• <code>/broadcast PESAN</code> — Pasang banner pengumuman di web
-• /clearnotice — Hapus banner pengumuman
-
-🛡 <b>Moderasi Akun</b>
-• <code>/ban user@gmail.com</code> — Bekukan akun user nakal
-• <code>/unban user@gmail.com</code> — Buka blokir akun
-
-<i>Tips: Lo juga bisa klik tombol menu di bawah ini:</i>`;
+<i>Atau klik menu cepat di bawah ini:</i>`;
 
   const inlineKeyboard = {
     inline_keyboard: [
@@ -201,12 +199,10 @@ Halo Bos! Berikut menu perintah cepat yang bisa lo pakai:
 
 async function handleStatsCommand(chatId: string, supabase: SupabaseClient) {
   try {
-    // 1. Count users
     const { count: totalUsers } = await supabase
       .from("profiles")
       .select("id", { count: "exact", head: true });
 
-    // 2. Count generations today
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
@@ -215,13 +211,11 @@ async function handleStatsCommand(chatId: string, supabase: SupabaseClient) {
       .select("id", { count: "exact", head: true })
       .gte("created_at", startOfDay.toISOString());
 
-    // 3. Count pending topups
     const { count: pendingTopups } = await supabase
       .from("topups")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending");
 
-    // 4. Sum approved revenue today
     const { data: todayTopups } = await supabase
       .from("topups")
       .select("amount_idr")
