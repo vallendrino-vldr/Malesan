@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 type Level = "beginner" | "intermediate" | "advanced";
 type Mode = "academy" | "voice" | "scenario" | "quiz" | "essay" | "progress";
@@ -1093,6 +1094,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [stepVoiceTranscribing, setStepVoiceTranscribing] = useState<boolean>(false);
   const [stepVoiceRecordedText, setStepVoiceRecordedText] = useState<string>("");
 
+  // Pop-up Window (Modal Dialog) State
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState<boolean>(false);
+  const [modalType, setModalType] = useState<"step" | "exam">("step");
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+
   // Exam Real Voice Recording Validation States
   const [isRecordingVoiceExam, setIsRecordingVoiceExam] = useState<boolean>(false);
   const [voiceExamTranscribing, setVoiceExamTranscribing] = useState<boolean>(false);
@@ -1137,6 +1143,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const voiceExamChunksRef = useRef<Blob[]>([]);
   const currentAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const modalCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const drillChamberRef = useRef<HTMLDivElement | null>(null);
   const capturedTextRef = useRef<string>("");
 
@@ -1165,6 +1172,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       return [];
     }
   });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isVoiceModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isVoiceModalOpen]);
 
   // Save record helper
   const saveSessionRecord = useCallback((rec: Omit<SessionRecord, "id" | "timestamp">) => {
@@ -1278,7 +1301,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       setStepVoiceRecordedText("");
       setFeedbackNotice(null);
 
-      // Web Speech Recognition for live feedback
       const SpeechRecognition =
         typeof window !== "undefined"
           ? (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).SpeechRecognition ||
@@ -1307,7 +1329,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         }
       }
 
-      // MediaRecorder for raw audio blob
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
@@ -1585,7 +1606,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     let animId: number;
 
     const renderWaveform = () => {
-      const canvas = canvasRef.current;
+      const canvas = modalCanvasRef.current || canvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext("2d");
         if (ctx) {
@@ -1626,7 +1647,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
     animId = requestAnimationFrame(renderWaveform);
     return () => cancelAnimationFrame(animId);
-  }, [isCalling, isRecording, isProcessing, isPlayingAudio, isRecordingVoiceExam, voiceExamTranscribing, isRecordingStepVoice, stepVoiceTranscribing]);
+  }, [isCalling, isRecording, isProcessing, isPlayingAudio, isRecordingVoiceExam, voiceExamTranscribing, isRecordingStepVoice, stepVoiceTranscribing, isVoiceModalOpen]);
 
   // Start Voice Call or Scenario Chamber
   const startCall = (scenarioItem?: ScenarioItem) => {
@@ -2159,7 +2180,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               {
                 id: "academy",
                 label: "Belajar 0-100%",
-                sub: "Uji Suara Per Step",
+                sub: "Uji Suara Pop-up",
                 icon: (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
@@ -2260,7 +2281,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       </div>
 
       {/* ========================================================================= */}
-      {/* MODE 0: BELAJAR 0-100% (DUAL-AUDIO & STEP-BY-STEP MANDATORY VOICE GATE) */}
+      {/* MODE 0: BELAJAR 0-100% (CLEAN COMPACT STEP ARENA + ISOLATED POP-UP MODAL) */}
       {/* ========================================================================= */}
       {mode === "academy" && (
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
@@ -2270,7 +2291,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             <div className="flex items-center justify-between gap-3 min-w-0">
               <div className="min-w-0">
                 <span className="text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider block truncate">
-                  Belajar 0% → 100% (Uji Suara Asli di Tiap Langkah)
+                  Belajar 0% → 100% (Uji Suara Pop-up)
                 </span>
                 <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate mt-0.5">
                   {activeStage.title}
@@ -2341,7 +2362,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           {/* ACTIVE STAGE DRILL CHAMBER */}
           <div ref={drillChamberRef} className="border-t border-hairline/60 pt-3 sm:pt-4 space-y-3 sm:space-y-4 scroll-mt-20 sm:scroll-mt-24">
             {!isExamMode ? (
-              /* LESSON STEP VIEW (WITH STEP-BY-STEP REAL AI VOICE VALIDATION) */
+              /* CLEAN COMPACT LESSON STEP VIEW (NO BLOATED INLINE CARDS) */
               <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-200">
                 {/* Step Progress Pill */}
                 <div className="flex items-center justify-between bg-surface-raised/70 px-3 py-2 rounded-xl border border-hairline">
@@ -2351,6 +2372,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     </span>
                     <span className="text-xs font-bold text-ink truncate">{activeStep.title}</span>
                   </div>
+
+                  {currentStepVoiceResult?.isPassed && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0">
+                      ✓ Suara Lulus ({currentStepVoiceResult.score})
+                    </span>
+                  )}
                 </div>
 
                 {/* Big Interactive Focus Arena */}
@@ -2431,7 +2458,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <p><b>Posisi Lidah:</b> {activeStep.tongueTip}</p>
                   </div>
 
-                  {/* 1. INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
+                  {/* UJI PEMAHAMAN TELINGA (PILIHAN GANDA) */}
                   <div className="rounded-2xl sm:rounded-3xl border border-ember/35 bg-surface-raised/80 p-3 sm:p-4 space-y-3 shadow-sm w-full min-w-0">
                     <div>
                       <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider">
@@ -2440,7 +2467,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                           <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
-                        1. Uji Pemahaman Telinga (Pilih Jawaban):
+                        Uji Pemahaman Suara:
                       </span>
                       <p className="font-display text-xs sm:text-sm font-bold text-ink mt-0.5 leading-snug">
                         {activeStep.audioDrill.prompt}
@@ -2464,7 +2491,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           <div
                             key={optIdx}
                             onClick={() => {
-                              if (drillAnswer === null) setDrillAnswer(optIdx);
+                              if (drillAnswer === null) {
+                                setDrillAnswer(optIdx);
+                                if (opt.isCorrect && !currentStepVoiceResult?.isPassed) {
+                                  // Automatically open the voice validation modal!
+                                  setModalType("step");
+                                  setIsVoiceModalOpen(true);
+                                }
+                              }
                             }}
                             className={`rounded-xl sm:rounded-2xl border p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
                           >
@@ -2522,132 +2556,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     )}
                   </div>
 
-                  {/* 2. MANDATORY REAL AI VOICE RECORDING VALIDATION FOR THIS STEP */}
-                  <div className="rounded-2xl sm:rounded-3xl border-2 border-ember/50 bg-gradient-to-b from-surface-raised via-surface to-ember/10 p-3.5 sm:p-4 space-y-3 shadow-md">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="size-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
-                        <span className="font-display text-xs sm:text-sm font-bold text-ink uppercase tracking-wider truncate">
-                          2. Uji Rekam Suara Lo Sendiri (Wajib Lolos):
-                        </span>
-                      </div>
-                      <span className="text-[9px] sm:text-[10px] font-mono font-bold text-ember bg-ember/20 px-2 py-0.5 rounded-full border border-ember/30 shrink-0">
-                        Validasi AI
-                      </span>
-                    </div>
-
-                    {/* Step Target Sentence Card */}
-                    <div className="rounded-xl border border-hairline bg-surface p-3 space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="space-y-1 min-w-0">
-                          <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
-                            Ucapkan Kalimat Ini:
-                          </span>
-                          <h4 className="font-display text-xs sm:text-sm font-bold text-ember leading-snug">
-                            &ldquo;{activeStep.stepVoiceChallenge.targetSentence}&rdquo;
-                          </h4>
-                          <p className="text-[10px] sm:text-[11px] font-mono font-medium text-ink bg-surface-raised px-2 py-0.5 rounded border border-hairline inline-block">
-                            {activeStep.stepVoiceChallenge.easyPronunciation}
-                          </p>
-                        </div>
-
-                        {/* Listen Sample Audio */}
-                        <button
-                          type="button"
-                          onClick={() => playSpeechAudio(activeStep.stepVoiceChallenge.sampleAudio)}
-                          className="btn-ember h-7 sm:h-8 px-2.5 rounded-lg text-obsidian text-[11px] font-bold transition-all flex items-center gap-1 shadow-xs hover:brightness-105 shrink-0 cursor-pointer"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                          </svg>
-                          <span>{currentlyPlayingAudioText === activeStep.stepVoiceChallenge.sampleAudio ? "Memutar..." : "Contoh"}</span>
-                        </button>
-                      </div>
-
-                      <p className="text-[10px] text-muted border-t border-hairline/50 pt-1.5">
-                        <b>Kunci Lulus:</b> {activeStep.stepVoiceChallenge.focusTips}
-                      </p>
-                    </div>
-
-                    {/* Step Mic Recorder Button */}
-                    <div className="flex flex-col items-center justify-center space-y-1.5 pt-1">
-                      <button
-                        type="button"
-                        disabled={stepVoiceTranscribing}
-                        onClick={() => toggleStepVoiceRecording(activeStage, activeStep, currentStepKey)}
-                        className={`h-11 sm:h-12 px-5 sm:px-7 rounded-xl font-display text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto cursor-pointer ${
-                          isRecordingStepVoice
-                            ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/40"
-                            : stepVoiceTranscribing
-                            ? "bg-surface-raised text-muted border border-hairline cursor-not-allowed"
-                            : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
-                        }`}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
-                          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-                          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                          <line x1="12" x2="12" y1="19" y2="22" />
-                        </svg>
-                        <span>
-                          {isRecordingStepVoice
-                            ? "Selesai Rekam (Kirim ke AI) ⏹"
-                            : stepVoiceTranscribing
-                            ? "AI Menganalisis Suara Lo..."
-                            : "🎙️ Tekan & Rekam Pelafalan Suara Lo"}
-                        </span>
-                      </button>
-
-                      {stepVoiceRecordedText && (
-                        <p className="text-[10px] font-mono text-muted text-center animate-in fade-in">
-                          Suara Terdengar: &ldquo;{stepVoiceRecordedText}&rdquo;
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Step Voice Validation Result Card */}
-                    {currentStepVoiceResult && (
-                      <div className={`rounded-xl border p-3 space-y-2 animate-in fade-in duration-300 ${
-                        currentStepVoiceResult.isPassed
-                          ? "border-emerald-500/50 bg-emerald-500/15"
-                          : "border-rose-500/50 bg-rose-500/15"
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                              currentStepVoiceResult.isPassed ? "bg-emerald-400 text-obsidian" : "bg-rose-500 text-white"
-                            }`}>
-                              {currentStepVoiceResult.isPassed ? "✓" : "✕"}
-                            </span>
-                            <span className={`font-display text-xs sm:text-sm font-bold ${
-                              currentStepVoiceResult.isPassed ? "text-emerald-400" : "text-rose-400"
-                            }`}>
-                              {currentStepVoiceResult.isPassed ? "LULUS UJI SUARA LANGKAH INI!" : "BELUM LULUS — REKAM ULANG"}
-                            </span>
-                          </div>
-                          <span className="font-display text-sm font-bold text-ink font-mono">
-                            Skor: {currentStepVoiceResult.score}/100
-                          </span>
-                        </div>
-
-                        <div className="rounded-lg bg-surface/80 p-2 text-[11px] space-y-1 border border-hairline/60">
-                          <p className="text-muted">
-                            <b>Terdengar:</b> &ldquo;{currentStepVoiceResult.transcribedText}&rdquo;
-                          </p>
-                        </div>
-
-                        <div className="rounded-lg bg-surface-raised p-2 text-[11px] border border-hairline">
-                          <p className="font-bold text-ember uppercase text-[9px] tracking-wider mb-0.5">
-                            Catatan Humor Malesan AI:
-                          </p>
-                          <p className="text-ink font-medium italic">
-                            &ldquo;{currentStepVoiceResult.humorRoast}&rdquo;
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* STRICT GATED NAVIGATION CONTROLS (GATED ON QUIZ + REAL VOICE VALIDATION) */}
+                  {/* CLEAN NAVIGATION & POPUP TRIGGER BAR */}
                   <div className="flex items-center justify-between pt-2.5 border-t border-hairline/60 gap-2">
                     <button
                       disabled={activeStepIndex === 0}
@@ -2662,45 +2571,59 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       ← Sebelumnya
                     </button>
 
-                    {activeStepIndex < activeStage.steps.length - 1 ? (
+                    {/* Step Navigation or Voice Popup Trigger */}
+                    {drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect ? (
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <button
-                          disabled={
-                            drillAnswer === null ||
-                            !activeStep.audioDrill.options[drillAnswer]?.isCorrect ||
-                            !currentStepVoiceResult?.isPassed
-                          }
+                          disabled
+                          className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-muted bg-surface-raised border border-hairline opacity-40 cursor-not-allowed shrink-0"
+                        >
+                          Langkah Berikutnya →
+                        </button>
+                        <span className="text-[9px] text-muted font-medium">
+                          {drillAnswer === null ? "Jawab kuis suara untuk lanjut" : "Pilih jawaban benar untuk lanjut"}
+                        </span>
+                      </div>
+                    ) : !currentStepVoiceResult?.isPassed ? (
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <button
+                          onClick={() => {
+                            setModalType("step");
+                            setIsVoiceModalOpen(true);
+                          }}
+                          className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 flex items-center gap-1.5"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                            <line x1="12" x2="12" y1="19" y2="22" />
+                          </svg>
+                          <span>🎙️ Uji Rekam Suara (Wajib)</span>
+                        </button>
+                        <span className="text-[9px] text-amber-400 font-bold">
+                          {currentStepVoiceResult
+                            ? `Skor suara ${currentStepVoiceResult.score}/100 — Buka pop-up rekam ulang`
+                            : "Buka pop-up rekam suara untuk lanjut"}
+                        </span>
+                      </div>
+                    ) : activeStepIndex < activeStage.steps.length - 1 ? (
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <button
                           onClick={() => {
                             setActiveStepIndex((prev) => prev + 1);
                             setDrillAnswer(null);
                             setStepVoiceRecordedText("");
                             scrollToDrillTop();
                           }}
-                          className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:saturate-50"
+                          className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0"
                         >
                           Langkah Berikutnya →
                         </button>
-                        {drillAnswer === null && (
-                          <span className="text-[9px] text-muted font-medium">1. Jawab kuis pilihan ganda</span>
-                        )}
-                        {drillAnswer !== null && !activeStep.audioDrill.options[drillAnswer]?.isCorrect && (
-                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar pada kuis</span>
-                        )}
-                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && !currentStepVoiceResult && (
-                          <span className="text-[9px] text-amber-400 font-bold">2. Rekam suara pelafalan lo di atas</span>
-                        )}
-                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && currentStepVoiceResult && !currentStepVoiceResult.isPassed && (
-                          <span className="text-[9px] text-rose-400 font-bold">Skor suara {currentStepVoiceResult.score}/100 — Rekam ulang untuk lanjut</span>
-                        )}
+                        <span className="text-[9px] text-emerald-400 font-bold">✓ Lolos Uji Suara</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <button
-                          disabled={
-                            drillAnswer === null ||
-                            !activeStep.audioDrill.options[drillAnswer]?.isCorrect ||
-                            !currentStepVoiceResult?.isPassed
-                          }
                           onClick={() => {
                             setIsExamMode(true);
                             setExamAnswers({});
@@ -2708,29 +2631,18 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setVoiceExamRecordedText("");
                             scrollToDrillTop();
                           }}
-                          className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none disabled:saturate-50"
+                          className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0"
                         >
                           Ujian Kelulusan Tahap Ini →
                         </button>
-                        {drillAnswer === null && (
-                          <span className="text-[9px] text-muted font-medium">1. Jawab kuis pilihan ganda</span>
-                        )}
-                        {drillAnswer !== null && !activeStep.audioDrill.options[drillAnswer]?.isCorrect && (
-                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar pada kuis</span>
-                        )}
-                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && !currentStepVoiceResult && (
-                          <span className="text-[9px] text-amber-400 font-bold">2. Rekam suara pelafalan lo di atas</span>
-                        )}
-                        {drillAnswer !== null && activeStep.audioDrill.options[drillAnswer]?.isCorrect && currentStepVoiceResult && !currentStepVoiceResult.isPassed && (
-                          <span className="text-[9px] text-rose-400 font-bold">Skor suara {currentStepVoiceResult.score}/100 — Rekam ulang untuk ujian</span>
-                        )}
+                        <span className="text-[9px] text-emerald-400 font-bold">✓ Lolos Uji Suara</span>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
             ) : (
-              /* STAGE GATEKEEPER EXAM VIEW (WITH MANDATORY REAL VOICE RECORDING VALIDATION) */
+              /* STAGE GATEKEEPER EXAM VIEW (WITH POPUP VOICE VALIDATION TRIGGER) */
               <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between bg-surface-raised/50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-hairline">
                   <div className="min-w-0 pr-2">
@@ -2819,164 +2731,50 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   ))}
                 </div>
 
-                {/* Bagian 2: MANDATORY REAL VOICE RECORDING VALIDATION CHAMBER */}
-                <div className="rounded-2xl sm:rounded-3xl border-2 border-ember/50 bg-gradient-to-b from-surface-raised via-surface to-ember/10 p-4 sm:p-5 space-y-3.5 shadow-lg">
+                {/* Bagian 2: POP-UP TRIGGER FOR STAGE EXAM VOICE VALIDATION */}
+                <div className="rounded-2xl sm:rounded-3xl border-2 border-ember/50 bg-gradient-to-b from-surface-raised via-surface to-ember/10 p-4 sm:p-5 space-y-3 shadow-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="size-3 rounded-full bg-rose-500 animate-pulse shrink-0" />
                       <h4 className="font-display text-xs sm:text-sm font-bold text-ink uppercase tracking-wider truncate">
-                        Bagian 2: Tantangan Rekam Suara Asli (Wajib Lolos)
+                        Bagian 2: Tantangan Rekam Suara Akhir Tahap
                       </h4>
                     </div>
                     <span className="text-[10px] font-mono font-bold text-ember bg-ember/20 px-2 py-0.5 rounded-full border border-ember/30 shrink-0">
-                      AI Phonetic Gate
+                      AI Gate
                     </span>
                   </div>
 
                   <p className="text-[11px] sm:text-xs text-muted leading-relaxed">
-                    Malesan akan menganalisis getaran lidah dan akurasi fonetik dari rekaman suara lo. Buktikan pelafalan aslimu untuk lulus tahap ini!
+                    Buka jendela pop-up untuk melafalkan kalimat target dan memvalidasi getaran fonetik lo ke AI Malesan.
                   </p>
 
-                  {/* Challenge Target Sentence Card */}
-                  <div className="rounded-xl sm:rounded-2xl border border-hairline bg-surface p-3.5 sm:p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0">
-                        <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
-                          Ucapkan Kalimat Ini dengan Jelas:
-                        </span>
-                        <h3 className="font-display text-sm sm:text-base font-bold text-ember leading-snug">
-                          &ldquo;{activeStage.voiceChallenge.targetSentence}&rdquo;
-                        </h3>
-                        <p className="text-[11px] sm:text-xs font-mono font-medium text-ink bg-surface-raised px-2 py-1 rounded-md border border-hairline inline-block">
-                          {activeStage.voiceChallenge.easyPronunciation}
-                        </p>
-                      </div>
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                    {voiceExamResult?.isPassed ? (
+                      <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                        ✓ Ujian Suara Tahap {activeStage.id} LULUS (Skor: {voiceExamResult.score}/100)
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted">
+                        Status: Belum lolos ujian suara tahap ini.
+                      </span>
+                    )}
 
-                      {/* Listen Sample Audio Button */}
-                      <button
-                        type="button"
-                        onClick={() => playSpeechAudio(activeStage.voiceChallenge.sampleAudio)}
-                        className="btn-ember h-8 sm:h-9 px-3 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm hover:brightness-105 shrink-0 cursor-pointer"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
-                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                        </svg>
-                        <span>{currentlyPlayingAudioText === activeStage.voiceChallenge.sampleAudio ? "Memutar..." : "Contoh Bule"}</span>
-                      </button>
-                    </div>
-
-                    <p className="text-[10px] sm:text-[11px] text-muted border-t border-hairline/50 pt-2">
-                      <b>Kunci Lulus:</b> {activeStage.voiceChallenge.focusTips}
-                    </p>
-                  </div>
-
-                  {/* Interactive Voice Recorder Button */}
-                  <div className="flex flex-col items-center justify-center space-y-2 pt-1">
                     <button
-                      type="button"
-                      disabled={voiceExamTranscribing}
-                      onClick={() => toggleVoiceExamRecording(activeStage)}
-                      className={`h-12 sm:h-14 px-6 sm:px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2.5 shadow-xl w-full sm:w-auto cursor-pointer ${
-                        isRecordingVoiceExam
-                          ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/40"
-                          : voiceExamTranscribing
-                          ? "bg-surface-raised text-muted border border-hairline cursor-not-allowed"
-                          : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
-                      }`}
+                      onClick={() => {
+                        setModalType("exam");
+                        setIsVoiceModalOpen(true);
+                      }}
+                      className="btn-ember h-10 sm:h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 sm:size-5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                         <line x1="12" x2="12" y1="19" y2="22" />
                       </svg>
-                      <span>
-                        {isRecordingVoiceExam
-                          ? "Selesai Rekam (Kirim ke AI) ⏹"
-                          : voiceExamTranscribing
-                          ? "AI Sedang Menganalisis Suara Lo..."
-                          : "🎙️ Tekan & Rekam Pelafalan Suara Lo"}
-                      </span>
+                      <span>{voiceExamResult?.isPassed ? "🎙️ Buka Pop-up Uji Suara (Lulus)" : "🎙️ Buka Pop-up Uji Suara"}</span>
                     </button>
-
-                    {voiceExamRecordedText && (
-                      <p className="text-[11px] font-mono text-muted text-center animate-in fade-in">
-                        Suara Terdengar: &ldquo;{voiceExamRecordedText}&rdquo;
-                      </p>
-                    )}
                   </div>
-
-                  {/* Voice Validation Result Rapor Card */}
-                  {voiceExamResult && (
-                    <div className={`rounded-2xl border p-4 space-y-3 animate-in fade-in duration-300 ${
-                      voiceExamResult.isPassed
-                        ? "border-emerald-500/50 bg-emerald-500/15"
-                        : "border-rose-500/50 bg-rose-500/15"
-                    }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className={`size-6 sm:size-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                            voiceExamResult.isPassed ? "bg-emerald-400 text-obsidian" : "bg-rose-500 text-white"
-                          }`}>
-                            {voiceExamResult.isPassed ? "✓" : "✕"}
-                          </span>
-                          <span className={`font-display text-sm sm:text-base font-bold ${
-                            voiceExamResult.isPassed ? "text-emerald-400" : "text-rose-400"
-                          }`}>
-                            {voiceExamResult.isPassed ? "LULUS UJIAN SUARA TAHAP INI!" : "BELUM LULUS — COBA REKAM LAGI"}
-                          </span>
-                        </div>
-                        <span className="font-display text-base sm:text-lg font-bold text-ink font-mono">
-                          Skor: {voiceExamResult.score}/100
-                        </span>
-                      </div>
-
-                      {/* Transcribed Text vs Target */}
-                      <div className="rounded-xl bg-surface/80 p-3 text-xs space-y-1.5 border border-hairline/60">
-                        <p className="text-muted">
-                          <b>Yang Terdengar:</b> &ldquo;{voiceExamResult.transcribedText}&rdquo;
-                        </p>
-                        <p className="text-muted">
-                          <b>Target Kalimat:</b> &ldquo;{voiceExamResult.targetSentence}&rdquo;
-                        </p>
-                      </div>
-
-                      {/* Humor Roast Malesan AI */}
-                      <div className="rounded-xl bg-surface-raised p-3 text-xs border border-hairline">
-                        <p className="font-bold text-ember uppercase text-[10px] tracking-wider mb-0.5">
-                          Kritik &amp; Catatan Humor Malesan AI:
-                        </p>
-                        <p className="text-ink font-medium leading-relaxed italic">
-                          &ldquo;{voiceExamResult.humorRoast}&rdquo;
-                        </p>
-                      </div>
-
-                      {/* Phonetic Breakdown Tags */}
-                      {voiceExamResult.phoneticBreakdown && voiceExamResult.phoneticBreakdown.length > 0 && (
-                        <div className="space-y-1.5">
-                          <p className="text-[10px] font-bold text-muted uppercase">Analisis Detail Kata:</p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-                            {voiceExamResult.phoneticBreakdown.map((item, i) => (
-                              <div
-                                key={i}
-                                className={`rounded-lg border p-2 text-xs flex items-start gap-1.5 ${
-                                  item.isCorrect
-                                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                                    : "border-rose-500/30 bg-rose-500/10 text-rose-300"
-                                }`}
-                              >
-                                <span className="font-bold shrink-0">{item.isCorrect ? "✓" : "✕"}</span>
-                                <div>
-                                  <span className="font-bold">{item.word}: </span>
-                                  <span>{item.feedback}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
 
                 {/* Final Exam Completion Actions */}
@@ -2985,7 +2783,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     {completedStages.includes(activeStage.id) ? (
                       <span className="text-emerald-400 font-bold">✓ Tahap {activeStage.id} telah lulus &amp; tersimpan di Rapor.</span>
                     ) : (
-                      <span>Selesaikan pilihan ganda &amp; loloskan rekaman suara AI untuk membuka tahap berikutnya.</span>
+                      <span>Selesaikan kuis &amp; loloskan rekaman suara di pop-up untuk membuka tahap berikutnya.</span>
                     )}
                   </div>
 
@@ -3005,16 +2803,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       >
                         Lanjut ke Tahap {activeStage.id + 1} →
                       </button>
-                    ) : voiceExamResult && !voiceExamResult.isPassed ? (
-                      <button
-                        onClick={() => {
-                          setVoiceExamResult(null);
-                          setVoiceExamRecordedText("");
-                        }}
-                        className="h-10 sm:h-11 px-5 rounded-xl border border-rose-500/40 bg-rose-500/15 text-rose-300 text-xs font-bold hover:bg-rose-500/25 cursor-pointer w-full sm:w-auto"
-                      >
-                        🔄 Coba Rekam Ulang Suara
-                      </button>
                     ) : null}
                   </div>
                 </div>
@@ -3022,6 +2810,231 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             )}
           </div>
         </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* HIGH-END ISOLATED VOICE VALIDATION POP-UP WINDOW (DIALOG PORTAL) */}
+      {/* ========================================================================= */}
+      {isMounted && isVoiceModalOpen && createPortal(
+        <div className="fixed inset-0 z-[99999] bg-obsidian/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg bg-surface border border-ember/40 rounded-t-3xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3.5 sm:space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
+              <div className="min-w-0 pr-2">
+                <span className="text-[10px] font-mono font-bold text-ember uppercase">
+                  {modalType === "step" ? `Langkah ${activeStepIndex + 1}/${activeStage.steps.length}` : `Ujian ${activeStage.badge}`}
+                </span>
+                <h3 className="font-display text-sm sm:text-base font-bold text-ink truncate mt-0.5">
+                  {modalType === "step" ? `Uji Suara: ${activeStep.title}` : `Ujian Suara: ${activeStage.title}`}
+                </h3>
+              </div>
+
+              <button
+                onClick={() => setIsVoiceModalOpen(false)}
+                className="size-8 rounded-full bg-surface-raised border border-hairline flex items-center justify-center hover:bg-surface text-muted hover:text-ink transition-colors cursor-pointer shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Target Sentence Box */}
+            {(() => {
+              const currentChallenge = modalType === "step" ? activeStep.stepVoiceChallenge : activeStage.voiceChallenge;
+              const currentResult = modalType === "step" ? currentStepVoiceResult : voiceExamResult;
+              const isRec = modalType === "step" ? isRecordingStepVoice : isRecordingVoiceExam;
+              const isTranscribing = modalType === "step" ? stepVoiceTranscribing : voiceExamTranscribing;
+              const recText = modalType === "step" ? stepVoiceRecordedText : voiceExamRecordedText;
+
+              return (
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-hairline bg-surface-raised p-3.5 sm:p-4 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1 min-w-0">
+                        <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
+                          Ucapkan Kalimat Ini:
+                        </span>
+                        <h4 className="font-display text-sm sm:text-base font-bold text-ember leading-snug">
+                          &ldquo;{currentChallenge.targetSentence}&rdquo;
+                        </h4>
+                        <p className="text-[11px] sm:text-xs font-mono font-medium text-ink bg-surface px-2 py-0.5 rounded border border-hairline inline-block">
+                          {currentChallenge.easyPronunciation}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => playSpeechAudio(currentChallenge.sampleAudio)}
+                        className="btn-ember h-8 px-2.5 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center gap-1 shadow-xs hover:brightness-105 shrink-0 cursor-pointer"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                        </svg>
+                        <span>{currentlyPlayingAudioText === currentChallenge.sampleAudio ? "Memutar..." : "Contoh Bule"}</span>
+                      </button>
+                    </div>
+
+                    <p className="text-[10px] sm:text-[11px] text-muted border-t border-hairline/50 pt-2">
+                      <b>Kunci Lulus:</b> {currentChallenge.focusTips}
+                    </p>
+                  </div>
+
+                  {/* Waveform Visualizer Canvas inside Modal */}
+                  <div className="rounded-xl border border-hairline bg-surface-raised p-2 flex flex-col items-center justify-center">
+                    <canvas ref={modalCanvasRef} width={400} height={36} className="w-full h-7" />
+                    <p className="text-[10px] font-mono text-muted mt-0.5 text-center">
+                      {isRec
+                        ? "Mendengarkan... Klik tombol merah untuk selesai & kirim"
+                        : isTranscribing
+                        ? "AI sedang membedah fonetik & intonasi suara lo..."
+                        : "Tekan tombol di bawah untuk mulai rekam"}
+                    </p>
+                  </div>
+
+                  {/* Big Glowing Mic Recorder Button */}
+                  <div className="flex flex-col items-center justify-center space-y-1.5 pt-1">
+                    <button
+                      type="button"
+                      disabled={isTranscribing}
+                      onClick={() => {
+                        if (modalType === "step") {
+                          toggleStepVoiceRecording(activeStage, activeStep, currentStepKey);
+                        } else {
+                          toggleVoiceExamRecording(activeStage);
+                        }
+                      }}
+                      className={`h-12 sm:h-14 px-6 sm:px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2.5 shadow-xl w-full cursor-pointer ${
+                        isRec
+                          ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/40"
+                          : isTranscribing
+                          ? "bg-surface-raised text-muted border border-hairline cursor-not-allowed"
+                          : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
+                      }`}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 sm:size-5">
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" x2="12" y1="19" y2="22" />
+                      </svg>
+                      <span>
+                        {isRec
+                          ? "Selesai Rekam (Kirim ke AI) ⏹"
+                          : isTranscribing
+                          ? "AI Sedang Menganalisis Suara..."
+                          : "🎙️ Tekan & Rekam Pelafalan Suara Lo"}
+                      </span>
+                    </button>
+
+                    {recText && (
+                      <p className="text-[11px] font-mono text-muted text-center animate-in fade-in">
+                        Suara Terdengar: &ldquo;{recText}&rdquo;
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Validation Result Inside Modal */}
+                  {currentResult && (
+                    <div className={`rounded-2xl border p-3.5 sm:p-4 space-y-2.5 animate-in fade-in duration-300 ${
+                      currentResult.isPassed
+                        ? "border-emerald-500/50 bg-emerald-500/15"
+                        : "border-rose-500/50 bg-rose-500/15"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`size-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                            currentResult.isPassed ? "bg-emerald-400 text-obsidian" : "bg-rose-500 text-white"
+                          }`}>
+                            {currentResult.isPassed ? "✓" : "✕"}
+                          </span>
+                          <span className={`font-display text-xs sm:text-sm font-bold ${
+                            currentResult.isPassed ? "text-emerald-400" : "text-rose-400"
+                          }`}>
+                            {currentResult.isPassed ? "LULUS UJI SUARA!" : "BELUM LULUS — COBA REKAM LAGI"}
+                          </span>
+                        </div>
+                        <span className="font-display text-sm sm:text-base font-bold text-ink font-mono">
+                          Skor: {currentResult.score}/100
+                        </span>
+                      </div>
+
+                      <div className="rounded-xl bg-surface/80 p-2.5 text-xs space-y-1 border border-hairline/60">
+                        <p className="text-muted">
+                          <b>Terdengar:</b> &ldquo;{currentResult.transcribedText}&rdquo;
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-surface-raised p-2.5 text-xs border border-hairline">
+                        <p className="font-bold text-ember uppercase text-[10px] tracking-wider mb-0.5">
+                          Catatan Humor Malesan AI:
+                        </p>
+                        <p className="text-ink font-medium leading-relaxed italic">
+                          &ldquo;{currentResult.humorRoast}&rdquo;
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Modal Action Controls */}
+                  <div className="pt-2 border-t border-hairline/60 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsVoiceModalOpen(false)}
+                      className="h-10 px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-muted hover:text-ink cursor-pointer"
+                    >
+                      Tutup
+                    </button>
+
+                    {currentResult?.isPassed ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsVoiceModalOpen(false);
+                          if (modalType === "step") {
+                            if (activeStepIndex < activeStage.steps.length - 1) {
+                              setActiveStepIndex((prev) => prev + 1);
+                              setDrillAnswer(null);
+                              setStepVoiceRecordedText("");
+                              scrollToDrillTop();
+                            } else {
+                              setIsExamMode(true);
+                              setExamAnswers({});
+                              setVoiceExamResult(null);
+                              setVoiceExamRecordedText("");
+                              scrollToDrillTop();
+                            }
+                          }
+                        }}
+                        className="btn-ember h-10 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer flex items-center gap-1.5"
+                      >
+                        <span>
+                          {modalType === "step" && activeStepIndex === activeStage.steps.length - 1
+                            ? "Selesai & Buka Ujian Tahap →"
+                            : "Selesai & Lanjut Langkah Berikutnya →"}
+                        </span>
+                      </button>
+                    ) : currentResult && !currentResult.isPassed ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (modalType === "step") {
+                            setStepVoiceRecordedText("");
+                            toggleStepVoiceRecording(activeStage, activeStep, currentStepKey);
+                          } else {
+                            setVoiceExamRecordedText("");
+                            toggleVoiceExamRecording(activeStage);
+                          }
+                        }}
+                        className="h-10 px-5 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30 cursor-pointer"
+                      >
+                        🔄 Coba Rekam Ulang
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* ========================================================================= */}
