@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
 
   let level = "intermediate";
   let topic = "grammar_tenses";
+  let count = 5;
 
   try {
     const body = await request.json();

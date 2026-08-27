@@ -178,6 +178,10 @@ const ESSAY_TOPICS = [
   "Pengaruh media sosial terhadap kesehatan mental generasi muda",
 ];
 
+function makeId(prefix: string): string {
+  return `${prefix}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
 export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits?: number }) {
   const [mode, setMode] = useState<Mode>("voice");
   const [level, setLevel] = useState<Level>("intermediate");
@@ -226,23 +230,21 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [essayResult, setEssayResult] = useState<EssayEvaluation | null>(null);
 
   // Progress & Learning Analytics State (Stored in LocalStorage)
-  const [records, setRecords] = useState<SessionRecord[]>([]);
-
-  // Load records from LocalStorage on mount
-  useEffect(() => {
+  const [records, setRecords] = useState<SessionRecord[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const saved = localStorage.getItem("malesan_english_records");
-      if (saved) {
-        setRecords(JSON.parse(saved));
-      }
-    } catch {}
-  }, []);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   // Save record helper
   const saveSessionRecord = useCallback((rec: Omit<SessionRecord, "id" | "timestamp">) => {
     const newRec: SessionRecord = {
       ...rec,
-      id: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: makeId("rec"),
       timestamp: Date.now(),
     };
     setRecords((prev) => {
@@ -614,12 +616,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       const newMessages: ChatMessage[] = [
         ...messages,
         {
-          id: `usr_${Date.now()}`,
+          id: makeId("usr"),
           role: "user",
           text: data.userTranscribedText,
         },
         {
-          id: `ast_${Date.now()}`,
+          id: makeId("ast"),
           role: "assistant",
           text: data.replyEn,
           translateId: data.translateId,
@@ -687,12 +689,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       const newMessages: ChatMessage[] = [
         ...messages,
         {
-          id: `usr_${Date.now()}`,
+          id: makeId("usr"),
           role: "user",
           text: userText,
         },
         {
-          id: `ast_${Date.now()}`,
+          id: makeId("ast"),
           role: "assistant",
           text: data.replyEn,
           translateId: data.translateId,
@@ -743,7 +745,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           level,
           topic: quizTopic,
           count: quizCount,
-          seed: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          seed: makeId("seed"),
         }),
       });
       if (!res.ok) {
