@@ -1311,7 +1311,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   }, []);
 
-  // Play Speech Audio with Intelligent Persona Gender & Voice Profile Matching
+  // Play Speech Audio with Authentic Human Neural Voice (David = Real US Male, Alex = Real US Male, Sarah = UK Female, Emma = US Female)
   const playSpeechAudio = useCallback(
     async (text: string, customPersona?: Persona) => {
       const activeP = customPersona || persona;
@@ -1323,13 +1323,45 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         currentAudioElementRef.current.pause();
         currentAudioElementRef.current = null;
       }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
 
-      // 1. Native Web Speech Synthesis with Gender & Pitch Shaping (Fast, Crystal-Clear Male/Female Voices)
+      setIsPlayingAudio(true);
+
+      // 1. Primary: Server-Side Authentic Neural Human Voice (Real Male Matthew/Joey on ALL devices including Android & iOS)
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, persona: activeP, lang: profile.lang }),
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.playbackRate = playbackSpeed;
+          currentAudioElementRef.current = audio;
+          audio.onended = () => {
+            setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
+            URL.revokeObjectURL(url);
+          };
+          audio.onerror = () => {
+            setIsPlayingAudio(false);
+            setCurrentlyPlayingAudioText(null);
+          };
+          await audio.play();
+          return;
+        }
+      } catch (err) {
+        console.warn("Server TTS playback error, attempting local fallback:", err);
+      }
+
+      // 2. Fallback: Native Web Speech Synthesis
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         try {
-          window.speechSynthesis.cancel();
-          setIsPlayingAudio(true);
-
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = profile.lang;
           utterance.pitch = profile.pitch;
@@ -1342,8 +1374,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             const pool = langVoices.length > 0 ? langVoices : voices;
 
             let matchedVoice: SpeechSynthesisVoice | null = null;
-
-            // Step A: Match by preferred keywords
             for (const kw of profile.preferredKeywords) {
               const found = pool.find((v) => v.name.toLowerCase().includes(kw.toLowerCase()));
               if (found) {
@@ -1351,19 +1381,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 break;
               }
             }
-
-            // Step B: Gender fallback heuristics
             if (!matchedVoice && profile.gender === "male") {
               matchedVoice =
                 pool.find((v) => v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("female")) ||
-                pool.find((v) => !v.name.toLowerCase().includes("female") && !v.name.toLowerCase().includes("zira") && !v.name.toLowerCase().includes("samantha")) ||
-                null;
-            } else if (!matchedVoice && profile.gender === "female") {
-              matchedVoice =
-                pool.find((v) => v.name.toLowerCase().includes("female") || v.name.toLowerCase().includes("zira") || v.name.toLowerCase().includes("samantha")) ||
                 null;
             }
-
             if (matchedVoice) {
               utterance.voice = matchedVoice;
             }
@@ -1381,43 +1403,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           window.speechSynthesis.speak(utterance);
           return;
         } catch (synthErr) {
-          console.warn("Native SpeechSynthesis failed, falling back to API:", synthErr);
+          console.warn("Native SpeechSynthesis fallback failed:", synthErr);
         }
       }
 
-      // 2. Fallback: Server TTS Endpoint
-      try {
-        setIsPlayingAudio(true);
-        const res = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, lang: profile.lang }),
-        });
-
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = URL.createObjectURL(blob);
-          const audio = new Audio(url);
-          audio.playbackRate = playbackSpeed * (profile.gender === "male" ? 0.92 : 1.0);
-          currentAudioElementRef.current = audio;
-          audio.onended = () => {
-            setIsPlayingAudio(false);
-            setCurrentlyPlayingAudioText(null);
-            URL.revokeObjectURL(url);
-          };
-          audio.onerror = () => {
-            setIsPlayingAudio(false);
-            setCurrentlyPlayingAudioText(null);
-          };
-          await audio.play();
-          return;
-        }
-      } catch (err) {
-        console.warn("API TTS playback failed:", err);
-      } finally {
-        setIsPlayingAudio(false);
-        setCurrentlyPlayingAudioText(null);
-      }
+      setIsPlayingAudio(false);
+      setCurrentlyPlayingAudioText(null);
     },
     [persona, playbackSpeed],
   );
