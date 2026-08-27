@@ -124,6 +124,80 @@ interface AIIntentResult {
   needsConfirmation: boolean;
 }
 
+export function extractEmailFromText(text: string): string | null {
+  const m = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/i);
+  return m ? m[0].toLowerCase() : null;
+}
+
+export function extractNumberFromText(text: string): number | null {
+  const patterns = [
+    /(?:jadi|ke|menjadi|set|ubah|rubah)\s*([+-]?\d+)/i,
+    /(?:tambah|tambahin|isi|beri|topup|plus|\+)\s*([+-]?\d+)/i,
+    /(?:kurang|kurangi|potong|minus|-)\s*(\d+)/i,
+    /(\d+)\s*(?:kredit|credit|cr|poin|point)/i,
+    /\b(\d+)\b/
+  ];
+
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m && m[1] !== undefined) {
+      const n = Number(m[1]);
+      if (!isNaN(n)) return n;
+    }
+  }
+  return null;
+}
+
+export function matchFastPathIntent(text: string, lastInspectedEmail?: string): { actionType: string; payload: Record<string, unknown> } | null {
+  const clean = text.trim();
+
+  // 1. Bare email: "vadlyvldr@gmail.com"
+  if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i.test(clean)) {
+    return {
+      actionType: "inspect_user",
+      payload: { email: clean.toLowerCase() },
+    };
+  }
+
+  // 2. Explicit inspect: "cek vadlyvldr@gmail.com", "detail user vadlyvldr"
+  const inspectMatch = clean.match(/^(?:cek|periksa|inspect|info|profil|detail)\s*(?:user\s*|pengguna\s*)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[a-zA-Z0-9_-]{3,})$/i);
+  if (inspectMatch && inspectMatch[1]) {
+    return {
+      actionType: "inspect_user",
+      payload: { email: inspectMatch[1].toLowerCase() },
+    };
+  }
+
+  const emailInText = extractEmailFromText(clean);
+  const targetEmail = emailInText || lastInspectedEmail;
+
+  // 3. Set credits: "Rubah saldo kreditnya jadi 50", "Set kredit 50", "Ubah kredit jadi 50", "vadlyvldr@gmail.com set kredit 50"
+  const setCreditsMatch = clean.match(/(?:rubah|ubah|set|jadikan|ganti)\s*(?:saldo\s*)?(?:kreditnya\s*|kredit\s*)?(?:jadi\s*|ke\s*)?(\d+)/i);
+  if (setCreditsMatch && setCreditsMatch[1] !== undefined && targetEmail) {
+    return {
+      actionType: "set_user_credits",
+      payload: {
+        email: targetEmail,
+        credits: Number(setCreditsMatch[1]),
+      },
+    };
+  }
+
+  // 4. Grant credits: "Tambah 50", "Tambah 50 kredit", "+50", "vadlyvldr@gmail.com tambah 50 kredit"
+  const grantCreditsMatch = clean.match(/(?:tambah|tambahin|isi|beri|topup|plus|\+)\s*(\d+)/i);
+  if (grantCreditsMatch && grantCreditsMatch[1] !== undefined && targetEmail) {
+    return {
+      actionType: "grant_credits",
+      payload: {
+        email: targetEmail,
+        amount: Number(grantCreditsMatch[1]),
+      },
+    };
+  }
+
+  return null;
+}
+
 export async function processTelegramAIMessage(
   userText: string,
   chatId: string,
@@ -304,29 +378,42 @@ ATURAN GAYA & FORMATTING KETAT:
   };
 
   try {
-    const rawRes = await generate({
-      prompt: `System: You are the Malesan Executive AI Telegram Controller. Strictly avoid tacky emojis. Maintain clean executive typography. Return strict JSON only.\n\n${prompt}`,
-      schema,
-    });
-
+    const fastPath = matchFastPathIntent(userText, sessionCtx.lastInspectedUser?.email);
     let parsed: AIIntentResult;
-    try {
-      parsed = JSON.parse(rawRes.trim()) as AIIntentResult;
-    } catch {
-      console.warn("[telegram-ai] Failed to parse JSON response:", rawRes);
-      await sendTelegramMessage(rawRes || "Siap Bos, ada yang bisa saya bantu?", {
-        chatId,
-        messageThreadId,
+
+    if (fastPath) {
+      parsed = {
+        intent: "action",
+        actionType: fastPath.actionType as AIIntentResult["actionType"],
+        payload: fastPath.payload,
+        replyText: "",
+        needsConfirmation: false,
+      };
+    } else {
+      const rawRes = await generate({
+        prompt: `System: You are the Malesan Executive AI Telegram Controller. Strictly avoid tacky emojis. Maintain clean executive typography. Return strict JSON only.\n\n${prompt}`,
+        schema,
       });
-      return;
+
+      try {
+        parsed = JSON.parse(rawRes.trim()) as AIIntentResult;
+      } catch {
+        console.warn("[telegram-ai] Failed to parse JSON response:", rawRes);
+        await sendTelegramMessage(rawRes || "Siap Bos, ada yang bisa saya bantu?", {
+          chatId,
+          messageThreadId,
+        });
+        return;
+      }
     }
 
-    // Resolve target email from session context if empty
-    if (!parsed.payload?.email && sessionCtx.lastInspectedUser?.email) {
-      if (["set_user_credits", "grant_credits", "set_user_role", "set_user_pro", "ban_user", "unban_user"].includes(parsed.actionType)) {
-        if (!parsed.payload) parsed.payload = {};
-        parsed.payload.email = sessionCtx.lastInspectedUser.email;
-      }
+    // Resolve target email from session context or userText if empty
+    const extractedEmail = extractEmailFromText(userText);
+    const extractedNumber = extractNumberFromText(userText);
+
+    if (!parsed.payload) parsed.payload = {};
+    if (!parsed.payload.email) {
+      parsed.payload.email = extractedEmail || sessionCtx.lastInspectedUser?.email;
     }
 
     // A. Human-In-The-Loop Confirmation Flow
@@ -390,11 +477,24 @@ ATURAN GAYA & FORMATTING KETAT:
     // B. Direct Execution of Safe / Read / Direct Operations
     switch (parsed.actionType) {
       case "set_user_credits": {
-        const email = String(parsed.payload?.email || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
-        const targetCredits = Number(parsed.payload?.credits ?? parsed.payload?.amount ?? 0);
+        const email = String(parsed.payload?.email || extractedEmail || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
+
+        let targetCredits: number | null = null;
+        if (typeof parsed.payload?.credits === "number" && !isNaN(parsed.payload.credits)) {
+          targetCredits = parsed.payload.credits;
+        } else if (typeof parsed.payload?.amount === "number" && !isNaN(parsed.payload.amount)) {
+          targetCredits = parsed.payload.amount;
+        } else {
+          targetCredits = extractedNumber;
+        }
 
         if (!email) {
           await sendTelegramMessage("Mohon sebutkan email user yang ingin diubah kreditnya, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        if (targetCredits === null) {
+          await sendTelegramMessage("Mohon sebutkan nominal target saldo kredit yang diinginkan, Bos (contoh: <i>'Rubah kreditnya jadi 50'</i>).", { chatId, messageThreadId });
           return;
         }
 
@@ -467,11 +567,24 @@ ATURAN GAYA & FORMATTING KETAT:
       }
 
       case "grant_credits": {
-        const email = String(parsed.payload?.email || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
-        const amount = Number(parsed.payload?.amount || 0);
+        const email = String(parsed.payload?.email || extractedEmail || sessionCtx.lastInspectedUser?.email || "").trim().toLowerCase();
 
-        if (!email || !amount) {
-          await sendTelegramMessage("Mohon sebutkan email user dan nominal kredit yang ingin ditambahkan, Bos.", { chatId, messageThreadId });
+        let amount: number | null = null;
+        if (typeof parsed.payload?.amount === "number" && !isNaN(parsed.payload.amount) && parsed.payload.amount !== 0) {
+          amount = parsed.payload.amount;
+        } else if (typeof parsed.payload?.credits === "number" && !isNaN(parsed.payload.credits) && parsed.payload.credits !== 0) {
+          amount = parsed.payload.credits;
+        } else {
+          amount = extractedNumber;
+        }
+
+        if (!email) {
+          await sendTelegramMessage("Mohon sebutkan email user yang ingin ditambah kreditnya, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        if (amount === null || amount === 0) {
+          await sendTelegramMessage("Mohon sebutkan nominal kredit yang ingin ditambahkan, Bos (contoh: <i>'Tambah 50 kredit'</i>).", { chatId, messageThreadId });
           return;
         }
 
