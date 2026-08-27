@@ -185,18 +185,16 @@ Instruksi Output:
 
   try {
     const rawRes = await generate({
-      systemInstruction: "You are the Malesan Executive AI Telegram Controller. Return strict JSON only.",
-      prompt,
-      responseSchema: schema,
-      temperature: 0.1,
+      prompt: `System: You are the Malesan Executive AI Telegram Controller. Return strict JSON only.\n\n${prompt}`,
+      schema,
     });
 
     let parsed: AIIntentResult;
     try {
-      parsed = JSON.parse(rawRes.text.trim()) as AIIntentResult;
+      parsed = JSON.parse(rawRes.trim()) as AIIntentResult;
     } catch {
-      console.warn("[telegram-ai] Failed to parse JSON response:", rawRes.text);
-      await sendTelegramMessage(rawRes.text || "Siap Bos, ada yang bisa saya bantu?", { chatId });
+      console.warn("[telegram-ai] Failed to parse JSON response:", rawRes);
+      await sendTelegramMessage(rawRes || "Siap Bos, ada yang bisa saya bantu?", { chatId });
       return;
     }
 
