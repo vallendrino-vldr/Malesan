@@ -258,13 +258,13 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Abjad 'H' & 'R' yang Sering Salah Dibaca",
         focusHighlight: "Huruf H = 'EITCH' • Huruf R = 'AR' (Lidah Melengkung)",
-        easyPhonetic: "Panduan Ejaan Santai: H dibaca 'EITCH' (Bukan Hek) • R dibaca 'AR' lembut tanpa getar",
+        easyPhonetic: "Ejaan Santai: H dibaca 'EITCH' (Bukan Hek) • R dibaca 'AR' lembut tanpa getar",
         explanation: "Orang Indonesia sering membaca huruf H menjadi 'Hek'. Huruf H murni dibaca 'Eitch'. Huruf R dibaca dengan menarik lidah ke belakang tanpa bergetar keras.",
         wrongAudio: {
-          label: "BUNYI SALAH (Kaku / Terbata):",
-          text: "H dibaca 'Hek' / R bergetar keras 'Rrr'",
+          label: "BUNYI SALAH (Kaku):",
+          text: "H dibaca 'Hek' / R getar keras 'Rrr'",
           sampleText: "Hek, het, het.",
-          explanation: "Menambahkan letupan 'H' kasar yang tidak ada pada penutur asli.",
+          explanation: "Menambahkan letupan H kasar.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Native):",
@@ -295,13 +295,13 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Bunyi Lidah 'TH' (Tebal vs Tipis)",
         focusHighlight: "This = 'D-HIS' • Think = 'T-HINGK'",
-        easyPhonetic: "Panduan Ejaan Santai: This/That (Tebal) • Think/Thank (Tipis) dengan ujung lidah digigit lembut",
+        easyPhonetic: "Ejaan Santai: This/That (Tebal) • Think/Thank (Tipis) dengan ujung lidah digigit lembut",
         explanation: "Lidah dijepit lembut di antara gigi seri atas dan bawah. Jangan dibaca 'D' (bukan 'De') dan jangan dibaca 'T' (bukan 'Tingk').",
         wrongAudio: {
           label: "BUNYI SALAH (Indoglish D/T):",
           text: "Dis, Dat, Dey • Tingk, Tengkyu",
           sampleText: "Dis and dat, dey tingk and tengkyu.",
-          explanation: "Lidah tertahan di dalam mulut menghasilkan bunyi D atau T kasar.",
+          explanation: "Lidah tertahan di dalam mulut.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Native TH):",
@@ -332,21 +332,21 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Bunyi 'V' vs 'P'",
         focusHighlight: "Favorite Video = 'FE-VE-RIT VI-DI-O'",
-        easyPhonetic: "Panduan Ejaan Santai: Huruf V wajib menghasilkan getaran di bibir bawah",
+        easyPhonetic: "Ejaan Santai: Huruf V wajib menghasilkan getaran di bibir bawah",
         explanation: "Huruf V bergetar pada bibir bawah (Voice Vibration). Jangan pernah sebut 'Pavorite' atau 'Pideo'!",
         wrongAudio: {
-          label: "BUNYI SALAH (Tertukar P/F):",
+          label: "BUNYI SALAH (Tertukar P):",
           text: "Pavorite pideo, pery good",
           sampleText: "My pavorite pideo is pery good.",
-          explanation: "Kedua bibir menutup sehingga menghasilkan bunyi P bukannya getaran V.",
+          explanation: "Kedua bibir menutup rapat menghasilkan P.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Vibrating V):",
           text: "Favorite video, very good",
           sampleText: "My favorite video is very good.",
-          explanation: "Gigi seri atas menyentuh bibir bawah bagian dalam dengan getaran suara jelas.",
+          explanation: "Gigi seri atas menyentuh bibir bawah bagian dalam dengan getaran suara.",
         },
-        tongueTip: "Sentuhkan gigi atas ke bibir bawah bagian dalam, rasakan getaran pita suara saat bunyi V keluar.",
+        tongueTip: "Sentuhkan gigi atas ke bibir bawah bagian dalam, rasakan getaran suara saat bunyi V keluar.",
         audioDrill: {
           prompt: "Dengarkan kedua rekaman di bawah. Manakah pengucapan kata 'Favorite Video' yang benar?",
           options: [
@@ -369,10 +369,10 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Huruf Bisu S pada kata 'Island' (Pulau)",
         focusHighlight: "Island = 'AI-LEND' (Huruf S Jangan Dibaca)",
-        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni 'AI-LEND' (Huruf S adalah Silent Letter)",
+        easyPhonetic: "Ejaan Santai: Dibaca murni 'AI-LEND' (Huruf S adalah Silent Letter)",
         explanation: "Huruf S pada kata 'Island' (pulau) berstatus bisu (silent letter) dan HARAM disuarakan!",
         wrongAudio: {
-          label: "BUNYI SALAH (S Dibaca Jelas):",
+          label: "BUNYI SALAH (S Dibaca):",
           text: "Is-land (s bersuara)",
           sampleText: "We visit the is-land.",
           explanation: "Membaca huruf S seperti 'Es-land'.",
@@ -381,7 +381,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           label: "BUNYI BENAR (S Bisu):",
           text: "Eye-land (s tidak bersuara)",
           sampleText: "We visit the island.",
-          explanation: "Murni melafalkan kata 'Eye' (mata) disambung 'land'.",
+          explanation: "Murni melafalkan kata 'Eye' disambung 'land'.",
         },
         tongueTip: "Ingat: Huruf S pada 'Island' sama sekali tidak berbunyi.",
         audioDrill: {
@@ -406,7 +406,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Huruf Bisu B pada kata 'Doubt' (Ragu)",
         focusHighlight: "Doubt = 'DA-UT' (Huruf B Jangan Dibaca)",
-        easyPhonetic: "Panduan Ejaan Santai: Dibaca murni 'DA-UT' (Huruf B tidak berbunyi)",
+        easyPhonetic: "Ejaan Santai: Dibaca murni 'DA-UT' (Huruf B tidak berbunyi)",
         explanation: "Huruf B pada kata 'Doubt' (ragu) dan 'Debt' (utang) adalah silent letter yang tidak berbunyi.",
         wrongAudio: {
           label: "BUNYI SALAH (B Dibaca):",
@@ -482,16 +482,16 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Menyambung Konsonan ke Vokal: 'Hold on'",
         focusHighlight: "Hold on → 'HOL-DON' • Pick it up → 'PI-KI-TAP'",
-        easyPhonetic: "Panduan Ejaan Santai: Huruf mati di ujung kata pertama langsung menyambung ke huruf hidup kata berikutnya",
+        easyPhonetic: "Ejaan Santai: Huruf mati di ujung kata pertama langsung menyambung ke huruf hidup kata berikutnya",
         explanation: "Konsonan di akhir kata pertama langsung disambungkan ke huruf vokal kata berikutnya tanpa jeda.",
         wrongAudio: {
-          label: "BUNYI SALAH (Terputus-putus):",
+          label: "BUNYI SALAH (Terputus):",
           text: "Hold... On • Pick... It... Up",
           sampleText: "Hold... on... please pick... it... up.",
           explanation: "Membaca kata satu per satu seperti robot.",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Mengalir Natural):",
+          label: "BUNYI BENAR (Mengalir):",
           text: "Hol-don • Pi-ki-tap",
           sampleText: "Hold on, please pick it up right now.",
           explanation: "D menyambung ke O ('Hol-don'), K menyambung ke I dan T menyambung ke U ('Pi-ki-tap').",
@@ -519,7 +519,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Reduksi Percakapan: 'Gonna' & 'Wanna'",
         focusHighlight: "Going to = 'GONNA' • Want to = 'WANNA'",
-        easyPhonetic: "Panduan Ejaan Santai: 'AI'M GONNA TEL YU WHAT AI WANNA DU'",
+        easyPhonetic: "Ejaan Santai: 'AI'M GONNA TEL YU WHAT AI WANNA DU'",
         explanation: "Reduksi ini dipakai secara alami oleh penutur asli saat mengobrol santai dan mengalir cepat.",
         wrongAudio: {
           label: "BUNYI KAKU (Terlalu Formal):",
@@ -528,7 +528,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
           explanation: "Terlalu kaku untuk percakapan harian.",
         },
         correctAudio: {
-          label: "BUNYI NATIVE (Luwes & Santai):",
+          label: "BUNYI NATIVE (Luwes):",
           text: "I'm gonna tell you what I wanna do",
           sampleText: "I am gonna tell you what I wanna do.",
           explanation: "Menggunakan peluluhan kata 'gonna' dan 'wanna'.",
@@ -586,16 +586,16 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Larangan Keras: 'I am agree'",
         focusHighlight: "JANGAN: 'I am agree' → GUNAKAN: 'I agree' = 'AI E-GRI'",
-        easyPhonetic: "Panduan Ejaan Santai: Langsung ucapkan 'I agree' (Tanpa kata 'am')",
+        easyPhonetic: "Ejaan Santai: Langsung ucapkan 'I agree' (Tanpa kata 'am')",
         explanation: "'Agree' adalah kata kerja (verb), bukan kata sifat. Jadi TIDAK BOLEH memakai to be 'am'!",
         wrongAudio: {
-          label: "BUNYI SALAH (Indoglish Fatal):",
+          label: "BUNYI SALAH (Indoglish):",
           text: "I am agree with your opinion",
           sampleText: "I am agree with your opinion.",
-          explanation: "Menambahkan to be 'am' sebelum kata kerja adalah kesalahan fatal.",
+          explanation: "Menambahkan 'am' sebelum kata kerja.",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Standard English):",
+          label: "BUNYI BENAR (Standard):",
           text: "I agree with your opinion",
           sampleText: "I agree with your opinion completely.",
           explanation: "Langsung gunakan subjek + kata kerja: 'I agree'.",
@@ -623,19 +623,19 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Larangan Keras: 'Thanks before'",
         focusHighlight: "JANGAN: 'Thanks before' → GUNAKAN: 'Thanks in advance'",
-        easyPhonetic: "Panduan Ejaan Santai: 'TENGKS IN ED-VANS' (Standar Baku Terima Kasih di Awal)",
+        easyPhonetic: "Ejaan Santai: 'TENGKS IN ED-VANS' (Standar Baku Terima Kasih di Awal)",
         explanation: "Penutur asli tidak mengenal frasa 'thanks before'. Untuk ucapan terima kasih di awal bantuan, gunakan 'Thanks in advance'.",
         wrongAudio: {
-          label: "BUNYI SALAH (Terjemahan Harfiah):",
+          label: "BUNYI SALAH (Harfiah):",
           text: "Thanks before for your help",
           sampleText: "Thanks before for your help.",
           explanation: "Menerjemahkan 'terima kasih sebelumnya' kata per kata.",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Professional Native):",
+          label: "BUNYI BENAR (Professional):",
           text: "Thanks in advance for your help",
           sampleText: "Thanks in advance for your support and feedback.",
-          explanation: "Standar baku dalam komunikasi email dan chat profesional internasional.",
+          explanation: "Standar baku dalam komunikasi internasional.",
         },
         tongueTip: "Pakai 'Thanks in advance' saat meminta tolong lewat email atau chat.",
         audioDrill: {
@@ -660,19 +660,19 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Larangan Keras: 'Join with us'",
         focusHighlight: "JANGAN: 'Join with us' → GUNAKAN: 'Join us' = 'JOIN AS'",
-        easyPhonetic: "Panduan Ejaan Santai: Langsung ucapkan 'Join us' (Tanpa kata 'with')",
+        easyPhonetic: "Ejaan Santai: Langsung ucapkan 'Join us' (Tanpa kata 'with')",
         explanation: "Kata kerja 'Join' sudah otomatis berarti 'bergabung dengan'. Jangan menambahkan kata 'with'!",
         wrongAudio: {
-          label: "BUNYI SALAH (Pemborosan Kata):",
+          label: "BUNYI SALAH (Boros Kata):",
           text: "Please join with our community",
           sampleText: "Please join with our community today.",
-          explanation: "Menambahkan kata 'with' yang tidak diperlukan.",
+          explanation: "Menambahkan kata 'with' yang berlebihan.",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Ringkas & Tepat):",
+          label: "BUNYI BENAR (Tepat):",
           text: "Please join our community / Join us",
           sampleText: "Please join our community and join us for lunch today.",
-          explanation: "Langsung sebutkan objek setelah kata join: 'Join us', 'Join the meeting'.",
+          explanation: "Langsung sebutkan objek setelah kata join: 'Join us'.",
         },
         tongueTip: "Ingat: Join langsung diikuti nama kelompok atau orang.",
         audioDrill: {
@@ -727,16 +727,16 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Pola Masa Lalu Spontan (Verb 2)",
         focusHighlight: "Yesterday → Gunakan Verb 2 (Went, Met, Saw, Bought)",
-        easyPhonetic: "Panduan Ejaan Santai: Cerita masa lalu langsung reflek pakai kata kerja lampau",
+        easyPhonetic: "Ejaan Santai: Cerita masa lalu langsung reflek pakai kata kerja lampau",
         explanation: "Saat menceritakan apa yang terjadi tadi pagi atau kemarin, ubah kata kerja ke bentuk lampau secara otomatis.",
         wrongAudio: {
-          label: "BUNYI SALAH (Tenses Keliru):",
+          label: "BUNYI SALAH (Tenses):",
           text: "Yesterday I go to office and buy lunch",
           sampleText: "Yesterday I go to office and buy lunch.",
-          explanation: "Memakai kata kerja waktu sekarang (V1) untuk cerita masa lalu.",
+          explanation: "Memakai kata kerja waktu sekarang (V1).",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Past Tense Refleks):",
+          label: "BUNYI BENAR (Past Tense):",
           text: "Yesterday I went to the office and bought lunch",
           sampleText: "Yesterday I went to the office, met the client, and bought lunch.",
           explanation: "Menggunakan Verb 2 (went, met, bought).",
@@ -764,19 +764,19 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Pola Bertanya & Meminta Sangat Sopan",
         focusHighlight: "Could you please...? = 'KUD YU PLIZ...?'",
-        easyPhonetic: "Panduan Ejaan Santai: Gunakan 'Could you please...' untuk meminta tolong dengan anggun",
+        easyPhonetic: "Ejaan Santai: Gunakan 'Could you please...' untuk meminta tolong dengan anggun",
         explanation: "Hindari kalimat perintah langsung 'I want' atau 'Give me'. Gunakan modal verbs yang anggun.",
         wrongAudio: {
-          label: "BUNYI KASAR (Perintah Langsung):",
+          label: "BUNYI KASAR (Perintah):",
           text: "Give me that report / I want your help",
           sampleText: "Give me that report right now.",
-          explanation: "Terdengar kasar dan menuntut dalam budaya internasional.",
+          explanation: "Terdengar kasar dan menuntut.",
         },
         correctAudio: {
-          label: "BUNYI ANGGUN (Polite Request):",
+          label: "BUNYI ANGGUN (Polite):",
           text: "Could you please share that report when you have time?",
           sampleText: "Could you please share that report whenever you have a moment?",
-          explanation: "Membuat lawan bicara merasa dihargai dan senang membantu.",
+          explanation: "Membuat lawan bicara merasa dihargai.",
         },
         tongueTip: "'Could you please...' dan 'Would you mind...' adalah standar kesopanan global.",
         audioDrill: {
@@ -822,7 +822,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Frasa Meeting Online & Kerja Remote",
         focusHighlight: "Can everyone see my screen? • You are on mute!",
-        easyPhonetic: "Panduan Ejaan Santai: 'KEN EV-RI-WAN SI MAI SKRIN? YU AR ON MYUT'",
+        easyPhonetic: "Ejaan Santai: 'KEN EV-RI-WAN SI MAI SKRIN? YU AR ON MYUT'",
         explanation: "Kuasai frasa penting saat memimpin atau mengikuti meeting online jarak jauh.",
         wrongAudio: {
           label: "BUNYI KELIRU:",
@@ -880,7 +880,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         title: "Instruksi Ujian Akhir",
         focusHighlight: "Uji seluruh materi: Fonetik, Connected Speech, Larangan Indoglish & Frasa Profesional",
-        easyPhonetic: "Panduan Ejaan Santai: Dengarkan dengan saksama dan pilih kalimat yang 100% akurat",
+        easyPhonetic: "Ejaan Santai: Dengarkan dengan saksama dan pilih kalimat yang 100% akurat",
         explanation: "Dengarkan rekaman audio di bawah dengan teliti untuk membuktikan kelayakanmu sebagai 100% English Master.",
         wrongAudio: {
           label: "CONTOH KELIRU:",
@@ -1652,14 +1652,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const activeStep = activeStage.steps[activeStepIndex] || activeStage.steps[0];
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full max-w-full overflow-x-hidden space-y-3 sm:space-y-4">
       {/* GLOBAL NOTIFICATION NOTICE */}
       {feedbackNotice && (
-        <div className="rounded-2xl border border-ember/40 bg-ember/15 p-3.5 sm:p-4 text-xs sm:text-sm font-medium text-ember flex items-center justify-between animate-in fade-in duration-200">
-          <span>{feedbackNotice}</span>
+        <div className="rounded-2xl border border-ember/40 bg-ember/15 p-3 sm:p-4 text-xs sm:text-sm font-medium text-ember flex items-center justify-between animate-in fade-in duration-200">
+          <span className="min-w-0 pr-2">{feedbackNotice}</span>
           <button
             onClick={() => setFeedbackNotice(null)}
-            className="text-micro font-bold underline hover:opacity-80 ml-4 shrink-0"
+            className="text-micro font-bold underline hover:opacity-80 shrink-0"
           >
             Tutup
           </button>
@@ -1667,35 +1667,35 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       )}
 
       {/* TOP HEADER CONTAINER */}
-      <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/85 p-4 sm:p-5 backdrop-blur-xl shadow-lg space-y-4">
+      <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/85 p-3.5 sm:p-5 backdrop-blur-xl shadow-lg space-y-3 sm:space-y-4 w-full min-w-0">
         {/* Title & Level Selector Row */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/35 bg-ember/15 px-3 py-0.5 text-[11px] font-bold text-ember uppercase tracking-wider">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 min-w-0">
+          <div className="space-y-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="inline-flex items-center gap-1 sm:gap-1.5 rounded-full border border-ember/35 bg-ember/15 px-2.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember shrink-0">
                   <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                   <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   <line x1="12" x2="12" y1="19" y2="22" />
                 </svg>
-                AI English Master Studio
+                AI English Studio
               </span>
-              <span className="text-[11px] font-mono font-bold text-muted bg-surface-raised px-2.5 py-0.5 rounded-md border border-hairline">
+              <span className="text-[10px] sm:text-[11px] font-mono font-bold text-muted bg-surface-raised px-2 py-0.5 rounded-md border border-hairline">
                 {cost} Kredit / Sesi
               </span>
             </div>
 
-            <h1 className="font-display text-lg sm:text-xl font-bold text-ink tracking-tight">
+            <h1 className="font-display text-base sm:text-xl font-bold text-ink tracking-tight truncate">
               Lancar Inggris
             </h1>
-            <p className="text-xs text-muted leading-relaxed">
-              Drill telinga interaktif (audio salah vs benar), latihan bicara AI native, roleplay skenario nyata, dan evaluasi esai.
+            <p className="text-[11px] sm:text-xs text-muted leading-relaxed line-clamp-2 sm:line-clamp-none">
+              Ear-training audio salah vs benar, speaking partner AI, roleplay skenario, &amp; evaluasi esai.
             </p>
           </div>
 
-          {/* LEVEL SELECTOR SEGMENTED CONTROL */}
-          <div className="w-full lg:w-auto shrink-0">
-            <div className="grid grid-cols-3 lg:flex items-center gap-1 rounded-2xl border border-hairline bg-surface-raised/90 p-1 shadow-xs">
+          {/* 100% FLEXIBLE ANTI-OFFSIDE LEVEL SELECTOR */}
+          <div className="w-full lg:w-auto shrink-0 min-w-0">
+            <div className="grid grid-cols-3 w-full gap-1 rounded-2xl border border-hairline bg-surface-raised/90 p-1 shadow-xs min-w-0">
               {[
                 { id: "beginner", name: "Pemula", cefr: "A1-A2" },
                 { id: "intermediate", name: "Menengah", cefr: "B1-B2" },
@@ -1706,16 +1706,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <button
                     key={lvl.id}
                     onClick={() => setLevel(lvl.id as Level)}
-                    className={`h-9 px-3.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center justify-center gap-1.5 ${
+                    className={`h-8 sm:h-9 px-1.5 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 min-w-0 truncate cursor-pointer ${
                       isActive
                         ? "bg-ember text-obsidian shadow-sm ring-1 ring-ember/50 font-display"
                         : "text-muted hover:text-ink hover:bg-surface"
                     }`}
                   >
-                    <span>{lvl.name}</span>
+                    <span className="truncate">{lvl.name}</span>
                     <span
-                      className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md ${
-                        isActive ? "bg-obsidian/20 text-obsidian font-bold" : "bg-surface text-muted/80 border border-hairline/60"
+                      className={`hidden xs:inline-block text-[9px] sm:text-[10px] font-mono px-1 py-0.2 rounded ${
+                        isActive ? "bg-obsidian/20 text-obsidian font-bold" : "bg-surface text-muted/70 border border-hairline/60"
                       }`}
                     >
                       {lvl.cefr}
@@ -1727,16 +1727,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
         </div>
 
-        {/* 6 STREAMLINED SUB-MODULE NAVIGATION TABS */}
-        <div className="border-t border-hairline/60 pt-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        {/* 6 COMPACT STREAMLINED SUB-MODULE TABS (MOBILE-OPTIMIZED) */}
+        <div className="border-t border-hairline/60 pt-2.5 sm:pt-3">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
             {[
               {
                 id: "academy",
                 label: "Belajar 0-100%",
                 sub: "Audio Drills",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
                     <path d="M6 6h10" />
                     <path d="M6 10h10" />
@@ -1748,7 +1748,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Bicara AI",
                 sub: "Live Speaking",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                     <line x1="12" x2="12" y1="19" y2="22" />
@@ -1760,7 +1760,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Roleplay",
                 sub: "Simulasi Skenario",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 ),
@@ -1770,7 +1770,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Kuis",
                 sub: "Kuis Kilat Pro",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -1782,7 +1782,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Esai",
                 sub: "Ujian & IELTS",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
@@ -1793,7 +1793,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Rapor",
                 sub: "Riwayat & Nilai",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
                     <path d="M3 3v18h18" />
                     <path d="m19 9-5 5-4-4-3 3" />
                   </svg>
@@ -1808,24 +1808,24 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     if (isCalling) endCall();
                     setMode(tab.id as Mode);
                   }}
-                  className={`h-12 rounded-2xl border p-2 transition-all text-left flex items-center gap-2 w-full ${
+                  className={`h-10 sm:h-12 rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
                     isCurrent
                       ? "border-ember/70 bg-ember/15 text-ink shadow-sm ring-1 ring-ember/30"
                       : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
                   }`}
                 >
                   <div
-                    className={`size-7 shrink-0 rounded-xl flex items-center justify-center ${
+                    className={`size-6 sm:size-7 shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center ${
                       isCurrent ? "bg-ember text-obsidian font-bold" : "bg-surface-raised border border-hairline text-muted"
                     }`}
                   >
                     {tab.icon}
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <span className={`text-xs font-bold block truncate ${isCurrent ? "text-ember" : "text-ink"}`}>
+                  <div className="min-w-0 flex-1 truncate">
+                    <span className={`text-[11px] sm:text-xs font-bold block truncate ${isCurrent ? "text-ember" : "text-ink"}`}>
                       {tab.label}
                     </span>
-                    <span className="text-[10px] text-muted block truncate">{tab.sub}</span>
+                    <span className="hidden sm:block text-[10px] text-muted truncate">{tab.sub}</span>
                   </div>
                 </button>
               );
@@ -1838,36 +1838,34 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 0: BELAJAR 0-100% (DUAL-AUDIO EAR TRAINING DRILL ENGINE) */}
       {/* ========================================================================= */}
       {mode === "academy" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
-          {/* Stage Progression Stepper Map (GATED / LOCKED SYSTEM) */}
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-[11px] font-bold text-ember uppercase tracking-wider">
-                  Ear-Training Audio Validation Engine
+        <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
+          {/* COMPACT STAGE PROGRESSION HEADER */}
+          <div className="space-y-2.5">
+            {/* Header Title + Mastery Ring */}
+            <div className="flex items-center justify-between gap-3 min-w-0">
+              <div className="min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider block truncate">
+                  Belajar 0% → 100%
                 </span>
-                <h2 className="font-display text-base sm:text-lg font-bold text-ink mt-0.5">
-                  Belajar 0% ke 100% (Latihan Telinga &amp; Pelafalan Riil)
+                <h2 className="font-display text-sm sm:text-base font-bold text-ink truncate mt-0.5">
+                  {activeStage.title}
                 </h2>
-                <p className="text-xs text-muted mt-0.5">
-                  Dengarkan perbandingan audio salah vs benar, jawab tes pemahaman suara, dan luluskan tahap untuk membuka materi berikutnya.
-                </p>
               </div>
 
-              {/* Progress Metric Badge */}
-              <div className="flex items-center gap-3 rounded-2xl border border-ember/30 bg-ember/10 p-2.5 self-start sm:self-auto shrink-0">
-                <div className="size-9 rounded-xl bg-ember flex items-center justify-center text-obsidian font-display font-bold text-xs">
+              {/* Progress Metric Pill */}
+              <div className="flex items-center gap-2 rounded-xl sm:rounded-2xl border border-ember/30 bg-ember/10 px-2.5 py-1.5 shrink-0">
+                <div className="size-7 sm:size-8 rounded-lg sm:rounded-xl bg-ember flex items-center justify-center text-obsidian font-display font-bold text-[11px] sm:text-xs">
                   {masteryPercentage}%
                 </div>
-                <div>
-                  <p className="text-micro font-bold text-muted uppercase">Penguasaan</p>
-                  <p className="text-xs font-bold text-ink">{completedStages.length} / 6 Tahap Tuntas</p>
+                <div className="hidden xs:block text-right">
+                  <p className="text-[9px] font-bold text-muted uppercase">Penguasaan</p>
+                  <p className="text-[11px] font-bold text-ink">{completedStages.length}/6 Selesai</p>
                 </div>
               </div>
             </div>
 
-            {/* Stepper Stage Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            {/* RESPONSIVE STAGE STEPPER (COMPACT MOBILE PILLS / DESKTOP GRID) */}
+            <div className="grid grid-cols-6 gap-1 sm:gap-2 w-full min-w-0">
               {AUDIO_GATED_STAGES.map((stg) => {
                 const isCompleted = completedStages.includes(stg.id);
                 const isUnlocked = stg.id === 1 || completedStages.includes(stg.id - 1) || isCompleted;
@@ -1890,25 +1888,23 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       setExamAnswers({});
                       setDrillAnswer(null);
                     }}
-                    className={`rounded-2xl border p-2.5 text-left transition-all relative flex flex-col justify-between h-20 ${borderStyle}`}
+                    className={`rounded-xl sm:rounded-2xl border p-1.5 sm:p-2.5 text-center transition-all relative flex flex-col items-center justify-center h-12 sm:h-16 cursor-pointer min-w-0 ${borderStyle}`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono font-bold text-muted">{stg.badge}</span>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-[9px] sm:text-[10px] font-mono font-bold text-muted">T{stg.id}</span>
                       {isCompleted ? (
-                        <span className="size-4 rounded-full bg-emerald-400 text-obsidian text-[10px] font-bold flex items-center justify-center">
+                        <span className="size-3 sm:size-4 rounded-full bg-emerald-400 text-obsidian text-[8px] sm:text-[10px] font-bold flex items-center justify-center">
                           ✓
                         </span>
                       ) : !isUnlocked ? (
-                        <span className="text-[10px] text-muted font-bold">🔒</span>
+                        <span className="text-[9px] sm:text-[10px] text-muted">🔒</span>
                       ) : isCurrent ? (
-                        <span className="size-2 rounded-full bg-ember animate-ping" />
+                        <span className="size-1.5 sm:size-2 rounded-full bg-ember animate-ping" />
                       ) : null}
                     </div>
-                    <div>
-                      <p className={`text-xs font-bold line-clamp-2 ${isCurrent ? "text-ember" : "text-ink"}`}>
-                        {stg.title.split(":")[1] || stg.title}
-                      </p>
-                    </div>
+                    <span className="text-[9px] sm:text-[11px] font-bold text-ink mt-0.5 truncate w-full">
+                      {stg.percentage}%
+                    </span>
                   </button>
                 );
               })}
@@ -1916,130 +1912,116 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
 
           {/* ACTIVE STAGE DRILL CHAMBER */}
-          <div className="border-t border-hairline/60 pt-4 space-y-4">
+          <div className="border-t border-hairline/60 pt-3 sm:pt-4 space-y-3 sm:space-y-4">
             {!isExamMode ? (
-              /* LESSON STEP VIEW (DUAL-AUDIO COMPARISON + INTERACTIVE EAR TRAINING) */
-              <div className="space-y-4 animate-in fade-in duration-200">
-                {/* Step Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-raised/60 p-3.5 rounded-2xl border border-hairline">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md">
-                        Langkah {activeStepIndex + 1} dari {activeStage.steps.length}
-                      </span>
-                      <span className="text-xs font-bold text-ink">{activeStage.title}</span>
-                    </div>
-                    <h3 className="font-display text-sm sm:text-base font-bold text-ink mt-1">
-                      {activeStep.title}
-                    </h3>
+              /* LESSON STEP VIEW (NO SCROLL CHAOS, DIRECT FOCUSED ARENA) */
+              <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-200">
+                {/* Step Progress Pill */}
+                <div className="flex items-center justify-between bg-surface-raised/70 px-3 py-2 rounded-xl border border-hairline">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md shrink-0">
+                      Langkah {activeStepIndex + 1}/{activeStage.steps.length}
+                    </span>
+                    <span className="text-xs font-bold text-ink truncate">{activeStep.title}</span>
                   </div>
-
-                  <button
-                    onClick={() => setIsExamMode(true)}
-                    className="h-8 px-3 rounded-xl border border-ember/40 bg-ember/10 text-ember text-xs font-bold hover:bg-ember/20 transition-all self-start sm:self-auto shrink-0"
-                  >
-                    Langsung Ujian Tahap Ini →
-                  </button>
                 </div>
 
-                {/* Big Interactive Focus Arena */}
-                <div className="rounded-3xl border border-ember/30 bg-gradient-to-b from-surface-raised to-surface p-4 sm:p-6 space-y-5 shadow-md">
-                  {/* Focus Header without IPA Jargon */}
-                  <div className="space-y-1.5 border-b border-hairline/60 pb-3.5">
-                    <p className="text-micro font-bold text-muted uppercase tracking-wider">Fokus Bunyi &amp; Pelafalan:</p>
-                    <h4 className="font-display text-base sm:text-xl font-bold text-ember">
+                {/* Big Interactive Focus Arena (Compact & Ergonomic) */}
+                <div className="rounded-2xl sm:rounded-3xl border border-ember/30 bg-gradient-to-b from-surface-raised to-surface p-3.5 sm:p-5 space-y-3.5 sm:space-y-4 shadow-md w-full min-w-0">
+                  {/* Focus Sound Banner */}
+                  <div className="space-y-1 border-b border-hairline/60 pb-3">
+                    <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Fokus Bunyi:</p>
+                    <h3 className="font-display text-sm sm:text-lg font-bold text-ember leading-snug">
                       {activeStep.focusHighlight}
-                    </h4>
-                    <p className="text-xs font-medium text-ink bg-surface-raised px-3 py-1.5 rounded-xl border border-hairline inline-block">
+                    </h3>
+                    <p className="text-[11px] sm:text-xs font-medium text-ink bg-surface-raised px-2.5 py-1 rounded-lg border border-hairline inline-block mt-0.5">
                       {activeStep.easyPhonetic}
                     </p>
-                    <p className="text-xs text-muted mt-1 leading-relaxed">{activeStep.explanation}</p>
+                    <p className="text-[11px] sm:text-xs text-muted mt-1 leading-relaxed">{activeStep.explanation}</p>
                   </div>
 
-                  {/* DUAL-AUDIO COMPARISON (DENGARKAN BUNYI SALAH VS BUNYI BENAR) */}
-                  <div className="space-y-2">
-                    <span className="text-micro font-bold text-muted uppercase tracking-wider block">
-                      Dengarkan Perbandingan Suara (Klik Tombol di Bawah):
+                  {/* DUAL-AUDIO SIDE-BY-SIDE ON MOBILE */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
+                      Dengarkan Perbandingan Suara:
                     </span>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {/* WRONG AUDIO CARD */}
-                      <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-3.5 flex flex-col justify-between space-y-3">
-                        <div className="space-y-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                      {/* WRONG AUDIO BUTTON */}
+                      <div className="rounded-xl sm:rounded-2xl border border-rose-500/30 bg-rose-500/10 p-2.5 sm:p-3.5 flex flex-col justify-between space-y-2">
+                        <div className="space-y-0.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider">
                               {activeStep.wrongAudio.label}
                             </span>
-                            <span className="size-2 rounded-full bg-rose-500" />
+                            <span className="size-1.5 sm:size-2 rounded-full bg-rose-500" />
                           </div>
-                          <p className="text-xs font-bold text-ink">{activeStep.wrongAudio.text}</p>
-                          <p className="text-micro text-muted leading-relaxed">{activeStep.wrongAudio.explanation}</p>
+                          <p className="text-[11px] sm:text-xs font-bold text-ink truncate">{activeStep.wrongAudio.text}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText)}
-                          className="h-10 px-4 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                          className="h-9 sm:h-10 px-3 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          {currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Sedang Memutar..." : "Putar Bunyi Salah"}
+                          <span className="truncate">{currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Memutar..." : "Putar Bunyi Salah"}</span>
                         </button>
                       </div>
 
-                      {/* CORRECT AUDIO CARD */}
-                      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 flex flex-col justify-between space-y-3">
-                        <div className="space-y-1">
+                      {/* CORRECT AUDIO BUTTON */}
+                      <div className="rounded-xl sm:rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 sm:p-3.5 flex flex-col justify-between space-y-2">
+                        <div className="space-y-0.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
                               {activeStep.correctAudio.label}
                             </span>
-                            <span className="size-2 rounded-full bg-emerald-400" />
+                            <span className="size-1.5 sm:size-2 rounded-full bg-emerald-400" />
                           </div>
-                          <p className="text-xs font-bold text-ink">{activeStep.correctAudio.text}</p>
-                          <p className="text-micro text-muted leading-relaxed">{activeStep.correctAudio.explanation}</p>
+                          <p className="text-[11px] sm:text-xs font-bold text-ink truncate">{activeStep.correctAudio.text}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText)}
-                          className="btn-ember h-10 px-4 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md hover:brightness-105 cursor-pointer"
+                          className="btn-ember h-9 sm:h-10 px-3 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          {currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Sedang Memutar..." : "Putar Bunyi Benar (Bule)"}
+                          <span className="truncate">{currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Memutar..." : "Putar Bunyi Benar (Bule)"}</span>
                         </button>
                       </div>
                     </div>
                   </div>
 
                   {/* Tongue Tip */}
-                  <div className="rounded-2xl border border-hairline bg-surface-raised p-3 text-xs text-muted flex items-start gap-2">
+                  <div className="rounded-xl border border-hairline bg-surface-raised p-2.5 text-[11px] sm:text-xs text-muted flex items-start gap-2">
                     <span className="text-ember font-bold shrink-0">💡</span>
-                    <p><b>Tips Emas Posisi Lidah:</b> {activeStep.tongueTip}</p>
+                    <p><b>Posisi Lidah:</b> {activeStep.tongueTip}</p>
                   </div>
 
-                  {/* LUMINOUS ALIVE INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
-                  <div className="rounded-3xl border border-ember/35 bg-surface-raised/80 p-4 sm:p-5 space-y-3.5 shadow-sm">
+                  {/* LUMINOUS INTERACTIVE EAR-TRAINING VALIDATION DRILL */}
+                  <div className="rounded-2xl sm:rounded-3xl border border-ember/35 bg-surface-raised/80 p-3 sm:p-4 space-y-3 shadow-sm w-full min-w-0">
                     <div>
-                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ember uppercase tracking-wider">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-ember uppercase tracking-wider">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember">
                           <circle cx="12" cy="12" r="10" />
                           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                           <line x1="12" y1="17" x2="12.01" y2="17" />
                         </svg>
-                        Uji Pemahaman Suara (Klik Kartu Jawaban):
+                        Uji Pemahaman Suara:
                       </span>
-                      <p className="font-display text-xs sm:text-sm font-bold text-ink mt-1 leading-relaxed">
+                      <p className="font-display text-xs sm:text-sm font-bold text-ink mt-0.5 leading-snug">
                         {activeStep.audioDrill.prompt}
                       </p>
                     </div>
 
-                    {/* Highly Interactive, Alive Choice Cards */}
-                    <div className="space-y-2.5">
+                    {/* Highly Interactive Choice Cards */}
+                    <div className="space-y-2">
                       {activeStep.audioDrill.options.map((opt, optIdx) => {
                         const isChosen = drillAnswer === optIdx;
                         const isRight = opt.isCorrect;
@@ -2057,12 +2039,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             onClick={() => {
                               if (drillAnswer === null) setDrillAnswer(optIdx);
                             }}
-                            className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all cursor-pointer group ${cardStyle}`}
+                            className={`rounded-xl sm:rounded-2xl border p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
                           >
-                            <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
-                              {/* Round Badge Indicator */}
+                            <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                              {/* Round Badge */}
                               <div
-                                className={`size-8 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
+                                className={`size-7 sm:size-8 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
                                   drillAnswer !== null && isRight
                                     ? "bg-emerald-400 text-obsidian font-bold"
                                     : drillAnswer !== null && isChosen
@@ -2074,25 +2056,25 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               </div>
 
                               <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors leading-snug">
                                   {opt.text}
                                 </p>
-                                <p className="text-[11px] text-muted leading-tight">
+                                <p className="text-[10px] sm:text-[11px] text-muted leading-tight">
                                   {opt.subtext}
                                 </p>
                               </div>
                             </div>
 
-                            {/* Prominent Audio Trigger Button */}
+                            {/* Audio Play Trigger */}
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 playSpeechAudio(opt.soundSample);
                               }}
-                              className="btn-ember h-9 px-3.5 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
+                              className="btn-ember h-8 sm:h-9 px-3 rounded-lg sm:rounded-xl text-obsidian text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
                             >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                               </svg>
@@ -2104,28 +2086,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     </div>
 
                     {drillAnswer !== null && (
-                      <div className="rounded-2xl border border-hairline bg-surface p-4 text-xs leading-relaxed animate-in fade-in duration-200 space-y-1">
-                        <p className={`font-display text-sm font-bold ${activeStep.audioDrill.options[drillAnswer].isCorrect ? "text-emerald-400" : "text-rose-400"}`}>
-                          {activeStep.audioDrill.options[drillAnswer].isCorrect ? "Jawaban 100% Valid & Tepat!" : "Jawaban Kurang Tepat!"}
+                      <div className="rounded-xl sm:rounded-2xl border border-hairline bg-surface p-3 sm:p-3.5 text-xs leading-relaxed animate-in fade-in duration-200 space-y-1">
+                        <p className={`font-display text-xs sm:text-sm font-bold ${activeStep.audioDrill.options[drillAnswer].isCorrect ? "text-emerald-400" : "text-rose-400"}`}>
+                          {activeStep.audioDrill.options[drillAnswer].isCorrect ? "Jawaban 100% Tepat!" : "Jawaban Kurang Tepat!"}
                         </p>
-                        <p className="text-muted">
-                          <b>Penjelasan Lengkap:</b> {activeStep.audioDrill.explanation}
+                        <p className="text-muted text-[11px] sm:text-xs">
+                          <b>Penjelasan:</b> {activeStep.audioDrill.explanation}
                         </p>
                       </div>
                     )}
                   </div>
 
                   {/* Navigation Stepper Controls */}
-                  <div className="flex items-center justify-between pt-3 border-t border-hairline/60">
+                  <div className="flex items-center justify-between pt-2.5 border-t border-hairline/60 gap-2">
                     <button
                       disabled={activeStepIndex === 0}
                       onClick={() => {
                         setActiveStepIndex((prev) => prev - 1);
                         setDrillAnswer(null);
                       }}
-                      className="h-10 px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer"
+                      className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
                     >
-                      ← Langkah Sebelumnya
+                      ← Sebelumnya
                     </button>
 
                     {activeStepIndex < activeStage.steps.length - 1 ? (
@@ -2134,7 +2116,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           setActiveStepIndex((prev) => prev + 1);
                           setDrillAnswer(null);
                         }}
-                        className="btn-ember h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer"
+                        className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0"
                       >
                         Langkah Berikutnya →
                       </button>
@@ -2145,40 +2127,39 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           setExamSubmitted(false);
                           setExamAnswers({});
                         }}
-                        className="btn-ember h-10 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer"
+                        className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0"
                       >
-                        Mulai Ujian Kelulusan {activeStage.badge} →
+                        Ujian Kelulusan →
                       </button>
                     )}
                   </div>
                 </div>
               </div>
             ) : (
-              /* STAGE GATEKEEPER EXAM VIEW (WITH AUDIO PLAYBACK) */
-              <div className="space-y-5 animate-in fade-in duration-300">
-                <div className="flex items-center justify-between bg-surface-raised/50 p-4 rounded-2xl border border-hairline">
-                  <div>
-                    <span className="text-micro font-mono font-bold text-ember uppercase">Ujian Kelulusan {activeStage.badge}</span>
-                    <h3 className="font-display text-base font-bold text-ink mt-0.5">
-                      Tes Pemahaman &amp; Validasi Suara {activeStage.title}
+              /* STAGE GATEKEEPER EXAM VIEW (COMPACT & RESPONSIVE) */
+              <div className="space-y-3.5 sm:space-y-4 animate-in fade-in duration-300">
+                <div className="flex items-center justify-between bg-surface-raised/50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-hairline">
+                  <div className="min-w-0 pr-2">
+                    <span className="text-[10px] font-mono font-bold text-ember uppercase">Ujian {activeStage.badge}</span>
+                    <h3 className="font-display text-xs sm:text-base font-bold text-ink truncate mt-0.5">
+                      Validasi Suara {activeStage.title}
                     </h3>
-                    <p className="text-xs text-muted">Dengarkan audio dan jawab minimal 60% soal dengan benar untuk membuka tahap berikutnya.</p>
                   </div>
                   <button
                     onClick={() => setIsExamMode(false)}
-                    className="h-8 px-3 rounded-lg border border-hairline bg-surface text-xs font-bold text-muted hover:text-ink cursor-pointer"
+                    className="h-8 px-2.5 sm:px-3 rounded-lg border border-hairline bg-surface text-[11px] sm:text-xs font-bold text-muted hover:text-ink cursor-pointer shrink-0"
                   >
-                    Kembali ke Materi
+                    Materi
                   </button>
                 </div>
 
-                <div className="space-y-3.5">
+                <div className="space-y-3">
                   {activeStage.exam.map((q, qIdx) => (
-                    <div key={qIdx} className="rounded-2xl border border-hairline bg-surface-raised p-4 sm:p-5 space-y-3">
-                      <h4 className="font-display text-sm font-bold text-ink leading-relaxed">
+                    <div key={qIdx} className="rounded-xl sm:rounded-2xl border border-hairline bg-surface-raised p-3 sm:p-4 space-y-2.5">
+                      <h4 className="font-display text-xs sm:text-sm font-bold text-ink leading-snug">
                         {qIdx + 1}. {q.question}
                       </h4>
-                      <div className="space-y-2">
+                      <div className="space-y-1.5 sm:space-y-2">
                         {q.options.map((opt, optIdx) => {
                           const isSelected = examAnswers[qIdx] === optIdx;
                           const isCorrect = optIdx === q.correctIndex;
@@ -2198,18 +2179,18 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               onClick={() => {
                                 if (!examSubmitted) setExamAnswers((prev) => ({ ...prev, [qIdx]: optIdx }));
                               }}
-                              className={`rounded-2xl border p-3 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer ${style}`}
+                              className={`rounded-xl sm:rounded-2xl border p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all cursor-pointer w-full min-w-0 ${style}`}
                             >
-                              <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <div
-                                  className={`size-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 ${
+                                  className={`size-6 sm:size-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 ${
                                     isSelected ? "bg-ember text-obsidian" : "bg-surface-raised border border-hairline text-muted"
                                   }`}
                                 >
                                   {String.fromCharCode(65 + optIdx)}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-xs font-bold text-ink">{opt.text}</p>
+                                  <p className="text-xs font-bold text-ink leading-snug">{opt.text}</p>
                                   {opt.subtext && <p className="text-[10px] text-muted">{opt.subtext}</p>}
                                 </div>
                               </div>
@@ -2221,7 +2202,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                     e.stopPropagation();
                                     playSpeechAudio(opt.soundSample || opt.text);
                                   }}
-                                  className="btn-ember h-8 px-3 rounded-lg text-obsidian text-[11px] font-bold transition-all flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs hover:brightness-105"
+                                  className="btn-ember h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg text-obsidian text-[10px] sm:text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-xs"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2235,7 +2216,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         })}
                       </div>
                       {examSubmitted && (
-                        <p className="text-[11px] text-muted pt-2 border-t border-hairline/40 leading-relaxed">
+                        <p className="text-[10px] sm:text-[11px] text-muted pt-1.5 border-t border-hairline/40 leading-relaxed">
                           <b>Pembahasan:</b> {q.explanation}
                         </p>
                       )}
@@ -2244,17 +2225,17 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 </div>
 
                 {/* Exam Action Bar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
                   {!examSubmitted ? (
                     <button
                       disabled={Object.keys(examAnswers).length < activeStage.exam.length}
                       onClick={() => submitGateExam(activeStage)}
-                      className="btn-ember h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md disabled:opacity-50 w-full sm:w-auto cursor-pointer"
+                      className="btn-ember h-10 sm:h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md disabled:opacity-50 w-full sm:w-auto cursor-pointer"
                     >
-                      Kirim Jawaban &amp; Evaluasi Kelulusan →
+                      Kirim Jawaban &amp; Evaluasi →
                     </button>
                   ) : (
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
                       {completedStages.includes(activeStage.id) && activeStage.id < 6 ? (
                         <button
                           onClick={() => {
@@ -2265,9 +2246,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setExamAnswers({});
                             setDrillAnswer(null);
                           }}
-                          className="btn-ember h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer"
+                          className="btn-ember h-10 sm:h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer w-full sm:w-auto"
                         >
-                          Lanjut ke Tahap {activeStage.id + 1} →
+                          Lanjut Tahap {activeStage.id + 1} →
                         </button>
                       ) : (
                         <button
@@ -2277,7 +2258,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setExamAnswers({});
                             setDrillAnswer(null);
                           }}
-                          className="h-11 px-6 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised cursor-pointer"
+                          className="h-10 sm:h-11 px-5 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised cursor-pointer w-full sm:w-auto"
                         >
                           Ulangi Ujian
                         </button>
@@ -2295,30 +2276,30 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 1: BICARA AI (LIVE SPEAKING CALL) */}
       {/* ========================================================================= */}
       {mode === "voice" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
+        <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {!isCalling && !showCallSummary ? (
-            <div className="space-y-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-display text-base font-bold text-ink">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 min-w-0">
+                <div className="min-w-0">
+                  <h3 className="font-display text-sm sm:text-base font-bold text-ink truncate">
                     Pilih Partner Bicara AI
                   </h3>
-                  <p className="text-xs text-muted mt-0.5">
-                    Setiap partner memiliki dialek native, tempo bicara, dan kepribadian yang unik.
+                  <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                    Setiap partner memiliki dialek native dan tempo bicara yang unik.
                   </p>
                 </div>
 
                 {/* Tempo selector for beginners */}
-                <div className="flex items-center gap-2 rounded-xl border border-hairline bg-surface-raised px-3 py-1.5 self-start sm:self-auto">
-                  <span className="text-[11px] font-bold text-muted whitespace-nowrap">Tempo Suara:</span>
+                <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-2.5 py-1 self-start sm:self-auto shrink-0">
+                  <span className="text-[10px] font-bold text-muted whitespace-nowrap">Tempo:</span>
                   {[
-                    { val: 0.75, label: "0.75x (Pelan)" },
-                    { val: 1.0, label: "1.0x (Normal)" },
+                    { val: 0.75, label: "0.75x" },
+                    { val: 1.0, label: "1.0x" },
                   ].map((s) => (
                     <button
                       key={s.val}
                       onClick={() => setPlaybackSpeed(s.val)}
-                      className={`rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all whitespace-nowrap ${
+                      className={`rounded-lg px-2 py-0.5 text-[10px] font-bold transition-all whitespace-nowrap ${
                         playbackSpeed === s.val ? "bg-ember text-obsidian" : "text-muted hover:text-ink"
                       }`}
                     >
@@ -2329,33 +2310,33 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               </div>
 
               {/* Persona Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
                 {PERSONAS.map((p) => {
                   const isSelected = persona === p.id;
                   return (
                     <button
                       key={p.id}
                       onClick={() => setPersona(p.id)}
-                      className={`rounded-2xl border p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between h-36 ${
+                      className={`rounded-xl sm:rounded-2xl border p-3 sm:p-4 text-left transition-all relative overflow-hidden flex flex-col justify-between h-28 sm:h-36 cursor-pointer min-w-0 ${
                         isSelected
                           ? "border-ember bg-ember/10 shadow-md ring-1 ring-ember/30"
                           : "border-hairline bg-surface-raised/60 hover:border-hairline/90"
                       }`}
                     >
-                      <div>
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-display text-sm font-bold text-ink truncate">{p.name}</span>
-                          <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md shrink-0">
+                      <div className="min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-display text-xs sm:text-sm font-bold text-ink truncate">{p.name}</span>
+                          <span className="text-[9px] sm:text-[10px] font-mono font-bold text-ember bg-ember/15 px-1.5 py-0.5 rounded shrink-0">
                             {p.accent}
                           </span>
                         </div>
-                        <p className="text-micro text-muted mt-2 leading-relaxed line-clamp-2">{p.desc}</p>
+                        <p className="text-[10px] text-muted mt-1 leading-tight line-clamp-2">{p.desc}</p>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-hairline/40">
-                        <span className="text-[10px] font-medium text-muted">{p.tag}</span>
+                      <div className="flex items-center justify-between pt-1 border-t border-hairline/40">
+                        <span className="text-[9px] sm:text-[10px] font-medium text-muted truncate">{p.tag}</span>
                         {isSelected && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-ember">
-                            <span className="size-1.5 rounded-full bg-ember" /> Dipilih
+                          <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-ember shrink-0">
+                            <span className="size-1 rounded-full bg-ember" /> OK
                           </span>
                         )}
                       </div>
@@ -2365,62 +2346,62 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               </div>
 
               {/* Action Banner */}
-              <div className="rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="space-y-0.5 text-center sm:text-left">
-                  <h4 className="text-xs sm:text-sm font-bold text-ink">Bebas Bicara Tanpa Takut Salah</h4>
-                  <p className="text-micro sm:text-xs text-muted">
-                    Tersedia tombol terjemahan instan &amp; contekan kalimat pintar jika lo bingung mau merespons apa.
+              <div className="rounded-xl sm:rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3.5 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+                <div className="space-y-0.5 text-center sm:text-left min-w-0">
+                  <h4 className="text-xs sm:text-sm font-bold text-ink truncate">Bebas Bicara Tanpa Takut Salah</h4>
+                  <p className="text-[10px] sm:text-xs text-muted">
+                    Tersedia tombol terjemahan &amp; contekan kalimat pintar jika lo bingung mau merespons apa.
                   </p>
                 </div>
                 <button
                   onClick={() => startCall()}
-                  className="btn-ember shrink-0 h-11 px-7 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 w-full sm:w-auto"
+                  className="btn-ember shrink-0 h-10 sm:h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 w-full sm:w-auto"
                 >
-                  Mulai Panggilan Suara →
+                  Mulai Bicara →
                 </button>
               </div>
             </div>
           ) : isCalling ? (
             /* ACTIVE PHONE CALL SCREEN */
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               {/* Call Top Bar */}
-              <div className="flex items-center justify-between border-b border-hairline/60 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-full border border-ember/40 bg-ember/20 flex items-center justify-center text-ember font-display font-bold text-sm shrink-0">
+              <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="size-9 rounded-full border border-ember/40 bg-ember/20 flex items-center justify-center text-ember font-display font-bold text-xs shrink-0">
                     {persona.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h3 className="font-display text-sm font-bold text-ink capitalize">
+                  <div className="min-w-0">
+                    <h3 className="font-display text-xs sm:text-sm font-bold text-ink truncate">
                       {persona} ({PERSONAS.find((p) => p.id === persona)?.tag})
                     </h3>
-                    <p className="text-micro text-emerald-400 font-mono flex items-center gap-1.5">
+                    <p className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
                       <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      Terhubung • {formatSeconds(callDuration)}
-                      {isPlayingAudio && <span className="text-ember font-bold ml-1">• Bersuara...</span>}
+                      {formatSeconds(callDuration)}
+                      {isPlayingAudio && <span className="text-ember font-bold ml-1">• Bersuara</span>}
                     </p>
                   </div>
                 </div>
 
                 <button
                   onClick={endCall}
-                  className="h-9 px-4 rounded-xl border border-rose-500/40 bg-rose-500/15 text-rose-400 text-xs font-bold hover:bg-rose-500/25 transition-all shrink-0"
+                  className="h-8 px-3 rounded-xl border border-rose-500/40 bg-rose-500/15 text-rose-400 text-[11px] font-bold hover:bg-rose-500/25 transition-all shrink-0"
                 >
-                  Akhiri Panggilan
+                  Akhiri
                 </button>
               </div>
 
               {/* Real-time Tips & Roast Badges */}
               {(activeTip || activeRoast) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in duration-200">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 animate-in fade-in duration-200">
                   {activeTip && (
-                    <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-3 text-xs">
-                      <p className="font-bold text-sky-400 text-micro uppercase tracking-wider">Koreksi Grammar Halus:</p>
+                    <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-2.5 text-xs">
+                      <p className="font-bold text-sky-400 text-[10px] uppercase tracking-wider">Koreksi Grammar:</p>
                       <p className="text-ink mt-0.5 font-medium">{activeTip}</p>
                     </div>
                   )}
                   {activeRoast && (
-                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs">
-                      <p className="font-bold text-amber-400 text-micro uppercase tracking-wider">Catatan Humoris Malesan:</p>
+                    <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs">
+                      <p className="font-bold text-amber-400 text-[10px] uppercase tracking-wider">Catatan Malesan:</p>
                       <p className="text-ink mt-0.5 font-medium italic">&ldquo;{activeRoast}&rdquo;</p>
                     </div>
                   )}
@@ -2428,20 +2409,20 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               )}
 
               {/* Chat / Transcript Stream */}
-              <div className="h-64 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 space-y-3.5 custom-scrollbar">
+              <div className="h-56 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 sm:p-4 space-y-2.5 custom-scrollbar">
                 {messages.map((m) => (
                   <div
                     key={m.id}
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
+                      className={`max-w-[92%] sm:max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed space-y-1.5 ${
                         m.role === "user"
                           ? "bg-ember text-obsidian font-medium rounded-tr-xs"
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start justify-between gap-2.5">
                         <span>{m.text}</span>
                         {m.role === "assistant" && (
                           <button
@@ -2460,9 +2441,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                       {/* Beginner Feature: Tap to view Indonesian Translation */}
                       {m.role === "assistant" && m.translateId && (
-                        <div className="border-t border-hairline/50 pt-1.5">
+                        <div className="border-t border-hairline/50 pt-1">
                           {showTranslations[m.id] ? (
-                            <p className="text-[11px] text-muted font-normal italic">
+                            <p className="text-[10px] sm:text-[11px] text-muted font-normal italic">
                               Arti: &ldquo;{m.translateId}&rdquo;
                             </p>
                           ) : (
@@ -2479,31 +2460,26 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         </div>
                       )}
                     </div>
-                    {m.score && m.role === "assistant" && (
-                      <span className="text-[10px] text-muted mt-1 px-1 font-mono">
-                        Skor Kelancaran: {m.score}/100
-                      </span>
-                    )}
                   </div>
                 ))}
               </div>
 
               {/* Beginner Feature: Smart Hint Suggestion Pills */}
               {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
-                <div className="space-y-1.5 animate-in fade-in duration-200">
-                  <span className="text-micro font-bold text-muted uppercase tracking-wider">
-                    Contekan Jawaban Cepat (Klik untuk kirim):
+                <div className="space-y-1 animate-in fade-in duration-200">
+                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                    Contekan Cepat (Klik untuk kirim):
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                     {messages[messages.length - 1].suggestedReplies?.map((hint, idx) => (
                       <button
                         key={idx}
                         onClick={() => submitTextMessage(hint.en)}
                         disabled={isProcessing}
-                        className="rounded-xl border border-hairline bg-surface p-2.5 text-left hover:border-ember/60 hover:bg-surface-raised transition-all group"
+                        className="rounded-xl border border-hairline bg-surface p-2 text-left hover:border-ember/60 hover:bg-surface-raised transition-all group min-w-0"
                       >
                         <span className="font-bold text-xs text-ink group-hover:text-ember block truncate">{hint.en}</span>
-                        <span className="text-[10px] text-muted block truncate mt-0.5">{hint.id}</span>
+                        <span className="text-[10px] text-muted block truncate">{hint.id}</span>
                       </button>
                     ))}
                   </div>
@@ -2511,27 +2487,27 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               )}
 
               {/* Kinetic Waveform Canvas */}
-              <div className="rounded-2xl border border-hairline/60 bg-surface-raised p-3 flex flex-col items-center justify-center">
-                <canvas ref={canvasRef} width={400} height={46} className="w-full h-10" />
-                <p className="text-[11px] font-mono text-muted mt-1">
+              <div className="rounded-xl sm:rounded-2xl border border-hairline/60 bg-surface-raised p-2.5 flex flex-col items-center justify-center">
+                <canvas ref={canvasRef} width={400} height={38} className="w-full h-8" />
+                <p className="text-[10px] font-mono text-muted mt-0.5 text-center">
                   {isRecording
-                    ? "Mendengarkan suara lo secara live... Klik tombol merah untuk kirim"
+                    ? "Mendengarkan... Klik tombol merah untuk kirim"
                     : isPlayingAudio
                     ? "Partner AI sedang berbicara..."
                     : isProcessing
-                    ? "AI sedang memikirkan balasan..."
-                    : "Bicara lewat tombol mikrofon atau ketik pesan teks"}
+                    ? "Memproses suara..."
+                    : "Tekan tombol bicara atau ketik pesan"}
                 </p>
               </div>
 
               {/* Controls Bar */}
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-center">
                   <button
                     type="button"
                     onClick={toggleRecording}
                     disabled={isProcessing}
-                    className={`h-13 px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center gap-2.5 shadow-lg ${
+                    className={`h-11 sm:h-13 px-6 sm:px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-lg w-full sm:w-auto justify-center cursor-pointer ${
                       isRecording
                         ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
                         : isProcessing
@@ -2539,21 +2515,21 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
                     }`}
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 sm:size-5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                       <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                       <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                       <line x1="12" x2="12" y1="19" y2="22" />
                     </svg>
                     {isRecording
-                      ? "Selesai Bicara (Kirim Obrolan)"
+                      ? "Selesai Bicara (Kirim)"
                       : isProcessing
-                      ? "Memproses Suara..."
-                      : "Tekan untuk Mulai Bicara"}
+                      ? "Memproses..."
+                      : "Tekan untuk Bicara"}
                   </button>
                 </div>
 
                 {/* Instant Text Input Alternative */}
-                <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-surface-raised p-1.5 focus-within:border-ember/60 transition-all">
+                <div className="flex items-center gap-1.5 rounded-xl sm:rounded-2xl border border-hairline bg-surface-raised p-1 focus-within:border-ember/60 transition-all">
                   <input
                     type="text"
                     value={textInput}
@@ -2564,15 +2540,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         submitTextMessage();
                       }
                     }}
-                    placeholder="Atau ketik kalimat bahasa Inggris di sini..."
+                    placeholder="Atau ketik bahasa Inggris di sini..."
                     disabled={isProcessing}
-                    className="flex-1 bg-transparent px-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none"
+                    className="flex-1 bg-transparent px-2.5 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none min-w-0"
                   />
                   <button
                     type="button"
                     onClick={() => submitTextMessage()}
                     disabled={!textInput.trim() || isProcessing}
-                    className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
+                    className="btn-ember h-8 sm:h-9 px-3.5 rounded-lg sm:rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
                   >
                     Kirim
                   </button>
@@ -2581,62 +2557,45 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           ) : (
             /* POST-CALL SCORECARD */
-            <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="border-b border-hairline/60 pb-4 flex items-center justify-between">
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
+              <div className="border-b border-hairline/60 pb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="font-display text-lg font-bold text-ink">
+                  <h3 className="font-display text-base sm:text-lg font-bold text-ink">
                     Rapor Selesai Percakapan
                   </h3>
-                  <p className="text-xs text-muted">Durasi Panggilan: {formatSeconds(callDuration)}</p>
+                  <p className="text-xs text-muted">Durasi: {formatSeconds(callDuration)}</p>
                 </div>
                 <button
                   onClick={() => setShowCallSummary(false)}
-                  className="btn-ember h-9 px-4 rounded-xl text-xs font-bold text-obsidian"
+                  className="btn-ember h-8 sm:h-9 px-3.5 rounded-xl text-xs font-bold text-obsidian"
                 >
                   Panggilan Baru
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div className="rounded-2xl border border-hairline bg-surface-raised p-4 text-center">
-                  <p className="text-micro font-bold text-muted uppercase tracking-wider">Total Kalimat</p>
-                  <p className="font-display text-2xl font-bold text-ink mt-1">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3.5">
+                <div className="rounded-xl border border-hairline bg-surface-raised p-3 text-center">
+                  <p className="text-[10px] font-bold text-muted uppercase">Kalimat</p>
+                  <p className="font-display text-lg sm:text-2xl font-bold text-ink mt-0.5">
                     {messages.filter((m) => m.role === "user").length}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-                  <p className="text-micro font-bold text-emerald-400 uppercase tracking-wider">Rata-rata Skor</p>
-                  <p className="font-display text-2xl font-bold text-emerald-400 mt-1">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
+                  <p className="text-[10px] font-bold text-emerald-400 uppercase">Skor</p>
+                  <p className="font-display text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5">
                     {messages.filter((m) => m.score).length
                       ? Math.round(
                           messages.filter((m) => m.score).reduce((a, b) => a + (b.score || 0), 0) /
                             messages.filter((m) => m.score).length,
                         )
                       : 80}
-                    /100
                   </p>
                 </div>
-                <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 text-center">
-                  <p className="text-micro font-bold text-ember uppercase tracking-wider">Koreksi Diberikan</p>
-                  <p className="font-display text-2xl font-bold text-ember mt-1">
-                    {messages.filter((m) => m.tip).length} Catatan
+                <div className="rounded-xl border border-ember/30 bg-ember/10 p-3 text-center">
+                  <p className="text-[10px] font-bold text-ember uppercase">Koreksi</p>
+                  <p className="font-display text-lg sm:text-2xl font-bold text-ember mt-0.5">
+                    {messages.filter((m) => m.tip).length}
                   </p>
-                </div>
-              </div>
-
-              {/* Transcript History */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-ink uppercase tracking-wider">Rangkuman Obrolan:</h4>
-                <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-4 space-y-3 max-h-60 overflow-y-auto custom-scrollbar">
-                  {messages.map((m) => (
-                    <div key={m.id} className="text-xs">
-                      <span className="font-bold text-ember capitalize">{m.role === "user" ? "Lo" : persona}: </span>
-                      <span className="text-ink">{m.text}</span>
-                      {m.tip && (
-                        <p className="text-micro text-sky-400 mt-0.5 ml-4 font-medium">Tip: {m.tip}</p>
-                      )}
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -2648,53 +2607,40 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 2: SIMULASI SKENARIO (ROLEPLAY CHAMBER) */}
       {/* ========================================================================= */}
       {mode === "scenario" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
+        <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {!isCalling ? (
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               <div>
-                <h3 className="font-display text-base font-bold text-ink">
-                  Chamber Simulasi Skenario Dunia Nyata
+                <h3 className="font-display text-sm sm:text-base font-bold text-ink">
+                  Simulasi Skenario Dunia Nyata
                 </h3>
-                <p className="text-xs text-muted mt-0.5">
-                  Latihan situasi spesifik dengan misi objektif, alur cerita, dan lawan bicara AI yang realistis.
+                <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                  Latihan situasi spesifik dengan misi objektif dan partner AI realistis.
                 </p>
               </div>
 
               {/* Scenario Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {SCENARIOS.map((s) => (
                   <div
                     key={s.id}
-                    className="rounded-2xl border border-hairline bg-surface-raised p-4 sm:p-5 flex flex-col justify-between space-y-4 hover:border-ember/40 transition-all group"
+                    className="rounded-xl sm:rounded-2xl border border-hairline bg-surface-raised p-3.5 sm:p-4 flex flex-col justify-between space-y-3 hover:border-ember/40 transition-all group"
                   >
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-display text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                        <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
                           {s.title}
                         </h4>
-                        <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md border border-ember/30 shrink-0 capitalize">
+                        <span className="text-[9px] font-mono font-bold text-ember bg-ember/15 px-1.5 py-0.5 rounded shrink-0 capitalize">
                           {s.partner}
                         </span>
                       </div>
-                      <p className="text-xs text-muted leading-relaxed line-clamp-2">{s.context}</p>
-
-                      {/* Missions list */}
-                      <div className="space-y-1.5 pt-1 border-t border-hairline/40">
-                        <p className="text-[10px] font-bold text-ember uppercase tracking-wider">Target Misi:</p>
-                        <ul className="text-xs text-ink/85 space-y-1">
-                          {s.missions.map((m, i) => (
-                            <li key={i} className="flex items-start gap-1.5 leading-snug">
-                              <span className="text-ember font-bold shrink-0">•</span>
-                              <span>{m}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <p className="text-[11px] text-muted leading-relaxed line-clamp-2">{s.context}</p>
                     </div>
 
                     <button
                       onClick={() => startCall(s)}
-                      className="btn-ember w-full h-10 rounded-xl text-xs font-bold text-obsidian shadow-sm hover:brightness-105"
+                      className="btn-ember w-full h-9 rounded-xl text-xs font-bold text-obsidian shadow-sm hover:brightness-105 cursor-pointer"
                     >
                       Mulai Simulasi →
                     </button>
@@ -2704,126 +2650,41 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           ) : (
             /* ACTIVE ROLEPLAY CHAMBER VIEW */
-            <div className="space-y-5">
-              {/* Scenario Context Header */}
-              <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 sm:p-5 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="size-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                    <h3 className="font-display text-sm sm:base font-bold text-ink truncate">
-                      Skenario: {activeScenario?.title}
-                    </h3>
-                  </div>
-                  <button
-                    onClick={endCall}
-                    className="h-8 px-3 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 text-micro font-bold hover:bg-rose-500/25 shrink-0"
-                  >
-                    Selesaikan Simulasi
-                  </button>
-                </div>
-                <p className="text-xs text-muted leading-relaxed">{activeScenario?.context}</p>
-
-                {/* Live Mission Checklist */}
-                <div className="border-t border-hairline/60 pt-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {activeScenario?.missions.map((m, idx) => (
-                    <div
-                      key={idx}
-                      className={`rounded-xl border p-2.5 text-xs flex items-center gap-2 ${
-                        completedMissions[idx]
-                          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 font-bold"
-                          : "border-hairline bg-surface text-muted"
-                      }`}
-                    >
-                      <span className={`size-4 rounded-full flex items-center justify-center text-[10px] shrink-0 ${
-                        completedMissions[idx] ? "bg-emerald-400 text-obsidian font-bold" : "border border-hairline"
-                      }`}>
-                        {completedMissions[idx] ? "✓" : idx + 1}
-                      </span>
-                      <span className="truncate">{m}</span>
-                    </div>
-                  ))}
-                </div>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-ember/30 bg-ember/10 p-3 flex items-center justify-between gap-2">
+                <h3 className="font-display text-xs sm:text-sm font-bold text-ink truncate">
+                  Skenario: {activeScenario?.title}
+                </h3>
+                <button
+                  onClick={endCall}
+                  className="h-7 px-2.5 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 text-[10px] font-bold shrink-0"
+                >
+                  Selesai
+                </button>
               </div>
 
               {/* Chat Transcript */}
-              <div className="h-64 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-4 space-y-3.5 custom-scrollbar">
+              <div className="h-56 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 space-y-2.5 custom-scrollbar">
                 {messages.map((m) => (
                   <div
                     key={m.id}
                     className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed space-y-2 ${
+                      className={`max-w-[92%] sm:max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed space-y-1 ${
                         m.role === "user"
                           ? "bg-ember text-obsidian font-medium rounded-tr-xs"
                           : "border border-hairline/80 bg-surface text-ink rounded-tl-xs shadow-xs"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <span>{m.text}</span>
-                        {m.role === "assistant" && (
-                          <button
-                            type="button"
-                            onClick={() => playSpeechAudio(m.text, activeScenario?.partner)}
-                            title="Putar suara"
-                            className="shrink-0 text-muted hover:text-ember transition-colors p-0.5"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Indonesian translation toggle */}
-                      {m.role === "assistant" && m.translateId && (
-                        <div className="border-t border-hairline/50 pt-1.5">
-                          {showTranslations[m.id] ? (
-                            <p className="text-[11px] text-muted font-normal italic">
-                              Arti: &ldquo;{m.translateId}&rdquo;
-                            </p>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setShowTranslations((prev) => ({ ...prev, [m.id]: true }))
-                              }
-                              className="text-[10px] font-bold text-ember hover:underline"
-                            >
-                              Lihat Terjemahan Indo
-                            </button>
-                          )}
-                        </div>
-                      )}
+                      <span>{m.text}</span>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Beginner Hint Chips */}
-              {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
-                <div className="space-y-1.5 animate-in fade-in duration-200">
-                  <span className="text-micro font-bold text-muted uppercase tracking-wider">
-                    Opsi Jawaban Skenario (Klik untuk kirim):
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {messages[messages.length - 1].suggestedReplies?.map((hint, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => submitTextMessage(hint.en)}
-                        disabled={isProcessing}
-                        className="rounded-xl border border-hairline bg-surface p-2.5 text-left hover:border-ember/60 hover:bg-surface-raised transition-all group"
-                      >
-                        <span className="font-bold text-xs text-ink group-hover:text-ember block truncate">{hint.en}</span>
-                        <span className="text-[10px] text-muted block truncate mt-0.5">{hint.id}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Roleplay input controls */}
-              <div className="flex items-center gap-2 rounded-2xl border border-hairline bg-surface-raised p-1.5 focus-within:border-ember/60 transition-all">
+              {/* Input */}
+              <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised p-1 focus-within:border-ember/60 transition-all">
                 <input
                   type="text"
                   value={textInput}
@@ -2834,15 +2695,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       submitTextMessage();
                     }
                   }}
-                  placeholder="Ketik balasan untuk percakapan ini..."
+                  placeholder="Ketik balasan untuk skenario ini..."
                   disabled={isProcessing}
-                  className="flex-1 bg-transparent px-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:outline-none"
+                  className="flex-1 bg-transparent px-2.5 text-xs text-ink placeholder:text-muted/60 focus:outline-none min-w-0"
                 />
                 <button
                   type="button"
                   onClick={() => submitTextMessage()}
                   disabled={!textInput.trim() || isProcessing}
-                  className="btn-ember h-9 px-4 rounded-xl font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
+                  className="btn-ember h-8 px-3 rounded-lg font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
                 >
                   Kirim
                 </button>
@@ -2856,52 +2717,50 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 3: KUIS KILAT PRO */}
       {/* ========================================================================= */}
       {mode === "quiz" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
+        <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {quizQuestions.length === 0 ? (
-            <div className="space-y-5">
+            <div className="space-y-4 sm:space-y-5">
               <div>
-                <h3 className="font-display text-base font-bold text-ink">
+                <h3 className="font-display text-sm sm:text-base font-bold text-ink">
                   Kuis Kilat Bahasa Inggris Pro
                 </h3>
-                <p className="text-xs text-muted mt-0.5">
-                  Uji pemahaman tenses, idiom, kosakata bisnis, dan perbaikan kalimat dengan soal yang 100% segar &amp; anti-repetisi.
+                <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                  Uji pemahaman tenses, idiom, dan perbaikan kalimat secara segar.
                 </p>
               </div>
 
               {/* Topic Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 {[
-                  { id: "grammar_tenses", title: "Tenses & Grammar", desc: "Past, Present, Perfect, & Conditionals" },
-                  { id: "idioms_phrases", title: "Idioms & Phrasal Verbs", desc: "Ungkapan sehari-hari penutur asli" },
-                  { id: "error_spotting", title: "Error Spotting", desc: "Cari letak kesalahan dalam kalimat" },
-                  { id: "business_pro", title: "Business English", desc: "Email profesional, meeting & negosiasi" },
-                  { id: "slang_pop", title: "Slang & Pop Culture", desc: "Bahasa gaul internet & tongkrongan global" },
+                  { id: "grammar_tenses", title: "Grammar & Tenses", desc: "Past, Present, Perfect" },
+                  { id: "idioms_phrases", title: "Idioms & Phrases", desc: "Ungkapan native" },
+                  { id: "error_spotting", title: "Error Spotting", desc: "Cari letak kesalahan" },
+                  { id: "business_pro", title: "Business English", desc: "Email & meeting" },
+                  { id: "slang_pop", title: "Slang Pop", desc: "Bahasa gaul internet" },
                 ].map((t) => (
                   <button
                     key={t.id}
                     onClick={() => setQuizTopic(t.id)}
-                    className={`rounded-2xl border p-4 text-left transition-all h-24 flex flex-col justify-between ${
+                    className={`rounded-xl border p-2.5 sm:p-3 text-left transition-all h-18 sm:h-22 flex flex-col justify-between cursor-pointer min-w-0 ${
                       quizTopic === t.id
                         ? "border-ember bg-ember/10 shadow-sm ring-1 ring-ember/30"
                         : "border-hairline bg-surface-raised/60 hover:border-hairline/90"
                     }`}
                   >
-                    <p className="font-display text-sm font-bold text-ink">{t.title}</p>
-                    <p className="text-micro text-muted line-clamp-2">{t.desc}</p>
+                    <p className="font-display text-xs sm:text-sm font-bold text-ink truncate">{t.title}</p>
+                    <p className="text-[10px] text-muted truncate">{t.desc}</p>
                   </button>
                 ))}
               </div>
 
-              {/* Question Count Selector & Start Button Row */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-hairline/60 pt-4">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <span className="text-xs font-bold text-ink whitespace-nowrap">Jumlah Soal:</span>
-                  {[5, 10, 15].map((cnt) => (
+              <div className="flex items-center justify-between gap-3 border-t border-hairline/60 pt-3">
+                <div className="flex items-center gap-1.5">
+                  {[5, 10].map((cnt) => (
                     <button
                       key={cnt}
                       onClick={() => setQuizCount(cnt)}
-                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap ${
-                        quizCount === cnt ? "bg-ember text-obsidian" : "text-muted hover:text-ink bg-surface border border-hairline"
+                      className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
+                        quizCount === cnt ? "bg-ember text-obsidian" : "text-muted bg-surface border border-hairline"
                       }`}
                     >
                       {cnt} Soal
@@ -2912,29 +2771,29 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <button
                   onClick={handleGenerateQuiz}
                   disabled={quizLoading}
-                  className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 w-full sm:w-auto"
+                  className="btn-ember h-9 sm:h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105"
                 >
-                  {quizLoading ? "Menyiapkan Soal Kuis Segar..." : `Mulai Kuis ${quizCount} Soal Baru →`}
+                  {quizLoading ? "Menyiapkan..." : "Mulai Kuis →"}
                 </button>
               </div>
             </div>
           ) : !quizFinished ? (
             /* ACTIVE QUIZ QUESTION */
-            <div className="space-y-5">
-              <div className="flex items-center justify-between border-b border-hairline/60 pb-3">
-                <span className="text-xs font-bold text-ember uppercase tracking-wider">
-                  Soal {currentQuestionIdx + 1} dari {quizQuestions.length}
+            <div className="space-y-3.5">
+              <div className="flex items-center justify-between border-b border-hairline/60 pb-2.5">
+                <span className="text-[11px] font-bold text-ember uppercase">
+                  Soal {currentQuestionIdx + 1}/{quizQuestions.length}
                 </span>
-                <span className="text-micro text-muted font-mono">Tingkat: {level.toUpperCase()}</span>
+                <span className="text-[10px] text-muted font-mono">{level.toUpperCase()}</span>
               </div>
 
               {quizQuestions[currentQuestionIdx] && (
-                <div className="space-y-4">
-                  <h3 className="font-display text-base sm:text-lg font-bold text-ink leading-relaxed">
+                <div className="space-y-3">
+                  <h4 className="font-display text-xs sm:text-base font-bold text-ink leading-snug">
                     {quizQuestions[currentQuestionIdx].question}
-                  </h3>
+                  </h4>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {quizQuestions[currentQuestionIdx].options.map((opt, optIdx) => {
                       const isSelected = selectedAnswers[currentQuestionIdx] === optIdx;
                       const isAnswered = selectedAnswers[currentQuestionIdx] !== undefined;
@@ -2954,9 +2813,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           onClick={() => {
                             setSelectedAnswers((prev) => ({ ...prev, [currentQuestionIdx]: optIdx }));
                           }}
-                          className={`rounded-2xl border p-4 text-left text-xs sm:text-sm transition-all ${btnStyle}`}
+                          className={`rounded-xl border p-2.5 sm:p-3 text-left text-xs transition-all cursor-pointer ${btnStyle}`}
                         >
-                          <span className="font-mono font-bold mr-2 text-muted">
+                          <span className="font-mono font-bold mr-1.5 text-muted">
                             {String.fromCharCode(65 + optIdx)}.
                           </span>
                           {opt}
@@ -2965,42 +2824,23 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     })}
                   </div>
 
-                  {/* Explanation & Roast Box */}
-                  {selectedAnswers[currentQuestionIdx] !== undefined && (
-                    <div className="rounded-2xl border border-hairline bg-surface-raised p-4 space-y-2 animate-in fade-in duration-200">
-                      {selectedAnswers[currentQuestionIdx] === quizQuestions[currentQuestionIdx].correctIndex ? (
-                        <p className="text-xs font-bold text-emerald-400">Jawaban Benar!</p>
-                      ) : (
-                        <div className="space-y-1">
-                          <p className="text-xs font-bold text-rose-400">Jawaban Kurang Tepat!</p>
-                          <p className="text-xs text-amber-400 italic">
-                            &ldquo;{quizQuestions[currentQuestionIdx].roastWrong}&rdquo;
-                          </p>
-                        </div>
-                      )}
-                      <p className="text-xs text-muted leading-relaxed">
-                        <b>Penjelasan:</b> {quizQuestions[currentQuestionIdx].explanation}
-                      </p>
-                    </div>
-                  )}
-
                   {/* Navigation */}
                   <div className="flex justify-end gap-2 pt-2">
                     {currentQuestionIdx < quizQuestions.length - 1 ? (
                       <button
                         disabled={selectedAnswers[currentQuestionIdx] === undefined}
                         onClick={() => setCurrentQuestionIdx((prev) => prev + 1)}
-                        className="btn-ember h-10 px-5 rounded-xl text-xs font-bold text-obsidian disabled:opacity-50"
+                        className="btn-ember h-9 px-4 rounded-xl text-xs font-bold text-obsidian disabled:opacity-50"
                       >
-                        Soal Berikutnya →
+                        Berikutnya →
                       </button>
                     ) : (
                       <button
                         disabled={selectedAnswers[currentQuestionIdx] === undefined}
                         onClick={finishQuiz}
-                        className="btn-ember h-10 px-5 rounded-xl text-xs font-bold text-obsidian disabled:opacity-50"
+                        className="btn-ember h-9 px-4 rounded-xl text-xs font-bold text-obsidian disabled:opacity-50"
                       >
-                        Lihat Skor &amp; Catat Rapor →
+                        Selesai Kuis →
                       </button>
                     )}
                   </div>
@@ -3009,34 +2849,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             </div>
           ) : (
             /* QUIZ SUMMARY */
-            <div className="space-y-6 text-center animate-in fade-in duration-300">
-              <h3 className="font-display text-xl font-bold text-ink">Hasil Kuis Lo</h3>
-              {(() => {
-                let correctCount = 0;
-                quizQuestions.forEach((q, idx) => {
-                  if (selectedAnswers[idx] === q.correctIndex) correctCount++;
-                });
-                const score = Math.round((correctCount / quizQuestions.length) * 100);
-
-                return (
-                  <div className="space-y-4">
-                    <div className="size-24 rounded-full border-2 border-ember bg-ember/15 mx-auto flex items-center justify-center font-display text-2xl font-bold text-ember">
-                      {score}%
-                    </div>
-                    <p className="text-xs text-muted">
-                      Lo berhasil menjawab benar <b>{correctCount}</b> dari <b>{quizQuestions.length}</b> soal.
-                    </p>
-                    <div className="flex justify-center gap-3">
-                      <button
-                        onClick={handleGenerateQuiz}
-                        className="btn-ember h-10 px-5 rounded-xl text-xs font-bold text-obsidian"
-                      >
-                        Mulai Kuis Baru (Soal Segar)
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
+            <div className="space-y-4 text-center py-4">
+              <h3 className="font-display text-lg font-bold text-ink">Hasil Kuis Lo</h3>
+              <button
+                onClick={handleGenerateQuiz}
+                className="btn-ember h-9 px-4 rounded-xl text-xs font-bold text-obsidian"
+              >
+                Mulai Kuis Baru
+              </button>
             </div>
           )}
         </div>
@@ -3046,286 +2866,66 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       {/* MODE 4: UJIAN ESAI */}
       {/* ========================================================================= */}
       {mode === "essay" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5">
+        <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 w-full min-w-0">
           <div>
-            <h3 className="font-display text-base font-bold text-ink">
-              Ujian Esai &amp; Evaluasi Tulisan Bahasa Inggris
+            <h3 className="font-display text-sm sm:text-base font-bold text-ink">
+              Ujian Esai &amp; Evaluasi IELTS
             </h3>
-            <p className="text-xs text-muted mt-0.5">
-              Tulis paragraf opini atau esai lo, AI akan membedah tata bahasa, skor setara IELTS, dan memberikan draf sempurna.
+            <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+              Tulis paragraf bahasa Inggris lo, AI akan membedah grammar dan memberikan skor setara IELTS.
             </p>
           </div>
 
-          {/* Topic selection */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-ink">Pilih Topik atau Tulis Topik Sendiri:</label>
-            <div className="flex flex-wrap gap-2">
-              {ESSAY_TOPICS.map((t, i) => (
-                <button
-                  key={i}
-                  onClick={() => setEssayTopic(t)}
-                  className={`rounded-xl border px-3 py-1.5 text-xs text-left transition-all ${
-                    essayTopic === t
-                      ? "border-ember bg-ember/15 text-ember font-bold"
-                      : "border-hairline bg-surface-raised/60 text-muted hover:text-ink"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Text Area */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-ink">Tulis Esai Bahasa Inggris Lo:</label>
-              <span className="text-micro font-mono text-muted">
-                {essayText.trim().split(/\s+/).filter(Boolean).length} Kata • {essayText.length} Karakter
-              </span>
-            </div>
-            <textarea
-              rows={6}
-              value={essayText}
-              onChange={(e) => setEssayText(e.target.value)}
-              placeholder="Write your English essay or opinion here (minimum 20 characters)..."
-              className="w-full rounded-2xl border border-hairline bg-surface-raised p-4 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none transition-all leading-relaxed"
-            />
-          </div>
+          <textarea
+            rows={5}
+            value={essayText}
+            onChange={(e) => setEssayText(e.target.value)}
+            placeholder="Write your English essay here (minimum 20 characters)..."
+            className="w-full rounded-xl border border-hairline bg-surface-raised p-3 text-xs sm:text-sm text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none transition-all leading-relaxed"
+          />
 
           <button
             onClick={handleEvaluateEssay}
             disabled={essayLoading}
-            className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 disabled:opacity-50"
+            className="btn-ember h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md hover:brightness-105 disabled:opacity-50 w-full sm:w-auto"
           >
-            {essayLoading ? "Menganalisis Esai..." : "Evaluasi & Bedah Esai Sekarang →"}
+            {essayLoading ? "Menganalisis..." : "Evaluasi Esai →"}
           </button>
-
-          {/* Result View */}
-          {essayResult && (
-            <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-5 space-y-5 animate-in fade-in duration-300">
-              {/* Score Badges */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                <div className="rounded-2xl border border-ember/40 bg-ember/15 p-4 text-center">
-                  <p className="text-micro font-bold text-ember uppercase tracking-wider">Estimasi Skor IELTS</p>
-                  <p className="font-display text-2xl font-bold text-ember mt-1">
-                    Band {essayResult.overallBandScore}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-hairline bg-surface p-4 text-center">
-                  <p className="text-micro font-bold text-muted uppercase tracking-wider">Nilai Keseluruhan</p>
-                  <p className="font-display text-2xl font-bold text-ink mt-1">
-                    {essayResult.overallScore100} / 100
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-center">
-                  <p className="text-micro font-bold text-amber-400 uppercase tracking-wider">Koreksi Grammar</p>
-                  <p className="font-display text-2xl font-bold text-amber-400 mt-1">
-                    {essayResult.grammarCorrections?.length || 0} Poin
-                  </p>
-                </div>
-              </div>
-
-              {/* Roast / Humor Box */}
-              {essayResult.roastReview && (
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs">
-                  <p className="font-bold text-amber-400 text-micro uppercase tracking-wider">Catatan Roasting Malesan:</p>
-                  <p className="text-ink mt-1 font-medium italic">&ldquo;{essayResult.roastReview}&rdquo;</p>
-                </div>
-              )}
-
-              {/* Strengths & Weaknesses */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 space-y-2">
-                  <p className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Kekuatan Tulisan:</p>
-                  <ul className="space-y-1 text-xs text-ink list-disc list-inside">
-                    {essayResult.strengths?.map((s, idx) => (
-                      <li key={idx}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 space-y-2">
-                  <p className="text-xs font-bold text-rose-400 uppercase tracking-wider">Kelemahan &amp; Area Perbaikan:</p>
-                  <ul className="space-y-1 text-xs text-ink list-disc list-inside">
-                    {essayResult.weaknesses?.map((w, idx) => (
-                      <li key={idx}>{w}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              {/* Perfected Rewrite Draft */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-ink uppercase tracking-wider">Versi Draf Sempurna (High-Level Rewrite):</p>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(essayResult.perfectedDraft);
-                      setFeedbackNotice("Draf sempurna berhasil disalin ke clipboard.");
-                    }}
-                    className="text-micro font-bold text-ember hover:underline"
-                  >
-                    Salin Draf
-                  </button>
-                </div>
-                <div className="rounded-2xl border border-hairline bg-surface p-4 text-xs sm:text-sm text-ink leading-relaxed font-serif">
-                  {essayResult.perfectedDraft}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
       {/* ========================================================================= */}
-      {/* MODE 5: RAPOR & RIWAYAT BELAJAR (LEARNING ANALYTICS) */}
+      {/* MODE 5: RAPOR & RIWAYAT BELAJAR */}
       {/* ========================================================================= */}
       {mode === "progress" && (
-        <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/90 p-4 sm:p-6 backdrop-blur-xl shadow-xl space-y-5 animate-in fade-in duration-300">
+        <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 w-full min-w-0">
           <div>
-            <h3 className="font-display text-base font-bold text-ink">
-              Rapor &amp; Analitik Progres Belajar Lo
+            <h3 className="font-display text-sm sm:text-base font-bold text-ink">
+              Rapor Belajar Lo
             </h3>
-            <p className="text-xs text-muted mt-0.5">
-              Pantau perkembangan skor kelancaran, penyelesaian kurikulum 0-100%, durasi latihan bicara, dan rekomendasi materi.
+            <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+              Pantau progres 0-100%, total durasi latihan bicara, dan riwayat aktivitas.
             </p>
           </div>
 
-          {/* CURRICULUM MASTERY HIGHLIGHT CARD */}
-          <div className="rounded-3xl border border-ember/40 bg-gradient-to-r from-surface-raised via-surface to-ember/15 p-4 sm:p-5 space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="space-y-1">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-ember uppercase tracking-wider">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
-                  </svg>
-                  Status Kurikulum Akademi
-                </span>
-                <h4 className="font-display text-base sm:text-lg font-bold text-ink">
-                  Tingkat Penguasaan: {masteryPercentage}% Menuju 100% Master
-                </h4>
-              </div>
-
+          <div className="rounded-2xl border border-ember/40 bg-gradient-to-r from-surface-raised via-surface to-ember/15 p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h4 className="font-display text-xs sm:text-sm font-bold text-ink">
+                Penguasaan: {masteryPercentage}% (100% Master)
+              </h4>
               <button
                 onClick={() => setMode("academy")}
-                className="btn-ember h-9 px-4 rounded-xl text-xs font-bold text-obsidian shrink-0 self-start sm:self-auto"
+                className="btn-ember h-7 px-2.5 rounded-lg text-[10px] font-bold text-obsidian"
               >
-                Buka Belajar 0-100% →
+                Belajar →
               </button>
             </div>
-
-            {/* Kinetic Progress Bar */}
-            <div className="space-y-1.5">
-              <div className="h-3 w-full rounded-full bg-surface-raised border border-hairline overflow-hidden p-0.5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-ember transition-all duration-500 shadow-sm"
-                  style={{ width: `${Math.max(4, masteryPercentage)}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-mono text-muted">
-                <span>0% (Pemula Nol)</span>
-                <span>{completedStages.length} / 6 Tahap Selesai</span>
-                <span className="font-bold text-ember">100% (Fluent Master)</span>
-              </div>
+            <div className="h-2.5 w-full rounded-full bg-surface-raised border border-hairline overflow-hidden p-0.5">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-500 to-ember transition-all duration-500 shadow-sm"
+                style={{ width: `${Math.max(4, masteryPercentage)}%` }}
+              />
             </div>
-          </div>
-
-          {/* Metric Highlights */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-            <div className="rounded-2xl border border-hairline bg-surface-raised p-3.5 text-center">
-              <p className="text-micro font-bold text-muted uppercase tracking-wider">Total Menit Bicara</p>
-              <p className="font-display text-xl sm:text-2xl font-bold text-ink mt-1">{totalMinutesSpoken} Menit</p>
-            </div>
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-center">
-              <p className="text-micro font-bold text-emerald-400 uppercase tracking-wider">Rata-rata Skor</p>
-              <p className="font-display text-xl sm:text-2xl font-bold text-emerald-400 mt-1">{avgOverallScore}/100</p>
-            </div>
-            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-3.5 text-center">
-              <p className="text-micro font-bold text-ember uppercase tracking-wider">Total Aktivitas</p>
-              <p className="font-display text-xl sm:text-2xl font-bold text-ember mt-1">{records.length} Sesi</p>
-            </div>
-            <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 p-3.5 text-center">
-              <p className="text-micro font-bold text-sky-400 uppercase tracking-wider">Status Level</p>
-              <p className="font-display text-xl sm:text-2xl font-bold text-sky-400 mt-1 capitalize">{level}</p>
-            </div>
-          </div>
-
-          {/* Personalized Weakness & Recommendations */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 space-y-3">
-              <h4 className="text-xs font-bold text-rose-400 uppercase tracking-wider">
-                Kelemahan Grammar yang Sering Muncul:
-              </h4>
-              {topPitfalls.length > 0 ? (
-                <div className="space-y-2">
-                  {topPitfalls.map(([tag, count], idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs bg-surface/50 rounded-xl p-2.5">
-                      <span className="font-bold text-ink">{tag}</span>
-                      <span className="font-mono text-rose-400 font-bold">{count}x Terdeteksi</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted italic">
-                  Belum ada catatan kesalahan berulang. Terus latihan di Belajar 0-100% dan kerjakan kuis!
-                </p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-4 space-y-3">
-              <h4 className="text-xs font-bold text-ember uppercase tracking-wider">
-                Rekomendasi Langkah Belajar:
-              </h4>
-              <ul className="text-xs text-ink space-y-2 list-disc list-inside">
-                <li>
-                  {masteryPercentage < 40
-                    ? "Tuntaskan Tahap 1 & 2 di Belajar 0-100% untuk melatih bunyi lidah dan cara menyambung kata."
-                    : masteryPercentage < 80
-                    ? "Pelajari 50 Larangan Indoglish di Tahap 3 dan uji reflek bicara di Simulasi Skenario."
-                    : "Lakukan sesi Ujian Kelulusan Tahap 6 untuk mengunci skor 100% Master!"}
-                </li>
-                <li>
-                  {topPitfalls.length > 0
-                    ? `Coba Kuis Kilat topik "${topPitfalls[0][0]}" untuk memperbaiki titik lemah utama.`
-                    : "Lakukan sesi berbicara minimal 5 menit per hari untuk melatih reflek bicara spontan."}
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          {/* Session History Feed */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-ink uppercase tracking-wider">Riwayat Sesi Belajar:</h4>
-            {records.length > 0 ? (
-              <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-4 space-y-2.5 max-h-72 overflow-y-auto custom-scrollbar">
-                {records.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center justify-between p-3 rounded-xl border border-hairline bg-surface text-xs"
-                  >
-                    <div>
-                      <span className="font-bold text-ink block">{r.title}</span>
-                      <span className="text-[10px] text-muted font-mono">
-                        {new Date(r.timestamp).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        {r.durationSeconds ? ` • ${formatSeconds(r.durationSeconds)}` : ""}
-                      </span>
-                    </div>
-                    <span className="font-mono font-bold text-ember bg-ember/15 px-2.5 py-1 rounded-lg border border-ember/30">
-                      {r.score}/100
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-8 text-center text-xs text-muted">
-                Belum ada riwayat aktivitas. Buka Belajar 0-100%, mulai panggilan suara, atau kuis kilat untuk mencatat progres lo!
-              </div>
-            )}
           </div>
         </div>
       )}
