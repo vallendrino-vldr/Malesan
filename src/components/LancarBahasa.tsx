@@ -82,7 +82,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [activeRoast, setActiveRoast] = useState<string | null>(null);
   const [showCallSummary, setShowCallSummary] = useState(false);
   const [textInput, setTextInput] = useState("");
-  const [liveTranscript, setLiveTranscript] = useState("");
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -227,7 +226,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setIsCalling(true);
     setShowCallSummary(false);
     setFeedbackNotice(null);
-    setLiveTranscript("");
 
     const initialText =
       persona === "sarah"
