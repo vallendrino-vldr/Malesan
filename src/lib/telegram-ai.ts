@@ -613,7 +613,3 @@ function escapeHtml(str?: string | null): string {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
-`;
-
-fs.writeFileSync(path.resolve("src/lib/telegram-ai.ts"), aiContent, "utf8");
-console.log("Successfully wrote updated src/lib/telegram-ai.ts");
