@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { toast } from "sonner";
+import { useState, useRef, useEffect } from "react";
 
 type Level = "beginner" | "intermediate" | "advanced";
 type Mode = "voice" | "quiz" | "essay" | "scenario";
@@ -70,6 +69,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [level, setLevel] = useState<Level>("intermediate");
   const [persona, setPersona] = useState<Persona>("sarah");
   const [scenario, setScenario] = useState<string>("daily");
+  const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
 
   // Voice Call States
   const [isCalling, setIsCalling] = useState(false);
@@ -84,9 +84,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
 
   // Quiz States
   const [quizLoading, setQuizLoading] = useState(false);
@@ -104,72 +102,66 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Timer Effect for Call
   useEffect(() => {
-    if (isCalling) {
-      timerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      setCallDuration(0);
-    }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    if (!isCalling) return;
+    const interval = setInterval(() => {
+      setCallDuration((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
   }, [isCalling]);
 
-  // Audio Visualizer Waveform Animation
-  const drawWaveform = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const width = canvas.width;
-    const height = canvas.height;
-    const barWidth = 4;
-    const gap = 3;
-    const barCount = Math.floor(width / (barWidth + gap));
-
-    const time = Date.now() * 0.005;
-
-    for (let i = 0; i < barCount; i++) {
-      const freq = Math.sin(time + i * 0.3) * 0.5 + 0.5;
-      const barHeight = isRecording
-        ? Math.max(4, freq * (height * 0.75))
-        : isProcessing
-        ? Math.max(4, Math.sin(time * 2 + i * 0.2) * (height * 0.45))
-        : 4;
-
-      const x = i * (barWidth + gap);
-      const y = (height - barHeight) / 2;
-
-      ctx.fillStyle = isRecording ? "#f97316" : isProcessing ? "#3b82f6" : "#27272a";
-      ctx.fillRect(x, y, barWidth, barHeight);
-    }
-
-    animationFrameRef.current = requestAnimationFrame(drawWaveform);
-  }, [isRecording, isProcessing]);
-
+  // Audio Visualizer Waveform Animation Loop
   useEffect(() => {
-    if (isCalling) {
-      animationFrameRef.current = requestAnimationFrame(drawWaveform);
-    }
-    return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    if (!isCalling) return;
+
+    let animId: number;
+
+    const renderWaveform = () => {
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const width = canvas.width;
+          const height = canvas.height;
+          const barWidth = 4;
+          const gap = 3;
+          const barCount = Math.floor(width / (barWidth + gap));
+          const time = Date.now() * 0.005;
+
+          for (let i = 0; i < barCount; i++) {
+            const freq = Math.sin(time + i * 0.3) * 0.5 + 0.5;
+            const barHeight = isRecording
+              ? Math.max(4, freq * (height * 0.75))
+              : isProcessing
+              ? Math.max(4, Math.sin(time * 2 + i * 0.2) * (height * 0.45))
+              : 4;
+
+            const x = i * (barWidth + gap);
+            const y = (height - barHeight) / 2;
+
+            ctx.fillStyle = isRecording ? "#f97316" : isProcessing ? "#3b82f6" : "#27272a";
+            ctx.fillRect(x, y, barWidth, barHeight);
+          }
+        }
+      }
+      animId = requestAnimationFrame(renderWaveform);
     };
-  }, [isCalling, drawWaveform]);
+
+    animId = requestAnimationFrame(renderWaveform);
+    return () => cancelAnimationFrame(animId);
+  }, [isCalling, isRecording, isProcessing]);
 
   // Start Voice Call
   const startCall = (customScenario?: string) => {
     if (credits < cost) {
-      toast.error(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
+      setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
       return;
     }
     if (customScenario) setScenario(customScenario);
+    setCallDuration(0);
     setIsCalling(true);
     setShowCallSummary(false);
+    setFeedbackNotice(null);
     setMessages([
       {
         id: "msg_init",
@@ -230,7 +222,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         setIsRecording(true);
       } catch (err) {
         console.error("Mic access error:", err);
-        toast.error("Gagal mengakses mikrofon. Pastikan izin mikrofon sudah aktif di browser.");
+        setFeedbackNotice("Gagal mengakses mikrofon. Pastikan izin mikrofon sudah aktif di browser.");
       }
     }
   };
@@ -238,6 +230,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   // Send Audio to Serverless Handler
   const submitAudioChunk = async (audioBlob: Blob) => {
     setIsProcessing(true);
+    setFeedbackNotice(null);
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "user_voice.oga");
@@ -294,7 +287,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         window.speechSynthesis.speak(utterance);
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
+      setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses audio.");
     } finally {
       setIsProcessing(false);
     }
@@ -303,13 +296,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   // Generate Quiz
   const handleGenerateQuiz = async () => {
     if (credits < cost) {
-      toast.error(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
+      setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
       return;
     }
     setQuizLoading(true);
     setQuizFinished(false);
     setSelectedAnswers({});
     setCurrentQuestionIdx(0);
+    setFeedbackNotice(null);
     try {
       const res = await fetch("/api/speaking/quiz", {
         method: "POST",
@@ -323,7 +317,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       const data = await res.json();
       setQuizQuestions(data.questions || []);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal memuat kuis.");
+      setFeedbackNotice(err instanceof Error ? err.message : "Gagal memuat kuis.");
     } finally {
       setQuizLoading(false);
     }
@@ -332,16 +326,17 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   // Evaluate Essay
   const handleEvaluateEssay = async () => {
     if (credits < cost) {
-      toast.error(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
+      setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
       return;
     }
     if (!essayText.trim() || essayText.trim().length < 20) {
-      toast.error("Tulis esai minimal 20 karakter sebelum dievaluasi.");
+      setFeedbackNotice("Tulis esai minimal 20 karakter sebelum dievaluasi.");
       return;
     }
 
     setEssayLoading(true);
     setEssayResult(null);
+    setFeedbackNotice(null);
     try {
       const res = await fetch("/api/speaking/essay", {
         method: "POST",
@@ -354,9 +349,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       }
       const data = await res.json();
       setEssayResult(data.data);
-      toast.success("Evaluasi esai selesai!");
+      setFeedbackNotice("Evaluasi esai berhasil diselesaikan.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal mengevaluasi esai.");
+      setFeedbackNotice(err instanceof Error ? err.message : "Gagal mengevaluasi esai.");
     } finally {
       setEssayLoading(false);
     }
@@ -370,6 +365,19 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   return (
     <div className="w-full space-y-6">
+      {/* GLOBAL FEEDBACK BANNER */}
+      {feedbackNotice && (
+        <div className="rounded-2xl border border-ember/40 bg-ember/15 p-4 text-xs sm:text-sm font-medium text-ember flex items-center justify-between animate-in fade-in duration-200">
+          <span>{feedbackNotice}</span>
+          <button
+            onClick={() => setFeedbackNotice(null)}
+            className="text-micro font-bold underline hover:opacity-80 ml-4"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
+
       {/* HEADER BAR */}
       <div className="surface-card rounded-3xl border border-hairline/80 bg-surface/80 p-5 sm:p-6 backdrop-blur-xl shadow-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -956,7 +964,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(essayResult.perfectedDraft);
-                      toast.success("Draf sempurna disalin ke clipboard!");
+                      setFeedbackNotice("Draf sempurna berhasil disalin ke clipboard.");
                     }}
                     className="text-micro font-bold text-ember hover:underline"
                   >
