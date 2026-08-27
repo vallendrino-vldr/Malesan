@@ -589,7 +589,7 @@ export async function POST(request: NextRequest) {
                   email: user.email || "user@malesan",
                   moduleName: module,
                   creditsSpent: cost,
-                  details: typeof input === "string" ? input.slice(0, 80) : module,
+                  details: String(input || module).slice(0, 80),
                 }).catch(() => {});
               }).catch(() => {});
             }

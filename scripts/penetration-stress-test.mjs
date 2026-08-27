@@ -139,6 +139,7 @@ for (const file of routeFiles) {
     file.includes("no-watermark") ||
     file.includes("questions") ||
     file.includes("demo-bypass") ||
+    file.includes("telegram") ||
     file.includes("auth");
 
   if (!isPublicRoute) {
