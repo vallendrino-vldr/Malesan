@@ -11,14 +11,9 @@ import type { Word } from "@/lib/transcribe";
  * This module uses Gemini to phonetically and semantically correct misheard words
  * while strictly preserving word counts and millisecond timestamps.
  */
-export async function refineTranscriptWithAI(
-  words: Word[],
-  rawText: string,
-): Promise<{ words: Word[]; text: string }> {
-  if (!words.length || !rawText.trim()) {
-    return { words, text: rawText };
-  }
-
+async function refineChunk(chunkWords: Word[]): Promise<Word[]> {
+  if (!chunkWords.length) return chunkWords;
+  const chunkText = chunkWords.map((w) => w.word).join(" ");
   const prompt = `Kamu adalah model AI korektor fonetik speech-to-text khusus bahasa Indonesia lisan / percakapan sehari-hari.
 Tugas kamu adalah memperbaiki kata-kata yang SALAH DENGAR (misheard phonetics / acoustic errors) dari audio mikrofon HP yang bervolume rendah atau berbisik.
 
@@ -29,16 +24,16 @@ Karakteristik kesalahan dengar fonetik bahasa Indonesia:
 4. Bahasa gaul, kasual, romantis, atau santai sehari-hari antar teman / pasangan.
 
 Kalimat mentah yang didengar:
-"${rawText}"
+"${chunkText}"
 
 Daftar kata terdeteksi:
-${words.map((w, i) => `${i}: "${w.word}"`).join(", ")}
+${chunkWords.map((w, i) => `${i}: "${w.word}"`).join(", ")}
 
 Instruksi:
 1. Analisis kalimat secara semantik dan fonetik: apa kalimat wajar yang sebenarnya diucapkan oleh manusia dalam konteks percakapan tersebut?
 2. Perbaiki kata-kata yang keliru dengar menjadi kata bahasa Indonesia yang tepat dan masuk akal.
 3. Pertahankan tanda baca asli pada posisi yang sesuai.
-4. Jumlah kata output HARUS PERSIS ${words.length} item.
+4. Jumlah kata output HARUS PERSIS ${chunkWords.length} item.
 5. Output HANYA JSON array string murni. Contoh: ["kata1", "kata2", "kata3"]`;
 
   try {
@@ -52,18 +47,36 @@ Instruksi:
     });
 
     const parsed = JSON.parse(rawRes) as string[];
-    if (Array.isArray(parsed) && parsed.length === words.length) {
-      const refinedWords = words.map((w, i) => ({
+    if (Array.isArray(parsed) && parsed.length === chunkWords.length) {
+      return chunkWords.map((w, i) => ({
         ...w,
         word: typeof parsed[i] === "string" && parsed[i].trim() ? parsed[i].trim() : w.word,
       }));
-      const refinedText = refinedWords.map((w) => w.word).join(" ");
-      return { words: refinedWords, text: refinedText };
     }
   } catch (err) {
-    // Fail-soft: if LLM refinement fails or timeouts, return raw Whisper words
-    console.warn("refineTranscriptWithAI failed, falling back to raw words", err);
+    console.warn("refineChunk failed, falling back to raw words", err);
+  }
+  return chunkWords;
+}
+
+export async function refineTranscriptWithAI(
+  words: Word[],
+  rawText: string,
+): Promise<{ words: Word[]; text: string }> {
+  if (!words.length || !rawText.trim()) {
+    return { words, text: rawText };
   }
 
-  return { words, text: rawText };
+  // Chunk into batches of up to 20 words for maximum LLM attention & speed
+  const CHUNK_SIZE = 20;
+  const chunks: Word[][] = [];
+  for (let i = 0; i < words.length; i += CHUNK_SIZE) {
+    chunks.push(words.slice(i, i + CHUNK_SIZE));
+  }
+
+  const refinedChunks = await Promise.all(chunks.map((c) => refineChunk(c)));
+  const refinedWords = refinedChunks.flat();
+  const refinedText = refinedWords.map((w) => w.word).join(" ");
+
+  return { words: refinedWords, text: refinedText };
 }

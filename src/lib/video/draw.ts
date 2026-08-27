@@ -50,6 +50,8 @@ export function drawFrame(
   H: number,
   watermark: boolean,
 ) {
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(video, 0, 0, W, H);
   const a = activeAt(lines, t);
   if (a) drawCaption(ctx, a.line, t, style, W, H);
