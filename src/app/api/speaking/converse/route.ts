@@ -16,7 +16,7 @@ const PERSONA_POLLY_MAP: Record<string, string> = {
   emma: "Joanna",
 };
 
-async function getPollyAudioUrl(text: string, persona: string): Promise<string | null> {
+async function getPollyAudio(text: string, persona: string): Promise<{ audioUrl: string | null; audioDataUri: string | null }> {
   try {
     const speaker = PERSONA_POLLY_MAP[persona] || "Matthew";
     const form = new URLSearchParams();
@@ -34,15 +34,27 @@ async function getPollyAudioUrl(text: string, persona: string): Promise<string |
         Referer: "https://ttsmp3.com/",
       },
       body: form.toString(),
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(4000),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) return { audioUrl: null, audioDataUri: null };
     const data = await res.json();
-    return (data.URL as string) || null;
+    if (!data.URL) return { audioUrl: null, audioDataUri: null };
+
+    // Fetch the audio bytes directly on the server to embed into payload for 0ms client decoding
+    const audioRes = await fetch(data.URL, { signal: AbortSignal.timeout(4000) });
+    if (audioRes.ok) {
+      const buf = Buffer.from(await audioRes.arrayBuffer());
+      return {
+        audioUrl: data.URL,
+        audioDataUri: `data:audio/mpeg;base64,${buf.toString("base64")}`,
+      };
+    }
+
+    return { audioUrl: data.URL || null, audioDataUri: null };
   } catch (e) {
-    console.warn("[speaking-converse] Polly audioUrl error:", e);
-    return null;
+    console.warn("[speaking-converse] Polly audio error:", e);
+    return { audioUrl: null, audioDataUri: null };
   }
 }
 
@@ -196,15 +208,14 @@ ATURAN FORMATTING KETAT:
   try {
     const rawAi = await generate({ prompt, schema, tier: "free" });
     const parsed = JSON.parse(rawAi.trim());
-    const replyEn = parsed.replyEn || "That is interesting! Tell me more about it.";
-
-    const audioUrl = await getPollyAudioUrl(replyEn, persona);
+    const audioData = await getPollyAudio(replyEn, persona);
+    const audioUrl = audioData.audioDataUri || audioData.audioUrl || null;
 
     return json({
       ok: true,
       userTranscribedText: textInput,
       replyEn,
-      audioUrl: audioUrl || null,
+      audioUrl,
       translateId: parsed.translateId || "Itu sangat menarik! Ceritakan lebih banyak tentang hal itu.",
       suggestedReplies: Array.isArray(parsed.suggestedReplies) && parsed.suggestedReplies.length > 0
         ? parsed.suggestedReplies

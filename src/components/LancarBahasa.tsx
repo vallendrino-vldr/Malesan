@@ -136,7 +136,7 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     gender: "male",
     lang: "en-US",
     pitch: 0.88, // Confident, masculine executive resonance
-    rateMultiplier: 1.05, // Crisp, confident, energetic executive pacing (never sluggish)
+    rateMultiplier: 1.0, // Natural 1.0x tempo
     preferredKeywords: [
       "david",
       "microsoft david",
@@ -160,7 +160,7 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     gender: "male",
     lang: "en-US",
     pitch: 0.98, // Upbeat modern American male
-    rateMultiplier: 1.06,
+    rateMultiplier: 1.0,
     preferredKeywords: [
       "alex",
       "mark",
@@ -176,7 +176,7 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     gender: "female",
     lang: "en-GB",
     pitch: 1.05, // Refined British female
-    rateMultiplier: 1.02,
+    rateMultiplier: 1.0,
     preferredKeywords: [
       "sarah",
       "hazel",
@@ -193,7 +193,7 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
     gender: "female",
     lang: "en-US",
     pitch: 1.02, // Crisp articulate academic female
-    rateMultiplier: 1.02,
+    rateMultiplier: 1.0,
     preferredKeywords: [
       "emma",
       "zira",
@@ -1333,7 +1333,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (directAudioUrl) {
         try {
           const audio = new Audio(directAudioUrl);
-          audio.playbackRate = 1.14; // Energetic, brisk, confident executive cadence
+          audio.playbackRate = playbackSpeed;
           currentAudioElementRef.current = audio;
           audio.onended = () => {
             setIsPlayingAudio(false);
@@ -1362,7 +1362,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
-          audio.playbackRate = 1.14; // Energetic, brisk, confident executive cadence
+          audio.playbackRate = playbackSpeed;
           currentAudioElementRef.current = audio;
           audio.onended = () => {
             setIsPlayingAudio(false);
