@@ -94,16 +94,9 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**
  * The credit figure to RECORD for this run.
- *
- * For a normal user it is simply what the route charged. For an admin it depends
- * on the configured test mode, because `spend_credits` silently exempts admins:
- * recording the nominal figure anyway meant every owner test inflated the
- * revenue and margin on their own dashboard.
  */
 async function billableCredits(args: RunArgs): Promise<number> {
-  const nominal = args.creditsCharged ?? 0;
-  if (!args.isAdmin || nominal === 0) return nominal;
-  return (await getAdminChargeMode()) === "simulate" ? nominal : 0;
+  return args.creditsCharged ?? 0;
 }
 
 /**
