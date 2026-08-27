@@ -977,7 +977,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const audioChunksRef = useRef<Blob[]>([]);
   const currentAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drillChamberRef = useRef<HTMLDivElement | null>(null);
   const capturedTextRef = useRef<string>("");
+
+  // Auto-scroll to top of drill chamber whenever step, stage, or exam mode changes
+  useEffect(() => {
+    if (mode === "academy" && drillChamberRef.current) {
+      drillChamberRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeStepIndex, activeStageId, isExamMode, mode]);
 
   // Quiz States
   const [quizLoading, setQuizLoading] = useState(false);
@@ -1885,7 +1893,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
 
           {/* ACTIVE STAGE DRILL CHAMBER */}
-          <div className="border-t border-hairline/60 pt-3 sm:pt-4 space-y-3 sm:space-y-4">
+          <div ref={drillChamberRef} className="border-t border-hairline/60 pt-3 sm:pt-4 space-y-3 sm:space-y-4 scroll-mt-20 sm:scroll-mt-24">
             {!isExamMode ? (
               /* LESSON STEP VIEW (NO SCROLL CHAOS, DIRECT FOCUSED ARENA) */
               <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-200">
@@ -2084,26 +2092,44 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     </button>
 
                     {activeStepIndex < activeStage.steps.length - 1 ? (
-                      <button
-                        onClick={() => {
-                          setActiveStepIndex((prev) => prev + 1);
-                          setDrillAnswer(null);
-                        }}
-                        className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0"
-                      >
-                        Langkah Berikutnya →
-                      </button>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <button
+                          disabled={drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect}
+                          onClick={() => {
+                            setActiveStepIndex((prev) => prev + 1);
+                            setDrillAnswer(null);
+                          }}
+                          className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:saturate-50"
+                        >
+                          Langkah Berikutnya →
+                        </button>
+                        {drillAnswer === null && (
+                          <span className="text-[9px] text-muted font-medium">Jawab kuis suara untuk lanjut</span>
+                        )}
+                        {drillAnswer !== null && !activeStep.audioDrill.options[drillAnswer]?.isCorrect && (
+                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar untuk lanjut</span>
+                        )}
+                      </div>
                     ) : (
-                      <button
-                        onClick={() => {
-                          setIsExamMode(true);
-                          setExamSubmitted(false);
-                          setExamAnswers({});
-                        }}
-                        className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0"
-                      >
-                        Ujian Kelulusan →
-                      </button>
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        <button
+                          disabled={drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect}
+                          onClick={() => {
+                            setIsExamMode(true);
+                            setExamSubmitted(false);
+                            setExamAnswers({});
+                          }}
+                          className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:animate-none disabled:saturate-50"
+                        >
+                          Ujian Kelulusan →
+                        </button>
+                        {drillAnswer === null && (
+                          <span className="text-[9px] text-muted font-medium">Jawab kuis suara untuk ujian</span>
+                        )}
+                        {drillAnswer !== null && !activeStep.audioDrill.options[drillAnswer]?.isCorrect && (
+                          <span className="text-[9px] text-rose-400 font-bold">Pilih jawaban benar untuk ujian</span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
