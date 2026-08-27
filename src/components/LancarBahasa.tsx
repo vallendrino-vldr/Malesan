@@ -2573,15 +2573,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                     {/* Step Navigation or Voice Popup Trigger */}
                     {drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect ? (
-                      <div className="flex flex-col items-end gap-1 shrink-0">
-                        <button
-                          disabled
-                          className="h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-muted bg-surface-raised border border-hairline opacity-40 cursor-not-allowed shrink-0"
-                        >
-                          Langkah Berikutnya →
-                        </button>
-                        <span className="text-[9px] text-muted font-medium">
-                          {drillAnswer === null ? "Jawab kuis suara untuk lanjut" : "Pilih jawaban benar untuk lanjut"}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[10px] sm:text-[11px] font-mono font-bold text-muted bg-surface-raised px-2.5 sm:px-3 py-1.5 rounded-xl border border-hairline">
+                          {drillAnswer === null ? "Pilih jawaban kuis di atas" : "Pilih opsi yang benar"}
                         </span>
                       </div>
                     ) : !currentStepVoiceResult?.isPassed ? (
@@ -2862,8 +2856,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       &ldquo;{currentChallenge.targetSentence}&rdquo;
                     </h4>
 
-                    <div className="inline-block max-w-full">
-                      <p className="text-[10px] sm:text-[11px] font-mono font-medium text-muted bg-surface-raised/90 px-3 py-1 rounded-xl border border-hairline/80 truncate">
+                    <div className="w-full">
+                      <p className="text-[10px] sm:text-[11px] font-mono font-medium text-muted bg-surface-raised/90 px-3 py-1.5 rounded-xl border border-hairline/80 whitespace-normal break-words leading-relaxed text-center">
                         🗣️ {currentChallenge.easyPronunciation}
                       </p>
                     </div>
