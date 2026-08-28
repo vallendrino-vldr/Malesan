@@ -260,7 +260,7 @@ export function AppShell({
       </header>
 
       {/* Mobile utility strip */}
-      <div className="area-nav relative z-20 flex items-center justify-between gap-2 border-b border-hairline/60 bg-obsidian px-4 py-2 sm:hidden">
+      <div className="area-nav relative z-20 flex items-center justify-between gap-2 border-b border-hairline/60 bg-obsidian px-4 py-1.5 sm:hidden">
         <TutorialSheet variant="chip" />
         <RefreshButton variant="chip" />
       </div>
@@ -268,7 +268,7 @@ export function AppShell({
       {/* Content scroll area */}
       <main className="area-main relative z-10">
         <div
-          className={`mx-auto w-full px-4 py-4 sm:py-6 sm:px-6 ${
+          className={`mx-auto w-full px-4 pt-2.5 pb-4 sm:py-6 sm:px-6 ${
             shown === "pipeline" ? "max-w-[1600px]" : "max-w-6xl"
           }`}
         >

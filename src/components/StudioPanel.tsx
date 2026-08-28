@@ -132,12 +132,12 @@ export function StudioPanel({
   }
 
   return (
-    <div className="reveal space-y-4">
+    <div className="reveal space-y-2.5 sm:space-y-4">
       <button
         onClick={back}
-        className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface pl-2 pr-3.5 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember"
+        className="flex h-7.5 sm:h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline/80 bg-surface/80 px-2.5 sm:px-3 text-xs font-semibold text-muted transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember shadow-xs"
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
           <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
         </svg>
         Balik ke Studio

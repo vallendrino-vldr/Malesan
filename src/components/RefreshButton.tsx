@@ -117,7 +117,7 @@ export function RefreshButton({
       <button
         onClick={go}
         disabled={spinning}
-        className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-micro font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink disabled:opacity-50 cursor-pointer"
+        className="flex h-7.5 sm:h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-hairline/60 bg-surface/50 px-2.5 text-[11px] font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink disabled:opacity-50 cursor-pointer shadow-xs"
         aria-label="Muat ulang"
       >
         {spinner}
