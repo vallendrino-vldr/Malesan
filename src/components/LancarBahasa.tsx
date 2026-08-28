@@ -279,6 +279,82 @@ const SCENARIOS: ScenarioItem[] = [
       "Sepakati tenggat waktu dan pembayaran deposit",
     ],
   },
+  {
+    id: "pitch_5k_client",
+    title: "Closing Klien Remote $5,000 USD",
+    partner: "david",
+    partnerRole: "US Client Executive",
+    context: "Kamu sedang pitching via Zoom untuk project digital senilai $5,000 USD dengan klien korporat asal New York.",
+    missions: [
+      "Pitch keunggulan portofoliomu & value proposition",
+      "Justifikasi harga $5,000 dengan ROI nyata",
+      "Amankan pembayaran uang muka 50% deposit",
+    ],
+  },
+  {
+    id: "angry_client_diplomacy",
+    title: "Menghadapi Klien Luar Negeri Komplain",
+    partner: "sarah",
+    partnerRole: "Frustrated Foreign Client",
+    context: "Klien komplain tentang revisi di luar kesepakatan awal dan kamu harus bersikap diplomatis & tegas.",
+    missions: [
+      "Tenangkan situasi dengan empati profesional",
+      "Jelaskan batasan scope kontrak awal dengan santun",
+      "Tawarkan solusi biaya tambahan untuk scope baru",
+    ],
+  },
+  {
+    id: "creator_livestream_intro",
+    title: "Opening Live Stream & YouTube Hook",
+    partner: "alex",
+    partnerRole: "Global Content Creator Co-host",
+    context: "Latihan opening live stream / video YouTube berbahasa Inggris yang energik, interaktif, dan memikat penonton global.",
+    missions: [
+      "Sampaikan hook 3 detik pertama yang nendang",
+      "Sapa viewers internasional dan baca chat",
+      "Ajak subscribe & sebutkan sponsor",
+    ],
+  },
+  {
+    id: "faang_behavioral_interview",
+    title: "Interview Silicon Valley (STAR Method)",
+    partner: "emma",
+    partnerRole: "Global Principal Interviewer",
+    context: "Latihan menjawab pertanyaan behavioral interview tech company global menggunakan metode Situation-Task-Action-Result.",
+    missions: [
+      "Jelaskan situasi konflik teknis / bug kritis",
+      "Jabarkan aksi solutif dan kepemimpinanmu",
+      "Tutup dengan dampak kuantitatif nyata (Result)",
+    ],
+  },
+];
+
+
+const SPRINT_TOPICS = [
+  {
+    id: "global_advantage",
+    title: "The Ultimate Unfair Advantage",
+    prompt: "Why is speaking English fluently the ultimate unfair advantage for creators and remote workers in Indonesia?",
+    hint: "Mention higher earnings in USD, global audience reach, and access to international tech/career opportunities.",
+  },
+  {
+    id: "pitch_us_client",
+    title: "Pitching a $5,000 USD Project",
+    prompt: "Imagine you are pitching a $5,000 remote project to an American CEO on Zoom. How do you introduce your solution?",
+    hint: "Highlight your unique process, high ROI, timeline certainty, and client satisfaction guarantee.",
+  },
+  {
+    id: "ai_future_2026",
+    title: "AI & The Future of Work 2026",
+    prompt: "How will Artificial Intelligence transform content creation and creative careers over the next 3 years?",
+    hint: "Discuss automation of repetitive tasks, rise of hyper-personalized media, and the power of human taste.",
+  },
+  {
+    id: "favorite_passion",
+    title: "Your Greatest Passion / Expertise",
+    prompt: "Explain your favorite skill, craft, or hobby to an international beginner who wants to get started.",
+    hint: "Break down the first 3 steps, common beginner pitfalls, and why it brings you fulfillment.",
+  },
 ];
 
 const ESSAY_TOPICS = [
@@ -1293,6 +1369,174 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [essayText, setEssayText] = useState("");
   const [essayLoading, setEssayLoading] = useState(false);
   const [essayResult, setEssayResult] = useState<EssayEvaluation | null>(null);
+
+  // Slangify & Native Polish States
+  const [slangifyData, setSlangifyData] = useState<
+    Record<string, { original: string; casual: string; executive: string; creator: string; explanation: string }>
+  >({});
+  const [slangifyLoading, setSlangifyLoading] = useState<Record<string, boolean>>({});
+  const [openSlangify, setOpenSlangify] = useState<Record<string, boolean>>({});
+
+  // 3-Minute Fluency Sprint Challenge States
+  const [isSprintModalOpen, setIsSprintModalOpen] = useState(false);
+  const [sprintTimeLeft, setSprintTimeLeft] = useState(180);
+  const [isSprintRunning, setIsSprintRunning] = useState(false);
+  const [sprintTopicItem, setSprintTopicItem] = useState(SPRINT_TOPICS[0]);
+  const [sprintTranscript, setSprintTranscript] = useState("");
+  const [sprintResult, setSprintResult] = useState<{ wpm: number; cefr: string; score: number; feedback: string; wordsTotal: number } | null>(null);
+  const sprintSpeechRecRef = useRef<SpeechRecognitionInstanceLike | null>(null);
+
+  // Live AI Phone Call (Hands-Free) States
+  const [isLivePhoneCallOpen, setIsLivePhoneCallOpen] = useState(false);
+  const [isHandsFreeActive, setIsHandsFreeActive] = useState(true);
+  const [isCallMuted, setIsCallMuted] = useState(false);
+  const callSpeechRecRef = useRef<SpeechRecognitionInstanceLike | null>(null);
+
+  // Slangify API Trigger
+  const triggerSlangify = async (messageId: string, text: string, context?: string) => {
+    if (slangifyData[messageId]) {
+      setOpenSlangify((prev) => ({ ...prev, [messageId]: !prev[messageId] }));
+      return;
+    }
+    setSlangifyLoading((prev) => ({ ...prev, [messageId]: true }));
+    setOpenSlangify((prev) => ({ ...prev, [messageId]: true }));
+
+    try {
+      const res = await fetch("/api/speaking/slangify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, context: context || activeScenario?.context || "General English" }),
+      });
+      const json = await res.json();
+      if (json.ok && json.data) {
+        setSlangifyData((prev) => ({ ...prev, [messageId]: json.data }));
+      } else {
+        setFeedbackNotice({
+          type: "error",
+          message: json.error || "Gagal memproses Slangify.",
+        });
+      }
+    } catch {
+      setFeedbackNotice({
+        type: "error",
+        message: "Gagal terhubung ke server Slangify.",
+      });
+    } finally {
+      setSlangifyLoading((prev) => ({ ...prev, [messageId]: false }));
+    }
+  };
+
+  // Sprint Timer Effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isSprintRunning && sprintTimeLeft > 0) {
+      timer = setInterval(() => {
+        setSprintTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isSprintRunning, sprintTimeLeft]);
+
+  // Sprint Speech Recognition
+  const startSprintSession = (topic?: typeof SPRINT_TOPICS[0]) => {
+    const chosen = topic || SPRINT_TOPICS[Math.floor(Math.random() * SPRINT_TOPICS.length)];
+    setSprintTopicItem(chosen);
+    setSprintTimeLeft(180);
+    setSprintTranscript("");
+    setSprintResult(null);
+    setIsSprintRunning(true);
+    setIsSprintModalOpen(true);
+
+    const SpeechRecognition =
+      typeof window !== "undefined"
+        ? (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).SpeechRecognition ||
+          (window as unknown as { SpeechRecognition?: new () => SpeechRecognitionInstanceLike; webkitSpeechRecognition?: new () => SpeechRecognitionInstanceLike }).webkitSpeechRecognition
+        : null;
+
+    if (SpeechRecognition) {
+      try {
+        const rec = new SpeechRecognition();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = "en-US";
+        rec.onresult = (event: SpeechRecognitionEventLike) => {
+          let full = "";
+          for (let i = 0; i < event.results.length; i++) {
+            full += event.results[i][0].transcript + " ";
+          }
+          setSprintTranscript(full.trim());
+        };
+        rec.start();
+        sprintSpeechRecRef.current = rec;
+      } catch (e) {
+        console.warn("Sprint speech rec error:", e);
+      }
+    }
+  };
+
+  const finishSprintSession = () => {
+    setIsSprintRunning(false);
+    if (sprintSpeechRecRef.current) {
+      try {
+        sprintSpeechRecRef.current.stop();
+      } catch {}
+    }
+
+    const words = sprintTranscript.trim() ? sprintTranscript.trim().split(/\s+/).length : 0;
+    const elapsedSeconds = Math.max(1, 180 - sprintTimeLeft);
+    const calculatedWpm = Math.round((words / elapsedSeconds) * 60);
+
+    let cefr = "A2 Elementary";
+    let score = 65;
+    let feedback = "Bagus untuk pemanasan! Coba variasikan kosakata dan percepat alur bicaramu.";
+
+    if (calculatedWpm >= 130 && words >= 150) {
+      cefr = "C1 Advanced";
+      score = 95;
+      feedback = "Luar biasa! Tempo bicaramu sangat lancar, alami, dan percaya diri setara native speaker.";
+    } else if (calculatedWpm >= 100 && words >= 100) {
+      cefr = "B2 Upper-Intermediate";
+      score = 88;
+      feedback = "Sangat solid! Artikulasi dan kecepatan bicaramu sangat ideal untuk wawancara kerja & pitching.";
+    } else if (calculatedWpm >= 70 && words >= 60) {
+      cefr = "B1 Intermediate";
+      score = 78;
+      feedback = "Aliran bicaramu sudah bagus dan mudah dipahami. Tingkatkan variasi idiom agar lebih natural.";
+    }
+
+    const result = {
+      wpm: calculatedWpm,
+      cefr,
+      score,
+      feedback,
+      wordsTotal: words,
+    };
+    setSprintResult(result);
+
+    saveSessionRecord({
+      type: "voice",
+      title: `3-Min Sprint: ${sprintTopicItem.title}`,
+      score,
+      durationSeconds: elapsedSeconds,
+    });
+  };
+
+  // Launch Full-Screen Live AI Phone Call
+  const launchLivePhoneCall = (scenario?: ScenarioItem) => {
+    if (scenario) {
+      startCall(scenario);
+    } else if (!isCalling) {
+      startCall();
+    }
+    setIsLivePhoneCallOpen(true);
+  };
+
 
   // Progress & Learning Analytics State (Stored in LocalStorage)
   const [records, setRecords] = useState<SessionRecord[]>(() => {
@@ -2479,6 +2723,69 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             })}
           </div>
         </div>
+
+        {/* ⚡ FLAGSHIP QUICK ACCESS BANNER: 3-MIN SPRINT & LIVE AI CALL */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={() => startSprintSession()}
+            className="group relative overflow-hidden rounded-2xl border border-ember/40 bg-gradient-to-r from-surface-raised via-surface to-ember/10 p-3 sm:p-3.5 text-left transition-all hover:border-ember hover:shadow-lg active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-9 rounded-xl bg-ember/20 border border-ember/30 flex items-center justify-center text-ember shrink-0 group-hover:scale-110 transition-transform">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                      3-Min Fluency Sprint
+                    </h4>
+                    <span className="rounded-full bg-ember/20 px-1.5 py-0.2 text-[9px] font-bold text-ember">
+                      DAILY XP
+                    </span>
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-muted truncate">
+                    Tantangan bicara 180s: Cek WPM & Level CEFR (A1-C2)
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-ember shrink-0">Mulai →</span>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => launchLivePhoneCall()}
+            className="group relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-surface-raised via-surface to-emerald-500/10 p-3 sm:p-3.5 text-left transition-all hover:border-emerald-400 hover:shadow-lg active:scale-[0.99] cursor-pointer"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-110 transition-transform">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-emerald-400 transition-colors">
+                      Live AI Phone Call
+                    </h4>
+                    <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-400">
+                      HANDS-FREE
+                    </span>
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-muted truncate">
+                    Teleponan nyata tanpa repot pencet tombol mic
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-emerald-400 shrink-0">Hubungkan 📞</span>
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* ========================================================================= */}
@@ -3441,8 +3748,92 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               Lihat Terjemahan Indo
                             </button>
                           )}
+    
+                      )}
+                    </div>
+
+                      {/* ⚡ SLANGIFY COMPONENT */}
+                      <div className="mt-2 pt-1.5 border-t border-hairline/40 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => triggerSlangify(m.id, m.text)}
+                          disabled={slangifyLoading[m.id]}
+                          className="h-6 px-2 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                          </svg>
+                          {slangifyLoading[m.id] ? "Memproses Slang..." : openSlangify[m.id] ? "Tutup Slangify" : "⚡ Slangify (Bikin Lebih Gaul)"}
+                        </button>
+                      </div>
+
+                      {openSlangify[m.id] && slangifyData[m.id] && (
+                        <div className="mt-2 rounded-xl border border-ember/40 bg-surface-raised/95 p-3 space-y-2 text-xs text-left animate-in fade-in duration-200">
+                          <span className="text-[10px] font-bold text-ember uppercase tracking-wider block">
+                            ⚡ 3 Gaya Penutur Asli (Native 2026):
+                          </span>
+
+                          <div className="space-y-1.5">
+                            {/* Casual */}
+                            <div className="rounded-lg border border-hairline bg-surface p-2 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-ink">🕶️ Casual / Gaul:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => playSpeechAudio(slangifyData[m.id].casual)}
+                                  className="text-[10px] text-ember hover:underline font-bold"
+                                >
+                                  Dengar 🔊
+                                </button>
+                              </div>
+                              <p className="text-xs text-ink font-medium leading-relaxed">
+                                &ldquo;{slangifyData[m.id].casual}&rdquo;
+                              </p>
+                            </div>
+
+                            {/* Executive */}
+                            <div className="rounded-lg border border-hairline bg-surface p-2 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-ink">👔 Global Executive ($):</span>
+                                <button
+                                  type="button"
+                                  onClick={() => playSpeechAudio(slangifyData[m.id].executive, "david")}
+                                  className="text-[10px] text-ember hover:underline font-bold"
+                                >
+                                  Dengar 🔊
+                                </button>
+                              </div>
+                              <p className="text-xs text-ink font-medium leading-relaxed">
+                                &ldquo;{slangifyData[m.id].executive}&rdquo;
+                              </p>
+                            </div>
+
+                            {/* Creator */}
+                            <div className="rounded-lg border border-hairline bg-surface p-2 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-ink">🔥 Creator Hook:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => playSpeechAudio(slangifyData[m.id].creator, "alex")}
+                                  className="text-[10px] text-ember hover:underline font-bold"
+                                >
+                                  Dengar 🔊
+                                </button>
+                              </div>
+                              <p className="text-xs text-ink font-medium leading-relaxed">
+                                &ldquo;{slangifyData[m.id].creator}&rdquo;
+                              </p>
+                            </div>
+
+                            {/* Explanation */}
+                            <div className="p-2 rounded-lg bg-ember/10 border border-ember/20 text-[11px] text-muted leading-relaxed">
+                              <span className="font-bold text-ember">💡 Native Insight: </span>
+                              {slangifyData[m.id].explanation}
+                            </div>
+                          </div>
                         </div>
                       )}
+
                     </div>
                   </div>
                 ))}
@@ -3707,8 +4098,92 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               Lihat Terjemahan Indo
                             </button>
                           )}
+    
+                      )}
+                    </div>
+
+                      {/* ⚡ SLANGIFY COMPONENT */}
+                      <div className="mt-2 pt-1.5 border-t border-hairline/40 flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => triggerSlangify(m.id, m.text)}
+                          disabled={slangifyLoading[m.id]}
+                          className="h-6 px-2 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                          </svg>
+                          {slangifyLoading[m.id] ? "Memproses Slang..." : openSlangify[m.id] ? "Tutup Slangify" : "⚡ Slangify (Bikin Lebih Gaul)"}
+                        </button>
+                      </div>
+
+                      {openSlangify[m.id] && slangifyData[m.id] && (
+                        <div className="mt-2 rounded-xl border border-ember/40 bg-surface-raised/95 p-3 space-y-2 text-xs text-left animate-in fade-in duration-200">
+                          <span className="text-[10px] font-bold text-ember uppercase tracking-wider block">
+                            ⚡ 3 Gaya Penutur Asli (Native 2026):
+                          </span>
+
+                          <div className="space-y-1.5">
+                            {/* Casual */}
+                            <div className="rounded-lg border border-hairline bg-surface p-2 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-ink">🕶️ Casual / Gaul:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => playSpeechAudio(slangifyData[m.id].casual)}
+                                  className="text-[10px] text-ember hover:underline font-bold"
+                                >
+                                  Dengar 🔊
+                                </button>
+                              </div>
+                              <p className="text-xs text-ink font-medium leading-relaxed">
+                                &ldquo;{slangifyData[m.id].casual}&rdquo;
+                              </p>
+                            </div>
+
+                            {/* Executive */}
+                            <div className="rounded-lg border border-hairline bg-surface p-2 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-ink">👔 Global Executive ($):</span>
+                                <button
+                                  type="button"
+                                  onClick={() => playSpeechAudio(slangifyData[m.id].executive, "david")}
+                                  className="text-[10px] text-ember hover:underline font-bold"
+                                >
+                                  Dengar 🔊
+                                </button>
+                              </div>
+                              <p className="text-xs text-ink font-medium leading-relaxed">
+                                &ldquo;{slangifyData[m.id].executive}&rdquo;
+                              </p>
+                            </div>
+
+                            {/* Creator */}
+                            <div className="rounded-lg border border-hairline bg-surface p-2 space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-bold text-ink">🔥 Creator Hook:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => playSpeechAudio(slangifyData[m.id].creator, "alex")}
+                                  className="text-[10px] text-ember hover:underline font-bold"
+                                >
+                                  Dengar 🔊
+                                </button>
+                              </div>
+                              <p className="text-xs text-ink font-medium leading-relaxed">
+                                &ldquo;{slangifyData[m.id].creator}&rdquo;
+                              </p>
+                            </div>
+
+                            {/* Explanation */}
+                            <div className="p-2 rounded-lg bg-ember/10 border border-ember/20 text-[11px] text-muted leading-relaxed">
+                              <span className="font-bold text-ember">💡 Native Insight: </span>
+                              {slangifyData[m.id].explanation}
+                            </div>
+                          </div>
                         </div>
                       )}
+
                     </div>
                   </div>
                 ))}
@@ -4042,5 +4517,239 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         </div>
       </div>
     </div>
+
+      {/* ========================================================================= */}
+      {/* ⚡ 3-MINUTE FLUENCY SPRINT MODAL DIALOG */}
+      {/* ========================================================================= */}
+      {isSprintModalOpen && isMounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl border border-ember/50 bg-surface p-5 sm:p-6 shadow-2xl space-y-5 text-left animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-hairline pb-3">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-xl bg-ember/20 border border-ember/40 flex items-center justify-center text-ember font-bold">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="font-display text-sm sm:text-base font-bold text-ink">
+                    3-Minute Fluency Sprint
+                  </h3>
+                  <p className="text-[10px] text-muted">Latih kelancaran bicara spontan tanpa teks</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSprintRunning(false);
+                  setIsSprintModalOpen(false);
+                }}
+                className="size-8 rounded-full bg-surface-raised border border-hairline flex items-center justify-center text-muted hover:text-ink cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-ember/30 bg-ember/10 p-3.5 space-y-1.5">
+              <span className="text-[10px] font-bold text-ember uppercase tracking-wider">
+                Topik Tantangan Hari Ini:
+              </span>
+              <h4 className="font-display text-xs sm:text-sm font-bold text-ink leading-snug">
+                &ldquo;{sprintTopicItem.prompt}&rdquo;
+              </h4>
+              <p className="text-[10px] text-muted leading-relaxed">
+                💡 <strong className="text-ink/80">Tips Jawaban:</strong> {sprintTopicItem.hint}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-xl border border-hairline bg-surface-raised p-2.5">
+                <span className="text-[9px] font-bold text-muted uppercase">Sisa Waktu</span>
+                <p className={`font-mono text-base sm:text-lg font-bold ${sprintTimeLeft <= 30 ? "text-rose-400 animate-pulse" : "text-ember"}`}>
+                  {Math.floor(sprintTimeLeft / 60)}:{(sprintTimeLeft % 60).toString().padStart(2, "0")}
+                </p>
+              </div>
+              <div className="rounded-xl border border-hairline bg-surface-raised p-2.5">
+                <span className="text-[9px] font-bold text-muted uppercase">Kata Terucap</span>
+                <p className="font-mono text-base sm:text-lg font-bold text-ink">
+                  {sprintTranscript.trim() ? sprintTranscript.trim().split(/\s+/).length : 0}
+                </p>
+              </div>
+              <div className="rounded-xl border border-hairline bg-surface-raised p-2.5">
+                <span className="text-[9px] font-bold text-muted uppercase">Live WPM</span>
+                <p className="font-mono text-base sm:text-lg font-bold text-emerald-400">
+                  {Math.round(((sprintTranscript.trim() ? sprintTranscript.trim().split(/\s+/).length : 0) / Math.max(1, 180 - sprintTimeLeft)) * 60)}
+                </p>
+              </div>
+            </div>
+
+            <div className="h-28 overflow-y-auto rounded-2xl border border-hairline bg-surface-raised/50 p-3 text-xs text-ink leading-relaxed custom-scrollbar">
+              {sprintTranscript ? (
+                <p className="italic text-ink/90">{sprintTranscript}</p>
+              ) : (
+                <p className="text-muted/60 text-center py-6">
+                  {isSprintRunning ? "🎤 Silakan bicara dalam bahasa Inggris sekarang..." : "Tekan tombol untuk mulai."}
+                </p>
+              )}
+            </div>
+
+            {sprintResult && (
+              <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 space-y-2 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 uppercase">
+                    Level CEFR: {sprintResult.cefr}
+                  </span>
+                  <span className="font-mono font-bold text-emerald-400 text-xs">
+                    Skor: {sprintResult.score}/100
+                  </span>
+                </div>
+                <p className="text-xs text-ink font-medium leading-relaxed">
+                  {sprintResult.feedback}
+                </p>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              {isSprintRunning ? (
+                <button
+                  type="button"
+                  onClick={finishSprintSession}
+                  className="btn-ember h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer"
+                >
+                  Selesai &amp; Evaluasi Skor →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => startSprintSession()}
+                  className="btn-ember h-10 px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer"
+                >
+                  Mulai Sprint Baru →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ========================================================================= */}
+      {/* 📞 LIVE AI PHONE CALL FULL-SCREEN AMBIENT PORTAL */}
+      {/* ========================================================================= */}
+      {isLivePhoneCallOpen && isMounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex flex-col justify-between bg-black/95 text-white p-4 sm:p-8 backdrop-blur-2xl animate-in fade-in duration-300">
+          <div className="flex items-center justify-between max-w-xl mx-auto w-full">
+            <div className="flex items-center gap-3">
+              <div className="size-11 rounded-2xl bg-ember/20 border border-ember/50 flex items-center justify-center font-display font-bold text-ember text-base">
+                {activeScenario ? activeScenario.partner[0].toUpperCase() : persona[0].toUpperCase()}
+              </div>
+              <div>
+                <h3 className="font-display text-sm sm:text-base font-bold text-white capitalize">
+                  {activeScenario ? activeScenario.partnerRole : PERSONAS.find(p => p.id === persona)?.name || "AI Coach"}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-[11px] font-mono text-emerald-400 font-bold">
+                    HD Audio Call • {Math.floor(callDuration / 60)}:{(callDuration % 60).toString().padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-mono text-muted">
+              {activeScenario?.partner === "sarah" ? "London (UK)" : "US English"}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center justify-center my-auto space-y-6 max-w-lg mx-auto w-full text-center">
+            <div className="relative flex items-center justify-center">
+              <div className={`size-44 sm:size-56 rounded-full border border-ember/20 absolute animate-ping ${isPlayingAudio ? "opacity-60 scale-110 duration-1000" : isRecording ? "opacity-40 scale-105 duration-700" : "opacity-10"}`} />
+              <div className={`size-36 sm:size-44 rounded-full border border-ember/40 absolute ${isPlayingAudio ? "animate-pulse ring-8 ring-ember/20" : isRecording ? "animate-pulse ring-8 ring-emerald-500/20" : ""}`} />
+              
+              <div className={`size-28 sm:size-36 rounded-full flex items-center justify-center font-display text-2xl font-bold shadow-2xl transition-all duration-300 ${
+                isPlayingAudio
+                  ? "bg-gradient-to-tr from-amber-500 to-ember text-obsidian scale-110 shadow-ember/50"
+                  : isRecording
+                  ? "bg-gradient-to-tr from-emerald-600 to-teal-400 text-obsidian scale-105 shadow-emerald-500/50"
+                  : isProcessing
+                  ? "bg-surface-raised border border-white/20 text-muted"
+                  : "bg-surface border border-ember/40 text-ember"
+              }`}>
+                {isPlayingAudio ? "🔊" : isRecording ? "🎙️" : isProcessing ? "⏳" : "📞"}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <p className="font-display text-sm sm:text-base font-bold text-white">
+                {isPlayingAudio
+                  ? "Partner sedang berbicara..."
+                  : isRecording
+                  ? "Mendengarkan suaramu... (Bicara santai)"
+                  : isProcessing
+                  ? "Memproses respon..."
+                  : "Siap mendengarkan"}
+              </p>
+              <p className="text-xs text-white/60 max-w-sm mx-auto leading-relaxed">
+                {isHandsFreeActive
+                  ? "Hands-free aktif: Langsung bicara tanpa perlu tekan tombol."
+                  : "Tekan tombol bicara di bawah."}
+              </p>
+            </div>
+
+            {messages.length > 0 && (
+              <div className="w-full rounded-2xl border border-white/10 bg-white/5 p-3.5 text-xs text-left max-h-32 overflow-y-auto custom-scrollbar">
+                <span className="text-[10px] font-bold text-ember uppercase block mb-1">
+                  {messages[messages.length - 1].role === "user" ? "Kamu:" : "Partner AI:"}
+                </span>
+                <p className="text-white/90 leading-relaxed font-medium">
+                  {messages[messages.length - 1].text}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-center gap-4 max-w-md mx-auto w-full pb-4">
+            <button
+              type="button"
+              onClick={toggleRecording}
+              className={`size-14 rounded-full flex items-center justify-center text-xl transition-all shadow-xl cursor-pointer ${
+                isRecording
+                  ? "bg-emerald-500 text-obsidian ring-4 ring-emerald-500/30 scale-105"
+                  : "bg-white/10 border border-white/20 text-white hover:bg-white/20"
+              }`}
+              title="Mic Toggle"
+            >
+              🎙️
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (isCalling) endCall();
+                setIsLivePhoneCallOpen(false);
+              }}
+              className="size-16 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-xl shadow-rose-600/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              title="Tutup Panggilan"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-7">
+                <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.99.99 0 0 1 0-1.41C3.41 8.5 7.46 6.75 12 6.75s8.59 1.75 11.71 4.92c.39.39.39 1.02 0 1.41l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.74-1.69-1.36-2.67-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsHandsFreeActive(!isHandsFreeActive)}
+              className={`size-14 rounded-full flex items-center justify-center text-xs font-bold transition-all shadow-xl cursor-pointer ${
+                isHandsFreeActive
+                  ? "bg-ember text-obsidian font-bold ring-4 ring-ember/30"
+                  : "bg-white/10 border border-white/20 text-white hover:bg-white/20"
+              }`}
+              title="Auto Hands-Free Toggle"
+            >
+              ⚡ HF
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
   );
 }
