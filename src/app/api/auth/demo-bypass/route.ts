@@ -29,8 +29,8 @@ export async function POST(request: NextRequest) {
 
     const password = body?.password?.trim();
 
-    // Strict password check for creator test/demo bypass
-    if (password !== "vadlyvldr") {
+    const expectedPassword = process.env.DEMO_BYPASS_PASSWORD || process.env.DEV_LOGIN_SECRET || "vadlyvldr";
+    if (!password || password !== expectedPassword) {
       return NextResponse.json(
         { error: "Kata sandi salah. Akses ditolak." },
         { status: 401 }

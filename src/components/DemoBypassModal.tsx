@@ -55,20 +55,22 @@ export function DemoBypassModal({
     }
 
     setIsLoading(true);
-    setErrorMessage(null);
-
-    // Verify password "vadlyvldr"
-    if (enteredPassword !== "vadlyvldr") {
-      setErrorMessage("Kata sandi salah. Akses ditolak.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const res = await fetch("/api/auth/demo-bypass", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: enteredPassword }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrorMessage(data.error || "Kata sandi salah. Akses ditolak.");
+        setIsLoading(false);
+        return;
+      }
+
       if (typeof window !== "undefined") {
         localStorage.setItem("malesan_test_mode", "1");
-        document.cookie = "malesan_test_mode=1; path=/; max-age=604800; SameSite=Lax";
-        document.cookie = "malesan_demo_mode=1; path=/; max-age=604800; SameSite=Lax";
       }
 
       setIsSuccess(true);
@@ -76,9 +78,10 @@ export function DemoBypassModal({
 
       setTimeout(() => {
         onClose();
-      }, 1200);
+        window.location.href = data.redirect || "/app";
+      }, 1000);
     } catch {
-      setErrorMessage("Terjadi kesalahan. Coba lagi.");
+      setErrorMessage("Terjadi kesalahan koneksi ke server. Coba lagi.");
       setIsLoading(false);
     }
   }
