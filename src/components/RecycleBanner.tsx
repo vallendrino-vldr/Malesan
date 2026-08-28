@@ -93,13 +93,13 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
               <button
                 onClick={() => void recycle()}
                 disabled={busy}
-                className="min-h-11 cursor-pointer rounded-xl bg-ember px-4 font-display text-mini font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-8 sm:h-8.5 cursor-pointer rounded-lg bg-ember px-3.5 font-display text-xs font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50 shadow-xs"
               >
                 {busy ? "Lagi nyulap..." : "Daur ulang jadi ide baru"}
               </button>
               <button
                 onClick={() => setDismissed(true)}
-                className="min-h-11 cursor-pointer rounded-xl border border-hairline px-4 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink"
+                className="h-8 sm:h-8.5 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-3.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink shadow-xs"
               >
                 Nanti aja
               </button>
@@ -123,7 +123,7 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
               ))}
               <button
                 onClick={() => setDismissed(true)}
-                className="min-h-11 cursor-pointer text-mini font-semibold text-muted underline-offset-2 hover:text-ink hover:underline"
+                className="h-7.5 cursor-pointer text-xs font-semibold text-muted underline-offset-2 hover:text-ink hover:underline"
               >
                 Tutup
               </button>

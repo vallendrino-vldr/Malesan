@@ -87,14 +87,14 @@ export function DraftReactions({ text }: { text: string }) {
         <button
           onClick={() => void run("netizen")}
           disabled={!canRun || busy !== null}
-          className="min-h-11 cursor-pointer rounded-xl border border-ember/45 px-4 text-mini font-semibold text-ember transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember hover:bg-ember/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-8.5 sm:h-9 cursor-pointer rounded-lg border border-ember/45 bg-ember/10 px-3.5 text-xs font-semibold text-ember transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember hover:bg-ember/15 disabled:cursor-not-allowed disabled:opacity-50 shadow-xs"
         >
           {busy === "netizen" ? "Ngumpulin komentar..." : "Simulasi netizen"}
         </button>
         <button
           onClick={() => void run("roast")}
           disabled={!canRun || busy !== null}
-          className="min-h-11 cursor-pointer rounded-xl border border-hairline px-4 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/45 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-8.5 sm:h-9 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-3.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/45 hover:text-danger disabled:cursor-not-allowed disabled:opacity-50 shadow-xs"
         >
           {busy === "roast" ? "Lagi diroasting..." : "Roast draft gue 🔥"}
         </button>

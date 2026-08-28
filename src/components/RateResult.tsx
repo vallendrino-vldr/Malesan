@@ -79,7 +79,7 @@ export function RateResult({
           onClick={() => send("good")}
           disabled={busy}
           aria-label="Hasilnya kepake"
-          className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-success/45 hover:text-success disabled:opacity-50"
+          className="flex h-7.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline/80 bg-surface/80 px-2.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-success/45 hover:text-success disabled:opacity-50 shadow-xs"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
             <path d="M2 21h3V9H2v12Zm19.7-9.8c.2-.2.3-.5.3-.8v-1a2 2 0 0 0-2-2h-5.2l.8-3.8v-.3c0-.4-.2-.8-.4-1L14.2 1 7.6 7.6c-.4.4-.6.9-.6 1.4v9a2 2 0 0 0 2 2h8.5c.8 0 1.5-.5 1.8-1.2l2.4-5.6Z" />
@@ -90,7 +90,7 @@ export function RateResult({
           onClick={() => send("bad")}
           disabled={busy}
           aria-label="Hasilnya gak kepake"
-          className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/45 hover:text-danger disabled:opacity-50"
+          className="flex h-7.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline/80 bg-surface/80 px-2.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/45 hover:text-danger disabled:opacity-50 shadow-xs"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
             <path d="M22 3h-3v12h3V3ZM2.3 12.8c-.2.2-.3.5-.3.8v1a2 2 0 0 0 2 2h5.2l-.8 3.8v.3c0 .4.2.8.4 1l.9.9 6.6-6.6c.4-.4.6-.9.6-1.4v-9a2 2 0 0 0-2-2H6.4c-.8 0-1.5.5-1.8 1.2L2.3 12.8Z" />

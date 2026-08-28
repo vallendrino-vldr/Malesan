@@ -330,9 +330,9 @@ export function DraftEditor({
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={onClose}
-          className="flex min-h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline pl-2 pr-3.5 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember"
+          className="flex h-7.5 sm:h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline/80 bg-surface/80 px-2.5 text-xs font-semibold text-muted transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember shadow-xs"
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
             <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
           </svg>
           Semua draf
@@ -352,7 +352,7 @@ export function DraftEditor({
         {state === "error" && (
           <button
             onClick={() => void save()}
-            className="min-h-11 cursor-pointer rounded-full border border-danger/40 px-3.5 text-mini font-semibold text-danger transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/10"
+            className="h-7.5 cursor-pointer rounded-lg border border-danger/40 px-3 text-xs font-semibold text-danger transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/10 shadow-xs"
           >
             Simpen ulang
           </button>
@@ -420,13 +420,13 @@ export function DraftEditor({
             <>
               <button
                 onClick={accept}
-                className="min-h-11 cursor-pointer rounded-xl bg-ember px-4 font-display text-mini font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo"
+                className="h-8 sm:h-8.5 cursor-pointer rounded-lg bg-ember px-3 font-display text-xs font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo shadow-xs"
               >
                 Pakai sambungannya
               </button>
               <button
                 onClick={() => setGhost("")}
-                className="min-h-11 cursor-pointer rounded-xl border border-hairline px-4 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink"
+                className="h-8 sm:h-8.5 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-3 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink shadow-xs"
               >
                 Buang
               </button>
@@ -437,7 +437,7 @@ export function DraftEditor({
               <button
                 onClick={() => void askCompletion()}
                 disabled={ghostBusy || !content.trim()}
-                className="min-h-11 cursor-pointer rounded-xl border border-ember/45 px-4 text-mini font-semibold text-ember transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember hover:bg-ember/10 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-8 sm:h-8.5 cursor-pointer rounded-lg border border-ember/45 bg-ember/10 px-3 text-xs font-semibold text-ember transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember hover:bg-ember/15 disabled:cursor-not-allowed disabled:opacity-50 shadow-xs"
               >
                 {ghostBusy ? "Lagi mikirin buat lo..." : "Sambungin kalimat"}
               </button>
@@ -591,13 +591,13 @@ export function DraftWorkspace({
                 <span className="flex shrink-0 items-center gap-1.5">
                   <button
                     onClick={() => void remove(d.id)}
-                    className="min-h-11 cursor-pointer rounded-full border border-danger/40 px-3 text-micro font-semibold text-danger transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/10"
+                    className="h-7.5 cursor-pointer rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-xs font-semibold text-danger transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/20 shadow-xs"
                   >
                     Yakin, hapus
                   </button>
                   <button
                     onClick={() => setConfirming(null)}
-                    className="min-h-11 cursor-pointer rounded-full border border-hairline px-3 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink"
+                    className="h-7.5 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-2.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink shadow-xs"
                   >
                     Batal
                   </button>
@@ -606,7 +606,7 @@ export function DraftWorkspace({
                 <button
                   onClick={() => setConfirming(d.id)}
                   aria-label={`Hapus draf ${d.title?.trim() || "tanpa judul"}`}
-                  className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-full border border-hairline px-3 text-micro font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/40 hover:text-danger"
+                  className="flex h-7.5 shrink-0 cursor-pointer items-center rounded-lg border border-hairline bg-surface/60 px-2.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/40 hover:text-danger shadow-xs"
                 >
                   Hapus
                 </button>

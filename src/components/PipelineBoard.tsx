@@ -789,7 +789,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
               </p>
               <button
                 onClick={undoDelete}
-                className="min-h-11 shrink-0 cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-3.5 font-display text-xs font-bold text-ember"
+                className="h-7.5 shrink-0 cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-2.5 font-display text-xs font-bold text-ember shadow-xs"
               >
                 Balikin
               </button>
@@ -1406,9 +1406,9 @@ function StageMover({
   const next = i < ORDER.length - 1 ? ORDER[i + 1] : null;
 
   const arrow =
-    "flex min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 cursor-pointer items-center justify-center rounded-lg text-muted/80 transition-all duration-[var(--duration-standard)] ease-heat hover:bg-white/[0.08] hover:text-ink disabled:cursor-default disabled:opacity-20";
+    "flex h-7.5 w-7.5 sm:h-7 sm:w-7 cursor-pointer items-center justify-center rounded-lg text-muted/80 transition-all duration-[var(--duration-standard)] ease-heat hover:bg-white/[0.08] hover:text-ink disabled:cursor-default disabled:opacity-20";
   const stage =
-    "min-h-11 sm:min-h-9 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.04] px-3.5 sm:px-3 text-micro font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/15 hover:text-ember active:scale-95 flex items-center justify-center";
+    "h-7.5 sm:h-7.5 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.04] px-2.5 sm:px-2 text-[11px] font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/15 hover:text-ember active:scale-95 flex items-center justify-center shadow-xs";
 
   return (
     <div className="-mb-1 mt-3 flex items-center justify-between gap-1 border-t border-hairline pt-1">

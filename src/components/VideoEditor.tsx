@@ -566,7 +566,7 @@ function StylePanel({
               type="button"
               onClick={() => onPreset(preset.id)}
               title={preset.hint}
-              className={`min-h-11 rounded-lg border px-2 py-2 text-micro font-semibold transition-colors ${
+              className={`h-8 sm:h-8.5 rounded-lg border px-2 text-micro font-semibold transition-colors ${
                 presetId === preset.id
                   ? "border-ember bg-ember/15 text-ember"
                   : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
@@ -582,7 +582,7 @@ function StylePanel({
       </div>
 
       <details className="overflow-hidden rounded-xl border border-hairline bg-obsidian/35">
-        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-mini font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
+        <summary className="flex h-8.5 sm:h-9 cursor-pointer items-center justify-between gap-3 px-3.5 text-mini font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
           <span>Atur sendiri</span>
           <span className="text-micro font-normal text-muted">Opsional</span>
         </summary>
@@ -604,7 +604,7 @@ function StylePanel({
                   key={m}
                   type="button"
                   onClick={() => set({ mode: m })}
-                  className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold transition-colors ${
+                  className={`h-8 flex-1 rounded-lg border px-2 text-micro font-semibold transition-colors ${
                     style.mode === m
                       ? "border-ember bg-ember/15 text-ember"
                       : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
@@ -621,7 +621,7 @@ function StylePanel({
             <select
               value={style.fontFamily}
               onChange={(e) => set({ fontFamily: e.target.value })}
-              className="mt-1 min-h-11 w-full rounded-lg border border-hairline bg-obsidian/40 px-2 py-2 text-mini text-ink outline-none focus:border-ember/50"
+              className="mt-1 h-8.5 w-full rounded-lg border border-hairline bg-obsidian/40 px-2 text-mini text-ink outline-none focus:border-ember/50"
             >
               {CAPTION_FONTS.map((f) => (
                 <option key={f.family} value={f.family}>
@@ -637,7 +637,7 @@ function StylePanel({
                 key={captionStyle}
                 type="button"
                 onClick={() => set({ style: captionStyle })}
-                className={`min-h-11 flex-1 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
+                className={`h-8 flex-1 rounded-lg border px-2 text-micro font-semibold capitalize transition-colors ${
                   style.style === captionStyle
                     ? "border-ember bg-ember/15 text-ember"
                     : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
@@ -656,7 +656,7 @@ function StylePanel({
                   key={animation}
                   type="button"
                   onClick={() => set({ animation })}
-                  className={`min-h-11 rounded-lg border px-2 py-2 text-micro font-semibold capitalize transition-colors ${
+                  className={`h-8 rounded-lg border px-2 text-micro font-semibold capitalize transition-colors ${
                     style.animation === animation
                       ? "border-ember bg-ember/15 text-ember"
                       : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
@@ -668,7 +668,7 @@ function StylePanel({
             </div>
           </div>
 
-          <label className="flex min-h-11 items-center gap-2 text-mini text-ink">
+          <label className="flex h-8 items-center gap-2 text-mini text-ink cursor-pointer">
             <input
               type="checkbox"
               checked={style.bold}

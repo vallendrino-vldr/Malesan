@@ -287,7 +287,7 @@ export function GenerationExtras({
             value={extras.personaId}
             onChange={(e) => extras.setPersonaId(e.target.value)}
             disabled={disabled}
-            className="mt-2 min-h-11 w-full cursor-pointer rounded-xl border border-hairline bg-obsidian px-3.5 text-sm text-ink focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
+            className="mt-2 h-9 w-full cursor-pointer rounded-xl border border-hairline bg-obsidian px-3 text-xs text-ink focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
           >
             <option value="">Profil utama</option>
             {extras.personas.map((p) => (
@@ -304,7 +304,7 @@ export function GenerationExtras({
         onToggle={(e) => setToggled(e.currentTarget.open)}
         className="rounded-xl border border-hairline bg-obsidian/40"
       >
-        <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
+        <summary className="flex h-9 cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 text-xs font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
           <span>Pakai bahan sendiri</span>
           <span className={`tabular text-micro font-normal ${hasRef ? "text-ember" : "text-muted"}`}>
             {hasRef ? `${used.toLocaleString("id-ID")} karakter nempel` : "Opsional"}
@@ -749,7 +749,7 @@ function SaveToPipeline({
           <button
             onClick={save}
             disabled={state === "saving"}
-            className="mt-2.5 min-h-11 w-full cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-4 font-display text-mini font-bold text-ember disabled:opacity-50"
+            className="mt-2.5 h-9 w-full cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-4 font-display text-xs font-bold text-ember disabled:opacity-50 shadow-xs"
           >
             {state === "saving" ? "Nyimpen..." : "Simpan ke pipeline"}
           </button>

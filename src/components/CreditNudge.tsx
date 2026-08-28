@@ -81,13 +81,13 @@ export function OfferAfterWin({ credits }: { credits: number }) {
       <div className="mt-3 flex items-center gap-2">
         <Link
           href="/app/topup"
-          className="btn-ember flex min-h-11 items-center rounded-lg px-4 font-display text-mini font-bold text-obsidian"
+          className="btn-ember flex h-8.5 items-center rounded-lg px-3.5 font-display text-xs font-bold text-obsidian shadow-xs"
         >
           Lihat paketnya
         </Link>
         <button
           onClick={() => setShow(false)}
-          className="min-h-11 cursor-pointer px-2 text-micro font-semibold text-muted hover:text-ink"
+          className="h-8.5 cursor-pointer px-2 text-xs font-semibold text-muted hover:text-ink"
         >
           Nanti aja
         </button>
@@ -141,7 +141,7 @@ export function LowCreditNotice({
         <button
           onClick={() => setDismissed(true)}
           aria-label="Tutup"
-          className="-mr-1.5 -mt-1.5 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center text-muted hover:text-ink"
+          className="-mr-1.5 -mt-1.5 flex h-7.5 w-7.5 shrink-0 cursor-pointer items-center justify-center text-muted hover:text-ink"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
             <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3 1.4 1.4Z" />
@@ -150,7 +150,7 @@ export function LowCreditNotice({
       </div>
       <Link
         href="/app/topup"
-        className={`mt-2.5 inline-flex min-h-11 items-center rounded-lg px-4 font-display text-mini font-bold ${
+        className={`mt-2.5 inline-flex h-8.5 items-center rounded-lg px-3.5 font-display text-xs font-bold shadow-xs ${
           empty
             ? "btn-ember text-obsidian"
             : "border border-ember/40 bg-ember/10 text-ember"

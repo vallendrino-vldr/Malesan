@@ -167,10 +167,10 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
                   aria-pressed={active}
                   disabled={isGenerating}
                   onClick={() => setGoal(option.id)}
-                  className={`min-h-11 rounded-full border px-3.5 text-mini font-semibold transition-colors disabled:opacity-50 ${
+                  className={`h-8 sm:h-8.5 rounded-lg border px-3 text-xs font-semibold transition-all disabled:opacity-50 shadow-xs ${
                     active
-                      ? "border-ember/55 bg-ember/10 text-ember"
-                      : "border-hairline text-muted hover:border-ember/30 hover:text-ink"
+                      ? "border-ember bg-ember/15 text-ember font-bold"
+                      : "border-hairline bg-surface/60 text-muted hover:border-ember/30 hover:text-ink"
                   }`}
                 >
                   {option.label}

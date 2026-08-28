@@ -199,7 +199,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
               <button
                 type="button"
                 onClick={handleCopy}
-                className={`min-h-11 rounded-xl px-3 font-display text-xs font-bold transition-colors ${
+                className={`h-8.5 sm:h-9 rounded-lg px-3 font-display text-xs font-bold transition-colors shadow-xs ${
                   copied ? "bg-success text-obsidian" : "bg-ember text-obsidian hover:bg-ember-lo"
                 }`}
               >
@@ -210,7 +210,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
               type="button"
               onClick={handleSave}
               disabled={isSaving || saved}
-              className={`min-h-11 rounded-xl border px-3 font-display text-xs font-semibold transition-colors ${
+              className={`h-8.5 sm:h-9 rounded-lg border px-3 font-display text-xs font-semibold transition-colors shadow-xs ${
                 saved
                   ? "cursor-default border-success/30 bg-success/10 text-success"
                   : "cursor-pointer border-hairline bg-surface-raised text-ink hover:border-ember/40 hover:text-ember-lo"
