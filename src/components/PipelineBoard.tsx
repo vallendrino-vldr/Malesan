@@ -521,72 +521,74 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       <LiveRefresh tables={LIVE_TABLES} silent />
 
       {/* ---------- Creator Workflow & AI Companion Header Strip ---------- */}
-      <div className="surface-card rounded-2xl border border-hairline/80 p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col gap-4">
+      <div className="surface-card rounded-2xl border border-hairline/80 p-3.5 sm:p-5 shadow-xs">
+        <div className="flex flex-col gap-3 sm:gap-4">
           {/* Top row: Title, Total badge, and View Switcher */}
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-2.5 py-0.5 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
+          <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between">
+            {/* Top Identity Row */}
+            <div className="flex items-center justify-between w-full lg:w-auto gap-2">
+              <div className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-ember/15 px-2.5 text-[11px] font-bold tracking-wider text-ember border border-ember/30 uppercase whitespace-nowrap shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember shrink-0">
                   <path d="M18 6H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h13l4-3.5L18 6Z" />
                   <path d="M12 13v8" />
                   <path d="M12 3v3" />
                 </svg>
                 <span>Alur Kerja Kreator</span>
               </div>
-              <span className="rounded-full bg-surface-raised px-2.5 py-0.5 font-mono text-micro text-muted border border-hairline">
+              <span className="inline-flex h-7 items-center rounded-lg bg-surface-raised px-2.5 font-mono text-[11px] text-muted border border-hairline whitespace-nowrap shrink-0">
                 {total} konten aktif
               </span>
             </div>
 
-            {/* View Mode Toggle & Rancang 7 Hari Action */}
+            {/* View Mode Toggle & Actions */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {/* Segmented View Switcher */}
-              <div className="flex h-12 sm:h-9 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 shrink-0">
+              <div className="grid grid-cols-2 h-8.5 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 w-full sm:w-auto shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode("kanban")}
-                  className={`flex h-11 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  className={`flex h-7.5 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "kanban"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
                   }`}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0">
                     <rect width="18" height="18" x="3" y="3" rx="2" />
                     <path d="M9 3v18" />
                     <path d="M15 3v18" />
                   </svg>
-                  <span>Papan Kanban</span>
+                  <span className="whitespace-nowrap">Papan Kanban</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("calendar")}
-                  className={`flex h-11 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  className={`flex h-7.5 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "calendar"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
                   }`}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0">
                     <rect width="18" height="18" x="3" y="4" rx="2" />
                     <path d="M16 2v4" />
                     <path d="M8 2v4" />
                     <path d="M3 10h18" />
                   </svg>
-                  <span>Kalender</span>
+                  <span className="whitespace-nowrap">Kalender</span>
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Action Buttons Grid */}
+              <div className={`grid ${cards.length > 0 ? "grid-cols-2" : "grid-cols-1"} gap-2 w-full sm:w-auto sm:flex sm:items-center`}>
                 {cards.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setIsClearModalOpen(true)}
-                    className="flex h-11 sm:h-9 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap shrink-0"
+                    className="flex h-8.5 items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 text-xs font-medium text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap"
                     title="Kosongkan jadwal atau hapus kartu dari alur"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0">
                       <path d="M3 6h18" />
                       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
                       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
@@ -599,9 +601,9 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   type="button"
                   onClick={handleGenerate7DayStrategy}
                   disabled={isGeneratingStrategy}
-                  className="flex h-11 sm:h-9 flex-2 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/10 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50 whitespace-nowrap shrink-0"
+                  className="flex h-8.5 items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/15 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/25 disabled:opacity-50 whitespace-nowrap"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0">
                     <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
                   </svg>
                   <span>{isGeneratingStrategy ? "Menyusun..." : "Rancang 7 Hari · 5 kredit"}</span>
@@ -672,14 +674,14 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                     role="tab"
                     aria-selected={on}
                     onClick={() => setMobileStage(col.id)}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg h-11 sm:h-auto sm:py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg h-8.5 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                       on ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
                     }`}
                   >
                     {col.label}
                     <span
-                      className={`grid size-5 place-items-center rounded-full text-micro leading-none ${
-                        on ? "bg-ember/25 text-ink" : "bg-surface-raised text-ink"
+                      className={`grid size-4.5 place-items-center rounded-full text-[10px] font-bold leading-none ${
+                        on ? "bg-ember/25 text-ink" : "bg-surface-raised text-muted"
                       }`}
                     >
                       {listOf(col.id).length}
