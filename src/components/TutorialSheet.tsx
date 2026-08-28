@@ -217,7 +217,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
       {variant === "chip" ? (
         <button
           onClick={() => setOpen(true)}
-          className="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-micro font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink cursor-pointer"
+          className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-micro font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink cursor-pointer"
           aria-label="Cara pakai"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">

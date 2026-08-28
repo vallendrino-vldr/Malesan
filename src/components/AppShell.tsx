@@ -136,7 +136,7 @@ export function AppShell({
               type="button"
               onClick={() => go("studio")}
               aria-label="Malesan"
-              className="flex shrink-0 items-center overflow-visible transition-opacity hover:opacity-95 cursor-pointer"
+              className="flex h-11 sm:h-auto shrink-0 items-center overflow-visible transition-opacity hover:opacity-95 cursor-pointer"
             >
               <Logo markClass="h-[36px] sm:h-[40px] lg:h-[48px]" />
             </button>

@@ -204,7 +204,7 @@ function Banner({
         <button
           type="button"
           onClick={onAction}
-          className="btn-ember shrink-0 rounded-lg px-3.5 py-2 font-display text-sm font-bold text-obsidian"
+          className="btn-ember h-11 shrink-0 rounded-lg px-3.5 font-display text-sm font-bold text-obsidian"
         >
           {action}
         </button>
@@ -212,7 +212,7 @@ function Banner({
           type="button"
           onClick={onClose}
           aria-label="Tutup"
-          className="shrink-0 text-muted transition-colors hover:text-ink"
+          className="grid size-11 shrink-0 place-items-center text-muted transition-colors hover:text-ink"
         >
           <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
             <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z" />

@@ -2905,7 +2905,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                   opt.isCorrect ? "en-US" : "id"
                                 );
                               }}
-                              className="btn-ember h-8 sm:h-9 px-3 rounded-lg sm:rounded-xl text-obsidian text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
+                              className="btn-ember h-11 sm:h-9 px-3 rounded-lg sm:rounded-xl text-obsidian text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2940,7 +2940,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         setStepVoiceRecordedText("");
                         scrollToDrillTop();
                       }}
-                      className="h-9 sm:h-10 px-3 sm:px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
+                      className="h-11 sm:h-10 px-3 sm:px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
                     >
                       ← Sebelumnya
                     </button>
