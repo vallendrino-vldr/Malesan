@@ -295,75 +295,62 @@ export function AppShell({
         aria-label="Navigasi utama"
         className="area-footer relative z-20 skeu-bar border-t border-hairline/70 bg-obsidian pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="mx-auto flex w-full max-w-3xl">
+        <div className="mx-auto flex w-full max-w-3xl items-center justify-around px-2">
           {TABS.map((t) => {
             const on = t.key === shown;
             const inner = (
-              <div className="relative flex flex-col items-center gap-1 w-full py-1">
-                {/* Top Active Laser & Particle Beam */}
+              <div className="relative flex flex-col items-center justify-center w-full min-h-[48px] py-1">
+                {/* Top Precision Laser Indicator */}
                 {on && (
-                  <>
-                    {/* Ambient Top Glow Diffusion */}
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute -top-2.5 inset-x-1.5 h-5 bg-[radial-gradient(ellipse_at_top,rgba(255,138,61,0.35)_0%,rgba(255,138,61,0.06)_50%,transparent_80%)] animate-active-tab-aura"
-                    />
-                    {/* Kinetic Laser Line */}
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute -top-2.5 inset-x-2 h-[2px] rounded-full bg-gradient-to-r from-transparent via-ember to-transparent shadow-[0_0_12px_2px_rgba(255,138,61,0.85)]"
-                    />
-                    {/* Center Hotspot Flare */}
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute -top-[11px] left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-ember/90 shadow-[0_0_10px_3px_#ff8a3d,0_0_20px_6px_rgba(255,138,61,0.5)]"
-                    />
-                  </>
+                  <span
+                    aria-hidden="true"
+                    className="kinetic-node pointer-events-none absolute -top-1 left-1/2 w-6 h-[2px] rounded-full bg-ember animate-tab-laser"
+                  />
                 )}
 
-                {/* Icon Container with Luminous Backdrop Aura & Floating VFX */}
-                <div className="relative flex items-center justify-center size-7">
+                {/* Cyber-Glass Pill Capsule */}
+                <div
+                  className={`relative flex flex-col items-center justify-center gap-0.5 w-full max-w-[68px] sm:max-w-[80px] py-1 px-2 rounded-xl transition-all duration-200 ${
+                    on
+                      ? "kinetic-node bg-ember/[0.08] border border-ember/30 animate-tab-pill overflow-hidden"
+                      : "hover:bg-white/[0.03]"
+                  }`}
+                >
+                  {/* Idle Liquid Shimmer Layer on Active */}
                   {on && (
                     <div
                       aria-hidden="true"
-                      className="pointer-events-none absolute -inset-1 rounded-full bg-[radial-gradient(circle,rgba(255,138,61,0.28)_0%,rgba(255,138,61,0.05)_65%,transparent_85%)] animate-active-tab-aura"
+                      className="kinetic-node pointer-events-none absolute inset-0 rounded-xl animate-tab-shimmer"
                     />
                   )}
+
+                  {/* Icon */}
                   <svg
                     viewBox="0 0 24 24"
                     aria-hidden="true"
-                    className={`size-[22px] transition-all duration-[var(--duration-standard)] ease-heat ${
-                      on
-                        ? "fill-ember animate-active-icon-float"
-                        : "fill-muted/70 group-hover:fill-ink group-hover:scale-105"
+                    className={`relative z-10 size-5 transition-all duration-[var(--duration-standard)] ease-heat ${
+                      on ? "fill-ember scale-105" : "fill-muted/75 group-hover:fill-ink"
                     }`}
                   >
                     {t.icon}
                   </svg>
-                  {/* Active Micro Ember Sparkle */}
-                  {on && (
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-ember shadow-[0_0_6px_#ff8a3d] animate-active-spark"
-                    />
-                  )}
-                </div>
 
-                {/* Label Typography with Ember Glow on Active */}
-                <span
-                  className={`text-micro leading-none transition-all duration-[var(--duration-standard)] ease-heat ${
-                    on
-                      ? "text-ember font-bold drop-shadow-[0_0_6px_rgba(255,138,61,0.5)] tracking-tight"
-                      : "text-muted/70 font-medium group-hover:text-ink"
-                  }`}
-                >
-                  {t.label}
-                </span>
+                  {/* Label */}
+                  <span
+                    className={`relative z-10 text-[11px] leading-none transition-colors duration-[var(--duration-standard)] ease-heat ${
+                      on
+                        ? "text-ember font-bold tracking-tight"
+                        : "text-muted/75 font-medium group-hover:text-ink"
+                    }`}
+                  >
+                    {t.label}
+                  </span>
+                </div>
               </div>
             );
 
             const cls =
-              "group relative flex flex-1 cursor-pointer flex-col items-center py-2 active:scale-95 transition-transform duration-[var(--duration-standard)] ease-heat select-none";
+              "group relative flex flex-1 cursor-pointer flex-col items-center justify-center py-0.5 active:scale-95 transition-transform duration-[var(--duration-standard)] ease-heat select-none";
 
             return clientTabs ? (
               <button
