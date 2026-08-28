@@ -3748,9 +3748,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               Lihat Terjemahan Indo
                             </button>
                           )}
-    
+                        </div>
                       )}
-                    </div>
 
                       {/* ⚡ SLANGIFY COMPONENT */}
                       <div className="mt-2 pt-1.5 border-t border-hairline/40 flex items-center justify-between gap-2">
@@ -4098,9 +4097,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               Lihat Terjemahan Indo
                             </button>
                           )}
-    
+                        </div>
                       )}
-                    </div>
 
                       {/* ⚡ SLANGIFY COMPONENT */}
                       <div className="mt-2 pt-1.5 border-t border-hairline/40 flex items-center justify-between gap-2">
