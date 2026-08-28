@@ -15,6 +15,7 @@ import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { CopyField } from "@/components/CopyField";
 import { jakartaDayKey } from "@/lib/time";
+import { isStudioModule } from "@/lib/studio-modules";
 
 const PipelineBoard = dynamic(() => import("@/components/PipelineBoard").then((m) => m.PipelineBoard), {
   loading: () => (
@@ -63,12 +64,7 @@ export default async function AppPage({
   const tab: TabKey = VALID_TABS.includes(params.tab as TabKey)
     ? (params.tab as TabKey)
     : "studio";
-  // Keep this in sync with StudioPanel.Mod. Missing the three newer modules
-  // made their URL update correctly, then reopen the Studio home after refresh.
-  const MODS = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video"] as const;
-  const mod = MODS.includes(params.m as (typeof MODS)[number])
-    ? (params.m as (typeof MODS)[number])
-    : null;
+  const mod = isStudioModule(params.m) ? params.m : null;
 
   const supabase = await createClient();
   const {
@@ -150,6 +146,7 @@ export default async function AppPage({
     personasResult,
     dnaResult,
     referralsResult,
+    historyResult,
   ] = await Promise.all([
     // Supabase's builder is a PromiseLike, not a Promise, so it has no
     // `.catch` — wrap it before attaching one. Never block the app on a
@@ -233,6 +230,16 @@ export default async function AppPage({
       .select("*", { count: "exact", head: true })
       .eq("referrer_id", user.id)
       .then((r) => r.count ?? 0),
+
+    // History is independent of every query above. Starting it here removes
+    // one full database round-trip from the critical server-render path.
+    supabase
+      .from("generations")
+      .select("id, module, created_at, credits_spent, performance_rating, output")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(25)
+      .then((r) => r.data ?? []),
   ]);
 
   if (typeof refillResult === "number") totalCredits = refillResult;
@@ -260,18 +267,9 @@ export default async function AppPage({
   // this is a map read, not a round trip.
   const notice = await getDashboardNotice();
 
-  // Same regression as the pipeline query above: gated on `tab === "profil"`,
-  // which is never true when the profile tab is reached by a client-side switch.
-  const history: HistoryItem[] = (
-    (
-      await supabase
-        .from("generations")
-        .select("id, module, created_at, credits_spent, performance_rating, output")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(25)
-    ).data ?? []
-  ).map((g) => {
+  // History stays available for client-side profile tab switches and has already
+  // loaded in parallel above, so this mapping adds no network waterfall.
+  const history: HistoryItem[] = historyResult.map((g) => {
           const o = g.output as Record<string, unknown> | null;
           const ideas = o?.ideas as { title?: string }[] | undefined;
           const hooks = o?.hooks as { text?: string }[] | undefined;

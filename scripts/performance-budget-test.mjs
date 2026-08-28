@@ -23,4 +23,25 @@ assert.match(endpoint, /MAX_BODY_BYTES = 2_048/);
 assert.match(endpoint, /sameOrigin\(request\)/);
 assert.match(endpoint, /RATE_LIMIT = 60/);
 assert.doesNotMatch(endpoint, /SUPABASE_SERVICE_ROLE_KEY|createClient/);
-console.log("Performance budgets and privacy invariants verified.");
+
+const studioModules = await readFile(path.join(root, "src/lib/studio-modules.ts"), "utf8");
+for (const moduleId of ["affiliate", "carousel", "lancar_bahasa"]) {
+  assert.match(studioModules, new RegExp(`"${moduleId}"`), `Studio registry missing ${moduleId}`);
+}
+const appPage = await readFile(path.join(root, "src/app/app/page.tsx"), "utf8");
+const studioPanel = await readFile(path.join(root, "src/components/StudioPanel.tsx"), "utf8");
+assert.match(appPage, /isStudioModule\(params\.m\)/);
+assert.match(studioPanel, /STUDIO_MODULES\.includes/);
+
+const loadableManifest = JSON.parse(
+  await readFile(path.join(root, ".next/server/app/app/page/react-loadable-manifest.json"), "utf8"),
+);
+const dynamicChunks = [...new Set(Object.values(loadableManifest).flatMap((entry) => entry.files))];
+for (const file of dynamicChunks) {
+  const chunkPath = path.join(root, ".next", file);
+  const source = await readFile(chunkPath, "utf8");
+  const sizeKb = kb((await stat(chunkPath)).size);
+  if (source.includes("Lancar")) assert.ok(sizeKb <= 250, `Lancar chunk: ${sizeKb} KB exceeds 250 KB budget`);
+  if (source.includes("Carousel")) assert.ok(sizeKb <= 40, `Carousel chunk: ${sizeKb} KB exceeds 40 KB budget`);
+}
+console.log("Performance budgets, Studio registry, and privacy invariants verified.");

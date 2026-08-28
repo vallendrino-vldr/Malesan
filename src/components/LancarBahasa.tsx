@@ -2711,7 +2711,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           ✓
                         </span>
                       ) : !isUnlocked ? (
-                        <span className="text-[9px] sm:text-[10px] text-muted">🔒</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-3 sm:size-3.5 text-muted">
+                          <rect width="14" height="11" x="5" y="11" rx="2" />
+                          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                        </svg>
                       ) : isCurrent ? (
                         <span className="size-1.5 sm:size-2 rounded-full bg-ember animate-ping" />
                       ) : null}

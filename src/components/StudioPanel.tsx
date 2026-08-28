@@ -3,23 +3,34 @@
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { STUDIO_MODULES, type StudioModule as Mod } from "@/lib/studio-modules";
 
 function StudioSkeleton({ label }: { label: string }) {
   return (
-    <div className="w-full rounded-2xl border border-hairline bg-surface p-5 sm:p-7 space-y-4 animate-in fade-in duration-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="size-9 rounded-xl bg-surface-raised animate-pulse" />
-          <div className="space-y-1">
-            <div className="h-4 w-32 rounded-md bg-surface-raised animate-pulse" />
-            <div className="h-2.5 w-44 rounded-md bg-surface-raised/60" />
+    <div
+      className="relative w-full overflow-hidden rounded-2xl border border-hairline bg-surface p-5 sm:p-7"
+      role="status"
+      aria-live="polite"
+      aria-label={`Menyiapkan ${label}`}
+    >
+      <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ember/10 to-transparent animate-shimmer-sweep" />
+      <div className="relative space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="size-9 shrink-0 rounded-xl bg-surface-raised animate-shimmer-sweep" />
+            <div className="min-w-0 space-y-1.5">
+              <div className="h-4 w-32 max-w-full rounded-md bg-surface-raised animate-shimmer-sweep" />
+              <div className="h-2.5 w-44 max-w-full rounded-md bg-surface-raised/60 animate-shimmer-sweep" />
+            </div>
           </div>
+          <div className="h-6 w-16 shrink-0 rounded-full bg-surface-raised animate-shimmer-sweep" />
         </div>
-        <div className="h-6 w-16 rounded-full bg-surface-raised animate-pulse" />
-      </div>
-      <div className="h-40 w-full rounded-xl bg-surface-raised/30 border border-hairline/60 flex flex-col items-center justify-center gap-2">
-        <div className="size-6 rounded-full border-2 border-ember border-t-transparent animate-spin" />
-        <span className="text-micro font-semibold text-muted">Menyiapkan {label}...</span>
+        <div className="flex h-40 w-full flex-col items-center justify-center gap-3 rounded-xl border border-hairline/60 bg-surface-raised/30">
+          <div className="relative size-8 rounded-full border border-ember/30">
+            <div className="absolute inset-1 rounded-full border-2 border-ember border-t-transparent animate-spin" />
+          </div>
+          <span className="text-center text-micro font-semibold text-muted">Menyiapkan {label}...</span>
+        </div>
       </div>
     </div>
   );
@@ -53,9 +64,6 @@ const LancarBahasa = dynamic(() => import("./LancarBahasa").then((m) => m.Lancar
   loading: () => <StudioSkeleton label="Lancar Inggris" />,
 });
 
-type Mod = "ide" | "idea" | "hook" | "script" | "repurpose" | "clip" | "thread" | "video" | "affiliate" | "carousel" | "lancar_bahasa";
-const MODS: Mod[] = ["ide", "idea", "hook", "script", "repurpose", "clip", "thread", "video", "affiliate", "carousel", "lancar_bahasa"];
-
 export type StudioCosts = {
   ide: number;
   idea: number;
@@ -87,7 +95,7 @@ export function StudioPanel({
   useEffect(() => {
     const open = (e: Event) => {
       const next = (e as CustomEvent<string>).detail;
-      if (!MODS.includes(next as Mod)) return;
+      if (!STUDIO_MODULES.includes(next as Mod)) return;
       setMod(next as Mod);
       window.history.replaceState(null, "", `/app?tab=studio&m=${next}`);
       document.querySelector("main")?.scrollTo({ top: 0 });
