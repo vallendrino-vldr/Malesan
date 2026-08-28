@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       return json({ error: spend.message }, spend.reason === "insufficient" ? 402 : 500);
     }
 
-    const systemPrompt = `Kamu adalah Master Native English Stylist & Slang Coach kelas dunia.
+    const prompt = `Kamu adalah Master Native English Stylist & Slang Coach kelas dunia.
 Tugasmu adalah mengubah kalimat bahasa Inggris yang kaku, literal, atau terdengar seperti buku teks menjadi 3 versi penutur asli (Native Speaker) modern 2026 yang mengalir alami dan berkelas.
 
 Konteks percakapan: "${context || "General / Professional"}"
@@ -55,30 +55,21 @@ HASILKAN DALAM FORMAT JSON BERIKUT (HARUS PERSIS VALID JSON TANPA MARKDOWN LAIN)
   "explanation": "Penjelasan singkat (1-2 kalimat dalam Bahasa Indonesia santai) tentang mengapa kalimat asli terasa kaku dan rahasia kenapa versi native di atas jauh lebih nendang."
 }`;
 
-    const res = await generate(
-      [
-        {
-          role: "user",
-          parts: [{ text: `Transform this sentence into native styles: "${text}"` }],
-        },
-      ],
-      {
-        systemInstruction: systemPrompt,
-        responseMimeType: "application/json",
-        tier: "free",
-        routeTag: "speaking_slangify",
-      }
-    );
+    const schema = {
+      type: "OBJECT",
+      properties: {
+        original: { type: "STRING" },
+        casual: { type: "STRING" },
+        executive: { type: "STRING" },
+        creator: { type: "STRING" },
+        explanation: { type: "STRING" },
+      },
+      required: ["original", "casual", "executive", "creator", "explanation"],
+    };
 
-    const rawText = res.text?.trim() || "";
-    let cleanJson = rawText;
-    if (cleanJson.startsWith("```json")) {
-      cleanJson = cleanJson.replace(/^```jsons*/, "").replace(/s*```$/, "");
-    } else if (cleanJson.startsWith("```")) {
-      cleanJson = cleanJson.replace(/^```s*/, "").replace(/s*```$/, "");
-    }
+    const rawAi = await generate({ prompt, schema, tier: "free" });
+    const parsed = JSON.parse(rawAi.trim());
 
-    const parsed = JSON.parse(cleanJson);
     return json({
       ok: true,
       data: parsed,

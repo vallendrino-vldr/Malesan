@@ -1389,8 +1389,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   // Live AI Phone Call (Hands-Free) States
   const [isLivePhoneCallOpen, setIsLivePhoneCallOpen] = useState(false);
   const [isHandsFreeActive, setIsHandsFreeActive] = useState(true);
-  const [isCallMuted, setIsCallMuted] = useState(false);
-  const callSpeechRecRef = useRef<SpeechRecognitionInstanceLike | null>(null);
 
   // Slangify API Trigger
   const triggerSlangify = async (messageId: string, text: string, context?: string) => {
@@ -1411,16 +1409,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (json.ok && json.data) {
         setSlangifyData((prev) => ({ ...prev, [messageId]: json.data }));
       } else {
-        setFeedbackNotice({
-          type: "error",
-          message: json.error || "Gagal memproses Slangify.",
-        });
+        setFeedbackNotice(json.error || "Gagal memproses Slangify.");
       }
     } catch {
-      setFeedbackNotice({
-        type: "error",
-        message: "Gagal terhubung ke server Slangify.",
-      });
+      setFeedbackNotice("Gagal terhubung ke server Slangify.");
     } finally {
       setSlangifyLoading((prev) => ({ ...prev, [messageId]: false }));
     }
