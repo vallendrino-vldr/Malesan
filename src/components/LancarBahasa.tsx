@@ -293,33 +293,33 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         wrongAudio: {
           label: "BUNYI SALAH (Lidah Kaku Indo):",
           text: "H dibaca 'Hek' / R getar keras 'Rrr'",
-          sampleText: "Heck. ... Heck.",
+          sampleText: "Heck. ... Rrr!",
           explanation: "Menambahkan letupan H kasar dan getaran lidah berlebihan.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Native Bule):",
           text: "H dibaca 'Eitch' / R dibaca 'Ar' lembut",
-          sampleText: "Aitch. ... Aitch.",
-          explanation: "Murni melafalkan vokal 'ei' diikuti desisan halus 'tch'.",
+          sampleText: "Aitch. ... Are.",
+          explanation: "Murni melafalkan vokal 'ei' diikuti desisan halus 'tch', dan huruf R lembut.",
         },
         tongueTip: "Tarik ujung lidah ke belakang menjauhi gigi seri saat menyebut huruf R.",
         audioDrill: {
-          prompt: "Dengarkan kedua rekaman di bawah. Manakah pelafalan abjad 'H' yang benar?",
+          prompt: "Dengarkan kedua rekaman di bawah. Manakah pelafalan abjad 'H' dan 'R' yang benar?",
           options: [
             {
-              text: "Pelafalan 'Eitch' murni",
-              subtext: "Ejaan: 'EITCH' (Tanpa huruf H di depan)",
-              soundSample: "The letter H is pronounced aitch.",
+              text: "Pelafalan 'Eitch' dan 'Ar' lembut",
+              subtext: "Ejaan: 'EITCH' & 'AR' lembut (Benar)",
+              soundSample: "The letter H is aitch, and the letter R is are.",
               isCorrect: true,
             },
             {
-              text: "Pelafalan 'Hek'",
-              subtext: "Ejaan: 'HEK' (Dengan bunyi H kasar di awal)",
-              soundSample: "The letter H is pronounced heck.",
+              text: "Pelafalan 'Hek' dan getar keras 'Rrr'",
+              subtext: "Ejaan: 'HEK' & 'RRR' kasar (Salah)",
+              soundSample: "The letter H is heck, and the letter R is rrr.",
               isCorrect: false,
             },
           ],
-          explanation: "Abjad H dalam bahasa Inggris dibaca murni 'Eitch'.",
+          explanation: "Abjad H dalam bahasa Inggris dibaca murni 'Eitch' dan R dibaca lembut 'Ar'.",
         },
         stepVoiceChallenge: {
           targetSentence: "The letter H is pronounced as aitch and R is smooth.",
@@ -503,13 +503,13 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
     ],
     exam: [
       {
-        question: "Dengarkan audio di bawah. Manakah pelafalan abjad 'H' yang benar?",
+        question: "Dengarkan audio di bawah. Manakah pelafalan abjad 'H' dan 'R' yang benar?",
         options: [
-          { text: "Eitch (tanpa bunyi H di awal)", subtext: "Ejaan: 'EITCH'", soundSample: "Aitch." },
-          { text: "Hek (dengan bunyi H kasar)", subtext: "Ejaan: 'HEK'", soundSample: "Heck." },
+          { text: "Eitch dan Ar lembut (Benar)", subtext: "Ejaan: 'EITCH & AR'", soundSample: "Aitch and are." },
+          { text: "Hek dan Rrr getar keras (Salah)", subtext: "Ejaan: 'HEK & RRR'", soundSample: "Heck and rrr." },
         ],
         correctIndex: 0,
-        explanation: "Huruf H dibaca murni 'Eitch'.",
+        explanation: "Huruf H dibaca murni 'Eitch' dan huruf R dibaca lembut 'Ar'.",
       },
       {
         question: "Dengarkan audio di bawah. Manakah pelafalan kata 'Island' (pulau) yang tepat?",

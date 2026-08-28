@@ -164,7 +164,7 @@ export function PwaProvider() {
   if (updateReady) {
     return (
       <Banner
-        text="Pembaruan versi sistem siap diterapkan."
+        text="Versi sistem baru siap."
         action="Muat ulang"
         onAction={applyUpdate}
         onClose={() => setUpdateReady(false)}
@@ -175,7 +175,7 @@ export function PwaProvider() {
   if (installEvent && !dismissed) {
     return (
       <Banner
-        text="Pasang di layar utama biar kayak aplikasi."
+        text="Pasang Malesan ke layar utama."
         action="Pasang"
         onAction={install}
         onClose={() => setDismissed(true)}
@@ -198,11 +198,11 @@ function Banner({
   onClose: () => void;
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 sm:bottom-6 z-50 px-3 flex justify-center animate-in fade-in slide-in-from-bottom-3 duration-300">
-      <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-2.5 rounded-2xl border border-ember/40 bg-surface/95 px-3.5 py-2 sm:py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.8rem)] sm:bottom-6 z-50 px-3 flex justify-center animate-in fade-in slide-in-from-bottom-3 duration-300">
+      <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-2xl border border-ember/40 bg-surface/95 px-3.5 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.9)] backdrop-blur-xl">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="size-2 rounded-full bg-ember animate-pulse shrink-0" />
-          <p className="min-w-0 truncate text-xs font-medium text-ink leading-tight">{text}</p>
+          <p className="text-xs font-medium text-ink leading-tight flex-1 whitespace-normal">{text}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button
