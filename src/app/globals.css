@@ -1337,8 +1337,64 @@ button:active .wordmark__slouch,
   animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Active Bottom Nav Tab VFX & Idle Animation Keyframes */
+@keyframes active-tab-aura-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes active-icon-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: drop-shadow(0 0 5px rgba(255, 138, 61, 0.45));
+  }
+  50% {
+    transform: translateY(-2px) scale(1.05);
+    filter: drop-shadow(0 0 12px rgba(255, 138, 61, 0.9));
+  }
+}
+
+@keyframes active-spark-beacon {
+  0%, 100% {
+    opacity: 0.45;
+    transform: scale(0.8);
+    box-shadow: 0 0 4px 1px rgba(255, 138, 61, 0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.25);
+    box-shadow: 0 0 10px 3px rgba(255, 138, 61, 1);
+  }
+}
+
+.animate-active-tab-aura {
+  animation: active-tab-aura-pulse 2.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.animate-active-icon-float {
+  animation: active-icon-float 3.2s ease-in-out infinite;
+  will-change: transform, filter;
+}
+
+.animate-active-spark {
+  animation: active-spark-beacon 2s ease-in-out infinite;
+  will-change: transform, opacity, box-shadow;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .export-spin {
     animation: export-spin 2.6s linear infinite;
+  }
+  .animate-active-tab-aura,
+  .animate-active-icon-float,
+  .animate-active-spark {
+    animation: none !important;
   }
 }

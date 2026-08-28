@@ -299,34 +299,71 @@ export function AppShell({
           {TABS.map((t) => {
             const on = t.key === shown;
             const inner = (
-              <>
+              <div className="relative flex flex-col items-center gap-1 w-full py-1">
+                {/* Top Active Laser & Particle Beam */}
                 {on && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-x-4 top-0 h-px bg-ember shadow-[0_0_12px_2px_color-mix(in_oklab,var(--color-ember)_60%,transparent)]"
-                  />
+                  <>
+                    {/* Ambient Top Glow Diffusion */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -top-2.5 inset-x-1.5 h-5 bg-[radial-gradient(ellipse_at_top,rgba(255,138,61,0.35)_0%,rgba(255,138,61,0.06)_50%,transparent_80%)] animate-active-tab-aura"
+                    />
+                    {/* Kinetic Laser Line */}
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -top-2.5 inset-x-2 h-[2px] rounded-full bg-gradient-to-r from-transparent via-ember to-transparent shadow-[0_0_12px_2px_rgba(255,138,61,0.85)]"
+                    />
+                    {/* Center Hotspot Flare */}
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -top-[11px] left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-ember/90 shadow-[0_0_10px_3px_#ff8a3d,0_0_20px_6px_rgba(255,138,61,0.5)]"
+                    />
+                  </>
                 )}
-                <svg
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className={`size-[21px] transition-colors duration-[var(--duration-standard)] ease-heat ${
-                    on ? "fill-ember" : "fill-muted group-hover:fill-ink"
-                  }`}
-                >
-                  {t.icon}
-                </svg>
+
+                {/* Icon Container with Luminous Backdrop Aura & Floating VFX */}
+                <div className="relative flex items-center justify-center size-7">
+                  {on && (
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -inset-1 rounded-full bg-[radial-gradient(circle,rgba(255,138,61,0.28)_0%,rgba(255,138,61,0.05)_65%,transparent_85%)] animate-active-tab-aura"
+                    />
+                  )}
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className={`size-[22px] transition-all duration-[var(--duration-standard)] ease-heat ${
+                      on
+                        ? "fill-ember animate-active-icon-float"
+                        : "fill-muted/70 group-hover:fill-ink group-hover:scale-105"
+                    }`}
+                  >
+                    {t.icon}
+                  </svg>
+                  {/* Active Micro Ember Sparkle */}
+                  {on && (
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -top-0.5 -right-0.5 size-1.5 rounded-full bg-ember shadow-[0_0_6px_#ff8a3d] animate-active-spark"
+                    />
+                  )}
+                </div>
+
+                {/* Label Typography with Ember Glow on Active */}
                 <span
-                  className={`text-micro font-semibold leading-none transition-colors duration-[var(--duration-standard)] ease-heat ${
-                    on ? "text-ember" : "text-muted group-hover:text-ink"
+                  className={`text-micro leading-none transition-all duration-[var(--duration-standard)] ease-heat ${
+                    on
+                      ? "text-ember font-bold drop-shadow-[0_0_6px_rgba(255,138,61,0.5)] tracking-tight"
+                      : "text-muted/70 font-medium group-hover:text-ink"
                   }`}
                 >
                   {t.label}
                 </span>
-              </>
+              </div>
             );
 
             const cls =
-              "group relative flex flex-1 cursor-pointer flex-col items-center gap-1 py-2.5";
+              "group relative flex flex-1 cursor-pointer flex-col items-center py-2 active:scale-95 transition-transform duration-[var(--duration-standard)] ease-heat select-none";
 
             return clientTabs ? (
               <button
