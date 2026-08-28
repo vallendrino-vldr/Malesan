@@ -2738,16 +2738,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               /* CLEAN COMPACT LESSON STEP VIEW (NO BLOATED INLINE CARDS) */
               <div className="space-y-3 sm:space-y-4 animate-in fade-in duration-200">
                 {/* Step Progress Pill */}
-                <div className="flex items-center justify-between bg-surface-raised/70 px-3 py-2 rounded-xl border border-hairline">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 bg-surface-raised/70 px-3 py-2 sm:py-2.5 rounded-xl border border-hairline">
+                  <div className="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
                     <span className="text-[10px] font-mono font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-md shrink-0">
                       Langkah {activeStepIndex + 1}/{activeStage.steps.length}
                     </span>
-                    <span className="text-xs font-bold text-ink truncate">{activeStep.title}</span>
+                    <span className="text-xs font-bold text-ink leading-snug">{activeStep.title}</span>
                   </div>
 
                   {currentStepVoiceResult?.isPassed && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full shrink-0 self-start sm:self-auto">
                       ✓ Suara Lulus ({currentStepVoiceResult.score})
                     </span>
                   )}
@@ -2872,11 +2872,11 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                 }
                               }
                             }}
-                            className={`rounded-xl border p-2.5 sm:p-3 flex items-center justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
+                            className={`rounded-xl border p-3 flex items-start justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex items-start gap-2.5 min-w-0 flex-1">
                               <div
-                                className={`size-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
+                                className={`size-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 mt-0.5 transition-all ${
                                   drillAnswer !== null && isRight
                                     ? "bg-emerald-400 text-obsidian font-bold"
                                     : drillAnswer !== null && isChosen
@@ -2899,6 +2899,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                             <button
                               type="button"
+                              aria-label={`Dengarkan pelafalan opsi ${String.fromCharCode(65 + optIdx)}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 playSpeechAudio(
@@ -2908,13 +2909,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                   "en-US"
                                 );
                               }}
-                              className="btn-ember h-8 px-2.5 rounded-lg text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1 shrink-0 shadow-xs hover:brightness-105 cursor-pointer"
+                              className={`size-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-all cursor-pointer shadow-xs ${
+                                currentlyPlayingAudioText === opt.soundSample
+                                  ? "bg-ember text-obsidian ring-2 ring-ember/40 animate-pulse"
+                                  : "border border-hairline bg-surface hover:border-ember hover:bg-surface-raised text-muted hover:text-ember"
+                              }`}
                             >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                               </svg>
-                              <span>{currentlyPlayingAudioText === opt.soundSample ? "..." : "Putar"}</span>
                             </button>
                           </div>
                         );
