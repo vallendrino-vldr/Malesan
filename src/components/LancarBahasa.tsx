@@ -418,15 +418,15 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         easyPhonetic: "Ejaan Santai: H dibaca 'EITCH' (Bukan Hek) • R dibaca 'AR' lembut tanpa getar",
         explanation: "Orang Indonesia sering membaca huruf H menjadi 'Hek'. Huruf H murni dibaca 'Eitch'. Huruf R dibaca dengan menarik lidah ke belakang tanpa bergetar keras.",
         wrongAudio: {
-          label: "BUNYI SALAH (Kaku):",
+          label: "BUNYI SALAH (Lidah Kaku Indo):",
           text: "H dibaca 'Hek' / R getar keras 'Rrr'",
-          sampleText: "Hek, het, het.",
-          explanation: "Menambahkan letupan H kasar.",
+          sampleText: "Hek, hek, abjad H dibaca hek. Rrr, getar keras rrr.",
+          explanation: "Menambahkan letupan H kasar dan getaran lidah berlebihan.",
         },
         correctAudio: {
-          label: "BUNYI BENAR (Native):",
+          label: "BUNYI BENAR (Native Bule):",
           text: "H dibaca 'Eitch' / R dibaca 'Ar' lembut",
-          sampleText: "A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z.",
+          sampleText: "The letter H is pronounced aitch, and the letter R is smooth.",
           explanation: "Murni melafalkan vokal 'ei' diikuti desisan halus 'tch'.",
         },
         tongueTip: "Tarik ujung lidah ke belakang menjauhi gigi seri saat menyebut huruf R.",
@@ -436,13 +436,13 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             {
               text: "Pelafalan 'Eitch' murni",
               subtext: "Ejaan: 'EITCH' (Tanpa huruf H di depan)",
-              soundSample: "H is pronounced Eitch.",
+              soundSample: "The letter H is pronounced aitch.",
               isCorrect: true,
             },
             {
               text: "Pelafalan 'Hek'",
               subtext: "Ejaan: 'HEK' (Dengan bunyi H kasar di awal)",
-              soundSample: "Hek is wrong.",
+              soundSample: "Hek, abjad H dibaca hek.",
               isCorrect: false,
             },
           ],
@@ -1207,7 +1207,27 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
 ];
 
 export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits?: number }) {
-  const [mode, setMode] = useState<Mode>("academy");
+  // 1. Active Mode Persistence
+  const [mode, setModeState] = useState<Mode>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_english_active_mode");
+        if (saved && ["academy", "voice", "scenario", "quiz", "essay", "progress"].includes(saved)) {
+          return saved as Mode;
+        }
+      } catch {}
+    }
+    return "academy";
+  });
+
+  const setMode = useCallback((newMode: Mode) => {
+    setModeState(newMode);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("malesan_english_active_mode", newMode);
+      } catch {}
+    }
+  }, []);
 
   // User Level Selection: Defaults to "beginner" (Pemula A1-A2) and persists user choice in localStorage
   const [level, setLevelState] = useState<Level>(() => {
@@ -1255,17 +1275,78 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1.0);
   const [feedbackNotice, setFeedbackNotice] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
+  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string>("Otomatis");
 
-  // Audio Gated Academy States
-  const [activeStageId, setActiveStageId] = useState<number>(1);
-  const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
+  // Audio Gated Academy States with Auto-Save Persistence
+  const [activeStageId, setActiveStageIdState] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_english_current_stage");
+        const num = Number(saved);
+        if (num >= 1 && num <= STAGES.length) return num;
+      } catch {}
+    }
+    return 1;
+  });
+
+  const setActiveStageId = useCallback((id: number) => {
+    setActiveStageIdState(id);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("malesan_english_current_stage", String(id));
+      } catch {}
+    }
+  }, []);
+
+  const [activeStepIndex, setActiveStepIndexState] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_english_current_step");
+        const num = Number(saved);
+        if (num >= 0 && num < 10) return num;
+      } catch {}
+    }
+    return 0;
+  });
+
+  const setActiveStepIndex = useCallback((idx: number) => {
+    setActiveStepIndexState(idx);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("malesan_english_current_step", String(idx));
+      } catch {}
+    }
+  }, []);
+
   const [isExamMode, setIsExamMode] = useState<boolean>(false);
   const [examAnswers, setExamAnswers] = useState<Record<number, number>>({});
   const [drillAnswer, setDrillAnswer] = useState<number | null>(null);
   const [currentlyPlayingAudioText, setCurrentlyPlayingAudioText] = useState<string | null>(null);
 
-  // Step-by-Step AI Voice Validation States
-  const [stepVoiceResults, setStepVoiceResults] = useState<Record<string, VoiceValidationResponse>>({});
+  // Step-by-Step AI Voice Validation States with Persistence
+  const [stepVoiceResults, setStepVoiceResults] = useState<Record<string, VoiceValidationResponse>>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_english_step_results");
+        return saved ? JSON.parse(saved) : {};
+      } catch {}
+    }
+    return {};
+  });
+
+  const updateStepVoiceResult = useCallback((key: string, res: VoiceValidationResponse) => {
+    setStepVoiceResults((prev) => {
+      const updated = { ...prev, [key]: res };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("malesan_english_step_results", JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+  }, []);
+
   const [isRecordingStepVoice, setIsRecordingStepVoice] = useState<boolean>(false);
   const [stepVoiceTranscribing, setStepVoiceTranscribing] = useState<boolean>(false);
   const [stepVoiceRecordedText, setStepVoiceRecordedText] = useState<string>("");
@@ -1295,7 +1376,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   });
 
-  // Voice & Roleplay Call States
+  // Voice & Roleplay Call States with Auto-Resume
   const [isCalling, setIsCalling] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1310,6 +1391,91 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
   // Active Roleplay Scenario State
   const [activeScenario, setActiveScenario] = useState<ScenarioItem | null>(null);
+
+  // Restore active speaking chat if interrupted
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("malesan_english_active_chat");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.messages && Array.isArray(parsed.messages) && parsed.messages.length > 0) {
+            setMessages(parsed.messages);
+            if (parsed.isCalling) setIsCalling(true);
+            if (parsed.callDuration) setCallDuration(parsed.callDuration);
+            if (parsed.activeScenario) setActiveScenario(parsed.activeScenario);
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
+  // Save active chat on every message update
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        if (messages.length > 0) {
+          localStorage.setItem(
+            "malesan_english_active_chat",
+            JSON.stringify({
+              isCalling,
+              activeScenario,
+              messages,
+              callDuration,
+              persona,
+            })
+          );
+        }
+      } catch {}
+    }
+  }, [messages, isCalling, activeScenario, callDuration, persona]);
+
+  // Manual Trigger: Simpan Progres Sekarang
+  const triggerManualSave = useCallback(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("malesan_english_current_stage", String(activeStageId));
+        localStorage.setItem("malesan_english_current_step", String(activeStepIndex));
+        localStorage.setItem("malesan_english_active_mode", mode);
+        localStorage.setItem("malesan_english_step_results", JSON.stringify(stepVoiceResults));
+        localStorage.setItem("malesan_english_completed_stages", JSON.stringify(completedStages));
+        if (messages.length > 0) {
+          localStorage.setItem(
+            "malesan_english_active_chat",
+            JSON.stringify({ isCalling, activeScenario, messages, callDuration, persona })
+          );
+        }
+        const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setLastSavedTimestamp(timeStr);
+        setSaveNotice("Progres belajar dan riwayat tersimpan aman di perangkat!");
+        setTimeout(() => setSaveNotice(null), 3500);
+      } catch {
+        setSaveNotice("Gagal menyimpan ke penyimpanan lokal");
+        setTimeout(() => setSaveNotice(null), 3500);
+      }
+    }
+  }, [activeStageId, activeStepIndex, mode, stepVoiceResults, completedStages, messages, isCalling, activeScenario, callDuration, persona]);
+
+  // Reset Progres ke Tahap 1
+  const resetAllProgress = useCallback(() => {
+    if (typeof window !== "undefined") {
+      if (window.confirm("Apakah kamu yakin ingin mengulang progres belajar dari Tahap 1? Seluruh riwayat nilai akan direset.")) {
+        localStorage.removeItem("malesan_english_current_stage");
+        localStorage.removeItem("malesan_english_current_step");
+        localStorage.removeItem("malesan_english_step_results");
+        localStorage.removeItem("malesan_english_completed_stages");
+        localStorage.removeItem("malesan_english_active_chat");
+        setActiveStageIdState(1);
+        setActiveStepIndexState(0);
+        setStepVoiceResults({});
+        setCompletedStages([]);
+        setMessages([]);
+        setIsCalling(false);
+        setFeedbackNotice("Progres berhasil direset ke Tahap 1. Selamat memulai latihan!");
+        setTimeout(() => setFeedbackNotice(null), 4000);
+      }
+    }
+  }, []);
 
   // Audio Recording Refs
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -1437,11 +1603,19 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   }, []);
 
-  // Play Speech Audio with Authentic Human Neural Voice (David = Real US Male, Alex = Real US Male, Sarah = UK Female, Emma = US Female)
+  // Play Speech Audio with Authentic Human Neural Voice (David = Real US Male, Alex = Real US Male, Sarah = UK Female, Emma = US Female, indonesian = Stiff Indo accent)
   const playSpeechAudio = useCallback(
-    async (text: string, customPersona?: Persona, directAudioUrl?: string | null) => {
+    async (
+      text: string,
+      customPersona?: Persona | "indonesian",
+      directAudioUrl?: string | null,
+      customLang?: string
+    ) => {
       const activeP = customPersona || persona;
-      const profile = PERSONA_VOICE_PROFILES[activeP] || PERSONA_VOICE_PROFILES.david;
+      const isIndoVoice = activeP === "indonesian" || customLang === "id" || customLang === "id-ID";
+      const profile = isIndoVoice
+        ? { lang: "id-ID", pitch: 1.0, preferredKeywords: ["Indonesian", "id-ID", "Gadis", "Andika", "Indonesia"] }
+        : PERSONA_VOICE_PROFILES[activeP as Persona] || PERSONA_VOICE_PROFILES.david;
       setCurrentlyPlayingAudioText(text);
 
       // Stop any existing HTML audio playback
@@ -1476,12 +1650,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         }
       }
 
-      // 2. Server-Side Authentic Neural Human Voice
+      // 2. Server-Side Authentic Neural Human Voice (Polly for Native US/UK, Google TTS for Indonesian)
       try {
         const res = await fetch("/api/tts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, persona: activeP, lang: profile.lang }),
+          body: JSON.stringify({
+            text,
+            persona: isIndoVoice ? "indonesian" : activeP,
+            lang: isIndoVoice ? "id" : (customLang || profile.lang),
+          }),
         });
 
         if (res.ok) {
@@ -1510,13 +1688,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         try {
           const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = profile.lang;
+          utterance.lang = isIndoVoice ? "id-ID" : profile.lang;
           utterance.pitch = profile.pitch;
-          utterance.rate = playbackSpeed * 1.12;
+          utterance.rate = playbackSpeed * (isIndoVoice ? 1.0 : 1.12);
 
           const voices = window.speechSynthesis.getVoices();
           if (voices && voices.length > 0) {
-            const langPrefix = profile.lang.split("-")[0].toLowerCase();
+            const langPrefix = (isIndoVoice ? "id" : profile.lang.split("-")[0]).toLowerCase();
             const langVoices = voices.filter((v) => v.lang.toLowerCase().startsWith(langPrefix));
             const pool = langVoices.length > 0 ? langVoices : voices;
 
@@ -1527,11 +1705,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 matchedVoice = found;
                 break;
               }
-            }
-            if (!matchedVoice && profile.gender === "male") {
-              matchedVoice =
-                pool.find((v) => v.name.toLowerCase().includes("male") && !v.name.toLowerCase().includes("female")) ||
-                null;
             }
             if (matchedVoice) {
               utterance.voice = matchedVoice;
@@ -1548,16 +1721,17 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           };
 
           window.speechSynthesis.speak(utterance);
-          return;
-        } catch (synthErr) {
-          console.warn("Native SpeechSynthesis fallback failed:", synthErr);
+        } catch (err) {
+          console.warn("Local speech synthesis fallback error:", err);
+          setIsPlayingAudio(false);
+          setCurrentlyPlayingAudioText(null);
         }
+      } else {
+        setIsPlayingAudio(false);
+        setCurrentlyPlayingAudioText(null);
       }
-
-      setIsPlayingAudio(false);
-      setCurrentlyPlayingAudioText(null);
     },
-    [persona, playbackSpeed],
+    [persona, playbackSpeed]
   );
 
   // =========================================================================
@@ -2457,6 +2631,35 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
         </div>
 
+        {/* 🛡️ AUTO-SAVE STATUS & QUICK SYNC STRIP */}
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-surface-raised/40 px-3 py-1.5 rounded-xl border border-hairline/70 text-[10px] sm:text-[11px]">
+          <div className="flex items-center gap-1.5 text-muted min-w-0 truncate">
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="font-medium text-ink truncate">Progres Otomatis Tersimpan</span>
+            <span className="text-muted/70 hidden xs:inline">• Terakhir: {lastSavedTimestamp}</span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {saveNotice && (
+              <span className="text-emerald-400 font-bold text-[10px] animate-in fade-in">
+                ✓ {saveNotice}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={triggerManualSave}
+              className="h-6 px-2 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+              title="Simpan status belajar dan riwayat chat ke memori browser sekarang"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                <polyline points="17 21 17 13 7 13 7 21" />
+                <polyline points="7 3 7 8 15 8" />
+              </svg>
+              <span>Simpan Progres</span>
+            </button>
+          </div>
+        </div>
+
         {/* 6 COMPACT STREAMLINED SUB-MODULE TABS */}
         <div className="border-t border-hairline/60 pt-2.5 sm:pt-3">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
@@ -2698,7 +2901,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                         <button
                           type="button"
-                          onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText)}
+                          onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText, "indonesian" as unknown as Persona, null, "id")}
                           className="h-9 sm:h-10 px-3 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
@@ -2723,7 +2926,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                         <button
                           type="button"
-                          onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText)}
+                          onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText, "david", null, "en-US")}
                           className="btn-ember h-9 sm:h-10 px-3 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
@@ -2813,7 +3016,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                playSpeechAudio(opt.soundSample);
+                                playSpeechAudio(
+                                  opt.soundSample,
+                                  opt.isCorrect ? "david" : ("indonesian" as unknown as Persona),
+                                  null,
+                                  opt.isCorrect ? "en-US" : "id"
+                                );
                               }}
                               className="btn-ember h-8 sm:h-9 px-3 rounded-lg sm:rounded-xl text-obsidian text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
                             >
@@ -2991,7 +3199,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    playSpeechAudio(opt.soundSample || opt.text);
+                                    playSpeechAudio(
+                                      opt.soundSample || opt.text,
+                                      optIdx === q.correctIndex ? "david" : ("indonesian" as unknown as Persona),
+                                      null,
+                                      optIdx === q.correctIndex ? "en-US" : "id"
+                                    );
                                   }}
                                   className="btn-ember h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg text-obsidian text-[10px] sm:text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-xs"
                                 >
@@ -4427,6 +4640,25 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
               <p className="text-[10px] font-bold text-ember uppercase">Total Sesi</p>
               <p className="font-display text-lg font-bold text-ember mt-0.5">{records.length} Sesi</p>
             </div>
+          </div>
+
+          {/* 🔄 RESET PROGRESS CONTROL */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-hairline/60 pt-3">
+            <div>
+              <h5 className="font-display text-xs font-bold text-ink">Mulai Ulang / Reset Progres</h5>
+              <p className="text-[10px] sm:text-[11px] text-muted">Ingin mengulang materi dan latihan dari Tahap 1?</p>
+            </div>
+            <button
+              type="button"
+              onClick={resetAllProgress}
+              className="h-8 px-3 rounded-xl border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer self-start sm:self-auto"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+              <span>Reset ke Tahap 1</span>
+            </button>
           </div>
         </div>
       </div>
