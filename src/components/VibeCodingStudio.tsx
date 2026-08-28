@@ -208,7 +208,9 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               : "text-muted hover:text-ink"
           }`}
         >
-          <span>🧠</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
           <span className="font-display">Lancar Ngoding</span>
         </button>
 
@@ -221,7 +223,9 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               : "text-muted hover:text-ink"
           }`}
         >
-          <span>⚡</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
           <span className="font-display">Bikin App AI</span>
         </button>
       </div>

@@ -7,7 +7,7 @@ export interface TrackMeta {
   id: string;
   name: string;
   shortName: string;
-  icon: string;
+  iconType: "rocket" | "layers" | "crown";
   desc: string;
   levelRange: [number, number];
 }
@@ -16,24 +16,24 @@ export const TRACKS: TrackMeta[] = [
   {
     id: "dasar",
     name: "Track 1: Fondasi Logika",
-    shortName: "1. Logika Dasar",
-    icon: "🚀",
+    shortName: "1. Logika",
+    iconType: "rocket",
     desc: "Variabel, If/Else, Array, Loop & Cara Komputer Berpikir",
     levelRange: [1, 10],
   },
   {
     id: "menengah",
     name: "Track 2: Interaktif & Modern Web",
-    shortName: "2. Interaktif Web",
-    icon: "⚡",
+    shortName: "2. Interaktif",
+    iconType: "layers",
     desc: "Event, DOM, State, Fetch API & Tarik Data Internet",
     levelRange: [11, 18],
   },
   {
     id: "mahir",
     name: "Track 3: Fullstack & AI Builder",
-    shortName: "3. Fullstack AI",
-    icon: "👑",
+    shortName: "3. Fullstack",
+    iconType: "crown",
     desc: "Database Supabase, Server Logic & Bikin AI App Sendiri",
     levelRange: [19, 24],
   },
@@ -77,13 +77,17 @@ export default function NgodingHUD({
         <div className="flex items-center gap-2">
           {/* Streak Counter */}
           <div className="inline-flex h-7.5 items-center gap-1.5 rounded-lg bg-orange-500/15 border border-orange-500/30 px-2.5 text-xs font-bold text-orange-400">
-            <span className="text-sm">🔥</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-orange-400">
+              <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
+            </svg>
             <span>{progress.streak} Hari Streak</span>
           </div>
 
           {/* XP Counter */}
           <div className="inline-flex h-7.5 items-center gap-1.5 rounded-lg bg-ember/15 border border-ember/30 px-2.5 text-xs font-bold text-ember">
-            <span className="text-sm">⚡</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
             <span>{progress.xp} XP</span>
           </div>
         </div>
@@ -137,7 +141,24 @@ export default function NgodingHUD({
                   : "text-muted hover:text-ink"
               }`}
             >
-              <span className="text-xs">{t.icon}</span>
+              {t.iconType === "rocket" && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z" />
+                  <path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z" />
+                </svg>
+              )}
+              {t.iconType === "layers" && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
+                  <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                  <polyline points="2 17 12 22 22 17" />
+                  <polyline points="2 12 12 17 22 12" />
+                </svg>
+              )}
+              {t.iconType === "crown" && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
+                  <path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14" />
+                </svg>
+              )}
               <span className="truncate">{t.shortName}</span>
             </button>
           );
