@@ -1284,19 +1284,22 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       try {
         const saved = localStorage.getItem("malesan_english_current_stage");
         const num = Number(saved);
-        if (num >= 1 && num <= STAGES.length) return num;
+        if (num >= 1 && num <= AUDIO_GATED_STAGES.length) return num;
       } catch {}
     }
     return 1;
   });
 
-  const setActiveStageId = useCallback((id: number) => {
-    setActiveStageIdState(id);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("malesan_english_current_stage", String(id));
-      } catch {}
-    }
+  const setActiveStageId = useCallback((val: React.SetStateAction<number>) => {
+    setActiveStageIdState((prev) => {
+      const next = typeof val === "function" ? val(prev) : val;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("malesan_english_current_stage", String(next));
+        } catch {}
+      }
+      return next;
+    });
   }, []);
 
   const [activeStepIndex, setActiveStepIndexState] = useState<number>(() => {
@@ -1310,13 +1313,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     return 0;
   });
 
-  const setActiveStepIndex = useCallback((idx: number) => {
-    setActiveStepIndexState(idx);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("malesan_english_current_step", String(idx));
-      } catch {}
-    }
+  const setActiveStepIndex = useCallback((val: React.SetStateAction<number>) => {
+    setActiveStepIndexState((prev) => {
+      const next = typeof val === "function" ? val(prev) : val;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("malesan_english_current_step", String(next));
+        } catch {}
+      }
+      return next;
+    });
   }, []);
 
   const [isExamMode, setIsExamMode] = useState<boolean>(false);
@@ -1334,18 +1340,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
     return {};
   });
-
-  const updateStepVoiceResult = useCallback((key: string, res: VoiceValidationResponse) => {
-    setStepVoiceResults((prev) => {
-      const updated = { ...prev, [key]: res };
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("malesan_english_step_results", JSON.stringify(updated));
-        } catch {}
-      }
-      return updated;
-    });
-  }, []);
 
   const [isRecordingStepVoice, setIsRecordingStepVoice] = useState<boolean>(false);
   const [stepVoiceTranscribing, setStepVoiceTranscribing] = useState<boolean>(false);
@@ -1376,13 +1370,28 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     }
   });
 
+  // Lazy recovery from localStorage for chat session
+  const initialChatSession = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const saved = localStorage.getItem("malesan_english_active_chat");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.messages && Array.isArray(parsed.messages) && parsed.messages.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return null;
+  }, []);
+
   // Voice & Roleplay Call States with Auto-Resume
-  const [isCalling, setIsCalling] = useState(false);
+  const [isCalling, setIsCalling] = useState(() => initialChatSession?.isCalling || false);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [callDuration, setCallDuration] = useState(0);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [callDuration, setCallDuration] = useState(() => initialChatSession?.callDuration || 0);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => initialChatSession?.messages || []);
   const [activeTip, setActiveTip] = useState<string | null>(null);
   const [activeRoast, setActiveRoast] = useState<string | null>(null);
   const [showCallSummary, setShowCallSummary] = useState(false);
@@ -1390,25 +1399,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [showTranslations, setShowTranslations] = useState<Record<string, boolean>>({});
 
   // Active Roleplay Scenario State
-  const [activeScenario, setActiveScenario] = useState<ScenarioItem | null>(null);
-
-  // Restore active speaking chat if interrupted
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = localStorage.getItem("malesan_english_active_chat");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.messages && Array.isArray(parsed.messages) && parsed.messages.length > 0) {
-            setMessages(parsed.messages);
-            if (parsed.isCalling) setIsCalling(true);
-            if (parsed.callDuration) setCallDuration(parsed.callDuration);
-            if (parsed.activeScenario) setActiveScenario(parsed.activeScenario);
-          }
-        }
-      } catch {}
-    }
-  }, []);
+  const [activeScenario, setActiveScenario] = useState<ScenarioItem | null>(() => initialChatSession?.activeScenario || null);
 
   // Save active chat on every message update
   useEffect(() => {
