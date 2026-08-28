@@ -2772,54 +2772,54 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
                       Dengarkan Perbandingan Suara:
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5">
                       {/* WRONG AUDIO CARD */}
-                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 sm:p-3 flex items-center justify-between gap-2.5 min-w-0">
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
-                            <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider truncate">
+                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 sm:p-3 flex flex-col justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider">
                               {activeStep.wrongAudio.label}
                             </span>
+                            <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
                           </div>
-                          <p className="text-xs font-bold text-ink truncate">{activeStep.wrongAudio.text}</p>
+                          <p className="text-xs font-bold text-ink leading-snug">{activeStep.wrongAudio.text}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText, "alex", null, "en-US")}
-                          className="h-8 px-2.5 sm:px-3 rounded-lg border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
+                          className="h-8 px-3 rounded-lg border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          <span>{currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Memutar..." : "Putar Salah"}</span>
+                          <span>{currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Memutar..." : "Putar Bunyi Salah"}</span>
                         </button>
                       </div>
 
                       {/* CORRECT AUDIO CARD */}
-                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 sm:p-3 flex items-center justify-between gap-2.5 min-w-0">
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="size-1.5 rounded-full bg-emerald-400 shrink-0" />
-                            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider truncate">
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 sm:p-3 flex flex-col justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
                               {activeStep.correctAudio.label}
                             </span>
+                            <span className="size-1.5 rounded-full bg-emerald-400 shrink-0" />
                           </div>
-                          <p className="text-xs font-bold text-ink truncate">{activeStep.correctAudio.text}</p>
+                          <p className="text-xs font-bold text-ink leading-snug">{activeStep.correctAudio.text}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText, "david", null, "en-US")}
-                          className="btn-ember h-8 px-2.5 sm:px-3 rounded-lg text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-sm hover:brightness-105 cursor-pointer"
+                          className="btn-ember h-8 px-3 rounded-lg text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm hover:brightness-105 cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          <span>{currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Memutar..." : "Putar Benar"}</span>
+                          <span>{currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Memutar..." : "Putar Bunyi Benar (Bule)"}</span>
                         </button>
                       </div>
                     </div>
@@ -2888,10 +2888,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               </div>
 
                               <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors leading-snug truncate">
+                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors leading-snug">
                                   {opt.text}
                                 </p>
-                                <p className="text-[10px] sm:text-[11px] text-muted leading-tight truncate">
+                                <p className="text-[10px] sm:text-[11px] text-muted leading-tight">
                                   {opt.subtext}
                                 </p>
                               </div>
