@@ -2562,69 +2562,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             })}
           </div>
         </div>
-
-        {/* ⚡ FLAGSHIP QUICK ACCESS BANNER: 3-MIN SPRINT & LIVE AI CALL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-          <button
-            type="button"
-            onClick={() => startSprintSession()}
-            className="group relative overflow-hidden rounded-2xl border border-ember/40 bg-gradient-to-r from-surface-raised via-surface to-ember/10 p-3 sm:p-3.5 text-left transition-all hover:border-ember hover:shadow-lg active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-9 rounded-xl bg-ember/20 border border-ember/30 flex items-center justify-center text-ember shrink-0 group-hover:scale-110 transition-transform">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
-                      3-Min Fluency Sprint
-                    </h4>
-                    <span className="rounded-full bg-ember/20 px-1.5 py-0.2 text-[9px] font-bold text-ember">
-                      DAILY XP
-                    </span>
-                  </div>
-                  <p className="text-[10px] sm:text-[11px] text-muted truncate">
-                    Tantangan bicara 180s: Cek WPM & Level CEFR (A1-C2)
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-bold text-ember shrink-0">Mulai →</span>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => launchLivePhoneCall()}
-            className="group relative overflow-hidden rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-surface-raised via-surface to-emerald-500/10 p-3 sm:p-3.5 text-left transition-all hover:border-emerald-400 hover:shadow-lg active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 group-hover:scale-110 transition-transform">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-5">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-emerald-400 transition-colors">
-                      Live AI Phone Call
-                    </h4>
-                    <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[9px] font-bold text-emerald-400">
-                      HANDS-FREE
-                    </span>
-                  </div>
-                  <p className="text-[10px] sm:text-[11px] text-muted truncate">
-                    Teleponan nyata tanpa repot pencet tombol mic
-                  </p>
-                </div>
-              </div>
-              <span className="text-xs font-bold text-emerald-400 shrink-0">Hubungkan 📞</span>
-            </div>
-          </button>
-        </div>
       </div>
 
       {/* ========================================================================= */}
