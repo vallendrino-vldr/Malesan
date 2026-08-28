@@ -5,6 +5,7 @@ import { getCost } from "@/lib/config";
 import { generate } from "@/lib/gemini/client";
 import { aiRateLimit } from "@/lib/rate-limit";
 import { transcribeAudio } from "@/lib/transcribe";
+import { getScenarioById } from "@/lib/speaking/scenarios";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -41,7 +42,7 @@ async function getPollyAudio(text: string, persona: string): Promise<{ audioUrl:
     const data = await res.json();
     if (!data.URL) return { audioUrl: null, audioDataUri: null };
 
-    // Fetch the audio bytes directly on the server to embed into payload for 0ms client decoding
+    // Fetch audio bytes server-side for instant client base64 playback
     const audioRes = await fetch(data.URL, { signal: AbortSignal.timeout(4000) });
     if (audioRes.ok) {
       const buf = Buffer.from(await audioRes.arrayBuffer());
@@ -72,9 +73,9 @@ export async function POST(request: NextRequest) {
   if (limited) return limited;
 
   let textInput = "";
-  let persona = "sarah";
+  let persona = "david";
   let level = "intermediate";
-  let scenario = "daily";
+  let scenarioId = "daily";
   let history: Array<{ role: "user" | "assistant"; text: string }> = [];
 
   const contentType = request.headers.get("content-type") || "";
@@ -83,9 +84,9 @@ export async function POST(request: NextRequest) {
     try {
       const formData = await request.formData();
       const audioFile = formData.get("audio");
-      persona = String(formData.get("persona") || "sarah");
+      persona = String(formData.get("persona") || "david");
       level = String(formData.get("level") || "intermediate");
-      scenario = String(formData.get("scenario") || "daily");
+      scenarioId = String(formData.get("scenario") || "daily");
       const historyRaw = formData.get("history");
       if (historyRaw) {
         history = JSON.parse(String(historyRaw));
@@ -105,9 +106,9 @@ export async function POST(request: NextRequest) {
     try {
       const body = await request.json();
       textInput = String(body.text || "").trim();
-      persona = String(body.persona || "sarah");
+      persona = String(body.persona || "david");
       level = String(body.level || "intermediate");
-      scenario = String(body.scenario || "daily");
+      scenarioId = String(body.scenario || "daily");
       history = body.history || [];
     } catch {
       return json({ error: "Permintaan tidak valid." }, 400);
@@ -125,21 +126,69 @@ export async function POST(request: NextRequest) {
     return json({ error: spend.message }, spend.reason === "insufficient" ? 402 : 500);
   }
 
-  // Persona instructions
-  const personaPrompts: Record<string, string> = {
-    sarah: "Kamu adalah Sarah, penutur asli bahasa Inggris asal London yang ramah, santai, dan ekspresif. Gunakan gaya British kasual yang sopan.",
-    alex: "Kamu adalah Alex, pemuda santai asal California yang kasual, banyak menggunakan ungkapan modern, ceria, dan bersahabat.",
-    david: "Kamu adalah David, Senior Tech Recruiter and Executive Interviewer. Bersikap profesional, tajam, namun mendukung kandidat dalam wawancara kerja.",
-    emma: "Kamu adalah Emma, IELTS & TOEFL Master Coach. Berikan pertanyaan terstruktur, melatih alur berpikir kritis dan kelancaran bahasa Inggris.",
+  // Load detailed Global Scenario if matched
+  const matchedScenario = getScenarioById(scenarioId);
+
+  // ═══════════════════════════════════════════════════════════════
+  // TWO-LAYER PERSONA MASTER PROMPTS (Claude Opus 5 Architecture)
+  // ═══════════════════════════════════════════════════════════════
+  const PERSONA_PROFILES: Record<string, string> = {
+    david: `PERSONA MODULE: DAVID KESSLER (47, Managing Director, PE Midtown Manhattan)
+- Core Drive: Time is the only currency he respects. Direct, compressed, zero patience for fluff.
+- Speech Mechanics: Short, punchy sentences. Deadpan dry humor. Never uses exclamation marks or emojis.
+- Signature Frames: "Look —", "Here's the thing.", "Bottom line.", "Let me stop you.", "That's not what I asked."
+- Reaction Bank: "Hm." / "Okay." / "Wait — back up." / "That's a stretch." / "Fine." / "Right." / "So what?"
+- Pressure Style: Weaponises the clock ("We've got six minutes"). Holds his frame until the user proves ROI.
+- Silent Recast: Naturally re-uses correct grammar in dialogue without breaking character.`,
+
+    sarah: `PERSONA MODULE: SARAH WHITMORE (52, Strategic Advisor London, ex-FCDO Diplomat)
+- Core Drive: Exacting precision. Believes imprecise language causes bad deals. Devastatingly polite.
+- Speech Mechanics: Measured British sentences with subordinate clauses. Understatement ("That's not ideal" = total disaster).
+- Signature Frames: "If I may —", "I wonder whether —", "Forgive me, but —", "I'd gently push back on that."
+- Reaction Bank: "Quite." / "Ah." / "I see." / "Hm — interesting." / "Fair enough." / "Go on."
+- Pressure Style: Politeness as pressure. Asks one laser question the user cannot dodge, then waits.`,
+
+    alex: `PERSONA MODULE: ALEX REYES (31, Silicon Valley Tech Founder & CTO)
+- Core Drive: Velocity. Would rather ship a wrong decision today than wait 3 weeks. Fast, energetic, informal.
+- Speech Mechanics: Short, fast, run-together thoughts. Heavy filler ("so basically", "like", "right right right").
+- Signature Frames: "Okay so —", "Real talk.", "Can I push back?", "What's the TL;DR?", "Love that. But."
+- Reaction Bank: "Oh wow." / "Wait, hold on." / "Okay okay okay." / "Hold up, rewind." / "That's actually sick."
+- Pressure Style: Tests whether the user can compress and get to the landing point quickly.`,
+
+    emma: `PERSONA MODULE: EMMA CHO (29, Creator Economy & Brand Partnerships Director, LA)
+- Core Drive: Authenticity as a business asset. Smells scripts instantly. Warm exterior, iron commercial interior.
+- Speech Mechanics: Conversational, expressive, emotionally attuned. Teasing story-driven humor.
+- Signature Frames: "Okay wait —", "Can I be real with you?", "No I love that, but —", "Here's my hesitation."
+- Reaction Bank: "Oh my god." / "Okay wait—" / "Fair enough." / "Oof." / "See, that's the thing."
+- Pressure Style: Calls out rehearsed/scripted answers: "You sound like you're reading a deck. Just tell me what you actually think."`,
   };
+
+  const activePersonaProfile = PERSONA_PROFILES[persona] || PERSONA_PROFILES.david;
+
+  let scenarioContext = `Skenario Umum: Percakapan harian / profesional bebas sesuai topik pengguna.`;
+  if (matchedScenario) {
+    scenarioContext = `SCENARIO CONTEXT:
+- Title: ${matchedScenario.title} (${matchedScenario.category})
+- User Role: ${matchedScenario.setting.user_role}
+- Stakes: $${matchedScenario.setting.stakes_usd || "5,000"} USD
+- Situation: ${matchedScenario.setting.context_id}
+- You are playing: ${matchedScenario.ai_persona.name}, ${matchedScenario.ai_persona.role} at ${matchedScenario.ai_persona.company}
+- Your Pressure Tactic: ${matchedScenario.ai_persona.pressure_tactic}
+- Your Real Limit (Walk Away Point): ${matchedScenario.ai_persona.walk_away_point}
+- Hidden Motivation: ${matchedScenario.setting.hidden_client_motivation}
+- Success Criteria: ${matchedScenario.success_criteria.join("; ")}
+- Escalation Guides:
+  * If user holds frame: ${matchedScenario.ai_followups.if_user_holds_frame}
+  * If user folds / concedes: ${matchedScenario.ai_followups.if_user_folds}
+  * If user gets defensive: ${matchedScenario.ai_followups.if_user_gets_defensive}`;
+  }
 
   const levelRules: Record<string, string> = {
-    beginner: "Pengguna adalah PEMULA. Gunakan kosakata sederhana, kalimat pendek, dan bicara dengan tempo ramah yang mudah dimengerti.",
-    intermediate: "Pengguna adalah MENENGAH. Gunakan percakapan normal mengalir, variasikan struktur kalimat, dan latih transisi alami.",
-    advanced: "Pengguna adalah TINGKAT MAHIR. Gunakan idiom, bahasa profesional, kosakata kaya, dan diskusikan topik secara mendalam.",
+    beginner: "Target CEFR A2-B1: Kalimat pendek, jelas, tempo bersahabat tanpa istilah yang terlalu rumit.",
+    intermediate: "Target CEFR B2: Percakapan bisnis mengalir alami, perhatikan register kesopanan dan ketegasan.",
+    advanced: "Target CEFR C1-C2: Idiomatik tinggi, negosiasi tingkat tinggi, pengujian logika bisnis yang ketat.",
   };
 
-  const personaContext = personaPrompts[persona] || personaPrompts.sarah;
   const levelContext = levelRules[level] || levelRules.intermediate;
 
   const historyContext = history
@@ -147,30 +196,51 @@ export async function POST(request: NextRequest) {
     .map((h) => `${h.role === "user" ? "User" : "Partner"}: "${h.text}"`)
     .join("\n");
 
-  const prompt = `${personaContext}
+  const prompt = `═══════════════════════════════════════════════════════════════
+TWO-LAYER MASTER CONVERSATION ENGINE (INDONESIAN CREATOR & PRO)
+═══════════════════════════════════════════════════════════════
+
+${activePersonaProfile}
+
 ${levelContext}
-Konteks Skenario: ${scenario}
+
+${scenarioContext}
 
 Riwayat Percakapan Sebelumnya:
-${historyContext || "(Baru memulai percakapan)"}
+${historyContext || "(Turn Pertama - Buka percakapan sesuai karakter)"}
 
-Pesan Pengguna Baru:
+Ucapan Terbaru Pengguna:
 "${textInput}"
 
-TUGAS KAMU:
-1. Berikan respons percakapan balasan dalam bahasa Inggris (replyEn) yang alami, relevan, dan mengajak pengguna terus berbicara (1-3 kalimat).
-2. Terjemahkan respons bahasa Inggris kamu ke dalam bahasa Indonesia (translateId) yang luwes dan natural agar pemula bisa langsung memahami artinya.
-3. Berikan 3 CONTEKAN JAWABAN CEPAT (suggestedReplies) yang bisa diucapkan/dikirim pengguna berikutnya dalam bahasa Inggris beserta arti singkat Indonesianya.
-4. Periksa ucapan pengguna: Apakah ada kesalahan grammar, pilihan kata, atau kebiasaan buruk?
-   - Jika ADA kesalahan, buat tip koreksi halus (correctionTip) dalam bahasa Indonesia yang ringkas (contoh: "Gunakan 'went' untuk masa lampau: I went to the store").
-   - Identifikasi KATEGORI KELEMAHAN (pitfallTag) yang ringkas (misal: "Past Tense (V2)", "Preposition (in/at/on)", "Subject-Verb Agreement", "Vocabulary Choice", "Pronunciation Hint").
-   - Jika BENAR, kosongkan (null).
-5. HUMOR & ROASTING ENGINE (Wajib ada jika ada kesalahan konyol / bahasa Indonesia):
-   - Jika pengguna membuat kesalahan lucu (seperti salah tenses parah, pakai bahasa Indonesia dicampur Inggris ga pas, atau idiom aneh), buat 1 kalimat roasting santai & lucu dalam bahasa Indonesia sehari-hari yang menghibur (roastComment).
-   - Jika pengguna bicara lancar dan bagus, berikan pujian santai tanpa lebay.
-6. Berikan estimasi skor kelancaran percakapan ini (fluencyScore: 1-100).
-7. Sebutkan 1 kosakata atau frasa keren yang relevan dengan topik ini (newVocab).
-8. Jika ini skenario simulasi, periksa apakah tujuan percakapan sudah tercapai (missionAccomplished: boolean).
+═══════════════════════════════════════════════════════════════
+ATURAN PRODUKSI OUTPUT DUA LAPIS (STRICT CONTRACT):
+═══════════════════════════════════════════════════════════════
+
+1. LAPIS 1: DIALOGUE (replyEn)
+   - 100% Bahasa Inggris murni in-character (1-3 kalimat).
+   - DILARANG menyinggung grammar, koreksi, atau bahwa ini simulasi.
+   - Buka dengan micro-reaction (~60% kemungkinan) dari REACTION BANK persona kamu ("Look —", "Right.", "Wait, hold on.", "Fair enough.").
+   - Jika pengguna membuat kesalahan grammar kecil (Tier 1), lakukan SILENT RECAST (ulang bentuk yang benar secara alami di dalam kalimat balasan).
+   - Terapkan SCENE DISCIPLINE: Jika pengguna menyerah/minta maaf berlebihan, TEKAN LEBIH JAUH. Jika pengguna memberikan argumen bernas, LUNAKKAN SIKAP.
+
+2. LAPIS 2: COACH & PEDAGOGY (Bahasa Indonesia di field correctionTip / roastComment)
+   - correctionTip (Maksimal 3 baris): Berikan analisis taktis jika ada kesalahan bahasa/diplomasi.
+     * Jelaskan kenapa salah (misal: Jebakan 'Sungkan', salah tense lampau V2, salah modal 'you must' yang terkesan kasar).
+     * Berikan UPGRADE PHRASE bahasa Inggris yang elegan untuk dipakai pengguna.
+     * Jika ucapan pengguna sudah bersih dan bagus, kosongkan (null).
+   - roastComment: Jika ada kesalahan konyol atau terjemahan harfiah Indoglish, berikan 1 kalimat komentar santai & cerdas khas mentor.
+
+3. LAPIS 3: STRATEGIC REPLIES (suggestedReplies)
+   - Berikan 3 pilihan respons taktis dalam bahasa Inggris beserta arti bahasa Indonesianya:
+     * Opsi A: The Value Reframe / Strong Position
+     * Opsi B: The Diagnostic Question / Counter-Question
+     * Opsi C: The Collaborative Trade / Scoped Compromise
+
+4. METRICS & SCORING:
+   - fluencyScore: Nilai kelancaran & diplomasi (1-100).
+   - pitfallTag: Tag kelemahan (contoh: "Sungkan / Apology Trap", "Scope Creep Defense", "Past Tense V2", "Register Calibration", "Modal Verbs").
+   - newVocab: 1 frasa / kosakata profesional tingkat tinggi dari turn ini.
+   - missionAccomplished: true jika negosiasi/skenario sudah mencapai titik sepakat yang solid.
 
 ATURAN FORMATTING KETAT:
 - DILARANG MENGGUNAKAN EMOJI APAPUN.
@@ -189,6 +259,7 @@ ATURAN FORMATTING KETAT:
           properties: {
             en: { type: "STRING" },
             id: { type: "STRING" },
+            strategy: { type: "STRING" },
           },
           required: ["en", "id"],
         },
@@ -208,27 +279,37 @@ ATURAN FORMATTING KETAT:
   try {
     const rawAi = await generate({ prompt, schema, tier: "free" });
     const parsed = JSON.parse(rawAi.trim());
-    const replyEn = parsed.replyEn || "That is interesting! Tell me more about it.";
+    const replyEn = parsed.replyEn || "Look — let us get straight to the point. What are your terms?";
     const audioData = await getPollyAudio(replyEn, persona);
     const audioUrl = audioData.audioDataUri || audioData.audioUrl || null;
+
+    // Use scenario response options as fallback or enhance with AI
+    let finalSuggestions = parsed.suggestedReplies;
+    if ((!finalSuggestions || finalSuggestions.length === 0) && matchedScenario?.response_options) {
+      finalSuggestions = matchedScenario.response_options.map((opt) => ({
+        en: opt.script,
+        id: `${opt.strategy}: ${opt.predicted_reaction}`,
+        strategy: opt.strategy,
+      }));
+    }
 
     return json({
       ok: true,
       userTranscribedText: textInput,
       replyEn,
       audioUrl,
-      translateId: parsed.translateId || "Itu sangat menarik! Ceritakan lebih banyak tentang hal itu.",
-      suggestedReplies: Array.isArray(parsed.suggestedReplies) && parsed.suggestedReplies.length > 0
-        ? parsed.suggestedReplies
+      translateId: parsed.translateId || "Dengar — mari kita langsung ke intinya. Apa syarat dari kamu?",
+      suggestedReplies: Array.isArray(finalSuggestions) && finalSuggestions.length > 0
+        ? finalSuggestions
         : [
-            { en: "I would like to know more.", id: "Saya ingin tahu lebih lanjut." },
-            { en: "That makes a lot of sense.", id: "Itu sangat masuk akal." },
-            { en: "Could you explain that again?", id: "Bisakah kamu jelaskan lagi?" },
+            { en: "That is a fair question, and I would ask the same thing.", id: "Itu pertanyaan yang adil, dan saya akan menanyakan hal yang sama.", strategy: "Value Reframe" },
+            { en: "Before we discuss the number, can I clarify your primary timeline?", id: "Sebelum kita bahas angka, boleh saya pastikan timeline utama Anda?", strategy: "Diagnostic Question" },
+            { en: "I can reduce the scope to meet your budget, but not the quality.", id: "Saya bisa kurangi cakupan kerja sesuai budget, tapi bukan kualitasnya.", strategy: "Scoped Trade" },
           ],
       correctionTip: parsed.correctionTip || null,
       pitfallTag: parsed.pitfallTag || null,
       roastComment: parsed.roastComment || null,
-      fluencyScore: parsed.fluencyScore || 80,
+      fluencyScore: parsed.fluencyScore || 85,
       newVocab: parsed.newVocab || null,
       missionAccomplished: Boolean(parsed.missionAccomplished),
       creditsSpent: cost,
@@ -239,17 +320,17 @@ ATURAN FORMATTING KETAT:
       {
         ok: true,
         userTranscribedText: textInput,
-        replyEn: "I hear you! That sounds really interesting. What do you think we should explore next?",
-        translateId: "Aku mendengarmu! Itu terdengar sangat menarik. Apa yang ingin kita bahas berikutnya?",
+        replyEn: "Look — I hear what you are saying. Let us focus on the core deliverable and move forward.",
+        translateId: "Dengar — saya paham maksud kamu. Mari fokus pada hasil kerja utama dan lanjutkan.",
         suggestedReplies: [
-          { en: "Let us talk about daily hobbies.", id: "Mari kita bicara tentang hobi sehari-hari." },
-          { en: "I want to improve my speaking confidence.", id: "Saya ingin meningkatkan kepercayaan diri berbicara." },
-          { en: "Can we practice a job interview?", id: "Bisakah kita latihan wawancara kerja?" },
+          { en: "That is a fair point. Here is how we should structure the scope.", id: "Itu poin yang bagus. Ini cara kita menyusun cakupan kerjanya.", strategy: "Value Reframe" },
+          { en: "Let us clarify the deliverables so we are 100% aligned.", id: "Mari kita perjelas deliverable agar kita 100% selaras.", strategy: "Clarification" },
+          { en: "I can send over an updated proposal with these milestones.", id: "Saya bisa kirim proposal yang diperbarui dengan target ini.", strategy: "Action Plan" },
         ],
         correctionTip: null,
         pitfallTag: null,
         roastComment: null,
-        fluencyScore: 75,
+        fluencyScore: 80,
         newVocab: null,
         missionAccomplished: false,
         creditsSpent: cost,

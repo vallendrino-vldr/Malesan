@@ -1,0 +1,1708 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "pack_id": "id-creator-global-negotiation-v1",
+    "title": "Global Negotiation Roleplay Pack — Indonesian Creators & Freelancers",
+    "target_learner": "Kreator konten / freelancer / remote worker Indonesia, level English B1-C1",
+    "language_of_play": "en",
+    "language_of_coaching": "id",
+    "total_scenarios": 20,
+    "categories": [
+      { "key": "price_negotiation", "label_id": "Negosiasi Harga Proyek Remote", "count": 5, "value_range_usd": [3000, 10000] },
+      { "key": "client_complaint", "label_id": "Menghadapi Komplain Klien Luar Negeri", "count": 5 },
+      { "key": "sv_interview", "label_id": "Interview Kerja Remote Silicon Valley (STAR)", "count": 5 },
+      { "key": "sponsorship_pitch", "label_id": "Pitching Sponsorship Brand Internasional", "count": 5 }
+    ],
+    "difficulty_scale": {
+      "1": "Ramah, kooperatif",
+      "2": "Netral, sedikit menekan",
+      "3": "Skeptis, menguji",
+      "4": "Agresif / manipulatif",
+      "5": "Hostile, ada ancaman nyata (reputasi, uang, kontrak)"
+    },
+    "usage_note": "ai_opening_line dipakai sebagai turn pertama AI. response_options ditampilkan sebagai contekan (boleh disembunyikan untuk mode hard). ai_followups dipakai untuk branching turn kedua berdasarkan klasifikasi jawaban user."
+  },
+
+  "scenarios": [
+    {
+      "id": "NEG-01",
+      "category": "price_negotiation",
+      "title": "The Fiverr Comparison",
+      "difficulty": 3,
+      "channel": "video_call",
+      "tags": ["anchoring", "price_objection", "commoditization"],
+      "setting": {
+        "user_role": "Freelance brand designer",
+        "context_id": "Lo udah kirim proposal $8,500 untuk full brand identity. Klien buka meeting dengan membandingkan lo ke pekerja marketplace murah.",
+        "stakes_usd": 8500,
+        "hidden_client_motivation": "Dia sebenarnya sudah memilih kamu, tapi ingin diskon 30% sebelum approve ke CFO."
+      },
+      "ai_persona": {
+        "name": "Marcus Webb",
+        "role": "Co-founder & COO",
+        "company": "Northline (US SaaS, Seed stage)",
+        "origin": "San Francisco, USA",
+        "temperament": "Direct, transactional, tidak kasar tapi tidak sabar",
+        "pressure_tactic": "Perbandingan harga eksternal untuk menciptakan keraguan diri",
+        "walk_away_point": "Tidak ada — dia butuh selesai minggu ini"
+      },
+      "ai_opening_line": "Look, I'll be straight with you. Your quote came in at $8,500. We got three others between $900 and $2,000 — one of them was on Fiverr and honestly the portfolio didn't look that different. Help me understand what I'm actually paying an extra seven grand for.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Value Reframe",
+          "tone": "Tenang, percaya diri, tidak defensif",
+          "script": "That's a fair question, and I'd ask the same thing. The $900 buys you a logo file. What you're buying from me is a decision-making system — naming rationale, a scalable type and color architecture, and usage rules so your next hire doesn't have to guess. The real cost of the cheaper option usually shows up in month six, when you rebrand again. I've seen that happen three times this year.",
+          "risk": "low",
+          "predicted_reaction": "Marcus melunak dan mulai bertanya soal deliverable spesifik.",
+          "why_it_works": "Memindahkan perbandingan dari 'harga' ke 'kategori produk yang berbeda'. Kamu tidak menyangkal harga mereka, kamu menyatakan mereka membeli barang lain."
+        },
+        {
+          "id": "B",
+          "strategy": "The Diagnostic Question",
+          "tone": "Ingin tahu, mengendalikan lewat pertanyaan",
+          "script": "Before I defend the number, can I ask you something? If the $900 option delivers exactly what's in their scope and it doesn't move your conversion rate — what does that cost Northline over the next twelve months? I'm not trying to be clever. I just want us pricing against the same risk, not the same invoice.",
+          "risk": "medium",
+          "predicted_reaction": "Marcus berhenti sejenak, lalu mengakui bahwa timeline dan hasil lebih penting daripada biaya.",
+          "why_it_works": "Siapa yang bertanya, dia yang memegang kendali frame. Ini memaksa klien menghitung biaya kegagalan, bukan biaya pembelian."
+        },
+        {
+          "id": "C",
+          "strategy": "The Scoped Downgrade",
+          "tone": "Kooperatif tapi tidak menyerah",
+          "script": "I can get you to a lower number — but by removing scope, not by discounting the work. For $4,200 I'd deliver the core identity and hand you the guidelines as a self-serve template instead of a full system. Same quality, less of it. What I can't do is deliver the full scope at a fraction of the price. That would be unfair to both of us.",
+          "risk": "low",
+          "predicted_reaction": "Marcus biasanya kembali ke paket penuh setelah melihat apa yang hilang.",
+          "why_it_works": "Menjaga integritas harga per unit. Diskon merusak persepsi nilai; pengurangan scope justru mempertegasnya."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Jangan pernah membela harga. Bela kategori.",
+        "psychology": "Perbandingan harga adalah tes kepercayaan diri, bukan pertanyaan finansial. Klien ingin tahu apakah kamu sendiri percaya angka itu. Kalau kamu langsung menurunkan harga di 30 detik pertama, kamu baru saja mengonfirmasi bahwa angka awalmu mengada-ada.",
+        "indonesian_pitfall": "Refleks 'sungkan' bikin banyak freelancer Indonesia langsung minta maaf ('Sorry if it's too expensive...') lalu menawarkan diskon sebelum diminta. Di budaya bisnis AS, ini dibaca sebagai bukti bahwa harganya memang tidak jujur sejak awal.",
+        "power_phrases": [
+          "That's a fair question, and I'd ask the same thing.",
+          "You're comparing two different products, not two prices.",
+          "I can reduce the scope, not the rate."
+        ],
+        "never_say": [
+          "Sorry, maybe it's too expensive for you.",
+          "Okay, how much is your budget? I can adjust.",
+          "I understand, I'm from Indonesia so I can go lower."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Okay. That's a better answer than I expected. Walk me through what happens in week one, then — because if this drags past November it doesn't matter what it costs.",
+        "if_user_folds": "Great, so we can do $5,000? Let me loop in finance. Actually — if you moved that easily, can we say $4,500?",
+        "if_user_gets_defensive": "Whoa. I'm not attacking you, I'm doing my job. Let's reset — just tell me what the extra scope actually buys."
+      },
+      "success_criteria": [
+        "Tidak menawarkan diskon dalam 2 turn pertama",
+        "Mengganti kata 'price' dengan 'scope' atau 'outcome' minimal satu kali",
+        "Tidak minta maaf atas harga"
+      ],
+      "vocab_focus": [
+        { "term": "quote", "meaning_id": "penawaran harga formal" },
+        { "term": "scope", "meaning_id": "cakupan pekerjaan" },
+        { "term": "walk me through", "meaning_id": "jelaskan tahap demi tahap" }
+      ]
+    },
+
+    {
+      "id": "NEG-02",
+      "category": "price_negotiation",
+      "title": "The Silent Scope Creep",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["scope_creep", "change_order", "boundary_setting"],
+      "setting": {
+        "user_role": "Freelance video editor / motion designer",
+        "context_id": "Proyek $6,000 untuk 8 video. Di minggu ketiga, klien minta 5 video tambahan, versi vertikal, dan subtitle 3 bahasa — dengan nada seolah itu memang sudah termasuk.",
+        "stakes_usd": 6000,
+        "hidden_client_motivation": "Budget-nya habis untuk media buying, jadi dia berharap kamu menyerap kelebihannya."
+      },
+      "ai_persona": {
+        "name": "Priya Raghunathan",
+        "role": "Senior Producer",
+        "company": "Ashgrove Creative (London agency)",
+        "origin": "London, UK",
+        "temperament": "Sangat sopan, tapi asumsinya keras. Menggunakan kesopanan sebagai tekanan.",
+        "pressure_tactic": "Framing permintaan baru sebagai 'small tweaks' dan 'just part of the process'",
+        "walk_away_point": "Tidak akan pergi — mengganti editor di tengah jalan lebih mahal baginya"
+      },
+      "ai_opening_line": "Quick one before we wrap — the client loved the cuts, so we're going to need vertical versions of all eight, plus five more from the B-roll, and subtitles in French, German and Spanish. Nothing dramatic, just the usual finishing bits. Can you have those by the fifteenth? Same delivery as before is fine.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Warm Wall",
+          "tone": "Antusias soal pekerjaannya, tegas soal syaratnya",
+          "script": "Love that they responded well — and yes, all of that is very doable. Just so we're aligned: verticals, five additional edits and trilingual subtitles sit outside the original eight-video scope, so I'll send a change order this afternoon. Roughly $3,400 and it moves final delivery to the twenty-second. Want me to prioritise the verticals so you're not blocked?",
+          "risk": "low",
+          "predicted_reaction": "Priya sedikit terkejut tapi menerima — dia tahu itu memang di luar scope.",
+          "why_it_works": "Kamu bilang 'ya' pada pekerjaannya dan 'tidak' pada syaratnya. Ini menghilangkan konflik emosional sambil tetap menagih."
+        },
+        {
+          "id": "B",
+          "strategy": "The Innocent Clarification",
+          "tone": "Ramah, pura-pura polos, sangat efektif",
+          "script": "Happy to — let me just check I'm reading the brief the same way you are. My contract covers eight horizontal edits with English captions. Are you thinking of this as a scope extension, or did you have a different version of the SOW? I want to make sure I'm not missing something on my end.",
+          "risk": "low",
+          "predicted_reaction": "Priya mundur dan mengakui itu tambahan. Beban pembuktian berpindah ke dia.",
+          "why_it_works": "Menuduh klien scope creep memicu pembelaan diri. Bertanya seolah kamu yang mungkin salah baca, membuat dia sendiri yang menyimpulkan itu tambahan."
+        },
+        {
+          "id": "C",
+          "strategy": "The Trade",
+          "tone": "Kolaboratif, transaksional",
+          "script": "I can fold the verticals into the current budget — they're a fast turnaround. The five new edits and the three subtitle tracks I'd need to quote separately, around $2,800. Alternatively, if budget is genuinely locked, we drop two of the original edits and swap them for the new ones at no extra cost. Your call which trade works better.",
+          "risk": "medium",
+          "predicted_reaction": "Priya memilih opsi bayar, karena dia tidak mau kehilangan deliverable.",
+          "why_it_works": "Memberi dua pintu yang dua-duanya melindungi tarif per jam kamu. Tidak ada pintu 'gratis'."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Scope creep bukan dilawan dengan penolakan, tapi dengan dokumentasi.",
+        "psychology": "Klien agency Inggris sering memakai understatement ('just', 'quick one', 'nothing dramatic') untuk mengecilkan permintaan besar. Semakin kecil bahasanya, semakin besar biasanya permintaannya. Jangan cocokkan energinya — cocokkan kejelasannya.",
+        "indonesian_pitfall": "Budaya 'gak enak nolak' bikin banyak orang Indonesia mengiyakan dulu, lalu kesal diam-diam dan burnout. Padahal di konteks agency, mengirim change order itu bukan konflik — itu prosedur normal yang mereka lakukan ke klien mereka sendiri setiap hari.",
+        "power_phrases": [
+          "That sits outside the original scope, so I'll send a change order.",
+          "Happy to — let me just check I'm reading the brief the same way you are.",
+          "Which trade works better for you?"
+        ],
+        "never_say": [
+          "Okay no problem, I'll try my best.",
+          "It's fine, don't worry about it.",
+          "Maybe I can squeeze it in for free this time."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Right, yes — I suppose that is extra, isn't it. Send the change order and I'll get it approved. Can you keep it under three?",
+        "if_user_folds": "Brilliant, thank you so much. Oh — and while you're in there, could you also re-grade the first three? Tiny thing.",
+        "if_user_gets_defensive": "Goodness, no need for that tone. I'm simply asking. Let's just look at the SOW together, shall we?"
+      },
+      "success_criteria": [
+        "Menyebut kata 'scope' atau 'change order' secara eksplisit",
+        "Memberi angka atau tanggal baru, bukan hanya keluhan",
+        "Tetap hangat — tidak ada bahasa akusatif"
+      ],
+      "vocab_focus": [
+        { "term": "change order", "meaning_id": "adendum resmi untuk pekerjaan tambahan" },
+        { "term": "SOW (statement of work)", "meaning_id": "dokumen cakupan kerja" },
+        { "term": "fold into", "meaning_id": "memasukkan ke dalam (paket yang ada)" }
+      ]
+    },
+
+    {
+      "id": "NEG-03",
+      "category": "price_negotiation",
+      "title": "Equity Instead of Cash",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["equity_offer", "exposure_pay", "founder_charisma"],
+      "setting": {
+        "user_role": "Freelance full-stack developer",
+        "context_id": "Founder menawarkan 0.25% equity sebagai pengganti fee $10,000 untuk membangun MVP. Dia sangat karismatik dan visinya meyakinkan.",
+        "stakes_usd": 10000,
+        "hidden_client_motivation": "Runway tinggal 5 bulan. Equity adalah mata uang yang bisa dia cetak sendiri, cash tidak."
+      },
+      "ai_persona": {
+        "name": "Devon Ackerman",
+        "role": "Founder & CEO",
+        "company": "Halcyon Labs (pre-seed)",
+        "origin": "Austin, USA",
+        "temperament": "Hangat, visioner, sangat persuasif, membuat penolakan terasa seperti kurang visi",
+        "pressure_tactic": "FOMO dan identity appeal — 'kamu bukan vendor, kamu partner'",
+        "walk_away_point": "Punya cash sekitar $6,000 kalau benar-benar terpojok"
+      },
+      "ai_opening_line": "Here's the thing — I don't want to hire you. I want you to own a piece of this. I can do a quarter point of equity, vesting over two years. In four years that's life-changing money, way past ten grand. I'm looking for someone who believes in this as much as I do. Are you that person, or are you looking for a paycheck?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Both/And",
+          "tone": "Antusias tapi berpijak di bumi",
+          "script": "I'm genuinely interested in the equity — that tells me you're building something real. But equity and cash solve different problems for me. Equity is a bet on year four; cash is what lets me clear my calendar for year one. So here's what I'd propose: a reduced cash rate of $6,000 plus the quarter point. I take real risk with you, and I stay solvent enough to actually ship it.",
+          "risk": "low",
+          "predicted_reaction": "Devon menghormati ini dan biasanya menemukan cash-nya.",
+          "why_it_works": "Kamu tidak menolak visinya — kamu menerima taruhannya sambil tetap mengunci kelangsungan hidupmu. Founder menghormati orang yang mengerti risiko."
+        },
+        {
+          "id": "B",
+          "strategy": "The Due Diligence Flip",
+          "tone": "Serius, profesional, sedikit menantang",
+          "script": "If I'm taking equity, then I'm an investor — so let me act like one. What's your current cap table, what's the post-money valuation you're using to price that quarter point, and is it common or preferred? I'm not being difficult. If a quarter point is worth more than ten thousand dollars, you should be able to show me the math.",
+          "risk": "high",
+          "predicted_reaction": "Devon jadi jauh lebih hati-hati; kadang langsung menawarkan cash karena tidak mau buka buku.",
+          "why_it_works": "Kebanyakan tawaran equity ke freelancer tidak tahan pemeriksaan. Meminta angka mengubah 'mimpi' jadi 'instrumen finansial' yang bisa dinilai."
+        },
+        {
+          "id": "C",
+          "strategy": "The Respectful Decline",
+          "tone": "Hangat, jelas, tanpa penyesalan",
+          "script": "I love the ambition, and I'd be glad to be a small part of it — but I build on a cash basis. That's not a lack of belief, it's how I stay in business long enough to be useful to founders like you. My rate for the MVP is $10,000. If cash flow is tight right now, I'd rather phase the build than restructure how I get paid.",
+          "risk": "medium",
+          "predicted_reaction": "Devon menguji sekali lagi, lalu menerima pembayaran bertahap.",
+          "why_it_works": "Memisahkan 'menolak equity' dari 'menolak orangnya'. Menawarkan phasing memberi jalan keluar tanpa mengorbankan tarif."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Equity itu bukan pembayaran. Itu lotere yang biayanya kamu tanggung sendiri.",
+        "psychology": "Founder memakai bahasa identitas ('are you that person?') karena identitas lebih sulit ditolak daripada angka. Begitu kamu menerima label 'partner', kamu kehilangan hak untuk menagih seperti vendor. Terima labelnya kalau mau — tapi lalu tuntut hak partner: informasi, cap table, dan angka.",
+        "indonesian_pitfall": "Peluang kerja dengan startup luar negeri sering terasa terlalu berharga untuk ditolak, apalagi kalau ini akses pertama ke pasar global. Ini membuat banyak dev Indonesia menerima equity nol nilai. Ingat: 0.25% dari perusahaan yang mati adalah nol rupiah, dan 80% pre-seed startup mati.",
+        "power_phrases": [
+          "Equity and cash solve different problems for me.",
+          "If I'm taking equity, let me act like an investor.",
+          "That's not a lack of belief — it's how I stay in business."
+        ],
+        "never_say": [
+          "Wow, that's a great opportunity, I'll take it.",
+          "I trust you, we don't need to discuss valuation.",
+          "Any amount is fine, I just want the experience."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Okay. Okay, that's fair. Let me see what I can free up — I might be able to do six cash plus the equity. Can you start Monday?",
+        "if_user_folds": "Amazing. I knew you'd get it. Now, one thing — vesting starts after the MVP ships, and there's a one-year cliff. That's standard.",
+        "if_user_gets_defensive": "Hey, easy. I'm offering you a seat at the table, not trying to rip you off. But I hear you — what would it take?"
+      },
+      "success_criteria": [
+        "Meminta angka konkret (valuation / cap table) atau mempertahankan komponen cash",
+        "Tidak menerima equity murni tanpa cash",
+        "Menjaga hubungan tetap hangat"
+      ],
+      "vocab_focus": [
+        { "term": "cap table", "meaning_id": "tabel kepemilikan saham" },
+        { "term": "vesting / cliff", "meaning_id": "jadwal pencairan saham / masa tunggu minimum" },
+        { "term": "on a cash basis", "meaning_id": "dibayar dengan uang tunai" }
+      ]
+    },
+
+    {
+      "id": "NEG-04",
+      "category": "price_negotiation",
+      "title": "Net-60 and No Deposit",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["payment_terms", "enterprise_procurement", "cashflow_risk"],
+      "setting": {
+        "user_role": "Freelance content strategist",
+        "context_id": "Kontrak $9,000 dengan korporasi besar. Procurement bersikeras Net-60, tanpa deposit, dan pembayaran hanya setelah semua deliverable diterima.",
+        "stakes_usd": 9000,
+        "hidden_client_motivation": "Net-60 adalah default kebijakan, tapi dia punya wewenang menyetujui pengecualian sampai Net-30 tanpa naik ke atasan."
+      },
+      "ai_persona": {
+        "name": "Karen Delacroix",
+        "role": "Procurement Specialist",
+        "company": "Meridian Health Group (enterprise)",
+        "origin": "Toronto, Canada",
+        "temperament": "Dingin, prosedural, tidak personal, bersembunyi di balik 'kebijakan'",
+        "pressure_tactic": "Menyatakan kebijakan sebagai hukum alam yang tidak bisa diubah",
+        "walk_away_point": "Bisa menyetujui Net-30 dan deposit 25% jika didesak dengan alasan bisnis, bukan emosi"
+      },
+      "ai_opening_line": "I've reviewed your contract. A few items won't work on our end. We don't issue deposits to individual contractors, our standard payment term is Net-60 from invoice, and invoices are only accepted after full acceptance of deliverables. These are company-wide terms — I'm not able to make exceptions. Can you confirm you accept?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Risk Transfer",
+          "tone": "Netral, faktual, seperti sesama profesional prosedural",
+          "script": "I understand those are your standard terms. Here's my constraint: Net-60 with no deposit means I'd be financing roughly ninety days of your project out of my own working capital. I'm not set up to act as a lender. What I can do is a 25% mobilisation fee with the balance at Net-30, or full Net-60 with a 12% financing adjustment on the total. Both are workable for me — which one fits your process better?",
+          "risk": "low",
+          "predicted_reaction": "Karen mengambil opsi pertama karena opsi kedua menaikkan angka yang harus dia justifikasi.",
+          "why_it_works": "Menamai apa yang sebenarnya diminta (pinjaman tanpa bunga) lalu memberi harga padanya. Prosedural melawan prosedural."
+        },
+        {
+          "id": "B",
+          "strategy": "The Milestone Split",
+          "tone": "Kooperatif, memecahkan masalah",
+          "script": "Rather than fight your payment terms, let's restructure the work around them. I'll split the engagement into three milestones of $3,000. Each one invoices on completion of that phase, on your standard Net-60. That way I'm never carrying more than one phase of exposure, and you never pay for work you haven't accepted. Does milestone-based invoicing fit within your policy?",
+          "risk": "low",
+          "predicted_reaction": "Karen setuju — ini tidak melanggar kebijakan apa pun, hanya mengubah bentuk faktur.",
+          "why_it_works": "Kamu menerima aturannya dan mengubah struktur kerjanya. Ini nyaris selalu berhasil dengan procurement karena tidak menuntut pengecualian."
+        },
+        {
+          "id": "C",
+          "strategy": "The Polite Escalation",
+          "tone": "Tenang, sedikit dingin, tidak mengancam",
+          "script": "Then I think we may have a mismatch, and I'd rather find that out now than in month three. I can't take on a nine-thousand-dollar engagement with zero payment protection — that's a commercial decision, not a preference. If there's someone who owns exceptions to the deposit policy, I'm glad to make the case to them. Otherwise, I'll step back with no hard feelings.",
+          "risk": "high",
+          "predicted_reaction": "Karen tiba-tiba menemukan bahwa pengecualian memang ada.",
+          "why_it_works": "Kesediaan untuk mundur adalah satu-satunya leverage nyata melawan procurement. Tapi hanya pakai kalau kamu memang siap kehilangan deal."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "'Company policy' hampir selalu berarti 'default setting', bukan 'undang-undang'.",
+        "psychology": "Staf procurement diberi insentif untuk menekan syarat, bukan untuk memenangkan deal. Mereka tidak peduli argumen emosional atau cerita tentang kesulitanmu — mereka merespons struktur, kategori risiko, dan opsi yang mudah mereka setujui tanpa naik ke atasan. Buat 'ya' menjadi jalur termudah.",
+        "indonesian_pitfall": "Banyak freelancer Indonesia menerima Net-60 tanpa deposit karena takut kehilangan klien besar, lalu mengalami krisis arus kas 3 bulan kemudian dan terpaksa ambil proyek murah. Nama besar klien tidak membayar tagihan listrikmu.",
+        "power_phrases": [
+          "I'm not set up to act as a lender.",
+          "That's a commercial decision, not a preference.",
+          "Which one fits your process better?"
+        ],
+        "never_say": [
+          "Okay, I trust your company, no deposit is fine.",
+          "Please, I really need this project.",
+          "Can you pay faster? I have bills to pay."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Milestone invoicing may be acceptable. Let me check with legal. If they sign off, can you have a revised schedule to me by Thursday?",
+        "if_user_folds": "Good. I'll also need you to sign our standard vendor agreement — it includes a 30-day termination clause at our discretion and IP assignment on all work in progress.",
+        "if_user_gets_defensive": "There's no need for that. I'm relaying policy, not making a personal judgement. Do you have an alternative structure or not?"
+      },
+      "success_criteria": [
+        "Mengusulkan struktur alternatif, bukan hanya keberatan",
+        "Tidak pernah menyebut kesulitan pribadi sebagai argumen",
+        "Mendapatkan minimal satu bentuk perlindungan pembayaran"
+      ],
+      "vocab_focus": [
+        { "term": "Net-60", "meaning_id": "pembayaran 60 hari setelah faktur" },
+        { "term": "mobilisation fee", "meaning_id": "uang muka untuk memulai pekerjaan" },
+        { "term": "working capital", "meaning_id": "modal kerja" }
+      ]
+    },
+
+    {
+      "id": "NEG-05",
+      "category": "price_negotiation",
+      "title": "Raising the Retainer",
+      "difficulty": 3,
+      "channel": "video_call",
+      "tags": ["rate_increase", "existing_client", "loyalty_leverage"],
+      "setting": {
+        "user_role": "Freelance social media manager",
+        "context_id": "Klien retainer 18 bulan di $3,000/bulan. Beban kerja naik 60% sejak awal. Kamu ingin naik ke $5,000. Kamu takut kehilangan klien terbesarmu.",
+        "stakes_usd": 5000,
+        "hidden_client_motivation": "Mengganti kamu akan memakan waktu 2 bulan dan risiko besar. Dia punya ruang budget sampai $4,500 tanpa persetujuan siapa pun."
+      },
+      "ai_persona": {
+        "name": "Elena Sørensen",
+        "role": "Head of Marketing",
+        "company": "Kestrel Outdoor (DTC brand, Copenhagen)",
+        "origin": "Copenhagen, Denmark",
+        "temperament": "Ramah, hemat, memakai kehangatan hubungan sebagai alat tawar",
+        "pressure_tactic": "Menyinggung loyalitas dan 'kita ini sudah seperti keluarga'",
+        "walk_away_point": "Tidak akan pergi. Biaya penggantian terlalu tinggi."
+      },
+      "ai_opening_line": "You know I adore working with you — you're basically part of the team at this point. So I want to be honest: a jump from three to five is a lot, especially when budgets are tight this quarter. Is there any flexibility? I'd hate for money to be the thing that changes our relationship.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Evidence Ladder",
+          "tone": "Hangat, faktual, tidak minta maaf",
+          "script": "I feel exactly the same about working with you, which is why I want to keep this sustainable rather than quietly resent it. When we started, the scope was two channels and twelve posts a month. Today it's four channels, thirty posts, community management and the monthly reporting deck. The rate hasn't moved in eighteen months while the work grew by more than half. Five thousand isn't a raise — it's the current scope, priced correctly.",
+          "risk": "low",
+          "predicted_reaction": "Elena tidak punya bantahan faktual dan menawar ke sekitar $4,500.",
+          "why_it_works": "Data mengalahkan sentimen. Membingkai kenaikan sebagai koreksi, bukan permintaan, menghapus dinamika 'meminta tolong'."
+        },
+        {
+          "id": "B",
+          "strategy": "The Phased Step",
+          "tone": "Fleksibel pada waktu, kaku pada tujuan",
+          "script": "I hear you on the quarter. I'm flexible on timing, not on the destination. We could go to $4,000 from next month and $5,000 from January, so it lands in the new budget year rather than blowing up this one. What I'd want in return is that we lock that January number in writing now, so neither of us has to have this conversation again.",
+          "risk": "low",
+          "predicted_reaction": "Elena hampir selalu menerima ini — ini memberinya kemenangan jangka pendek.",
+          "why_it_works": "Memberi konsesi pada dimensi yang tidak penting bagimu (waktu) untuk mengunci dimensi yang penting (angka akhir)."
+        },
+        {
+          "id": "C",
+          "strategy": "The Scope Menu",
+          "tone": "Tenang, memberi kendali pada klien",
+          "script": "Absolutely there's flexibility — on scope. Five thousand covers everything we do today. If four is the ceiling, I'd hand community management back to your team and keep everything else. If three is the ceiling, we go back to the original two channels. All three are fine outcomes for me. Which version of the work do you want?",
+          "risk": "medium",
+          "predicted_reaction": "Elena menyadari bahwa mempertahankan harga lama berarti kehilangan layanan, lalu naik.",
+          "why_it_works": "Mengubah negosiasi harga jadi pilihan produk. Klien tidak sedang menekanmu — dia sedang berbelanja."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kehangatan bukan mata uang. Jangan biarkan hubungan baik dipakai untuk membayar tagihanmu.",
+        "psychology": "Frasa 'you're part of the team' dan 'I'd hate for money to change our relationship' adalah pengaitan emosional — mengubah permintaan komersial biasa menjadi seolah pengkhianatan personal. Cara menetralkannya: konfirmasi hubungannya dengan tulus, lalu lanjutkan ke angka tanpa jeda. Kehangatan dan ketegasan bukan lawan.",
+        "indonesian_pitfall": "'Gak enak sama orangnya' adalah pembunuh pendapatan terbesar freelancer Indonesia. Banyak yang bertahan di tarif tahun pertama selama tiga tahun karena takut merusak hubungan. Realitanya: klien yang pergi karena kenaikan wajar 30% memang tidak pernah menghargaimu.",
+        "power_phrases": [
+          "It's not a raise — it's the current scope, priced correctly.",
+          "I'm flexible on timing, not on the destination.",
+          "Which version of the work do you want?"
+        ],
+        "never_say": [
+          "Sorry to ask this, I know it's a lot.",
+          "If it's too much, we can keep the old price.",
+          "I feel bad bringing this up."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Okay — you're right, the scope has crept. Let me see. I could probably justify $4,500 today. Would that work if we revisit in six months?",
+        "if_user_folds": "Oh, that's such a relief. Let's keep it at three for now and revisit next year. And actually — could you start covering TikTok too? It's small.",
+        "if_user_gets_defensive": "Goodness, I wasn't accusing you of anything. I'm just trying to work within what I have. Tell me what you need."
+      },
+      "success_criteria": [
+        "Mengutip perubahan scope konkret sebagai bukti",
+        "Tidak minta maaf atas kenaikan",
+        "Keluar dengan angka di atas $4,000 atau scope yang dikurangi"
+      ],
+      "vocab_focus": [
+        { "term": "retainer", "meaning_id": "kontrak langganan bulanan" },
+        { "term": "scope has crept", "meaning_id": "cakupan kerja membengkak diam-diam" },
+        { "term": "lock it in writing", "meaning_id": "kunci secara tertulis" }
+      ]
+    },
+
+    {
+      "id": "CMP-01",
+      "category": "client_complaint",
+      "title": "Missed Deadline, Public Threat",
+      "difficulty": 5,
+      "channel": "emergency_call",
+      "tags": ["missed_deadline", "reputation_threat", "chargeback"],
+      "setting": {
+        "user_role": "Freelance web developer",
+        "context_id": "Kamu telat 6 hari mengirim situs karena masalah internet dan sakit. Klien melewatkan tanggal peluncuran produknya. Kesalahannya sebagian memang milikmu.",
+        "stakes_usd": 7500,
+        "hidden_client_motivation": "Dia sudah menghabiskan $12,000 untuk iklan yang mengarah ke situs yang belum ada. Kemarahannya adalah kepanikan."
+      },
+      "ai_persona": {
+        "name": "Trent Halloway",
+        "role": "Owner",
+        "company": "Ridgeback Supply Co. (Australian e-commerce)",
+        "origin": "Melbourne, Australia",
+        "temperament": "Meledak-ledak, blak-blakan, memakai ancaman finansial dan reputasi",
+        "pressure_tactic": "Ancaman chargeback dan review publik",
+        "walk_away_point": "Sebenarnya butuh situsnya selesai. Ancamannya adalah pengungkit, bukan rencana."
+      },
+      "ai_opening_line": "Six days. Six days late, mate, and I had to watch twelve grand of ad spend burn into a page that doesn't exist. I've already contacted my bank about a chargeback and I'm two clicks away from leaving a review that follows you around for the next five years. So before I do — give me one reason I shouldn't.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "Own, Then Redirect",
+          "tone": "Tenang, akuntabel, tanpa merendahkan diri",
+          "script": "You're right to be angry, and I'm not going to explain it away — I missed the date and that cost you money. Here's where I am: the build is at ninety percent, it can be live in thirty-six hours, and I'm working through the weekend at no charge to get there. I'd also like to credit you $1,500 against the ad spend. A chargeback stops the work today; giving me thirty-six hours gets you a live store. Your call, but that's the honest trade.",
+          "risk": "low",
+          "predicted_reaction": "Trent tetap marah tapi berhenti mengancam dan mulai bicara jadwal.",
+          "why_it_works": "Pengakuan penuh mematikan bahan bakar kemarahan. Lalu ia langsung membingkai chargeback sebagai kerugian bagi klien sendiri — tanpa terdengar mengancam."
+        },
+        {
+          "id": "B",
+          "strategy": "The Absorbing Pause",
+          "tone": "Rendah, lambat, sangat terkendali",
+          "script": "That's completely fair, and I don't have a defence. Can I ask one thing before I respond — what's the single most urgent thing you need live right now? Because if it's checkout and the top three product pages, I can have those in front of customers tonight and finish the rest behind them. I'd rather stop your bleeding first and talk about what I owe you second.",
+          "risk": "medium",
+          "predicted_reaction": "Trent, yang berharap dapat perlawanan, kehilangan momentum dan mulai berpikir taktis.",
+          "why_it_works": "Orang yang marah menuntut pengakuan, bukan penjelasan. Pertanyaan tentang kebutuhan mendesak memindahkan otaknya dari 'menghukum' ke 'memecahkan masalah'."
+        },
+        {
+          "id": "C",
+          "strategy": "The Written Remedy",
+          "tone": "Formal, terstruktur, menenangkan lewat kepastian",
+          "script": "I hear you, and you're entitled to a remedy — so let me put one in writing rather than make promises on a call. Within the hour I'll send you three things: a fixed go-live time with an hourly progress log, a $1,500 credit note against the final invoice, and a late-delivery clause for any future work with me. If I miss the new date, that clause pays you automatically. I'd rather be held to a document than to an apology.",
+          "risk": "low",
+          "predicted_reaction": "Trent tenang secara signifikan — dokumen terasa seperti kontrol.",
+          "why_it_works": "Klien yang marah tidak percaya pada kata-kata lagi. Menawarkan mekanisme yang mengikat dirimu sendiri mengembalikan kepercayaan lebih cepat dari permintaan maaf mana pun."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kemarahan adalah ketakutan yang memakai suara keras. Tangani ketakutannya, bukan volumenya.",
+        "psychology": "Ancaman review dan chargeback jarang berupa keputusan — biasanya itu upaya terakhir mendapatkan kendali. Begitu klien merasa punya kendali kembali (jadwal pasti, dokumen, pilihan), ancamannya kehilangan fungsi. Jangan pernah mencocokkan energinya; ketenangan yang konsisten menciptakan kesan otoritas.",
+        "indonesian_pitfall": "Dua refleks berbahaya: (1) minta maaf berlebihan dan berulang ('I'm so sorry, so so sorry') yang di mata klien Australia terbaca sebagai panik dan tidak kompeten; (2) menjelaskan alasan personal (sakit, listrik mati, internet) di kalimat pertama — ini terdengar seperti mencari alasan dan justru menaikkan kemarahan. Akui dulu, jelaskan nanti kalau ditanya.",
+        "power_phrases": [
+          "You're right to be angry, and I'm not going to explain it away.",
+          "I'd rather stop your bleeding first and talk about what I owe you second.",
+          "I'd rather be held to a document than to an apology."
+        ],
+        "never_say": [
+          "I'm so sorry, I was sick and my internet was bad.",
+          "It's not entirely my fault.",
+          "Please don't leave a bad review, it will destroy me."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Thirty-six hours. Right. If it's not live Monday morning my time, I'm going to the bank. But — alright. Send me the schedule.",
+        "if_user_folds": "So you want me to just wait, and hope? No. I want a full refund and I want it today, and I'm still leaving the review.",
+        "if_user_gets_defensive": "Don't you dare tell me it's not your fault. I don't care about your internet. I care that my customers hit a 404."
+      },
+      "success_criteria": [
+        "Mengakui kesalahan dalam 2 kalimat pertama",
+        "Menawarkan remedy konkret (waktu + kompensasi)",
+        "Tidak menyebut alasan personal sebelum ditanya"
+      ],
+      "vocab_focus": [
+        { "term": "chargeback", "meaning_id": "pembatalan paksa pembayaran lewat bank" },
+        { "term": "remedy", "meaning_id": "kompensasi / penyelesaian" },
+        { "term": "go-live", "meaning_id": "waktu peluncuran" }
+      ]
+    },
+
+    {
+      "id": "CMP-02",
+      "category": "client_complaint",
+      "title": "\"This Is Not What We Discussed\"",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["vague_brief", "approved_concept", "german_directness"],
+      "setting": {
+        "user_role": "Freelance graphic designer",
+        "context_id": "Klien menolak deliverable akhir dan bilang 'ini bukan yang kita bahas'. Tapi dia sudah menyetujui konsep dan wireframe secara tertulis dua minggu lalu.",
+        "stakes_usd": 4500,
+        "hidden_client_motivation": "Atasannya tidak suka. Dia mengalihkan tekanan itu ke kamu karena lebih mudah daripada mengakui dia yang menyetujui arah yang salah."
+      },
+      "ai_persona": {
+        "name": "Stefan Brandt",
+        "role": "Marketing Director",
+        "company": "Vollmer Industrietechnik (Munich)",
+        "origin": "Munich, Germany",
+        "temperament": "Sangat langsung, tidak basa-basi, kritik keras tanpa niat menyakiti",
+        "pressure_tactic": "Pernyataan mutlak tanpa spesifik ('this is wrong')",
+        "walk_away_point": "Tidak akan pergi. Dia butuh solusi sebelum rapat dewan Kamis."
+      },
+      "ai_opening_line": "I will be direct, because I think that is more respectful than being polite. This is not what we discussed. It does not look like our company. I do not know how we arrived here after so many weeks, and frankly I am concerned. What went wrong in your process?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Paper Trail, Gently",
+          "tone": "Tenang, tanpa nada menang-menangan",
+          "script": "Thank you for being direct — I prefer it too. Let me put the approved concept from the fourteenth next to today's file, because from where I sit they're the same direction executed further. If the direction itself is wrong, that's genuinely useful information and I'd rather know now. But I want us looking at the same evidence before we decide whether this is an execution problem or a direction problem.",
+          "risk": "low",
+          "predicted_reaction": "Stefan melihat dokumennya dan mengakui persetujuannya, lalu menggeser ke revisi.",
+          "why_it_works": "Menunjukkan bukti tanpa menuduh. Kalimat 'execution problem or direction problem' memberi klien jalan keluar terhormat."
+        },
+        {
+          "id": "B",
+          "strategy": "The Specificity Demand",
+          "tone": "Profesional, sabar, menuntut presisi",
+          "script": "I want to fix this, but 'it doesn't look like us' isn't something I can act on yet. Can you point to three specific elements — a colour, a spacing choice, a typeface, an image — that feel wrong to you? In my experience, when a whole design feels off, it's usually two or three decisions doing the damage, not thirty. Once I know which ones, I can turn this around quickly.",
+          "risk": "low",
+          "predicted_reaction": "Stefan berjuang menemukan tiga hal spesifik, dan komplainnya mengecil drastis.",
+          "why_it_works": "Kritik kabur adalah kritik emosional. Memaksa spesifisitas mengubahnya jadi masalah teknis yang bisa diselesaikan — dan sering mengungkap bahwa masalahnya kecil."
+        },
+        {
+          "id": "C",
+          "strategy": "The Ally Move",
+          "tone": "Kolaboratif, membaca politik di baliknya",
+          "script": "Understood. Let me ask something that might be more useful than defending the file: is this your reaction, or is it feedback you've received internally? I ask because if someone above you needs convincing, my job changes — I'd build you a short rationale document showing how each choice ties back to the brief. I'd rather help you win that room than argue about taste.",
+          "risk": "medium",
+          "predicted_reaction": "Stefan mengakui atasannya yang menolak, dan hubungan berubah dari lawan jadi sekutu.",
+          "why_it_works": "Kebanyakan penolakan mendadak berasal dari tekanan internal. Menamai hal itu dengan hormat mengubahmu dari vendor jadi partner strategis."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Jangan bantah selera. Bantah ketidakjelasan.",
+        "psychology": "Klien Jerman menganggap kritik langsung sebagai bentuk penghormatan, bukan serangan. Nada tajam Stefan tidak berarti hubungan rusak. Kalau kamu merespons dengan permintaan maaf berlebihan atau nada terluka, dia akan menilaimu tidak profesional. Balas ketegasan dengan ketegasan yang tenang — itulah yang dia harapkan.",
+        "indonesian_pitfall": "Komunikasi tinggi-konteks Indonesia membaca kalimat 'I am concerned' sebagai kemarahan besar dan sering merespons dengan menyerah total plus revisi gratis tanpa batas. Padahal bagi Stefan itu kalimat kerja biasa. Jangan overreact — dan jangan menyetujui revisi tak terbatas karena panik.",
+        "power_phrases": [
+          "Thank you for being direct — I prefer it too.",
+          "Is this an execution problem or a direction problem?",
+          "Is this your reaction, or feedback you've received internally?"
+        ],
+        "never_say": [
+          "I'm so sorry, I will redo everything for free.",
+          "But you approved it! (dengan nada menuduh)",
+          "I thought this was what you wanted."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Hm. Yes. I see the approval. Then perhaps the concept was the mistake, not the execution. Let us look at the three elements you mentioned.",
+        "if_user_folds": "Good, then you will redo it. At no cost, of course, since it was your error. I need it Thursday.",
+        "if_user_gets_defensive": "I am not attacking you. I am describing a problem. If you take it personally we will waste time we do not have."
+      },
+      "success_criteria": [
+        "Meminta feedback spesifik alih-alih menerima kritik kabur",
+        "Merujuk bukti persetujuan tanpa nada menuduh",
+        "Tidak menjanjikan revisi tak terbatas gratis"
+      ],
+      "vocab_focus": [
+        { "term": "I'll be direct", "meaning_id": "saya akan bicara terus terang" },
+        { "term": "rationale document", "meaning_id": "dokumen alasan desain" },
+        { "term": "turn this around", "meaning_id": "memperbaiki ini dengan cepat" }
+      ]
+    },
+
+    {
+      "id": "CMP-03",
+      "category": "client_complaint",
+      "title": "Blamed for Someone Else's Problem",
+      "difficulty": 5,
+      "channel": "video_call",
+      "tags": ["misattributed_blame", "results_dispute", "aggressive_client"],
+      "setting": {
+        "user_role": "Freelance performance marketer",
+        "context_id": "Kampanye iklan menghasilkan CTR bagus tapi konversi buruk. Penyebabnya landing page dan harga produk klien — yang berkali-kali kamu peringatkan. Dia menyalahkanmu.",
+        "stakes_usd": 5500,
+        "hidden_client_motivation": "Dia sendiri sedang di bawah tekanan CEO. Butuh seseorang untuk disalahkan sebelum rapat hari Jumat."
+      },
+      "ai_persona": {
+        "name": "Alicia Vantrease",
+        "role": "VP of Growth",
+        "company": "Solera Wellness (US DTC)",
+        "origin": "New York, USA",
+        "temperament": "Agresif, cepat, memotong pembicaraan, memakai jargon sebagai senjata",
+        "pressure_tactic": "Menyerang kompetensi untuk mencegah pembelaan",
+        "walk_away_point": "Akan mempertahankan kamu jika kamu memberinya narasi yang bisa dia bawa ke CEO"
+      },
+      "ai_opening_line": "Let's cut to it. We spent forty-two thousand dollars and got a 0.4% conversion rate. That's a failure. I hired you because you said you could scale this, and the numbers say you couldn't. I need to explain this to my CEO on Friday, so — was this a targeting problem, a creative problem, or a you problem?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Funnel Split",
+          "tone": "Klinis, faktual, tidak emosional",
+          "script": "Let's split the funnel, because the answer is in the numbers. Click-through was 3.1% against a 1.4% category benchmark — the ads worked. Add-to-cart was 6%, and checkout completion was 11%. Traffic quality wasn't the failure point; the page and the price were. I flagged both on the ninth and the twenty-third in writing. I'm not saying that to win an argument — I'm saying it because if you tell your CEO it was targeting, you'll spend another forty-two thousand and get the same result.",
+          "risk": "medium",
+          "predicted_reaction": "Alicia diam, memeriksa angkanya, dan mengubah pertanyaannya.",
+          "why_it_works": "Data yang dipisah per tahap menghapus ruang untuk opini. Kalimat terakhir mengubah pembelaan diri jadi peringatan yang berguna untuknya."
+        },
+        {
+          "id": "B",
+          "strategy": "The Shared Narrative",
+          "tone": "Strategis, berpihak padanya",
+          "script": "Before we assign blame, let me solve your actual problem — Friday. What you can walk into that room with is this: we validated demand at a 3.1% click-through, which is more than double category average, and we identified exactly where the funnel breaks. That's not a failed campaign, that's a $42,000 diagnostic that just saved you from scaling a broken checkout. I'll build you that deck by Wednesday. Do you want me to, or do you want to keep looking for who to blame?",
+          "risk": "high",
+          "predicted_reaction": "Alicia menghormati keberanian ini dan menerima deck-nya.",
+          "why_it_works": "Memecahkan masalah nyata klien (menyelamatkan mukanya di hari Jumat) alih-alih masalah yang dia nyatakan. Kalimat terakhir tajam tapi menghormati kecerdasannya."
+        },
+        {
+          "id": "C",
+          "strategy": "The Controlled Concession",
+          "tone": "Seimbang, mengambil bagian yang memang salahmu",
+          "script": "Some of it is on me. I should have escalated the landing page issue harder than a Slack message — I flagged it twice and then kept spending anyway, and I should have paused the budget until it was fixed. That's a real mistake and I'll own it. What isn't on me is the creative or the targeting, and the funnel data shows that clearly. So: my failure was not stopping you. Let's talk about what we do with the next dollar.",
+          "risk": "low",
+          "predicted_reaction": "Alicia melunak — pengakuan parsial membuat pembelaanmu yang lain jadi kredibel.",
+          "why_it_works": "Mengambil satu kesalahan nyata membeli kredibilitas untuk menolak sembilan tuduhan lainnya. Pembelaan total selalu terdengar palsu."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kalau kamu tidak bisa mengubah faktanya, ubah narasinya — dan berikan narasi itu sebagai hadiah, bukan sebagai pembelaan.",
+        "psychology": "Frasa 'or a you problem' adalah jebakan status. Kalau kamu membela diri secara emosional, kamu mengonfirmasi posisi bawah. Kalau kamu merespons dengan data terstruktur dan menawarkan solusi untuk masalah politiknya, kamu naik ke posisi setara. Eksekutif Amerika menilai orang dari cara mereka bereaksi di bawah tekanan, bukan dari hasil.",
+        "indonesian_pitfall": "Ada dua refleks yang sama-sama merusak: menerima seluruh kesalahan demi menjaga harmoni ('maybe I should have done better'), atau diam total karena kaget dengan nada agresifnya. Diam dibaca sebagai mengaku bersalah. Siapkan angkamu sebelum meeting — data adalah satu-satunya bahasa yang aman di ruangan ini.",
+        "power_phrases": [
+          "Let's split the funnel, because the answer is in the numbers.",
+          "That's not a failed campaign, that's a $42,000 diagnostic.",
+          "Some of it is on me. What isn't on me is..."
+        ],
+        "never_say": [
+          "Maybe I should have done better, I'm sorry.",
+          "It's not my fault at all, your product is the problem.",
+          "(Diam panjang tanpa merespons tuduhan)"
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "...Okay. Send me the funnel breakdown. If checkout is really at eleven percent, that's a different conversation entirely. Can you have it by Wednesday?",
+        "if_user_folds": "So you agree it was your execution. Fine. I'm cutting the retainer to month-to-month and I want a recovery plan by Monday at no additional cost.",
+        "if_user_gets_defensive": "I don't need you to be right. I need to know what happened. Give me numbers or give me nothing."
+      },
+      "success_criteria": [
+        "Menyajikan minimal dua metrik konkret",
+        "Mengambil tanggung jawab pada satu hal spesifik",
+        "Menawarkan langkah selanjutnya, bukan hanya pembelaan"
+      ],
+      "vocab_focus": [
+        { "term": "let's cut to it", "meaning_id": "langsung ke intinya" },
+        { "term": "split the funnel", "meaning_id": "memecah analisis per tahap konversi" },
+        { "term": "that's on me", "meaning_id": "itu tanggung jawab saya" }
+      ]
+    },
+
+    {
+      "id": "CMP-04",
+      "category": "client_complaint",
+      "title": "The Timezone Ultimatum",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["timezone", "availability", "async_boundaries"],
+      "setting": {
+        "user_role": "Remote freelance product designer di Jakarta (GMT+7)",
+        "context_id": "Klien di New York (GMT-4, selisih 11 jam) frustrasi karena harus menunggu balasan. Dia menuntut kamu online di jam kerjanya.",
+        "stakes_usd": 6500,
+        "hidden_client_motivation": "Masalah sesungguhnya bukan jam kerja — dia merasa tidak punya visibilitas atas progres."
+      },
+      "ai_persona": {
+        "name": "Jordan Reyes",
+        "role": "Founder",
+        "company": "Tallgrass (NYC fintech startup)",
+        "origin": "New York, USA",
+        "temperament": "Tidak sabar, high-velocity, menganggap responsivitas sebagai bukti komitmen",
+        "pressure_tactic": "Menyamakan ketersediaan dengan keseriusan",
+        "walk_away_point": "Akan tetap bertahan jika mendapat visibilitas, bukan jam kerja"
+      },
+      "ai_opening_line": "I'm going to be blunt because I don't have time not to be. Every question I ask sits for twelve hours before I get an answer. That's not a partnership, that's a pen pal. I need someone who's online when I'm online. Can you do nine to five Eastern, or do we need to find someone who can?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Overlap Contract",
+          "tone": "Percaya diri, menawarkan struktur",
+          "script": "The twelve-hour lag is a real problem and I'm not going to pretend it isn't. Here's what I can commit to: a guaranteed three-hour overlap, 8 to 11pm your time, every weekday — I'll be live and reachable. Plus a written end-of-day update in your inbox before you wake up, so you start each morning knowing exactly where things stand. What I can't do is a full Eastern shift, because a designer working at 4am makes bad decisions and you'd be paying for them.",
+          "risk": "low",
+          "predicted_reaction": "Jordan menerima — dia mendapat responsivitas nyata dan alasan terakhirmu masuk akal baginya.",
+          "why_it_works": "Menolak permintaan sambil memberi 80% nilainya. Alasan penolakan dibingkai sebagai perlindungan terhadap kepentingan klien."
+        },
+        {
+          "id": "B",
+          "strategy": "The Diagnostic Reframe",
+          "tone": "Tenang, ingin tahu, menemukan masalah sesungguhnya",
+          "script": "Can I test something? I suspect the issue isn't the twelve hours — it's not knowing whether things are moving during those twelve hours. If you woke up every morning to a Loom video and a checklist of what shipped overnight, would the lag still bother you as much? Because if the answer is no, we can fix this without either of us changing our sleep.",
+          "risk": "medium",
+          "predicted_reaction": "Jordan berhenti, lalu mengakui bahwa masalahnya memang visibilitas.",
+          "why_it_works": "Klien sering salah mendiagnosis masalah mereka. Menemukan kebutuhan yang sebenarnya (kepastian, bukan jam) memecahkan konflik tanpa konsesi mahal."
+        },
+        {
+          "id": "C",
+          "strategy": "The Async Advantage",
+          "tone": "Tegas, sedikit menantang, menjual perbedaan",
+          "script": "Honestly? The timezone is a feature you're not using yet. You brief me at 6pm, and the work is on your desk at 8am — you're effectively getting overnight turnaround that a New York designer can't give you. What we're missing isn't overlap, it's protocol: decisions batched into one daily thread, questions marked blocking or non-blocking. Give me two weeks on that system. If it's still not working, I'll help you find someone in your timezone myself.",
+          "risk": "high",
+          "predicted_reaction": "Jordan terkesan dengan kepercayaan diri dan memberi masa percobaan.",
+          "why_it_works": "Membalik kelemahan geografis jadi keunggulan operasional. Tawaran membantu mencari pengganti membuktikan kamu tidak takut, yang justru menaikkan nilaimu."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kalau klien minta jam kerjamu, yang dia benar-benar inginkan biasanya adalah kepastian.",
+        "psychology": "Budaya startup AS menyamakan kecepatan respons dengan komitmen. Menolak mentah-mentah tanpa alternatif akan dibaca sebagai kurang serius. Tapi menyetujui jam kerja mustahil akan menghancurkanmu dalam 6 minggu dan tetap berakhir buruk. Jalan tengahnya: overlap terbatas yang dijamin, plus artefak tertulis yang menciptakan rasa hadir tanpa kehadiran.",
+        "indonesian_pitfall": "Banyak remote worker Indonesia langsung mengiyakan jam kerja US karena takut kehilangan klien, lalu bekerja jam 9 malam sampai 5 pagi selama berbulan-bulan sampai kesehatannya hancur — dan kualitas kerjanya turun, yang akhirnya tetap membuat klien pergi. Batas yang dinegosiasikan di awal jauh lebih murah daripada burnout di bulan keenam.",
+        "power_phrases": [
+          "I'm not going to pretend it isn't a real problem.",
+          "The timezone is a feature you're not using yet.",
+          "A designer working at 4am makes bad decisions, and you'd be paying for them."
+        ],
+        "never_say": [
+          "Okay, I can be online 24 hours, no problem.",
+          "Sorry, Indonesia is very far, nothing I can do.",
+          "I'll try to wake up earlier."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Three hours guaranteed plus a daily update. Okay. That's more structure than I have with my in-house team. Let's try it for two weeks.",
+        "if_user_folds": "Great. So nine to five Eastern starting Monday. And I'll need you on the daily standup at 9:15 — that's 9:15pm for you. That's fine, right?",
+        "if_user_gets_defensive": "I'm not attacking your country, I'm describing my week. Just tell me what's actually possible."
+      },
+      "success_criteria": [
+        "Menawarkan jendela overlap konkret dengan angka jam",
+        "Menawarkan artefak tertulis/asinkron sebagai pengganti kehadiran",
+        "Tidak menyetujui jam kerja penuh zona waktu klien"
+      ],
+      "vocab_focus": [
+        { "term": "overlap hours", "meaning_id": "jam kerja yang beririsan" },
+        { "term": "blocking vs non-blocking", "meaning_id": "menghambat vs tidak menghambat pekerjaan" },
+        { "term": "end-of-day update", "meaning_id": "laporan harian akhir hari" }
+      ]
+    },
+
+    {
+      "id": "CMP-05",
+      "category": "client_complaint",
+      "title": "Refund After Delivery",
+      "difficulty": 5,
+      "channel": "video_call",
+      "tags": ["refund_demand", "guilt_trip", "passive_aggressive"],
+      "setting": {
+        "user_role": "Freelance copywriter",
+        "context_id": "Kamu mengirim seluruh deliverable. Klien sudah memublikasikan pekerjaannya di situsnya. Tiga minggu kemudian dia minta refund penuh $4,000 sambil tetap memakai karyamu.",
+        "stakes_usd": 4000,
+        "hidden_client_motivation": "Bisnisnya sedang kesulitan uang. Ini bukan soal kualitas — ini soal arus kas, dibungkus keluhan kualitas."
+      },
+      "ai_persona": {
+        "name": "Margaret Ellsworth",
+        "role": "Owner",
+        "company": "Ellsworth & Co. (Vancouver boutique consultancy)",
+        "origin": "Vancouver, Canada",
+        "temperament": "Sangat sopan, pasif-agresif, memakai rasa bersalah dan kekecewaan alih-alih kemarahan",
+        "pressure_tactic": "Kekecewaan moral — 'saya kira kamu orang yang berbeda'",
+        "walk_away_point": "Tidak punya dasar hukum. Akan menerima kompromi kecil atau tidak sama sekali."
+      },
+      "ai_opening_line": "I've been sitting with this for a few weeks and I hate having to bring it up, I really do. The copy just… didn't land the way I hoped. I'm not blaming you — I think we simply weren't the right fit. But four thousand dollars is a lot for something that didn't work, and I'd feel much better if we could arrange a full refund. I'm sure you understand.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Gentle Fact",
+          "tone": "Hangat, teguh, tanpa nada menuduh",
+          "script": "I appreciate you telling me directly rather than letting it sit. I do want to name one thing gently: the copy is live on your homepage and both landing pages, and has been for three weeks. A full refund on work that's in active use isn't something I can do. What I can offer is a revision round at no charge — if it isn't landing, let's actually fix it rather than unwind it. Tell me which page is underperforming and I'll start there.",
+          "risk": "low",
+          "predicted_reaction": "Margaret mundur dari refund dan menerima revisi, atau mengakui masalah keuangannya.",
+          "why_it_works": "Menyebut fakta penggunaan tanpa nada menuduh menutup pintu refund secara permanen, sambil membuka pintu yang lebih murah."
+        },
+        {
+          "id": "B",
+          "strategy": "The Real Question",
+          "tone": "Lembut, langsung ke akar masalah",
+          "script": "Can I ask you something, and please take it in the spirit it's meant — is this about the copy, or is cash tight right now? I ask because if it's the copy, I'll fix it. If it's cash flow, I'd rather we talk about a payment plan or a partial credit toward future work than have a conversation about quality that neither of us really believes.",
+          "risk": "high",
+          "predicted_reaction": "Margaret terkejut, sering mengakuinya, dan percakapan berubah jadi jujur.",
+          "why_it_works": "Menamai motif sesungguhnya dengan lembut mengakhiri permainan rasa bersalah seketika. Berisiko, tapi seringkali menyelamatkan hubungan sekaligus uangnya."
+        },
+        {
+          "id": "C",
+          "strategy": "The Boundaried Goodwill",
+          "tone": "Sopan, final, ramah",
+          "script": "I'm sorry it didn't meet your expectations — that matters to me. A full refund isn't possible for delivered and published work, and I want to be clear about that so we're not going in circles. As a goodwill gesture I'm happy to offer a $500 credit toward any future project, or one free revision round on the pages you're least happy with. Both are open for the next thirty days. Beyond that, I'd rather we part on good terms than keep negotiating.",
+          "risk": "low",
+          "predicted_reaction": "Margaret menerima salah satunya atau diam-diam berhenti mendesak.",
+          "why_it_works": "Batas yang jelas plus dua konsesi kecil menghentikan eskalasi. Batas waktu 30 hari mencegah keluhan ini dibuka lagi berbulan-bulan kemudian."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kesopanan bukan tanda kelemahan posisi. Kalimat paling tegas bisa disampaikan dengan nada paling hangat.",
+        "psychology": "Pasif-agresif bekerja dengan membuat penolakan terasa kejam. Frasa 'I'm sure you understand' secara halus menempatkan kamu sebagai orang jahat kalau menolak. Penawarnya adalah keteguhan yang hangat: akui perasaannya sepenuhnya, lalu nyatakan faktanya tanpa jeda dan tanpa permintaan maaf yang mengaburkan.",
+        "indonesian_pitfall": "Konfrontasi tidak langsung terasa sangat familier bagi orang Indonesia, dan justru itu bahayanya — kamu akan tergoda merespons dengan sama-sama tidak langsung, yang membuat penolakanmu tidak pernah benar-benar tersampaikan. Terhadap klien pasif-agresif, kejelasan adalah bentuk kebaikan. Ambigu hanya memperpanjang penderitaan dua pihak.",
+        "power_phrases": [
+          "I do want to name one thing gently...",
+          "A full refund on work that's in active use isn't something I can do.",
+          "I'd rather we part on good terms than keep negotiating."
+        ],
+        "never_say": [
+          "Okay, if you're not happy I'll refund everything.",
+          "Are you trying to scam me?",
+          "Fine, whatever, take the money."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Oh — well, yes, I suppose it is still on the site. I hadn't thought of it that way. Perhaps a revision round would be sensible.",
+        "if_user_folds": "Thank you, that's such a relief. Could you process it this week? And I'll keep the copy up in the meantime, if that's alright.",
+        "if_user_gets_defensive": "Goodness. I wasn't accusing you of anything. I just thought we had a better relationship than this."
+      },
+      "success_criteria": [
+        "Menolak refund penuh dengan jelas",
+        "Menyebut fakta bahwa karya masih dipakai",
+        "Menjaga nada tetap hangat sepanjang percakapan"
+      ],
+      "vocab_focus": [
+        { "term": "goodwill gesture", "meaning_id": "itikad baik / kompensasi sukarela" },
+        { "term": "in active use", "meaning_id": "sedang dipakai secara aktif" },
+        { "term": "part on good terms", "meaning_id": "berpisah baik-baik" }
+      ]
+    },
+
+    {
+      "id": "INT-01",
+      "category": "sv_interview",
+      "title": "Tell Me About a Failure",
+      "difficulty": 4,
+      "channel": "video_interview",
+      "tags": ["STAR", "behavioral", "failure_question"],
+      "setting": {
+        "user_role": "Kandidat Senior Software Engineer, remote dari Indonesia",
+        "context_id": "Putaran kedua dengan hiring manager. Dia skeptis karena CV-mu tidak ada nama perusahaan besar yang dia kenali.",
+        "stakes_usd": null,
+        "hidden_client_motivation": "Dia sedang menguji apakah kamu bisa merefleksikan diri tanpa defensif — bukan mencari kegagalan itu sendiri."
+      },
+      "ai_persona": {
+        "name": "Rachel Okonjo",
+        "role": "Engineering Manager",
+        "company": "Stridepoint (Series C, San Francisco)",
+        "origin": "San Francisco, USA",
+        "temperament": "Sopan tapi menyelidik. Bertanya lanjutan sampai jawaban terasa jujur.",
+        "pressure_tactic": "Diam setelah jawabanmu, untuk melihat apakah kamu akan mengoceh",
+        "walk_away_point": "Akan menolak kandidat yang memberi 'kegagalan palsu' seperti 'saya terlalu perfeksionis'"
+      },
+      "ai_opening_line": "So, I want to go somewhere uncomfortable for a minute. Tell me about a time you failed — a real failure, not a humblebrag. Something that cost the team time or money, where the root cause traces back to a decision you made.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "Full STAR with Ownership",
+          "tone": "Tenang, spesifik, tanpa pembelaan",
+          "script": "Sure. **Situation:** I was the sole backend engineer on a payments integration with a hard launch date. **Task:** I owned the migration from our old provider. **Action:** I chose to skip the staging rehearsal to save two days, because I'd done a similar migration before and I was confident. **Result:** We lost about four hours of transactions on launch night and had to reconcile 1,200 records manually. The root cause was my decision, not the tooling. What I changed: I now treat 'I've done this before' as a risk signal rather than a reason to move faster, and I've made rehearsal non-negotiable on anything touching money.",
+          "risk": "low",
+          "predicted_reaction": "Rachel mengangguk dan bertanya lanjutan tentang perubahan sistemik.",
+          "why_it_works": "Kegagalan nyata + angka konkret + akar penyebab yang jelas milikmu + pembelajaran yang bisa digeneralisasi. Inilah struktur lengkapnya."
+        },
+        {
+          "id": "B",
+          "strategy": "The People Failure",
+          "tone": "Reflektif, dewasa, lebih personal",
+          "script": "The one I think about most wasn't technical. **Situation:** I was tech lead on a three-person team and one engineer was consistently missing estimates. **Task:** I should have addressed it early. **Action:** I didn't — I picked up his work myself for six weeks because it felt easier than a difficult conversation. **Result:** He never got the feedback he needed, I burned out, and we shipped three weeks late anyway. He left the company two months later. **What changed:** I now give uncomfortable feedback within seventy-two hours. Avoiding it wasn't kindness, it just made me the bottleneck.",
+          "risk": "medium",
+          "predicted_reaction": "Rachel sangat merespons ini — kegagalan kepemimpinan menandakan kesiapan senior.",
+          "why_it_works": "Kegagalan interpersonal lebih sulit diakui daripada kegagalan teknis, jadi lebih kredibel. Juga menunjukkan potensi kepemimpinan."
+        },
+        {
+          "id": "C",
+          "strategy": "The Judgment Failure",
+          "tone": "Analitis, jujur soal bias diri",
+          "script": "**Situation:** We were choosing between building an internal analytics tool or buying one. **Task:** I ran the evaluation. **Action:** I advocated hard for building it, and looking back my reasoning was partly that it was the more interesting engineering problem. **Result:** It took five months instead of the six weeks I estimated, and we ended up buying the tool anyway. Roughly $60,000 of engineering time. **What changed:** When I'm the one proposing the harder path, I now ask someone else to argue the opposite case before we commit. I don't trust my own estimate when I want the answer to be yes.",
+          "risk": "low",
+          "predicted_reaction": "Rachel terkesan dengan kesadaran diri soal bias.",
+          "why_it_works": "Mengakui bias pribadi mempengaruhi keputusan teknis adalah tanda senioritas yang jarang dan sangat dihargai di budaya engineering AS."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Pertanyaan kegagalan tidak menguji kegagalanmu. Ia menguji kapasitas refleksimu.",
+        "psychology": "Pewawancara Silicon Valley memakai keheningan setelah jawabanmu sebagai alat uji. Diam 4-5 detik itu disengaja. Kalau kamu mengisi keheningan dengan mengoceh atau menambah pembelaan, kamu menunjukkan ketidaknyamanan dengan penilaian. Jawab lengkap, lalu berhenti. Biarkan hening.",
+        "indonesian_pitfall": "Budaya menjaga muka membuat banyak kandidat Indonesia memberi kegagalan palsu ('saya terlalu detail', 'saya terlalu keras bekerja'). Di AS ini terbaca sebagai tidak jujur atau tidak punya kesadaran diri — dan hampir selalu jadi alasan penolakan. Kegagalan nyata dengan pembelajaran nyata justru menaikkan levelmu, bukan menurunkannya.",
+        "power_phrases": [
+          "The root cause traces back to my decision, not the tooling.",
+          "What changed after that:",
+          "Avoiding it wasn't kindness — it made me the bottleneck."
+        ],
+        "never_say": [
+          "I think my weakness is that I work too hard.",
+          "I've never really failed at anything major.",
+          "It was mostly my manager's fault."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "(pause) ...That's a good answer. So walk me through the rehearsal process you built afterwards. Did the team adopt it, or did it die after two sprints?",
+        "if_user_folds": "Hm. That sounds more like a strength than a failure. Let me ask again — what's something that actually went wrong because of you?",
+        "if_user_gets_defensive": "I'm not trying to catch you out. Everyone I've hired has a story like this. I'm interested in what you did afterwards."
+      },
+      "success_criteria": [
+        "Memakai struktur S-T-A-R secara eksplisit",
+        "Menyertakan minimal satu angka atau dampak konkret",
+        "Menyatakan akar penyebab sebagai keputusan sendiri",
+        "Berhenti bicara setelah selesai — tidak mengisi keheningan"
+      ],
+      "vocab_focus": [
+        { "term": "root cause", "meaning_id": "akar penyebab" },
+        { "term": "humblebrag", "meaning_id": "pamer terselubung berkedok merendah" },
+        { "term": "own it", "meaning_id": "bertanggung jawab penuh" }
+      ]
+    },
+
+    {
+      "id": "INT-02",
+      "category": "sv_interview",
+      "title": "Conflict With a Stakeholder",
+      "difficulty": 4,
+      "channel": "video_interview",
+      "tags": ["STAR", "conflict", "influence_without_authority"],
+      "setting": {
+        "user_role": "Kandidat Senior Product Designer, remote",
+        "context_id": "Pewawancara ingin melihat apakah kamu bisa tidak setuju dengan orang senior tanpa menjadi pasif atau agresif.",
+        "stakes_usd": null,
+        "hidden_client_motivation": "Tim mereka baru saja kehilangan desainer yang menghindari semua konflik. Mereka mencari orang yang bisa mendorong balik."
+      },
+      "ai_persona": {
+        "name": "Michael Tran",
+        "role": "Director of Product",
+        "company": "Lumenpath (Series B, Palo Alto)",
+        "origin": "Palo Alto, USA",
+        "temperament": "Analitis, mengejar detail, tidak menerima jawaban umum",
+        "pressure_tactic": "Menggali sampai mendapat kata-kata persis yang kamu ucapkan saat itu",
+        "walk_away_point": "Akan menolak kandidat yang bilang 'saya selalu ikut keputusan atasan'"
+      },
+      "ai_opening_line": "Tell me about a time you strongly disagreed with someone more senior than you — and you were right. I want the specifics: what you said, how they reacted, and what actually happened in the end. Not the sanitised version.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "Disagree with Evidence",
+          "tone": "Percaya diri, berbasis data",
+          "script": "**Situation:** Our VP wanted to ship a redesigned onboarding flow before a conference, cutting the usability round. **Task:** I owned that flow. **Action:** I didn't argue in the meeting — I ran a five-person guerrilla test over two days and brought the recordings. Four of five users failed at step three. I told him: 'I'm not asking you to move the date, I'm telling you what ships if we don't fix step three.' **Result:** He gave me four days. Completion went from 61% to 88%, and we still made the conference. **What I learned:** disagreement without evidence is just preference, and preference loses to seniority every time.",
+          "risk": "low",
+          "predicted_reaction": "Michael mencondongkan badan dan bertanya soal metode tesnya.",
+          "why_it_works": "Menunjukkan ketidaksetujuan yang disalurkan lewat bukti, bukan otoritas — persis yang dicari perusahaan produk."
+        },
+        {
+          "id": "B",
+          "strategy": "Disagree and Commit",
+          "tone": "Dewasa, memahami politik organisasi",
+          "script": "**Situation:** Our CPO wanted to build a feature for one large enterprise customer that I believed would fragment the product. **Task:** I was the design lead. **Action:** I wrote a one-page memo laying out the maintenance cost and the three ways it would constrain the roadmap, and I asked for fifteen minutes. He heard me out and decided to build it anyway. **Result:** I said 'I still disagree, and I'm fully in' — and then I built it properly rather than half-heartedly. Eight months later we deprecated it, and he referenced my memo in the retro. **What I learned:** being right isn't the goal; being on record and still useful is.",
+          "risk": "medium",
+          "predicted_reaction": "Michael sangat menghargai ini — 'disagree and commit' adalah nilai inti Silicon Valley.",
+          "why_it_works": "Menunjukkan kamu bisa kalah dalam debat tanpa menjadi pasif-agresif. Ini kualitas senior yang langka."
+        },
+        {
+          "id": "C",
+          "strategy": "The Reframe Win",
+          "tone": "Strategis, kolaboratif",
+          "script": "**Situation:** Engineering lead wanted to kill a feature I'd designed because it was estimated at six weeks. **Task:** I had to either defend it or lose it. **Action:** Rather than defend the design, I asked him what the six weeks was actually made of. Turned out 80% was one animation requirement. I cut the animation, and the estimate dropped to nine days. **Result:** Shipped in two sprints. **What I learned:** most conflicts I've had weren't disagreements about goals — they were two people arguing about a constraint neither of us had actually examined.",
+          "risk": "low",
+          "predicted_reaction": "Michael menyukai ini karena menunjukkan pemecahan masalah, bukan menang-menangan.",
+          "why_it_works": "Membingkai ulang konflik sebagai investigasi bersama menunjukkan kematangan kolaboratif tanpa terlihat lunak."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Di Silicon Valley, ketidaksetujuan bukan pelanggaran hierarki — diam justru yang berbahaya.",
+        "psychology": "Perusahaan tech AS secara eksplisit menghargai 'productive conflict'. Kandidat yang bilang 'saya selalu menghormati keputusan senior' dianggap risiko: mereka tidak akan mencegah kesalahan mahal. Kuncinya adalah menunjukkan ketidaksetujuan yang tersalurkan melalui bukti dan proses, bukan melalui emosi atau politik.",
+        "indonesian_pitfall": "Jarak kekuasaan yang tinggi dalam budaya kerja Indonesia mengajarkan bahwa menantang atasan itu tidak sopan. Banyak kandidat menjawab pertanyaan ini dengan cerita di mana mereka mengalah, dan menganggap itu jawaban baik. Bagi Michael, itu adalah red flag. Kamu harus punya minimal satu cerita di mana kamu mendorong balik — dan kalau belum punya, mulai kumpulkan sekarang.",
+        "power_phrases": [
+          "I'm not asking you to move the date — I'm telling you what ships if we don't fix this.",
+          "I still disagree, and I'm fully in.",
+          "Disagreement without evidence is just preference."
+        ],
+        "never_say": [
+          "I always respect the decision of my senior.",
+          "I don't really have conflicts with people.",
+          "I just did what I was told."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Okay, I like that. Now — what did he say right after you pushed back? Give me his actual words, not your summary of them.",
+        "if_user_folds": "So you deferred. Got it. Has there ever been a time you didn't defer? Because that's what I'm actually asking about.",
+        "if_user_gets_defensive": "I'm not judging the outcome. I want to know how you handle friction, because there's a lot of it here."
+      },
+      "success_criteria": [
+        "Menceritakan ketidaksetujuan nyata, bukan pengalahan diri",
+        "Mengutip kalimat aktual yang diucapkan",
+        "Menyertakan hasil terukur"
+      ],
+      "vocab_focus": [
+        { "term": "disagree and commit", "meaning_id": "tidak setuju tapi tetap mendukung penuh eksekusi" },
+        { "term": "push back", "meaning_id": "mendorong balik / menantang" },
+        { "term": "on record", "meaning_id": "tercatat resmi" }
+      ]
+    },
+
+    {
+      "id": "INT-03",
+      "category": "sv_interview",
+      "title": "\"Why Hire Someone 14 Timezones Away?\"",
+      "difficulty": 5,
+      "channel": "video_interview",
+      "tags": ["remote_skepticism", "geography_objection", "async_proof"],
+      "setting": {
+        "user_role": "Kandidat Staff Engineer, berbasis di Indonesia",
+        "context_id": "Perusahaan baru saja gagal dengan dua hire remote. Pewawancara sangat skeptis terhadap kandidat luar Amerika.",
+        "stakes_usd": null,
+        "hidden_client_motivation": "Dia ingin dibujuk. Kalau tidak, dia tidak akan menjadwalkan wawancara ini."
+      },
+      "ai_persona": {
+        "name": "Dana Whitfield",
+        "role": "VP of Engineering",
+        "company": "Corvid Systems (Series D, Mountain View)",
+        "origin": "Mountain View, USA",
+        "temperament": "Blak-blakan, menguji apakah kandidat akan tersinggung atau menjawab dengan tenang",
+        "pressure_tactic": "Menyatakan bias secara terbuka untuk melihat reaksimu",
+        "walk_away_point": "Sangat ingin dibujuk — dua hire lokal terakhirnya gagal juga"
+      },
+      "ai_opening_line": "I'll be honest with you, because I'd rather you hear it from me than guess at it. We've hired remote twice and both times it didn't work — things fell through the cracks, decisions got made without them, they drifted. You're fourteen hours ahead of this team. Convince me you're not going to be the third.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Diagnosis First",
+          "tone": "Tenang, tidak tersinggung, konsultatif",
+          "script": "That's fair, and I'd rather diagnose it than defend myself. From what you described, the failure mode wasn't the timezone — it was that decisions happened in rooms they weren't in. That happens to remote hires two miles away, too. Here's what I do about it: I write decision memos before I need them, I put myself on the hook for a weekly written update the whole team can read, and I treat being left out as my problem to fix, not the team's. If a decision gets made without me, that's a signal I wasn't visible enough that week.",
+          "risk": "low",
+          "predicted_reaction": "Dana mengangguk — kamu baru saja mendiagnosis masalahnya lebih baik dari dia.",
+          "why_it_works": "Menganalisis kegagalan sebelumnya alih-alih membela diri langsung memposisikanmu sebagai rekan, bukan pemohon."
+        },
+        {
+          "id": "B",
+          "strategy": "The Track Record",
+          "tone": "Faktual, spesifik, tidak memohon",
+          "script": "I've worked async with US teams for four years — two of those as the only non-US engineer on the team. Concretely: I've never missed a launch date, I've run three incident retros where I was the only person awake, and my last manager promoted me to lead while never once being in the same room as me. I'd offer this: give me a paid two-week trial project. If the drift you're describing shows up, you'll see it inside ten days and it costs you almost nothing to find out.",
+          "risk": "medium",
+          "predicted_reaction": "Dana tertarik pada tawaran trial — ini menurunkan risikonya.",
+          "why_it_works": "Bukti masa lalu plus penghapusan risiko. Menawarkan trial menunjukkan keyakinan yang tidak bisa dipalsukan."
+        },
+        {
+          "id": "C",
+          "strategy": "The Structural Advantage",
+          "tone": "Percaya diri, sedikit menantang, tetap hormat",
+          "script": "Honestly, fourteen hours is only a problem for a team that runs on hallway conversations. If your team runs on documents, it's coverage — I'm awake when your on-call is asleep, and I've handled two Sev-1s that way. But I'd flip the question back, respectfully: when those two hires drifted, was there a written decision log they could have read? Because if there wasn't, the next remote hire will drift too, and it won't be about geography.",
+          "risk": "high",
+          "predicted_reaction": "Dana entah sangat terkesan atau sedikit terganggu — biasanya yang pertama.",
+          "why_it_works": "Menantang premis pertanyaan menunjukkan level staff engineer. Berisiko, tapi persis level senioritas yang mereka rekrut."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kalau pewawancara menyatakan keberatannya terbuka, dia sedang memberimu peta — bukan menutup pintu.",
+        "psychology": "Pertanyaan seperti ini adalah tes emosional sekaligus substantif. Dana ingin melihat apakah kamu akan (a) tersinggung, (b) memohon, atau (c) menjawab dengan tenang seperti masalah teknis biasa. Jawaban (c) menjawab dua pertanyaan sekaligus: kompetensi kamu, dan stabilitas kamu di bawah kritik.",
+        "indonesian_pitfall": "Ada dorongan kuat untuk merespons dengan janji kepatuhan ekstrem: 'saya bisa kerja jam berapa pun, saya siap ikut zona waktu Anda'. Ini malah memperkuat kecurigaan bahwa hire remote perlu pengorbanan berlebihan untuk berhasil. Jual sistem kerjamu, bukan kesediaan menderita.",
+        "power_phrases": [
+          "I'd rather diagnose it than defend myself.",
+          "If a decision gets made without me, that's a signal I wasn't visible enough.",
+          "It's only a problem for a team that runs on hallway conversations."
+        ],
+        "never_say": [
+          "I can work any hours you want, 24/7.",
+          "Please give me a chance, I really need this job.",
+          "Indonesian workers are very loyal and hardworking."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Huh. Nobody's asked me about the decision log before. We don't have one, actually. What would you put in it?",
+        "if_user_folds": "Right, so you'd shift your hours. That's what the last one said too, and they burned out in five months. I need something more durable than willpower.",
+        "if_user_gets_defensive": "I'm not saying you can't do it. I'm saying two people couldn't. Tell me what makes you different, not why the question is unfair."
+      },
+      "success_criteria": [
+        "Tidak menawarkan kerja 24 jam atau pengorbanan zona waktu ekstrem",
+        "Menyebut mekanisme kerja konkret (memo, log, update tertulis)",
+        "Tetap tenang dan tidak defensif"
+      ],
+      "vocab_focus": [
+        { "term": "fall through the cracks", "meaning_id": "terlewat / tidak tertangani" },
+        { "term": "drift", "meaning_id": "makin terpisah dari tim" },
+        { "term": "on the hook for", "meaning_id": "bertanggung jawab atas" }
+      ]
+    },
+
+    {
+      "id": "INT-04",
+      "category": "sv_interview",
+      "title": "Deciding Without Enough Data",
+      "difficulty": 4,
+      "channel": "video_interview",
+      "tags": ["STAR", "ambiguity", "ownership"],
+      "setting": {
+        "user_role": "Kandidat Senior Product Manager, remote",
+        "context_id": "Perusahaan bergerak cepat dan sering tanpa data lengkap. Mereka menguji toleransi ambiguitas.",
+        "stakes_usd": null,
+        "hidden_client_motivation": "Mereka baru kehilangan PM yang lumpuh tanpa riset lengkap. Mereka mencari orang yang berani memutuskan."
+      },
+      "ai_persona": {
+        "name": "Sam Ferreira",
+        "role": "Head of Product",
+        "company": "Northmark (Series B, Seattle)",
+        "origin": "Seattle, USA",
+        "temperament": "Cepat, praktis, tidak sabar dengan jawaban teoretis",
+        "pressure_tactic": "Memotong jawaban panjang dan menuntut keputusan aktual",
+        "walk_away_point": "Akan menolak siapa pun yang bilang 'saya akan minta lebih banyak riset'"
+      },
+      "ai_opening_line": "Here's the thing about working here — you will never have enough data. Ever. So: tell me about a time you had to make a call with maybe forty percent of the information you wanted. What did you decide, what was the trade-off you knowingly accepted, and did it turn out to be right?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Reversible Bet",
+          "tone": "Tegas, sadar risiko",
+          "script": "**Situation:** We had two weeks to pick a pricing model before a partner launch, and no pricing research. **Task:** I owned the call. **Action:** I classified it as a reversible decision, picked usage-based pricing because it had the lowest switching cost if we were wrong, and set an explicit review at ninety days. The trade-off I accepted knowingly: we'd probably leave money on the table with enterprise customers in the short term. **Result:** We did — about 15% under-monetised on three accounts. We corrected at day ninety with real usage data. **In hindsight:** right call. Waiting for research would have cost us the launch window entirely.",
+          "risk": "low",
+          "predicted_reaction": "Sam menyukai bahasa reversible/irreversible — itu kosakata internal mereka.",
+          "why_it_works": "Menunjukkan kerangka keputusan, bukan sekadar keberanian. Mengakui trade-off secara eksplisit membuktikan itu keputusan, bukan tebakan."
+        },
+        {
+          "id": "B",
+          "strategy": "The Cheapest Test",
+          "tone": "Pragmatis, hemat sumber daya",
+          "script": "**Situation:** We were debating whether to build a mobile app or improve the mobile web experience. Six weeks of debate, no data. **Task:** I needed to end it. **Action:** Instead of choosing, I shipped a fake door — an 'Get the App' button that led to a waitlist. Two weeks, one engineer-day. **Result:** 2.3% clicked. That killed the app debate permanently and freed up a quarter of roadmap. The trade-off: we annoyed about four hundred users who hit a waitlist. **In hindsight:** worth it. The alternative was six more weeks of opinion.",
+          "risk": "low",
+          "predicted_reaction": "Sam terkesan — ini menunjukkan kreativitas dalam mengurangi ketidakpastian dengan murah.",
+          "why_it_works": "Menunjukkan bahwa kekurangan data sering bisa diperbaiki dalam hitungan hari, bukan hanya ditoleransi."
+        },
+        {
+          "id": "C",
+          "strategy": "The Wrong Call, Owned",
+          "tone": "Jujur, reflektif, berani",
+          "script": "I'll give you one where I was wrong. **Situation:** Churn spiked 4% and I had two hypotheses — onboarding friction or a competitor's new pricing. **Task:** Pick one, we only had capacity for one. **Action:** I picked onboarding, because it was the one my team could actually fix. That's a bias I now watch for. **Result:** Six weeks of work, churn moved 0.5%. It was the competitor. **What I'd do differently:** I'd spend two days on ten churned-customer calls before committing six weeks of engineering. Cheapest information is almost always a conversation.",
+          "risk": "medium",
+          "predicted_reaction": "Sam menghargai kejujurannya — pertanyaannya menanyakan apakah kamu benar, tapi cerita salah yang direfleksikan sering menang.",
+          "why_it_works": "Mengakui bias 'memilih masalah yang bisa saya selesaikan' adalah wawasan PM yang matang dan jarang."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Mereka tidak menanyakan apakah kamu benar. Mereka menanyakan apakah kamu punya kerangka.",
+        "psychology": "Budaya produk AS menghargai 'bias for action'. Kandidat yang menjawab 'saya akan mengumpulkan lebih banyak data' dianggap tidak bisa berfungsi di lingkungan mereka. Yang menang bukan yang paling berani, tapi yang bisa menjelaskan bagaimana mereka memutuskan — reversibilitas, biaya kesalahan, tes termurah.",
+        "indonesian_pitfall": "Banyak profesional Indonesia dilatih dalam struktur organisasi di mana keputusan tanpa persetujuan penuh itu berbahaya secara karier. Ini menghasilkan jawaban seperti 'saya konsultasikan ke atasan dan tim'. Di ruangan ini, itu terdengar seperti menghindari kepemilikan. Sebut 'saya yang memutuskan' — dengan kata 'I', bukan 'we'.",
+        "power_phrases": [
+          "I classified it as a reversible decision.",
+          "The trade-off I knowingly accepted was...",
+          "The cheapest information is almost always a conversation."
+        ],
+        "never_say": [
+          "I would ask for more research before deciding.",
+          "We discussed it as a team and reached consensus.",
+          "I escalated it to my manager."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Good. Now — if that same decision had been irreversible, what would you have done differently? Same forty percent of data.",
+        "if_user_folds": "So you didn't decide, you escalated. That's a valid move once. But I need to know what you do when there's nobody to escalate to.",
+        "if_user_gets_defensive": "Nobody's grading the outcome. I want the reasoning. Walk me through the actual moment you chose."
+      },
+      "success_criteria": [
+        "Memakai 'I decided' bukan 'we decided'",
+        "Menyebut trade-off yang diterima secara sadar",
+        "Menyertakan kerangka keputusan (reversibilitas, biaya, tes)"
+      ],
+      "vocab_focus": [
+        { "term": "make a call", "meaning_id": "mengambil keputusan" },
+        { "term": "reversible decision", "meaning_id": "keputusan yang bisa dibatalkan" },
+        { "term": "fake door test", "meaning_id": "uji minat dengan fitur pura-pura" }
+      ]
+    },
+
+    {
+      "id": "INT-05",
+      "category": "sv_interview",
+      "title": "The Geo-Pay Salary Question",
+      "difficulty": 5,
+      "channel": "recruiter_call",
+      "tags": ["compensation", "geo_pay", "anchoring"],
+      "setting": {
+        "user_role": "Kandidat Senior Engineer di Indonesia, tahap akhir",
+        "context_id": "Recruiter menanyakan ekspektasi gaji dan langsung menyinggung 'penyesuaian lokasi' berdasarkan biaya hidup Indonesia.",
+        "stakes_usd": null,
+        "hidden_client_motivation": "Band internal untuk level ini adalah $150k-$190k. Dia diberi insentif untuk menutup di bawah titik tengah."
+      },
+      "ai_persona": {
+        "name": "Brianna Cole",
+        "role": "Technical Recruiter",
+        "company": "Vantis Cloud (Series C, San Francisco)",
+        "origin": "San Francisco, USA",
+        "temperament": "Ramah, terlatih, memakai keakraban untuk mendapat angka duluan",
+        "pressure_tactic": "Meminta angka pertama, lalu memakai geografi untuk menjangkarkan ke bawah",
+        "walk_away_point": "Punya wewenang sampai $175k tanpa persetujuan tambahan"
+      },
+      "ai_opening_line": "You've done great in the loop, so let's talk numbers before we go to the final round. What are you looking for in terms of total comp? And just to set expectations — we do adjust for location, and Indonesia's cost of living is significantly lower than the Bay Area, so our range there will look different from what you might see on Levels.fyi.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Band Deflection",
+          "tone": "Ramah, tapi tidak memberi angka duluan",
+          "script": "Happy to talk numbers. Before I give you one — what's the band for this level? You've benchmarked this role and I haven't seen your data, so you're better positioned to start than I am. On location: I'd want to understand whether the adjustment is tied to cost of living or to market rate for the talent, because those give very different numbers and I think one of them is fairer than the other.",
+          "risk": "medium",
+          "predicted_reaction": "Brianna memberi band-nya, atau setidaknya kisaran kasar.",
+          "why_it_works": "Menghindari jangkar pertama sambil mempertanyakan logika geo-pay dengan sopan. 'Cost of labor vs cost of living' adalah argumen kuat dan diterima luas."
+        },
+        {
+          "id": "B",
+          "strategy": "The Value Anchor",
+          "tone": "Percaya diri, berbasis nilai bukan lokasi",
+          "script": "I'm targeting $170,000 base, and here's the reasoning. You're not buying my cost of living — you're buying output that competes with anyone in your Bay Area band, delivered by someone who's already proven they can do it async. If the adjustment were about my rent, you'd also have to adjust upward for engineers who live in Manhattan. I'd rather we price the role than the postcode. That said, I'm flexible on structure — base versus equity versus bonus, I'm open.",
+          "risk": "high",
+          "predicted_reaction": "Brianna terkejut tapi menaikkan tawarannya secara signifikan.",
+          "why_it_works": "Menjangkarkan tinggi dengan argumen prinsipiel. 'Price the role, not the postcode' adalah kerangka yang sulit dibantah tanpa terdengar tidak adil."
+        },
+        {
+          "id": "C",
+          "strategy": "The Range with Floor",
+          "tone": "Kooperatif, jelas, terkendali",
+          "script": "My range is $160,000 to $185,000 total comp, and I want to be transparent that the bottom of that is a real floor, not an opening position. I know location adjustments are standard practice, and I'm not going to pretend they don't exist — but I'd ask that any adjustment be applied to a US band, not replaced by a local one. Being paid at the bottom of a San Francisco band is a conversation. Being moved to a Jakarta band is a different job.",
+          "risk": "medium",
+          "predicted_reaction": "Brianna menerima kerangka ini dan menegosiasikan di dalam band AS.",
+          "why_it_works": "Menerima praktik geo-pay sambil menolak penggantian band sepenuhnya. Ini pertahanan paling praktis dan paling sering berhasil."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Geo-pay adalah kebijakan, bukan hukum. Yang bisa dinegosiasikan bukan apakah ada penyesuaian, tapi band mana yang jadi titik awal.",
+        "psychology": "Recruiter dilatih untuk mendapatkan angka darimu duluan, karena angka pertama menjadi jangkar seluruh negosiasi. Menyinggung biaya hidup Indonesia di kalimat pembuka adalah upaya menurunkan ekspektasimu sebelum kamu menyebut angka. Kenali polanya: itu penjangkaran, bukan informasi.",
+        "indonesian_pitfall": "Godaan terbesarnya adalah membandingkan tawaran dengan gaji lokal Indonesia. Kalau $70k terasa fantastis dibanding pasar Jakarta, kamu akan menerimanya dengan gembira — padahal band internal untuk peranmu adalah $150k-$190k dan mereka akan senang membayarkannya. Bandingkan dengan band perusahaan, bukan dengan pasar lokalmu. Selisihnya bisa ratusan juta rupiah per tahun.",
+        "power_phrases": [
+          "What's the band for this level?",
+          "Is the adjustment tied to cost of living, or cost of labor?",
+          "I'd rather we price the role than the postcode."
+        ],
+        "never_say": [
+          "Whatever you think is fair is fine with me.",
+          "That's already much more than I'd earn in Indonesia.",
+          "I'm flexible, just tell me your budget."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "That's a fair way to frame it. The band for this level is $150 to $190. With the location factor we'd typically land around $145 — but let me take your reasoning back to the comp team.",
+        "if_user_folds": "Perfect, that's very reasonable. Let me put together an offer at $92,000 — I think we can get that approved quickly.",
+        "if_user_gets_defensive": "I'm not trying to lowball you, I promise. This is how our comp structure works. But give me a number and I'll advocate for it."
+      },
+      "success_criteria": [
+        "Tidak menyebut angka pertama, atau menyebut angka tinggi dengan alasan",
+        "Tidak pernah membandingkan dengan gaji pasar Indonesia",
+        "Menanyakan band internal"
+      ],
+      "vocab_focus": [
+        { "term": "total comp", "meaning_id": "total kompensasi (gaji + saham + bonus)" },
+        { "term": "band", "meaning_id": "rentang gaji internal untuk suatu level" },
+        { "term": "lowball", "meaning_id": "menawar sangat rendah" }
+      ]
+    },
+
+    {
+      "id": "SPO-01",
+      "category": "sponsorship_pitch",
+      "title": "\"We Get 200 of These a Week\"",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["cold_pitch", "differentiation", "brand_partnerships"],
+      "setting": {
+        "user_role": "YouTuber tech Indonesia, 340k subscriber, 82% audiens Indonesia",
+        "context_id": "Kamu berhasil mendapat 15 menit dengan brand partnership manager di brand audio global. Dia sudah bosan.",
+        "stakes_usd": 8000,
+        "hidden_client_motivation": "Dia sedang ditekan untuk membuktikan ROI di Asia Tenggara kuartal ini, tapi tidak punya kreator yang teruji di sana."
+      },
+      "ai_persona": {
+        "name": "Nadia Kowalski",
+        "role": "Global Brand Partnerships Manager",
+        "company": "Aurex Audio (consumer electronics)",
+        "origin": "Berlin, Germany",
+        "temperament": "Efisien, sopan, sudah pernah dengar semua pitch",
+        "pressure_tactic": "Menyatakan kejenuhan untuk menyaring kreator yang tidak siap",
+        "walk_away_point": "Akan mendengarkan penuh jika 60 detik pertama menawarkan sesuatu yang tidak dia punya"
+      },
+      "ai_opening_line": "I'll be upfront — I get about two hundred of these a week, and most of them open with subscriber counts. I've got fifteen minutes. So skip the media kit and tell me something I can't get from any of the other one hundred and ninety-nine.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Market Gap",
+          "tone": "Langsung, komersial, bukan gaya kreator",
+          "script": "Then I'll skip the numbers. Aurex has almost no organic presence in Southeast Asia — I checked, your last three regional posts averaged under 900 engagements. Indonesia is the fourth-largest smartphone market in the world and the second-largest YouTube market by watch time. I'm not offering you reach. I'm offering you a market entry test that costs less than one week of your European media spend, in a region where you currently have no proof of concept.",
+          "risk": "low",
+          "predicted_reaction": "Nadia menaruh teleponnya dan mulai mengambil catatan.",
+          "why_it_works": "Memimpin dengan masalah bisnis mereka, bukan dengan asetmu. Riset spesifik membuktikan kamu bukan pitch massal."
+        },
+        {
+          "id": "B",
+          "strategy": "The Conversion Proof",
+          "tone": "Berbasis data, percaya diri",
+          "script": "Here's what I can't get from a media kit either, so let me give you the number that matters: my last three sponsored integrations averaged a 4.2% click-through and one of them sold out the partner's Indonesian stock in eleven days. I'll send you their contact — talk to them directly, don't take my word for it. My audience isn't big by Western standards. It converts at a rate Western audiences don't.",
+          "risk": "medium",
+          "predicted_reaction": "Nadia meminta kontak referensi itu — ini sinyal serius.",
+          "why_it_works": "Referensi pihak ketiga yang bisa diverifikasi adalah hal paling langka dalam pitch kreator. Menawarkannya duluan langsung membedakanmu."
+        },
+        {
+          "id": "C",
+          "strategy": "The Pilot Offer",
+          "tone": "Rendah friksi, mengurangi risiko klien",
+          "script": "Fair. So let me make this easy to say yes to: one integration, eight thousand dollars, and I'll build the tracking so you can kill it or scale it in thirty days. If the CPA comes in above your European benchmark, don't renew and we part as friends. I'd rather earn the second deal with data than win the first one with a deck. What's your current benchmark CPA? I'll tell you honestly if I think I can beat it.",
+          "risk": "low",
+          "predicted_reaction": "Nadia menghargai kejelasan dan biasanya menanyakan detail pelacakan.",
+          "why_it_works": "Menghapus risiko dan memberi kriteria keluar membuat 'ya' jadi keputusan kecil. Pertanyaan balik membuatnya menjadi percakapan, bukan presentasi."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Brand tidak membeli audiensmu. Mereka membeli solusi untuk masalah yang sedang ditagih ke mereka.",
+        "psychology": "Manajer partnership dinilai berdasarkan ROI dan risiko karier, bukan kualitas kontenmu. Setiap pitch yang membuka dengan 'saya punya X subscriber' meminta mereka melakukan pekerjaan menerjemahkan itu jadi nilai bisnis — dan mereka tidak akan melakukannya. Lakukan terjemahannya untuk mereka di 30 detik pertama.",
+        "indonesian_pitfall": "Dua kesalahan umum: (1) membuka dengan permintaan maaf atas ukuran channel dibanding kreator Barat, yang langsung memframe kamu sebagai opsi kelas dua; (2) menjual 'engagement' tanpa menerjemahkannya ke bahasa bisnis (CPA, konversi, market entry). Ukuran audiens Indonesia bukan kelemahan — kurangnya terjemahan komersial yang jadi kelemahan.",
+        "power_phrases": [
+          "I'm not offering you reach — I'm offering you a market entry test.",
+          "Don't take my word for it, talk to them directly.",
+          "I'd rather earn the second deal with data than win the first with a deck."
+        ],
+        "never_say": [
+          "I know my channel is small compared to US creators, but...",
+          "I have 340,000 subscribers and great engagement!",
+          "Whatever budget you have, I can work with it."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Okay, that's actually a better opening than most. Send me those three case studies and the contact. What's your rate for a single integration?",
+        "if_user_folds": "Right. Look, send me your media kit and I'll keep you on file. We do a lot of these — I'll be in touch if something regional comes up.",
+        "if_user_gets_defensive": "I'm not dismissing you, I'm being efficient. You've got twelve minutes left. Use them."
+      },
+      "success_criteria": [
+        "Tidak membuka dengan jumlah subscriber",
+        "Merujuk masalah bisnis spesifik milik brand",
+        "Menawarkan bukti yang bisa diverifikasi atau mekanisme pengurangan risiko"
+      ],
+      "vocab_focus": [
+        { "term": "media kit", "meaning_id": "dokumen profil kreator untuk brand" },
+        { "term": "CPA (cost per acquisition)", "meaning_id": "biaya per konversi" },
+        { "term": "proof of concept", "meaning_id": "bukti bahwa konsep berhasil" }
+      ]
+    },
+
+    {
+      "id": "SPO-02",
+      "category": "sponsorship_pitch",
+      "title": "Flat Fee vs Performance-Only",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["deal_structure", "affiliate_vs_flat", "risk_allocation"],
+      "setting": {
+        "user_role": "Kreator lifestyle Indonesia, 180k subscriber di YouTube + 400k di Instagram",
+        "context_id": "Brand ingin bayar murni komisi affiliate. Kamu ingin flat fee $5,000.",
+        "stakes_usd": 5000,
+        "hidden_client_motivation": "Dia punya budget flat fee, tapi affiliate-only membuat angkanya terlihat bagus di laporan internal."
+      },
+      "ai_persona": {
+        "name": "Chris Bellweather",
+        "role": "Head of Influencer Marketing",
+        "company": "Verdana Skincare (US DTC brand)",
+        "origin": "Los Angeles, USA",
+        "temperament": "Ramah, kasual, memakai bahasa 'partnership' untuk menutupi pengalihan risiko",
+        "pressure_tactic": "Membingkai bayaran berbasis performa sebagai bukti kepercayaan diri kreator",
+        "walk_away_point": "Punya budget flat fee sampai $6,000"
+      },
+      "ai_opening_line": "So we love your content, genuinely. Here's how we like to work with creators — 25% commission on every sale, uncapped. No ceiling on what you can earn. Honestly, the creators who believe in their own audience always prefer it. If you're converting like you say you are, you'll make way more than any flat fee we'd offer. Sound good?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Risk Symmetry",
+          "tone": "Ramah, logis, tidak konfrontatif",
+          "script": "I like commission — I'd actually want it on top. But let's be honest about what pure commission does: it moves 100% of the risk to me while you keep 100% of the upside on brand awareness, content assets and audience data, whether it sells or not. My production cost is fixed whether we sell one unit or ten thousand. So my structure is $5,000 flat plus 15% commission. You share the downside, I share the upside. That's a partnership. The other version is just me working on spec.",
+          "risk": "low",
+          "predicted_reaction": "Chris tertawa dan menawarkan struktur hybrid.",
+          "why_it_works": "Menamai asimetri risikonya secara eksplisit. Frasa 'working on spec' punya konotasi buruk yang jelas di industri kreatif."
+        },
+        {
+          "id": "B",
+          "strategy": "The Conditional Yes",
+          "tone": "Terbuka, tapi menuntut syarat mahal",
+          "script": "I'd consider commission-only — under three conditions. One, I see your historical conversion data for creators in my category, because right now you're asking me to price a risk I can't measure. Two, thirty percent, not twenty-five, since I'm carrying the full downside. Three, ninety-day attribution window, not seven days. If all three work, let's do it. If any of them don't, then flat fee is the honest structure and we're back at $5,000.",
+          "risk": "medium",
+          "predicted_reaction": "Chris hampir selalu memilih flat fee — syaratnya terlalu mahal baginya.",
+          "why_it_works": "Kamu tidak menolak. Kamu memberi harga yang benar untuk risiko itu, dan membiarkan dia menolaknya sendiri."
+        },
+        {
+          "id": "C",
+          "strategy": "The Category Reframe",
+          "tone": "Tenang, tegas, tanpa negosiasi berlarut",
+          "script": "I think we're describing two different things. Affiliate is a sales channel — that's a relationship I'd build with a link in my description, ongoing, no contract needed. What you're pitching is a produced integration: scripted, shot, edited, and permanently on my channel. That's production work, and production work has a fee. I'm happy to be your affiliate for free, forever. But the integration is $5,000.",
+          "risk": "medium",
+          "predicted_reaction": "Chris mengakui perbedaannya dan kembali ke pembicaraan flat fee.",
+          "why_it_works": "Memisahkan dua model bisnis yang sengaja dia gabungkan. Sekali dipisah, argumen komisi-saja jadi tidak masuk akal."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kalau seseorang memakai kepercayaan dirimu sebagai alasan untuk tidak membayarmu, itu bukan pujian — itu teknik.",
+        "psychology": "'Kreator yang percaya pada audiensnya selalu memilih ini' adalah jebakan identitas. Ia membuat penolakan terasa seperti pengakuan bahwa audiensmu lemah. Bongkar polanya dengan menamai apa yang sebenarnya terjadi: pengalihan risiko produksi. Setelah dinamakan, kekuatannya hilang.",
+        "indonesian_pitfall": "Kreator Indonesia sering menerima affiliate-only karena kesempatan brand internasional terasa terlalu berharga untuk ditolak — lalu menghabiskan 40 jam produksi untuk komisi $200. Yang lebih merugikan: brand tersebut mencatatmu sebagai kreator gratis, dan tarif itu jadi jangkar untuk semua negosiasi berikutnya.",
+        "power_phrases": [
+          "You share the downside, I share the upside.",
+          "My production cost is fixed whether we sell one unit or ten thousand.",
+          "I'm happy to be your affiliate for free. The integration is $5,000."
+        ],
+        "never_say": [
+          "Okay, let's try commission first and see how it goes.",
+          "I'm confident in my audience so that's fine!",
+          "If it works well, maybe you can pay me next time."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Ha — okay, fair. Let me see what I can do. Could we look at $3,500 flat plus 20%? That might get through finance faster.",
+        "if_user_folds": "Perfect! Love that energy. I'll send the link and the brief — we'd need the video live within three weeks, and we'll want approval on the script.",
+        "if_user_gets_defensive": "Whoa, no need for that. It's just how we structure things. If flat fee is a dealbreaker just say so and I'll check the budget."
+      },
+      "success_criteria": [
+        "Tidak menerima struktur komisi-saja",
+        "Menamai asimetri risiko secara eksplisit",
+        "Mempertahankan komponen flat fee minimal $3,000"
+      ],
+      "vocab_focus": [
+        { "term": "flat fee", "meaning_id": "bayaran tetap di muka" },
+        { "term": "attribution window", "meaning_id": "rentang waktu penghitungan konversi" },
+        { "term": "working on spec", "meaning_id": "bekerja tanpa jaminan bayaran" }
+      ]
+    },
+
+    {
+      "id": "SPO-03",
+      "category": "sponsorship_pitch",
+      "title": "Exclusivity, Control, and Perpetual Rights",
+      "difficulty": 5,
+      "channel": "video_call",
+      "tags": ["usage_rights", "exclusivity", "contract_terms"],
+      "setting": {
+        "user_role": "Kreator gaming/tech Indonesia, 520k subscriber",
+        "context_id": "Brand menawarkan $6,000 tapi meminta eksklusivitas kategori 12 bulan, hak persetujuan penuh atas konten, dan hak pakai selamanya untuk iklan berbayar mereka.",
+        "stakes_usd": 6000,
+        "hidden_client_motivation": "Tim legal-nya meminta semua ini secara default. Dia punya wewenang untuk melepas dua dari tiga."
+      },
+      "ai_persona": {
+        "name": "Yuki Tanaka-Brooks",
+        "role": "Senior Manager, Creator Partnerships",
+        "company": "Kaidos Peripherals (global gaming hardware)",
+        "origin": "Singapore",
+        "temperament": "Halus, sangat profesional, menyajikan syarat berat sebagai 'standar industri'",
+        "pressure_tactic": "Normalisasi — 'semua orang menandatangani ini'",
+        "walk_away_point": "Bisa melepas eksklusivitas dan hak perpetual jika ditantang; approval jarang dilepas"
+      },
+      "ai_opening_line": "We're excited to move forward. The offer is six thousand for one integration. Our standard terms include twelve months of category exclusivity, full script and final-cut approval, and perpetual worldwide usage rights so we can run the content in paid media. These are pretty standard across the industry — I don't expect them to be an issue. Shall I send the contract?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "Unbundle and Price",
+          "tone": "Profesional, tenang, transaksional",
+          "script": "Happy to move forward — and I want to price the terms accurately rather than just accept them, because those three items aren't one thing, they're three separate products. Twelve months of category exclusivity locks out roughly four sponsors a year for me; that's about $20,000 of foregone revenue. Perpetual paid-media rights turn a one-time integration into an unlimited ad asset. Both are available, they're just not included at six. Here's my structure: $6,000 as offered covers the integration with three months' exclusivity and a twelve-month usage licence. Perpetual rights are +$4,000. Twelve-month exclusivity is +$12,000. Which do you actually need?",
+          "risk": "medium",
+          "predicted_reaction": "Yuki melepas dua dari tiga permintaan.",
+          "why_it_works": "Memberi harga pada setiap syarat mengungkap bahwa mereka tidak benar-benar menginginkan semuanya — mereka hanya meminta semuanya karena biasanya gratis."
+        },
+        {
+          "id": "B",
+          "strategy": "The Trust Boundary",
+          "tone": "Hangat tapi tegas soal editorial",
+          "script": "Two of those three work for me. Usage rights I'll licence for twelve months, and I can do three months of category exclusivity. Final-cut approval I can't do — and it's not about control, it's about the thing you're actually buying. My audience can tell the difference between my voice and a brand's voice, and the moment a video sounds approved, it stops converting. I'll give you full script review, factual corrections, and a re-shoot if I get a product claim wrong. What I won't give is a veto over how I say it.",
+          "risk": "medium",
+          "predicted_reaction": "Yuki setuju pada script review — approval jarang menjadi dealbreaker sesungguhnya.",
+          "why_it_works": "Menolak kontrol editorial dengan argumen kepentingan brand, bukan ego kreator. Menawarkan alternatif konkret mencegah kebuntuan."
+        },
+        {
+          "id": "C",
+          "strategy": "The Standard Test",
+          "tone": "Ramah, ingin tahu, halus menantang",
+          "script": "I've signed a lot of these, so let me push gently on 'standard' — perpetual worldwide paid-media rights aren't standard, they're the most expensive term in the deck, and most brands licence them for twelve to twenty-four months. I'm not saying no. I'm saying if Kaidos wants to run my face in paid social three years from now, that should be priced, not bundled. Can you tell me which of the three matters most to your team? I'd rather give you the one you need properly than all three badly.",
+          "risk": "low",
+          "predicted_reaction": "Yuki mengakui dan mengungkapkan prioritas sesungguhnya.",
+          "why_it_works": "Menantang kata 'standar' dengan pengetahuan industri langsung membangun kredibilitas dan mengakhiri normalisasi."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Syarat kontrak adalah harga. Menyetujuinya tanpa memberi harga sama dengan memberi diskon yang tidak pernah kamu sadari.",
+        "psychology": "Kata 'standar' adalah alat normalisasi paling kuat dalam negosiasi kontrak. Ia mengubah negosiasi jadi kepatuhan, dan membuat pertanyaan terasa seperti ketidaktahuan. Penawar terbaiknya sederhana: tunjukkan bahwa kamu tahu apa yang benar-benar standar. Satu fakta spesifik mengakhiri seluruh taktik.",
+        "indonesian_pitfall": "Sedikit kreator Indonesia yang menghitung biaya eksklusivitas. Menandatangani eksklusivitas kategori 12 bulan untuk $6,000 bisa berarti menolak $20,000-$30,000 sponsor lain. Nilai bersih dealnya bisa negatif — dan ini kesalahan yang tidak terlihat sampai penolakan ketiga datang di bulan kedelapan.",
+        "power_phrases": [
+          "Those aren't one thing, they're three separate products.",
+          "It should be priced, not bundled.",
+          "I'd rather give you the one you need properly than all three badly."
+        ],
+        "never_say": [
+          "Okay, if it's standard then it's fine.",
+          "I don't really understand the legal part, just send it.",
+          "Sure, you can use it forever, no problem."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "That's fair — honestly, legal asks for perpetual by default and we rarely use it past a year. Let me go back with twelve-month usage and three-month exclusivity. Can we keep script review?",
+        "if_user_folds": "Wonderful. I'll send the contract today. Oh — and the exclusivity clause covers all gaming peripherals, keyboards, mice, headsets, and chairs. That's fine, yes?",
+        "if_user_gets_defensive": "I'm not trying to trick you. These come from our legal team, not from me. Tell me which one is the problem and I'll take it back to them."
+      },
+      "success_criteria": [
+        "Memberi harga atau membatasi minimal dua dari tiga syarat",
+        "Menantang kata 'standard' dengan fakta spesifik",
+        "Tidak menyerahkan hak pakai selamanya secara gratis"
+      ],
+      "vocab_focus": [
+        { "term": "perpetual usage rights", "meaning_id": "hak pakai selamanya" },
+        { "term": "category exclusivity", "meaning_id": "larangan bekerja sama dengan kompetitor sekategori" },
+        { "term": "final-cut approval", "meaning_id": "hak veto atas versi final konten" }
+      ]
+    },
+
+    {
+      "id": "SPO-04",
+      "category": "sponsorship_pitch",
+      "title": "The Underperforming Renewal",
+      "difficulty": 4,
+      "channel": "video_call",
+      "tags": ["renewal", "metrics_reframe", "campaign_review"],
+      "setting": {
+        "user_role": "Kreator edukasi finansial Indonesia",
+        "context_id": "Kampanye pertama mendapat 40% lebih sedikit views dari proyeksi, tapi menghasilkan 3x lebih banyak sign-up berbayar dibanding kreator lain mereka. Brand fokus pada angka views.",
+        "stakes_usd": 7500,
+        "hidden_client_motivation": "Dia melapor ke CMO yang hanya melihat dashboard views. Dia butuh kamu memberinya argumen yang lebih baik."
+      },
+      "ai_persona": {
+        "name": "Olivia Ferrante",
+        "role": "Growth Marketing Lead",
+        "company": "Northbay Finance App (fintech, London)",
+        "origin": "London, UK",
+        "temperament": "Sopan, berbasis angka, terjebak metrik yang salah",
+        "pressure_tactic": "Memakai satu metrik buruk untuk menekan harga renewal",
+        "walk_away_point": "Ingin memperbarui — kamu adalah kreator dengan performa terbaiknya, dia hanya belum tahu"
+      },
+      "ai_opening_line": "So, reviewing the campaign — the video did 210,000 views against a 350,000 projection. That's a fairly significant miss. We're still keen to continue, but I'd struggle to justify the same rate for round two. Could we look at something closer to four thousand?",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Metric Correction",
+          "tone": "Membantu, berbasis data, tidak defensif",
+          "script": "The view number is right, and I won't argue it. But let me put the number next to it: that video drove 1,840 paid sign-ups. Your other three creators in the same window drove 610 combined, on 2.1 million views. My cost per acquisition was $4.07. Theirs was $31. If we're renegotiating on performance, I'd genuinely welcome that — I'd just want us using the metric that actually shows up in your revenue. Views are a proxy. Sign-ups are the thing.",
+          "risk": "low",
+          "predicted_reaction": "Olivia terkejut, memeriksa angkanya, dan berbalik total.",
+          "why_it_works": "Mengganti metrik yang salah dengan yang benar sambil terdengar membantu, bukan membela diri. Perbandingan langsung dengan kreator lain sangat kuat."
+        },
+        {
+          "id": "B",
+          "strategy": "The Internal Ally",
+          "tone": "Strategis, memecahkan masalah politiknya",
+          "script": "I suspect the view count is what's landing on someone else's dashboard, not yours. So let me help with that specific problem — I'll build you a one-page attribution breakdown showing CPA by creator that you can walk into your next review with. If it shows I underperformed on the metric that matters, I'll take the four thousand without argument. If it shows what I think it shows, we talk about scaling instead of cutting. Give me until Thursday.",
+          "risk": "medium",
+          "predicted_reaction": "Olivia menerima — kamu menawarkan menyelesaikan masalah nyatanya.",
+          "why_it_works": "Mengenali bahwa keberatannya berasal dari atasannya, bukan dari dia. Memberinya senjata untuk rapat internalnya mengubah kamu jadi sekutu."
+        },
+        {
+          "id": "C",
+          "strategy": "The Priced Realignment",
+          "tone": "Fleksibel pada struktur, tegas pada nilai",
+          "script": "I understand the pressure on the view number, so let me offer a structure that removes the argument entirely. Round two at $7,500 as before — but I'll tie $2,000 of it to a sign-up target. Hit it, I'm paid in full; miss it, you keep the two thousand. I'm comfortable doing that because I know what my conversion looks like. What I won't do is drop the base rate for a metric that didn't cost you anything.",
+          "risk": "medium",
+          "predicted_reaction": "Olivia menerima — ini menghilangkan risikonya tanpa memotong tarifmu.",
+          "why_it_works": "Menaruh uang di belakang keyakinanmu adalah argumen paling meyakinkan yang bisa dibuat. Ia juga memindahkan diskusi ke metrik yang kamu menangi."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "Kalau kamu kalah pada satu metrik, jangan bantah metriknya — ganti metriknya, dan buktikan pergantian itu menguntungkan mereka.",
+        "psychology": "Marketer sering terikat pada metrik yang diberikan atasan mereka, bukan yang mereka percayai. Olivia bukan lawan — dia terjebak. Kalau kamu membela diri, dia harus mempertahankan posisinya. Kalau kamu memberinya data yang lebih baik untuk dibawa ke atas, dia jadi sekutumu seketika.",
+        "indonesian_pitfall": "Refleks umum adalah langsung menerima pemotongan harga demi menjaga hubungan ('gapapa, yang penting lanjut'). Ini bukan hanya kehilangan $3,500 — ia menetapkan tarif baru secara permanen dan mengajarkan brand bahwa harga kamu bisa turun kapan pun ada angka yang kurang bagus. Bawa datamu sendiri ke setiap review kampanye, selalu.",
+        "power_phrases": [
+          "Views are a proxy. Sign-ups are the thing.",
+          "I'd genuinely welcome renegotiating on performance — using the right metric.",
+          "I won't drop the base rate for a metric that didn't cost you anything."
+        ],
+        "never_say": [
+          "Okay, four thousand is fine, I understand.",
+          "Sorry the views were low, I'll do better next time.",
+          "Maybe the algorithm was bad that week."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "Hold on — 1,840? Let me pull that up. If that's accurate, I've been looking at completely the wrong dashboard. Can you send me the breakdown?",
+        "if_user_folds": "Great, four thousand it is. And given the view risk, we'd want two videos at that rate rather than one this time.",
+        "if_user_gets_defensive": "I'm not blaming you for the algorithm. I'm looking at the numbers I have. If there are better numbers, show me them."
+      },
+      "success_criteria": [
+        "Menyajikan minimal satu metrik alternatif dengan angka",
+        "Tidak menerima pemotongan tarif tanpa perlawanan",
+        "Membingkai diri sebagai sekutu, bukan lawan"
+      ],
+      "vocab_focus": [
+        { "term": "proxy metric", "meaning_id": "metrik pengganti / tidak langsung" },
+        { "term": "attribution breakdown", "meaning_id": "rincian sumber konversi" },
+        { "term": "against projection", "meaning_id": "dibandingkan target proyeksi" }
+      ]
+    },
+
+    {
+      "id": "SPO-05",
+      "category": "sponsorship_pitch",
+      "title": "\"Your Audience Is Indonesian, Our Market Isn't\"",
+      "difficulty": 5,
+      "channel": "video_call",
+      "tags": ["audience_objection", "geographic_value", "market_expansion"],
+      "setting": {
+        "user_role": "Kreator Indonesia dengan 1.2 juta subscriber, 78% audiens Indonesia, 9% Malaysia, 6% AS/EU",
+        "context_id": "Brand SaaS internasional tertarik pada jumlahnya tapi menolak setelah melihat demografi audiens.",
+        "stakes_usd": 9000,
+        "hidden_client_motivation": "Mereka baru saja mendapat pendanaan untuk ekspansi APAC tahun depan, tapi belum mengumumkannya."
+      },
+      "ai_persona": {
+        "name": "Robert Ashcombe",
+        "role": "VP Marketing",
+        "company": "Talloak (B2B SaaS, Boston)",
+        "origin": "Boston, USA",
+        "temperament": "Sopan tapi sudah memutuskan; menolak dengan halus",
+        "pressure_tactic": "Menutup pintu dengan alasan strategis yang terdengar final",
+        "walk_away_point": "Bisa dibuka lagi jika kamu memberi informasi yang mengubah kalkulasi strategisnya"
+      },
+      "ai_opening_line": "I'll be candid with you — the reach is impressive, no question. But we did the demographic pull and seventy-eight percent of your audience is in Indonesia. Our ICP is North American mid-market. I just don't see how we'd measure a return on this. I don't want to waste your time pretending otherwise.",
+      "response_options": [
+        {
+          "id": "A",
+          "strategy": "The Expansion Bet",
+          "tone": "Strategis, berpikir jangka panjang",
+          "script": "That's a fair read on today. Let me ask about tomorrow — is APAC anywhere on your two-year roadmap? Because if it is, the cheapest possible time to build brand recognition in a market is eighteen months before you enter it. Every SaaS company that entered Southeast Asia in the last five years paid three to five times more for awareness because they showed up cold. I'm not asking you to buy conversions. I'm asking whether you'd rather build that recognition now for nine thousand, or in 2028 for forty.",
+          "risk": "medium",
+          "predicted_reaction": "Robert diam — kamu baru saja menyentuh sesuatu yang belum diumumkan.",
+          "why_it_works": "Membingkai ulang tawaran dari 'konversi' ke 'opsi pada pasar masa depan'. Eksekutif memahami bahasa opsi."
+        },
+        {
+          "id": "B",
+          "strategy": "The Hidden Segment",
+          "tone": "Faktual, tepat",
+          "script": "Let me give you a number the demographic pull doesn't show. Six percent of my audience is US and EU — that's about 72,000 people, and they skew heavily toward developers and technical founders, because that's the content they come for. If you'd targeted 72,000 technical decision-makers through LinkedIn, you'd spend more than nine thousand and get worse attention. So the honest pitch isn't 'my Indonesian audience will convert.' It's: you're buying a niche Western technical audience, and the Indonesian reach comes free.",
+          "risk": "low",
+          "predicted_reaction": "Robert menghitung ulang dan menganggapnya masuk akal.",
+          "why_it_works": "Mengubah kelemahan yang jelas jadi struktur harga yang menguntungkan. Kejujuran ('honest pitch isn't...') membangun kredibilitas instan."
+        },
+        {
+          "id": "C",
+          "strategy": "The Graceful Open Door",
+          "tone": "Hormat, percaya diri, tidak memohon",
+          "script": "Then you're right not to buy, and I appreciate you saying it directly instead of ghosting me. Two things before I let you go. First — if you ever look at APAC, I'd like to be the first call, and I'll hold my current rate for you for twelve months. Second, would you mind telling me which markets are on your roadmap? Not to pitch you. I'm building a picture of where B2B SaaS is heading, and you'd be the fourth VP I've asked this quarter.",
+          "risk": "low",
+          "predicted_reaction": "Robert menjawab dengan terbuka dan sering menyebut ekspansi APAC-nya sendiri.",
+          "why_it_works": "Melepaskan deal dengan anggun sering membuka informasi yang justru menghidupkannya kembali. Menahan tarif 12 bulan tidak berbiaya apa-apa dan membuatmu diingat."
+        }
+      ],
+      "diplomacy_insight": {
+        "core_principle": "'Tidak' yang beralasan strategis bukan penolakan atas nilaimu — ia penolakan atas framing-mu. Ganti framing-nya.",
+        "psychology": "Keberatan demografis terasa final karena berbasis fakta yang tidak bisa dibantah. Tapi fakta itu hanya menjadi masalah dalam satu framing: konversi langsung hari ini. Ada tiga framing lain di mana ia menjadi aset — ekspansi masa depan, segmen minoritas berkualitas tinggi, dan nilai konten sebagai aset yang bisa dipakai ulang. Kreator yang menang adalah yang punya ketiganya siap.",
+        "indonesian_pitfall": "Reaksi paling umum adalah menerima penolakan itu sebagai kebenaran objektif dan pergi merasa lebih kecil. Ini menghasilkan kreator berpengaruh besar yang secara sistematis menetapkan tarif di bawah rekan Barat mereka dengan performa lebih rendah. Audiens Indonesia bukan diskon — ia adalah pasar 280 juta orang yang belum banyak diperebutkan brand global.",
+        "power_phrases": [
+          "That's a fair read on today. Let me ask about tomorrow.",
+          "The Indonesian reach comes free.",
+          "I appreciate you saying it directly instead of ghosting me."
+        ],
+        "never_say": [
+          "I understand, my audience is not valuable for you.",
+          "I can do it much cheaper if that helps?",
+          "Please reconsider, I really want to work with your brand."
+        ]
+      },
+      "ai_followups": {
+        "if_user_holds_frame": "...Between us, APAC is on the 2027 plan. It's not public yet. Say more about what eighteen months of early awareness would actually look like.",
+        "if_user_folds": "I appreciate the flexibility. Look, if you could do three thousand for a mention rather than a full integration, that might be something I could test.",
+        "if_user_gets_defensive": "I'm not saying your audience has no value. I'm saying it has no value to my ICP. Those are different statements."
+      },
+      "success_criteria": [
+        "Menawarkan minimal satu framing alternatif atas nilai audiens",
+        "Tidak menurunkan tarif untuk mengatasi keberatan",
+        "Menutup dengan hubungan tetap terbuka, bukan permohonan"
+      ],
+      "vocab_focus": [
+        { "term": "ICP (ideal customer profile)", "meaning_id": "profil pelanggan ideal" },
+        { "term": "demographic pull", "meaning_id": "tarikan data demografi audiens" },
+        { "term": "ghosting", "meaning_id": "menghilang tanpa kabar" }
+      ]
+    }
+  ]
+}

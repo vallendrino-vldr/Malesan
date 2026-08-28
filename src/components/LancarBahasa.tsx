@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useSyncExternalStore, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { GLOBAL_SCENARIOS, SCENARIO_CATEGORIES, GlobalScenario } from "@/lib/speaking/scenarios";
 
 type Level = "beginner" | "intermediate" | "advanced";
 type Mode = "academy" | "voice" | "scenario" | "quiz" | "essay" | "progress";
@@ -10,6 +11,7 @@ type Persona = "sarah" | "alex" | "david" | "emma";
 interface SuggestedReply {
   en: string;
   id: string;
+  strategy?: string;
 }
 
 interface ChatMessage {
@@ -22,6 +24,8 @@ interface ChatMessage {
   pitfallTag?: string | null;
   roast?: string | null;
   score?: number;
+  newVocab?: string | null;
+  missionAccomplished?: boolean;
 }
 
 interface QuizQuestion {
@@ -49,15 +53,6 @@ interface EssayEvaluation {
     exampleUsage: string;
   }>;
   perfectedDraft: string;
-}
-
-interface ScenarioItem {
-  id: string;
-  title: string;
-  partner: Persona;
-  partnerRole: string;
-  context: string;
-  missions: string[];
 }
 
 interface SessionRecord {
@@ -115,10 +110,10 @@ function makeId(prefix: string): string {
 }
 
 const PERSONAS: Array<{ id: Persona; name: string; tag: string; desc: string; accent: string; gender: "male" | "female" }> = [
-  { id: "sarah", name: "Sarah", tag: "British Casual", accent: "London", desc: "Ramah, sopan, aksen British wanita mengalir alami", gender: "female" },
-  { id: "alex", name: "Alex", tag: "American Slang", accent: "California", desc: "Santai, aksen pria Amerika modern & gaul", gender: "male" },
-  { id: "david", name: "David", tag: "Tech Recruiter", accent: "Executive", desc: "Wawancara kerja profesional, suara pria berwibawa", gender: "male" },
-  { id: "emma", name: "Emma", tag: "IELTS Coach", accent: "Academic", desc: "Melatih struktur berpikir kritis & aksen akademis wanita", gender: "female" },
+  { id: "david", name: "David Kessler", tag: "Wall St MD (47)", accent: "New York", desc: "Tegas, menghargai waktu, negosiator deal jutaan dollar", gender: "male" },
+  { id: "sarah", name: "Sarah Whitmore", tag: "Strategic Advisor (52)", accent: "London", desc: "Aksen British presisi tinggi, santun mematikan (ex-FCDO)", gender: "female" },
+  { id: "alex", name: "Alex Reyes", tag: "Silicon Valley (31)", accent: "San Francisco", desc: "Cepat, santai, startup hustle, jargon tech & creative economy", gender: "male" },
+  { id: "emma", name: "Emma Cho", tag: "Brand Director LA (29)", accent: "Los Angeles", desc: "Ekonomi kreator global, hangat di luar tapi negosiator tajam", gender: "female" },
 ];
 
 interface PersonaVoiceProfile {
@@ -206,128 +201,6 @@ const PERSONA_VOICE_PROFILES: Record<Persona, PersonaVoiceProfile> = {
   },
 };
 
-const SCENARIOS: ScenarioItem[] = [
-  {
-    id: "job_interview",
-    title: "Wawancara Kerja Global",
-    partner: "david",
-    partnerRole: "Senior Tech Recruiter",
-    context: "Kamu sedang diwawancarai oleh Senior Tech Recruiter untuk posisi internasional jarak jauh.",
-    missions: [
-      "Perkenalkan diri dan keahlian utamamu",
-      "Jelaskan pengalaman proyek yang paling membanggakan",
-      "Sampaikan ekspektasi gaji dan gaya kerjamu",
-    ],
-  },
-  {
-    id: "airport_immigration",
-    title: "Pemeriksaan Imigrasi Bandara",
-    partner: "sarah",
-    partnerRole: "Immigration Officer",
-    context: "Kamu baru mendarat di London Heathrow dan petugas imigrasi menanyakan tujuan kunjunganmu.",
-    missions: [
-      "Jawab tujuan kedatangan dan lama tinggal",
-      "Tunjukkan tempat menginap / reservasi hotel",
-      "Jelaskan pekerjaanmu di Indonesia",
-    ],
-  },
-  {
-    id: "ordering_cafe",
-    title: "Pesan Kopi & Makanan di Kafe",
-    partner: "alex",
-    partnerRole: "Barista Kafe Hipster",
-    context: "Kamu sedang antre di kafe San Francisco dan ingin memesan minuman kustom.",
-    missions: [
-      "Pesan kopi dengan susu oat dan sedikit gula",
-      "Tanya rekomendasi roti atau pastry terbaik",
-      "Selesaikan pembayaran non-tunai",
-    ],
-  },
-  {
-    id: "salary_negotiation",
-    title: "Negosiasi Kenaikan Gaji",
-    partner: "david",
-    partnerRole: "Engineering Manager",
-    context: "Sesi 1-on-1 dengan manajer untuk membahas pencapaian tahunan dan penyesuaian kompensasi.",
-    missions: [
-      "Ungkapkan kontribusi dan hasil kerjamu tahun ini",
-      "Tunjukkan riset standar gaji industri terkini",
-      "Capai kesepakatan nilai yang saling menguntungkan",
-    ],
-  },
-  {
-    id: "hotel_checkin",
-    title: "Check-in Hotel & Permintaan Kamar",
-    partner: "emma",
-    partnerRole: "Front Desk Concierge",
-    context: "Kamu tiba di hotel bintang lima dan ingin check-in dengan request lantai tinggi pemandangan kota.",
-    missions: [
-      "Sebutkan nama reservasi dan tunjukkan paspor",
-      "Minta kamar bebas rokok lantai atas",
-      "Tanyakan jadwal sarapan dan fasilitas gym",
-    ],
-  },
-  {
-    id: "freelance_client",
-    title: "Diskusi Proyek Klien Internasional",
-    partner: "alex",
-    partnerRole: "Product Owner Luar Negeri",
-    context: "Klien luar negeri menghubungimu untuk merekrut keahlianmu dalam proyek digital.",
-    missions: [
-      "Jelaskan alur kerjamu dan estimasi waktu selesai",
-      "Sampaikan rate harga jasa dan opsi revisi",
-      "Sepakati tenggat waktu dan pembayaran deposit",
-    ],
-  },
-  {
-    id: "pitch_5k_client",
-    title: "Closing Klien Remote $5,000 USD",
-    partner: "david",
-    partnerRole: "US Client Executive",
-    context: "Kamu sedang pitching via Zoom untuk project digital senilai $5,000 USD dengan klien korporat asal New York.",
-    missions: [
-      "Pitch keunggulan portofoliomu & value proposition",
-      "Justifikasi harga $5,000 dengan ROI nyata",
-      "Amankan pembayaran uang muka 50% deposit",
-    ],
-  },
-  {
-    id: "angry_client_diplomacy",
-    title: "Menghadapi Klien Luar Negeri Komplain",
-    partner: "sarah",
-    partnerRole: "Frustrated Foreign Client",
-    context: "Klien komplain tentang revisi di luar kesepakatan awal dan kamu harus bersikap diplomatis & tegas.",
-    missions: [
-      "Tenangkan situasi dengan empati profesional",
-      "Jelaskan batasan scope kontrak awal dengan santun",
-      "Tawarkan solusi biaya tambahan untuk scope baru",
-    ],
-  },
-  {
-    id: "creator_livestream_intro",
-    title: "Opening Live Stream & YouTube Hook",
-    partner: "alex",
-    partnerRole: "Global Content Creator Co-host",
-    context: "Latihan opening live stream / video YouTube berbahasa Inggris yang energik, interaktif, dan memikat penonton global.",
-    missions: [
-      "Sampaikan hook 3 detik pertama yang nendang",
-      "Sapa viewers internasional dan baca chat",
-      "Ajak subscribe & sebutkan sponsor",
-    ],
-  },
-  {
-    id: "faang_behavioral_interview",
-    title: "Interview Silicon Valley (STAR Method)",
-    partner: "emma",
-    partnerRole: "Global Principal Interviewer",
-    context: "Latihan menjawab pertanyaan behavioral interview tech company global menggunakan metode Situation-Task-Action-Result.",
-    missions: [
-      "Jelaskan situasi konflik teknis / bug kritis",
-      "Jabarkan aksi solutif dan kepemimpinanmu",
-      "Tutup dengan dampak kuantitatif nyata (Result)",
-    ],
-  },
-];
 
 const ESSAY_TOPICS = [
   "Dampak Artificial Intelligence terhadap lapangan pekerjaan masa depan",
@@ -1398,8 +1271,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const [textInput, setTextInput] = useState("");
   const [showTranslations, setShowTranslations] = useState<Record<string, boolean>>({});
 
-  // Active Roleplay Scenario State
-  const [activeScenario, setActiveScenario] = useState<ScenarioItem | null>(() => initialChatSession?.activeScenario || null);
+  // Active Roleplay Scenario State & Category Filter
+  const [activeScenario, setActiveScenario] = useState<GlobalScenario | null>(() => initialChatSession?.activeScenario || null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showBriefingInCall, setShowBriefingInCall] = useState<boolean>(true);
 
   // Save active chat on every message update
   useEffect(() => {
@@ -1519,7 +1394,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       const res = await fetch("/api/speaking/slangify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, context: context || activeScenario?.context || "General English" }),
+        body: JSON.stringify({ text, context: context || (activeScenario ? activeScenario.setting.context_id : "General English") }),
       });
       const json = await res.json();
       if (json.ok && json.data) {
@@ -2097,13 +1972,30 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     return () => cancelAnimationFrame(animId);
   }, [isCalling, isRecording, isProcessing, isPlayingAudio, isRecordingVoiceExam, voiceExamTranscribing, isRecordingStepVoice, stepVoiceTranscribing, isVoiceModalOpen]);
 
+  // Helper to determine persona for Global Scenarios
+  const getScenarioPersona = (s: GlobalScenario): Persona => {
+    if (s.category === "price_negotiation") {
+      return s.ai_persona.name.includes("Devon") ? "alex" : "david";
+    }
+    if (s.category === "client_complaint") {
+      return "sarah";
+    }
+    if (s.category === "sv_interview") {
+      return s.ai_persona.temperament.toLowerCase().includes("direct") ? "david" : "alex";
+    }
+    if (s.category === "sponsorship_pitch") {
+      return "emma";
+    }
+    return "david";
+  };
+
   // Start Voice Call or Scenario Chamber
-  const startCall = (scenarioItem?: ScenarioItem) => {
+  const startCall = (scenarioItem?: GlobalScenario) => {
     if (credits < cost) {
       setFeedbackNotice(`Kredit lo kurang (${credits} tersisa). Butuh minimal ${cost} kredit.`);
       return;
     }
-    const chosenPersona = scenarioItem ? scenarioItem.partner : persona;
+    const chosenPersona: Persona = scenarioItem ? getScenarioPersona(scenarioItem) : persona;
     if (scenarioItem) {
       setActiveScenario(scenarioItem);
     } else {
@@ -2118,15 +2010,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     capturedTextRef.current = "";
 
     const initialText = scenarioItem
-      ? scenarioItem.id === "job_interview"
-        ? "Hello and welcome. Thank you for joining our interview today. To start, could you please tell me about yourself and your professional background?"
-        : scenarioItem.id === "airport_immigration"
-        ? "Good day. Passport and entry declaration, please. What is the main purpose of your visit to London today?"
-        : scenarioItem.id === "ordering_cafe"
-        ? "Hey there! Welcome to Blue Bottle. What can I get started for you today?"
-        : scenarioItem.id === "salary_negotiation"
-        ? "Good morning. Thanks for setting up this 1-on-1 meeting. What would you like to discuss regarding your compensation?"
-        : `Hello! Welcome to our ${scenarioItem.title}. How may I help you today?`
+      ? scenarioItem.ai_opening_line
       : chosenPersona === "sarah"
       ? "Hello there! So lovely to talk with you today. How is your day going so far?"
       : chosenPersona === "alex"
@@ -2136,15 +2020,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       : "Welcome to today's speaking preparation. Let us begin with your thoughts on our topic.";
 
     const initialTranslate = scenarioItem
-      ? "Halo dan selamat datang. Ceritakan tentang dirimu dan latar belakang pekerjaanmu untuk memulai."
+      ? scenarioItem.setting.context_id
       : "Halo! Senang bisa berbicara denganmu hari ini. Bagaimana harimu sejauh ini?";
 
     const initialSuggestions: SuggestedReply[] = scenarioItem
-      ? [
-          { en: "I am a content creator and digital specialist.", id: "Saya seorang konten kreator dan spesialis digital." },
-          { en: "I have worked on several global marketing projects.", id: "Saya telah mengerjakan beberapa proyek pemasaran global." },
-          { en: "Could you tell me more about the role?", id: "Bisakah Anda jelaskan lebih banyak tentang posisi ini?" },
-        ]
+      ? scenarioItem.response_options.map((opt) => ({
+          en: opt.script,
+          id: `${opt.strategy} (${opt.tone})`,
+          strategy: opt.strategy,
+        }))
       : [
           { en: "I am doing great today, thanks for asking!", id: "Kabar saya sangat baik hari ini, terima kasih sudah bertanya!" },
           { en: "I have been quite busy with work today.", id: "Saya lumayan sibuk dengan pekerjaan hari ini." },
@@ -2233,7 +2117,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       setTextInput("");
       setFeedbackNotice(null);
 
-      const activeP = activeScenario ? activeScenario.partner : persona;
+      const activeP = activeScenario ? getScenarioPersona(activeScenario) : persona;
 
       const SpeechRecognition =
         typeof window !== "undefined"
@@ -2307,15 +2191,15 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   const submitAudioChunk = async (audioBlob: Blob) => {
     setIsProcessing(true);
     setFeedbackNotice(null);
-    const activeP = activeScenario ? activeScenario.partner : persona;
-    const activeScenTitle = activeScenario ? activeScenario.title : "daily";
+    const activeP = activeScenario ? getScenarioPersona(activeScenario) : persona;
+    const activeScenId = activeScenario ? activeScenario.id : "daily";
 
     try {
       const formData = new FormData();
       formData.append("audio", audioBlob, "user_voice.webm");
       formData.append("persona", activeP);
       formData.append("level", level);
-      formData.append("scenario", activeScenTitle);
+      formData.append("scenario", activeScenId);
       formData.append(
         "history",
         JSON.stringify(
@@ -2352,6 +2236,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           pitfallTag: data.pitfallTag,
           roast: data.roastComment,
           score: data.fluencyScore,
+          newVocab: data.newVocab,
+          missionAccomplished: data.missionAccomplished,
         },
       ];
 
@@ -2377,8 +2263,8 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
     setIsProcessing(true);
     setFeedbackNotice(null);
 
-    const activeP = activeScenario ? activeScenario.partner : persona;
-    const activeScenTitle = activeScenario ? activeScenario.title : "daily";
+    const activeP = activeScenario ? getScenarioPersona(activeScenario) : persona;
+    const activeScenId = activeScenario ? activeScenario.id : "daily";
 
     // Optimistic UI: immediately show user's message in the chat
     const userMsg: ChatMessage = {
@@ -2397,7 +2283,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           text: userText,
           persona: activeP,
           level,
-          scenario: activeScenTitle,
+          scenario: activeScenId,
           history: messages.map((m) => ({ role: m.role, text: m.text })),
         }),
       });
@@ -2419,15 +2305,17 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         pitfallTag: data.pitfallTag,
         roast: data.roastComment,
         score: data.fluencyScore,
+        newVocab: data.newVocab,
+        missionAccomplished: data.missionAccomplished,
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages([...updatedHistory, assistantMsg]);
       if (data.correctionTip) setActiveTip(data.correctionTip);
       if (data.roastComment) setActiveRoast(data.roastComment);
 
       playSpeechAudio(data.replyEn, activeP, data.audioUrl);
     } catch (err) {
-      setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan saat memproses percakapan.");
+      setFeedbackNotice(err instanceof Error ? err.message : "Terjadi kesalahan.");
     } finally {
       setIsProcessing(false);
     }
@@ -3700,7 +3588,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         {m.role === "assistant" && (
                           <button
                             type="button"
-                            onClick={() => playSpeechAudio(m.text, activeScenario?.partner || persona)}
+                            onClick={() => playSpeechAudio(m.text, activeScenario ? getScenarioPersona(activeScenario) : persona)}
                             title="Putar suara"
                             className="shrink-0 text-muted hover:text-ember transition-colors p-0.5 cursor-pointer"
                           >
@@ -3897,7 +3785,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "300ms" }} />
                       </span>
                       <span className="text-[11px] font-mono text-muted/90 font-medium">
-                        {PERSONAS.find((p) => p.id === (activeScenario?.partner || persona))?.name || "Partner"} is thinking...
+                        {PERSONAS.find((p) => p.id === (activeScenario ? getScenarioPersona(activeScenario) : persona))?.name || "Partner"} is thinking...
                       </span>
                     </div>
                   </div>
@@ -4044,68 +3932,174 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
       </div>
 
       {/* ========================================================================= */}
-      {/* MODE 2: SIMULASI SKENARIO (ROLEPLAY CHAMBER) */}
+      {/* MODE 2: SIMULASI SKENARIO 20 GLOBAL MASTER (ROLEPLAY CHAMBER) */}
       {/* ========================================================================= */}
       <div className={mode === "scenario" ? "w-full min-w-0" : "hidden"}>
         <div className="surface-card rounded-2xl sm:rounded-3xl border border-hairline/80 bg-surface/90 p-3.5 sm:p-6 backdrop-blur-xl shadow-xl space-y-4 sm:space-y-5 w-full min-w-0">
           {!isCalling ? (
             <div className="space-y-4 sm:space-y-5">
-              <div>
-                <h3 className="font-display text-sm sm:text-base font-bold text-ink">
-                  Simulasi Skenario Dunia Nyata
-                </h3>
-                <p className="text-[11px] sm:text-xs text-muted mt-0.5">
-                  Latihan situasi spesifik dengan misi objektif dan partner AI realistis.
-                </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-hairline/60 pb-3">
+                <div>
+                  <h3 className="font-display text-sm sm:text-base font-bold text-ink flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-ember animate-pulse" />
+                    20 Skenario Negosiasi Global &amp; Cuan Dollar ($)
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-muted mt-0.5">
+                    Latihan negosiasi harga proyek remote ($3k-$10k USD), komplain klien luar negeri, dan interview Silicon Valley.
+                  </p>
+                </div>
+                <div className="text-[11px] font-mono text-muted bg-surface-raised px-2.5 py-1 rounded-xl border border-hairline shrink-0">
+                  {GLOBAL_SCENARIOS.length} Skenario Master
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {SCENARIOS.map((s) => (
-                  <div
-                    key={s.id}
-                    className="rounded-xl sm:rounded-2xl border border-hairline bg-surface-raised p-3.5 sm:p-4 flex flex-col justify-between space-y-3 hover:border-ember/40 transition-all group"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
-                          {s.title}
-                        </h4>
-                        <span className="text-[9px] font-mono font-bold text-ember bg-ember/15 px-1.5 py-0.5 rounded shrink-0 capitalize">
-                          {s.partner}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-muted leading-relaxed line-clamp-2">{s.context}</p>
-                    </div>
-
+              {/* 5 CATEGORY FILTER TABS */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                {SCENARIO_CATEGORIES.map((cat) => {
+                  const isActive = selectedCategory === cat.key;
+                  return (
                     <button
-                      onClick={() => startCall(s)}
-                      className="btn-ember w-full h-9 rounded-xl text-xs font-bold text-obsidian shadow-sm hover:brightness-105 cursor-pointer"
+                      key={cat.key}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat.key)}
+                      className={`h-8 px-3 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isActive
+                          ? "bg-ember text-obsidian shadow-sm"
+                          : "bg-surface text-muted hover:text-ink border border-hairline hover:bg-surface-raised"
+                      }`}
                     >
-                      Mulai Simulasi →
+                      <span>{cat.label_id}</span>
                     </button>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* 20 SCENARIO CARDS GRID */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {GLOBAL_SCENARIOS.filter((s) => selectedCategory === "all" || s.category === selectedCategory).map((s) => {
+                  const categoryMeta = SCENARIO_CATEGORIES.find((c) => c.key === s.category);
+                  return (
+                    <div
+                      key={s.id}
+                      className="rounded-xl sm:rounded-2xl border border-hairline bg-surface-raised p-3.5 sm:p-4 flex flex-col justify-between space-y-3 hover:border-ember/60 transition-all group relative overflow-hidden"
+                    >
+                      <div className="space-y-2.5">
+                        {/* Card Header: Category & Stakes */}
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="text-[10px] font-bold text-ember bg-ember/15 px-2 py-0.5 rounded-lg border border-ember/25 truncate">
+                            {categoryMeta?.label_id.split("(")[0] || s.category}
+                          </span>
+                          {s.setting.stakes_usd && (
+                            <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-lg border border-emerald-500/30 shrink-0">
+                              💰 ${s.setting.stakes_usd.toLocaleString()} USD
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Title & Counterpart */}
+                        <div>
+                          <h4 className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors leading-snug">
+                            {s.title}
+                          </h4>
+                          <p className="text-[10px] sm:text-[11px] text-muted font-medium mt-0.5 truncate">
+                            Lawan: <span className="text-ink font-bold">{s.ai_persona.name}</span> ({s.ai_persona.role} • {s.ai_persona.company})
+                          </p>
+                        </div>
+
+                        {/* Context summary */}
+                        <p className="text-[11px] text-muted leading-relaxed line-clamp-2">
+                          {s.setting.context_id}
+                        </p>
+
+                        {/* Tag Pills */}
+                        <div className="flex flex-wrap gap-1 pt-1">
+                          {s.tags.slice(0, 3).map((tag, tIdx) => (
+                            <span key={tIdx} className="text-[9px] font-mono text-muted/80 bg-surface px-1.5 py-0.2 rounded border border-hairline/60">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => startCall(s)}
+                        className="btn-ember w-full h-9 rounded-xl text-xs font-bold text-obsidian shadow-sm hover:brightness-105 cursor-pointer flex items-center justify-center gap-1.5 mt-2"
+                      >
+                        <span>Mulai Simulasi (${s.setting.stakes_usd ? `$${s.setting.stakes_usd.toLocaleString()}` : "Pro"})</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="rounded-xl border border-ember/30 bg-ember/10 p-3 flex items-center justify-between gap-2">
-                <h3 className="font-display text-xs sm:text-sm font-bold text-ink truncate">
-                  Skenario: {activeScenario?.title}
-                </h3>
-                <button
-                  onClick={endCall}
-                  className="h-7 px-2.5 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-400 text-[10px] font-bold shrink-0"
-                >
-                  Selesai
-                </button>
+            /* ACTIVE ROLEPLAY CHAMBER */
+            <div className="space-y-3.5 sm:space-y-4">
+              {/* Header Bar */}
+              <div className="rounded-2xl border border-ember/30 bg-surface-raised/90 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2 shadow-sm">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                    <h3 className="font-display text-xs sm:text-sm font-bold text-ink truncate">
+                      {activeScenario?.title}
+                    </h3>
+                    {activeScenario?.setting.stakes_usd && (
+                      <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.2 rounded-lg border border-emerald-500/30">
+                        ${activeScenario.setting.stakes_usd.toLocaleString()} USD
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] sm:text-[11px] text-muted truncate mt-0.5">
+                    Lawan Bicara: <strong className="text-ink">{activeScenario?.ai_persona.name}</strong> ({activeScenario?.ai_persona.role} • {activeScenario?.ai_persona.company})
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowBriefingInCall((prev) => !prev)}
+                    className="h-7 px-2.5 rounded-lg border border-ember/30 bg-ember/10 text-ember text-[10px] font-bold cursor-pointer"
+                  >
+                    {showBriefingInCall ? "Tutup Briefing" : "Lihat Briefing Taktis"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={endCall}
+                    className="h-7 px-3 rounded-lg border border-rose-500/40 bg-rose-500/15 text-rose-300 text-[10px] font-bold cursor-pointer hover:bg-rose-500/25"
+                  >
+                    Akhiri Simulasi
+                  </button>
+                </div>
               </div>
 
-              <div className="h-56 sm:h-72 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 sm:p-4 space-y-2.5 custom-scrollbar">
+              {/* DIPLOMACY BRIEFING DRAWER */}
+              {showBriefingInCall && activeScenario && (
+                <div className="rounded-2xl border border-ember/30 bg-surface p-3 sm:p-4 space-y-2.5 text-xs animate-in fade-in duration-200 shadow-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-ember uppercase tracking-wider">🎯 Situasi &amp; Motivasi Tersembunyi:</span>
+                      <p className="text-[11px] text-ink leading-relaxed font-medium">{activeScenario.setting.context_id}</p>
+                      <p className="text-[10px] text-muted italic">Rahasia Klien: {activeScenario.setting.hidden_client_motivation}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">💡 Prinsip Diplomasi &amp; Anti-Sungkan:</span>
+                      <p className="text-[11px] text-ink leading-relaxed font-medium">{activeScenario.diplomacy_insight.core_principle}</p>
+                      <p className="text-[10px] text-rose-300">⚠️ Jebakan Orang Indo: {activeScenario.diplomacy_insight.indonesian_pitfall}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CHAT LOG STREAM */}
+              <div className="h-64 sm:h-80 overflow-y-auto rounded-2xl border border-hairline/60 bg-surface-raised/40 p-3 sm:p-4 space-y-3 custom-scrollbar">
                 {messages.map((m) => (
                   <div
                     key={m.id}
-                    className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
+                    className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"} space-y-1.5`}
                   >
                     <div
                       className={`max-w-[92%] sm:max-w-[85%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed space-y-1.5 ${
@@ -4115,16 +4109,17 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2.5">
-                        <span>{m.text}</span>
+                        <span className="leading-relaxed">{m.text}</span>
                         {m.role === "assistant" && (
                           <button
                             type="button"
-                            onClick={() => playSpeechAudio(m.text, activeScenario?.partner || persona)}
-                            title="Putar suara"
+                            onClick={() => playSpeechAudio(m.text, activeScenario ? getScenarioPersona(activeScenario) : persona)}
+                            title="Putar suara bule"
                             className="shrink-0 text-muted hover:text-ember transition-colors p-0.5 cursor-pointer"
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                             </svg>
                           </button>
                         )}
@@ -4139,170 +4134,35 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                           ) : (
                             <button
                               type="button"
-                              onClick={() =>
-                                setShowTranslations((prev) => ({ ...prev, [m.id]: true }))
-                              }
-                              className="text-[10px] font-bold text-ember hover:underline"
+                              onClick={() => setShowTranslations((prev) => ({ ...prev, [m.id]: true }))}
+                              className="text-[10px] font-bold text-ember hover:underline cursor-pointer"
                             >
                               Lihat Terjemahan Indo
                             </button>
                           )}
                         </div>
                       )}
-
-                      {/* ⚡ SLANGIFY DRAWER */}
-                      <div className="mt-2 pt-1.5 border-t border-hairline/40 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => triggerSlangify(m.id, m.text)}
-                          disabled={slangifyLoading[m.id]}
-                          className="h-6 px-2.5 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[10px] font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                          </svg>
-                          {slangifyLoading[m.id] ? "Menganalisis Gaya..." : openSlangify[m.id] ? "Tutup Versi Native" : "⚡ Versi Native (Casual & Executive)"}
-                        </button>
-                      </div>
-
-                      {openSlangify[m.id] && slangifyData[m.id] && (
-                        <div className="mt-2.5 rounded-2xl border border-ember/40 bg-surface-raised/95 p-3 sm:p-4 space-y-2.5 text-xs text-left animate-in fade-in duration-200 shadow-md">
-                          <div className="flex items-center justify-between border-b border-hairline/50 pb-2">
-                            <span className="text-[10px] font-bold text-ember uppercase tracking-wider flex items-center gap-1">
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="m4.93 4.93 4.24 4.24" />
-                                <path d="m14.83 9.17 4.24-4.24" />
-                                <path d="m14.83 14.83 4.24 4.24" />
-                                <path d="m9.17 14.83-4.24 4.24" />
-                              </svg>
-                              3 Variasi Penutur Asli (Native Speaker):
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setOpenSlangify((prev) => ({ ...prev, [m.id]: false }))}
-                              className="text-[10px] text-muted hover:text-ink font-bold cursor-pointer"
-                            >
-                              Tutup
-                            </button>
-                          </div>
-
-                          <div className="space-y-2">
-                            {/* Casual */}
-                            <div className="rounded-xl border border-hairline bg-surface p-2.5 space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-ink uppercase tracking-wider text-muted">
-                                  Casual &amp; Natural (Sehari-hari):
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => playSpeechAudio(slangifyData[m.id].casual)}
-                                    className="text-[10px] font-bold text-ember hover:underline flex items-center gap-0.5 cursor-pointer"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
-                                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                                    </svg>
-                                    Dengar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(slangifyData[m.id].casual);
-                                      setFeedbackNotice("Teks Casual berhasil disalin.");
-                                    }}
-                                    className="text-[10px] font-bold text-muted hover:text-ink cursor-pointer"
-                                  >
-                                    Salin
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="text-xs text-ink font-medium leading-relaxed">
-                                &ldquo;{slangifyData[m.id].casual}&rdquo;
-                              </p>
-                            </div>
-
-                            {/* Executive */}
-                            <div className="rounded-xl border border-hairline bg-surface p-2.5 space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-ink uppercase tracking-wider text-muted">
-                                  Global Executive (Karier &amp; Klien USD):
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => playSpeechAudio(slangifyData[m.id].executive, "david")}
-                                    className="text-[10px] font-bold text-ember hover:underline flex items-center gap-0.5 cursor-pointer"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
-                                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                                    </svg>
-                                    Dengar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(slangifyData[m.id].executive);
-                                      setFeedbackNotice("Teks Executive berhasil disalin.");
-                                    }}
-                                    className="text-[10px] font-bold text-muted hover:text-ink cursor-pointer"
-                                  >
-                                    Salin
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="text-xs text-ink font-medium leading-relaxed">
-                                &ldquo;{slangifyData[m.id].executive}&rdquo;
-                              </p>
-                            </div>
-
-                            {/* Creator */}
-                            <div className="rounded-xl border border-hairline bg-surface p-2.5 space-y-1">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-ink uppercase tracking-wider text-muted">
-                                  Creator Hook (Punchy &amp; Tajam):
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    type="button"
-                                    onClick={() => playSpeechAudio(slangifyData[m.id].creator, "alex")}
-                                    className="text-[10px] font-bold text-ember hover:underline flex items-center gap-0.5 cursor-pointer"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
-                                      <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                      <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                                    </svg>
-                                    Dengar
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(slangifyData[m.id].creator);
-                                      setFeedbackNotice("Teks Creator berhasil disalin.");
-                                    }}
-                                    className="text-[10px] font-bold text-muted hover:text-ink cursor-pointer"
-                                  >
-                                    Salin
-                                  </button>
-                                </div>
-                              </div>
-                              <p className="text-xs text-ink font-medium leading-relaxed">
-                                &ldquo;{slangifyData[m.id].creator}&rdquo;
-                              </p>
-                            </div>
-
-                            {/* Explanation */}
-                            <div className="p-2.5 rounded-xl bg-ember/10 border border-ember/20 text-[11px] text-muted leading-relaxed">
-                              <strong className="text-ember font-bold">Kenapa Versi Ini Lebih Baik: </strong>
-                              {slangifyData[m.id].explanation}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
                     </div>
+
+                    {/* TWO-LAYER COACH BLOCK */}
+                    {m.tip && (
+                      <div className="max-w-[92%] sm:max-w-[85%] rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-ink space-y-1 animate-in fade-in">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                            💡 Coach Insight:
+                          </span>
+                          {m.pitfallTag && (
+                            <span className="text-[9px] font-mono font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.2 rounded border border-amber-500/30">
+                              {m.pitfallTag}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted leading-relaxed font-medium">{m.tip}</p>
+                        {m.roast && (
+                          <p className="text-[10px] text-amber-300 italic">🔥 {m.roast}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
 
@@ -4316,59 +4176,107 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         <span className="size-1.5 rounded-full bg-ember animate-bounce" style={{ animationDelay: "300ms" }} />
                       </span>
                       <span className="text-[11px] font-mono text-muted/90 font-medium">
-                        {PERSONAS.find((p) => p.id === (activeScenario?.partner || persona))?.name || "Partner"} is thinking...
+                        {activeScenario?.ai_persona.name || "Partner"} is thinking...
                       </span>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Smart Hint Suggestion Pills */}
+              {/* 3 STRATEGIC RESPONSE DOCK (CONTEKAN TAKTIS DARI CLAUDE OPUS 5) */}
               {messages.length > 0 && messages[messages.length - 1].role === "assistant" && messages[messages.length - 1].suggestedReplies && (
-                <div className="space-y-1 animate-in fade-in duration-200">
-                  <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
-                    Contekan Cepat (Klik untuk kirim):
+                <div className="space-y-1.5 animate-in fade-in duration-200">
+                  <span className="text-[10px] font-bold text-ember uppercase tracking-wider flex items-center gap-1">
+                    ⚡ 3 Pilihan Respons Strategis (Klik untuk kirim/latih):
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                     {messages[messages.length - 1].suggestedReplies?.map((item, idx) => (
                       <button
                         key={idx}
                         type="button"
                         onClick={() => submitTextMessage(item.en)}
                         disabled={isProcessing}
-                        className="text-left px-2.5 py-1 rounded-xl border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ink text-[11px] transition-all disabled:opacity-50 cursor-pointer"
+                        className="rounded-xl border border-hairline bg-surface p-2.5 text-left hover:border-ember/60 hover:bg-surface-raised transition-all group disabled:opacity-50 cursor-pointer flex flex-col justify-between space-y-1 min-w-0"
                       >
-                        <span className="font-semibold text-ember">&ldquo;{item.en}&rdquo;</span>
-                        <span className="text-muted text-[10px] block font-normal">{item.id}</span>
+                        <span className="text-[10px] font-bold text-ember uppercase tracking-wider block truncate">
+                          {item.strategy || `Strategi ${String.fromCharCode(65 + idx)}`}
+                        </span>
+                        <p className="font-semibold text-xs text-ink group-hover:text-ember transition-colors leading-snug line-clamp-2">
+                          &ldquo;{item.en}&rdquo;
+                        </p>
+                        <span className="text-[10px] text-muted block truncate">{item.id}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised p-1 focus-within:border-ember/60 transition-all">
-                <input
-                  type="text"
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      submitTextMessage();
-                    }
-                  }}
-                  placeholder="Ketik balasan untuk skenario ini..."
-                  disabled={isProcessing}
-                  className="flex-1 bg-transparent px-2.5 text-xs text-ink placeholder:text-muted/60 focus:outline-none min-w-0"
-                />
-                <button
-                  type="button"
-                  onClick={() => submitTextMessage()}
-                  disabled={!textInput.trim() || isProcessing}
-                  className="btn-ember h-8 px-3 rounded-lg font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0"
-                >
-                  Kirim
-                </button>
+              {/* Kinetic Waveform Visualizer */}
+              <div className="rounded-xl sm:rounded-2xl border border-hairline/60 bg-surface-raised p-2 flex flex-col items-center justify-center">
+                <canvas ref={canvasRef} width={400} height={32} className="w-full h-7" />
+                <p className="text-[10px] font-mono text-muted mt-0.5 text-center">
+                  {isRecording
+                    ? "Mendengarkan... Klik tombol merah untuk kirim"
+                    : isPlayingAudio
+                    ? `${activeScenario?.ai_persona.name || "Partner"} sedang berbicara...`
+                    : isProcessing
+                    ? "Memproses suara..."
+                    : "Tekan tombol bicara atau ketik pesan"}
+                </p>
+              </div>
+
+              {/* Voice & Text Controls */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={toggleRecording}
+                    disabled={isProcessing}
+                    className={`h-10 sm:h-12 px-6 sm:px-8 rounded-2xl font-display text-xs sm:text-sm font-bold transition-all flex items-center gap-2 shadow-lg w-full sm:w-auto justify-center cursor-pointer ${
+                      isRecording
+                        ? "bg-rose-500 text-white animate-pulse ring-4 ring-rose-500/30"
+                        : isProcessing
+                        ? "bg-surface-raised text-muted cursor-not-allowed border border-hairline"
+                        : "bg-ember text-obsidian hover:brightness-105 active:scale-95"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+                      <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                      <line x1="12" x2="12" y1="19" y2="22" />
+                    </svg>
+                    {isRecording
+                      ? "Selesai Bicara (Kirim)"
+                      : isProcessing
+                      ? "Memproses..."
+                      : "Bicara Bahasa Inggris"}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised p-1 focus-within:border-ember/60 transition-all">
+                  <input
+                    type="text"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        submitTextMessage();
+                      }
+                    }}
+                    placeholder="Atau ketik respons bahasa Inggris lo di sini..."
+                    disabled={isProcessing}
+                    className="flex-1 bg-transparent px-2.5 text-xs text-ink placeholder:text-muted/60 focus:outline-none min-w-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => submitTextMessage()}
+                    disabled={!textInput.trim() || isProcessing}
+                    className="btn-ember h-8 px-3.5 rounded-lg font-display text-xs font-bold text-obsidian disabled:opacity-50 shrink-0 cursor-pointer"
+                  >
+                    Kirim
+                  </button>
+                </div>
               </div>
             </div>
           )}
