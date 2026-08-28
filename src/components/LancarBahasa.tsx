@@ -4514,7 +4514,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
           </div>
         </div>
       </div>
-    </div>
 
       {/* ========================================================================= */}
       {/* ⚡ 3-MINUTE FLUENCY SPRINT MODAL DIALOG */}
@@ -4748,6 +4747,6 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         </div>,
         document.body
       )}
-
+    </div>
   );
 }
