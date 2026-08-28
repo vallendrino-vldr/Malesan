@@ -96,9 +96,31 @@ export function PwaProvider() {
     };
     window.addEventListener("beforeinstallprompt", onInstall);
 
+    // Fallback: poll /api/version every 10 minutes when tab is visible
+    // to support regular non-PWA browser sessions.
+    let initialVersion: string | null = null;
+    const checkApiVersion = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const res = await fetch("/api/version", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data.version || data.version === "dev") return;
+        if (!initialVersion) {
+          initialVersion = data.version;
+        } else if (initialVersion !== data.version) {
+          setUpdateReady(true);
+        }
+      } catch {}
+    };
+
+    checkApiVersion();
+    const versionInterval = setInterval(checkApiVersion, 10 * 60 * 1000);
+
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("beforeinstallprompt", onInstall);
+      clearInterval(versionInterval);
     };
   }, []);
 
@@ -110,18 +132,19 @@ export function PwaProvider() {
   }
 
   async function applyUpdate() {
-    const reg = await navigator.serviceWorker.getRegistration();
+    // Flush any unsaved drafts before reloading
+    try {
+      window.dispatchEvent(new CustomEvent("malesan:save-drafts"));
+    } catch {}
+
+    const reg = await navigator.serviceWorker?.getRegistration().catch(() => null);
     const waiting = reg?.waiting;
     if (!waiting) {
       window.location.reload();
       return;
     }
 
-    // Reload only after the new worker owns this page. Reloading immediately
-    // after postMessage races skipWaiting(): on slower phones the old worker can
-    // still serve that reload, so the user taps "Muat ulang" and sees the same
-    // bundle again. Keep a short escape hatch for browsers that fail to emit the
-    // event; a stuck banner is worse than one extra network-first reload.
+    // Reload only after the new worker owns this page.
     await new Promise<void>((resolve) => {
       let settled = false;
       const finish = () => {
@@ -141,7 +164,7 @@ export function PwaProvider() {
   if (updateReady) {
     return (
       <Banner
-        text="Ada versi baru."
+        text="Pembaruan versi sistem siap diterapkan."
         action="Muat ulang"
         onAction={applyUpdate}
         onClose={() => setUpdateReady(false)}
