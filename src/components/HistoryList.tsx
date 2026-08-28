@@ -100,6 +100,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                 {new Date(it.created_at).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "short",
+                  timeZone: "Asia/Jakarta",
                 })}
               </span>
             </div>

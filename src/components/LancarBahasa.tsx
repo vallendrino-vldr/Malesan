@@ -2489,7 +2489,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <button
                     key={lvl.id}
                     onClick={() => setLevel(lvl.id as Level)}
-                    className={`h-8 sm:h-9 px-1.5 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 min-w-0 truncate cursor-pointer ${
+                    className={`h-11 sm:h-9 px-1.5 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 min-w-0 truncate cursor-pointer ${
                       isActive
                         ? "bg-ember text-obsidian shadow-sm ring-1 ring-ember/50 font-display"
                         : "text-muted hover:text-ink hover:bg-surface"
@@ -2526,7 +2526,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             <button
               type="button"
               onClick={triggerManualSave}
-              className="h-6 px-2 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+              className="h-11 sm:h-6 px-3 sm:px-2 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[11px] sm:text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
               title="Simpan status belajar dan riwayat chat ke memori browser sekarang"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
@@ -2620,7 +2620,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     if (isCalling) endCall();
                     setMode(tab.id as Mode);
                   }}
-                  className={`h-10 sm:h-12 rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
+                  className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
                     isCurrent
                       ? "border-ember/70 bg-ember/15 text-ink shadow-sm ring-1 ring-ember/30"
                       : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
@@ -2784,7 +2784,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText, "indonesian" as unknown as Persona, null, "id")}
-                          className="h-9 sm:h-10 px-3 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
+                          className="h-11 sm:h-10 px-3 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -2809,7 +2809,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText, "david", null, "en-US")}
-                          className="btn-ember h-9 sm:h-10 px-3 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 cursor-pointer w-full"
+                          className="btn-ember h-11 sm:h-10 px-3 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />

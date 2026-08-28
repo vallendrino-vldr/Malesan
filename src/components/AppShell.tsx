@@ -184,7 +184,7 @@ export function AppShell({
                     ? `Panel admin — ${pendingTopups} topup nunggu di-approve`
                     : "Panel admin"
                 }
-                className={`relative flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                className={`relative flex h-11 sm:h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                   pendingTopups > 0
                     ? "border-ember bg-ember text-obsidian hover:bg-ember-lo"
                     : "border-ember/30 bg-surface/50 text-ember hover:border-ember hover:bg-surface-raised"
@@ -215,7 +215,7 @@ export function AppShell({
                 type="button"
                 onClick={() => go("profil")}
                 aria-label="Profil"
-                className="flex h-10 w-10 shrink-0 items-center justify-center cursor-pointer"
+                className="flex h-11 w-11 sm:h-10 sm:w-10 shrink-0 items-center justify-center cursor-pointer"
               >
                 <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
                   {avatarUrl ? (
@@ -237,7 +237,7 @@ export function AppShell({
                 href="/app?tab=profil"
                 prefetch={true}
                 aria-label="Profil"
-                className="flex h-10 w-10 shrink-0 items-center justify-center"
+                className="flex h-11 w-11 sm:h-10 sm:w-10 shrink-0 items-center justify-center"
               >
                 <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
                   {avatarUrl ? (

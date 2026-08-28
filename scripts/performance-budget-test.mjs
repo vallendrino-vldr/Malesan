@@ -24,6 +24,12 @@ assert.match(endpoint, /sameOrigin\(request\)/);
 assert.match(endpoint, /RATE_LIMIT = 60/);
 assert.doesNotMatch(endpoint, /SUPABASE_SERVICE_ROLE_KEY|createClient/);
 
+const historySource = await readFile(path.join(root, "src", "components", "HistoryList.tsx"), "utf8");
+assert.ok(
+  /toLocaleDateString\("id-ID",\s*\{[\s\S]*?timeZone:\s*"Asia\/Jakarta"/.test(historySource),
+  "History dates must pin Asia/Jakarta so server and client hydration text stays identical",
+);
+
 const studioModules = await readFile(path.join(root, "src/lib/studio-modules.ts"), "utf8");
 for (const moduleId of ["affiliate", "carousel", "lancar_bahasa"]) {
   assert.match(studioModules, new RegExp(`"${moduleId}"`), `Studio registry missing ${moduleId}`);
