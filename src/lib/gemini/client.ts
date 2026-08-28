@@ -117,7 +117,9 @@ async function callOnce(
     headers: req.headers,
     body: req.body,
     redirect: "error",
-    signal: args.signal,
+    signal: args.signal
+      ? AbortSignal.any([args.signal, AbortSignal.timeout(35_000)])
+      : AbortSignal.timeout(35_000),
   });
 }
 

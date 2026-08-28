@@ -321,6 +321,7 @@ ATURAN FORMATTING KETAT:
         ok: true,
         userTranscribedText: textInput,
         replyEn: "Look — I hear what you are saying. Let us focus on the core deliverable and move forward.",
+        audioUrl: null,
         translateId: "Dengar — saya paham maksud kamu. Mari fokus pada hasil kerja utama dan lanjutkan.",
         suggestedReplies: [
           { en: "That is a fair point. Here is how we should structure the scope.", id: "Itu poin yang bagus. Ini cara kita menyusun cakupan kerjanya.", strategy: "Value Reframe" },

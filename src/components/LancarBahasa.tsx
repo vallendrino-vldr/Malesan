@@ -1543,8 +1543,12 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             setIsPlayingAudio(false);
             setCurrentlyPlayingAudioText(null);
           };
-          await audio.play();
-          return;
+          try {
+            await audio.play();
+            return;
+          } catch (playErr) {
+            console.warn("Server TTS audio.play() rejected, falling back to local voice:", playErr);
+          }
         }
       } catch (err) {
         console.warn("Server TTS playback error, attempting local fallback:", err);

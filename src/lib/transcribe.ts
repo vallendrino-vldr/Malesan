@@ -79,7 +79,7 @@ async function postWithRotation(
         method: "POST",
         headers: { Authorization: `Bearer ${key.value}` },
         body: form,
-        signal: opts?.signal,
+        signal: opts?.signal || AbortSignal.timeout(30_000),
       });
     } catch (e) {
       last = new TranscribeError(
