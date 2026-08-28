@@ -26,7 +26,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
           type="button"
           onClick={copy}
           aria-label={`Salin ${label ?? "nilai"}`}
-          className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 font-display text-xs font-bold transition-all cursor-pointer ${
+          className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border h-11 sm:h-auto px-3.5 sm:py-2 font-display text-xs font-bold transition-all cursor-pointer ${
             copied
               ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
               : "border-ember/40 bg-ember/10 text-ember hover:border-ember hover:bg-ember/20 active:scale-[0.98]"

@@ -138,7 +138,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                       onClick={() => rate(it.id, s)}
                       disabled={busy === it.id}
                       aria-label={`Kasih ${s} bintang`}
-                      className={`cursor-pointer text-base leading-none transition-colors disabled:opacity-50 ${
+                      className={`flex h-11 w-8 sm:h-7 sm:w-6 items-center justify-center cursor-pointer text-base leading-none transition-colors disabled:opacity-50 ${
                         s <= rating ? "text-ember" : "text-muted hover:text-ink"
                       }`}
                     >
@@ -154,9 +154,9 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                   onClick={() => setConfirmDel(it.id)}
                   aria-label="Hapus dari riwayat"
                   title="Hapus"
-                  className="ml-1 shrink-0 cursor-pointer text-muted/50 transition-colors hover:text-danger"
+                  className="ml-1 flex size-11 sm:size-7 shrink-0 cursor-pointer items-center justify-center text-muted/50 transition-colors hover:text-danger -mr-1"
                 >
-                  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
                     <path d="M9 3h6l1 2h4v2H4V5h4l1-2ZM6 9h12l-1 12H7L6 9Z" />
                   </svg>
                 </button>

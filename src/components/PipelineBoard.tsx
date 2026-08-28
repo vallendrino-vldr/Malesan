@@ -184,16 +184,24 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
   const router = useRouter();
 
   const currentWeekInfo = useMemo(() => {
-    const d = new Date();
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
+    const now = new Date();
+    const wibStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+    const [y, m, dayNum] = wibStr.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 1, dayNum));
+    const day = d.getUTCDay();
+    const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(Date.UTC(y, m - 1, diff));
     const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+    sunday.setUTCDate(monday.getUTCDate() + 6);
     const format = (dt: Date) => {
-      const year = dt.getFullYear();
-      const month = String(dt.getMonth() + 1).padStart(2, "0");
-      const day = String(dt.getDate()).padStart(2, "0");
+      const year = dt.getUTCFullYear();
+      const month = String(dt.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dt.getUTCDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
     const startStr = format(monday);
@@ -534,11 +542,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
             {/* View Mode Toggle & Rancang 7 Hari Action */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {/* Segmented View Switcher */}
-              <div className="flex h-9 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 shrink-0">
+              <div className="flex h-11 sm:h-9 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode("kanban")}
-                  className={`flex h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  className={`flex h-10 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "kanban"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
@@ -554,7 +562,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 <button
                   type="button"
                   onClick={() => setViewMode("calendar")}
-                  className={`flex h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  className={`flex h-10 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "calendar"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
@@ -575,7 +583,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   <button
                     type="button"
                     onClick={() => setIsClearModalOpen(true)}
-                    className="flex h-9 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap shrink-0"
+                    className="flex h-11 sm:h-9 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/60 px-3 text-xs font-semibold text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap shrink-0"
                     title="Kosongkan jadwal atau hapus kartu dari alur"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
@@ -591,7 +599,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   type="button"
                   onClick={handleGenerate7DayStrategy}
                   disabled={isGeneratingStrategy}
-                  className="flex h-9 flex-2 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/10 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50 whitespace-nowrap shrink-0"
+                  className="flex h-11 sm:h-9 flex-2 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/10 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/20 disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                     <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
@@ -664,7 +672,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                     role="tab"
                     aria-selected={on}
                     onClick={() => setMobileStage(col.id)}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg h-11 sm:h-auto sm:py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                       on ? "bg-ember/15 text-ember" : "text-muted hover:text-ink"
                     }`}
                   >
@@ -1206,7 +1214,7 @@ function PipelineCardItem({
           <button
             onClick={() => handleGenerate("hook")}
             disabled={isGenerating}
-            className={`w-full cursor-pointer rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-[var(--duration-standard)] ease-heat active:scale-[0.98] disabled:opacity-60 ${
+            className={`w-full cursor-pointer rounded-xl h-11 sm:h-auto px-4 sm:py-2.5 text-xs font-bold transition-all duration-[var(--duration-standard)] ease-heat active:scale-[0.98] disabled:opacity-60 flex items-center justify-center ${
               isGenerating
                 ? "glow-ember bg-surface text-ember"
                 : "bg-ember text-obsidian shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo"
@@ -1253,7 +1261,7 @@ function PipelineCardItem({
           <button
             onClick={() => handleGenerate("script")}
             disabled={isGenerating}
-            className={`mt-1 w-full cursor-pointer rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-[var(--duration-standard)] ease-heat active:scale-[0.98] disabled:opacity-60 ${
+            className={`mt-1 w-full cursor-pointer rounded-xl h-11 sm:h-auto px-4 sm:py-2.5 text-xs font-bold transition-all duration-[var(--duration-standard)] ease-heat active:scale-[0.98] disabled:opacity-60 flex items-center justify-center ${
               isGenerating
                 ? "glow-ember bg-surface text-ember"
                 : "bg-ember text-obsidian shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo"
@@ -1398,9 +1406,9 @@ function StageMover({
   const next = i < ORDER.length - 1 ? ORDER[i + 1] : null;
 
   const arrow =
-    "flex min-h-10 min-w-10 cursor-pointer items-center justify-center rounded-lg text-muted/80 transition-all duration-[var(--duration-standard)] ease-heat hover:bg-white/[0.08] hover:text-ink disabled:cursor-default disabled:opacity-20";
+    "flex min-h-11 min-w-11 sm:min-h-10 sm:min-w-10 cursor-pointer items-center justify-center rounded-lg text-muted/80 transition-all duration-[var(--duration-standard)] ease-heat hover:bg-white/[0.08] hover:text-ink disabled:cursor-default disabled:opacity-20";
   const stage =
-    "min-h-9 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 text-micro font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/15 hover:text-ember active:scale-95";
+    "min-h-11 sm:min-h-9 cursor-pointer rounded-lg border border-white/[0.08] bg-white/[0.04] px-3.5 sm:px-3 text-micro font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/15 hover:text-ember active:scale-95 flex items-center justify-center";
 
   return (
     <div className="-mb-1 mt-3 flex items-center justify-between gap-1 border-t border-hairline pt-1">

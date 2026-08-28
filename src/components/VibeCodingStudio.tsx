@@ -237,7 +237,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
                   key={s.label}
                   type="button"
                   onClick={() => setIdea(s.seed)}
-                  className="cursor-pointer rounded-full border border-hairline/80 bg-surface-raised/60 px-3 py-1.5 text-mini font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
+                  className="flex h-11 sm:h-auto items-center cursor-pointer rounded-full border border-hairline/80 bg-surface-raised/60 px-3.5 sm:px-3 sm:py-1.5 text-mini font-medium text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:text-ember-lo"
                 >
                   {s.label}
                 </button>

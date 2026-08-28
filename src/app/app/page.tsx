@@ -624,13 +624,13 @@ export default async function AppPage({
               <div className="flex items-center gap-2">
                 <Link
                   href="/app/topup"
-                  className="btn-ember inline-flex h-10 items-center justify-center rounded-xl px-4 font-display text-xs font-bold text-obsidian shadow-xs"
+                  className="btn-ember inline-flex h-11 sm:h-10 items-center justify-center rounded-xl px-4 font-display text-xs font-bold text-obsidian shadow-xs"
                 >
                   Top Up Kredit
                 </Link>
                 <Link
                   href={profile.onboarding_completed ? "/app/profile" : "/app/onboarding"}
-                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-white/[0.12] bg-surface-raised px-4 text-xs font-bold text-ink hover:border-ember/40 hover:text-ember transition-all"
+                  className="inline-flex h-11 sm:h-10 items-center justify-center gap-1.5 rounded-xl border border-white/[0.12] bg-surface-raised px-4 text-xs font-bold text-ink hover:border-ember/40 hover:text-ember transition-all"
                 >
                   <span>{profile.onboarding_completed ? "Profil konten lo" : "Atur Profil Utama"}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">

@@ -157,12 +157,12 @@ export function PipelineCalendarView({
           </div>
 
           {/* Week Navigation Segmented Control */}
-          <div className="flex h-9 items-center rounded-xl border border-hairline bg-surface p-0.5 self-start sm:self-auto shrink-0">
+          <div className="flex h-11 sm:h-9 items-center rounded-xl border border-hairline bg-surface p-0.5 self-start sm:self-auto shrink-0">
             <button
               type="button"
               onClick={handlePrevWeek}
               aria-label="Minggu Sebelumnya"
-              className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
+              className="flex size-10 sm:size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
                 <path d="m15 18-6-6 6-6" />
@@ -171,7 +171,7 @@ export function PipelineCalendarView({
             <button
               type="button"
               onClick={handleResetToday}
-              className="px-3 text-xs font-semibold text-ink transition-colors hover:text-ember whitespace-nowrap"
+              className="flex h-10 sm:h-auto items-center px-3.5 sm:px-3 text-xs font-semibold text-ink transition-colors hover:text-ember whitespace-nowrap cursor-pointer"
             >
               Minggu Ini
             </button>
@@ -179,7 +179,7 @@ export function PipelineCalendarView({
               type="button"
               onClick={handleNextWeek}
               aria-label="Minggu Berikutnya"
-              className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
+              className="flex size-10 sm:size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
                 <path d="m9 18 6-6-6-6" />
