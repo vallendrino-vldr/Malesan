@@ -357,22 +357,52 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
             <button
               type="button"
               onClick={() => handleCopy(buildVariantReadThrough(currentVariant), "full")}
-              className="flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-4 py-2 text-xs font-semibold text-ink transition-colors hover:border-ember/40 hover:text-ember"
+              className="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl border border-hairline bg-surface-raised px-4 h-11 sm:h-10 text-xs font-semibold text-ink transition-colors hover:border-ember/40 hover:text-ember active:scale-[0.99]"
             >
-              {copied === "full" ? "Tersalin ke Clipboard! ✓" : "📋 Salin Naskah"}
+              {copied === "full" ? (
+                <>
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 text-emerald-400">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Tersalin ke Clipboard!</span>
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  <span>Salin Naskah</span>
+                </>
+              )}
             </button>
 
             <button
               type="button"
               disabled={savedToPipeline}
               onClick={handleSaveToPipeline}
-              className={`flex-1 cursor-pointer inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+              className={`flex-1 cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl px-4 h-11 sm:h-10 text-xs font-bold transition-all active:scale-[0.99] ${
                 savedToPipeline
                   ? "border border-success/30 bg-success/15 text-success"
                   : "border border-ember/40 bg-ember/15 text-ember hover:bg-ember hover:text-obsidian"
               }`}
             >
-              {savedToPipeline ? "✓ Tersimpan di Alur Kanban" : "🚀 Simpan ke Alur Kanban"}
+              {savedToPipeline ? (
+                <>
+                  <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>Tersimpan di Alur Kanban</span>
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M9 3v18M15 3v18" />
+                  </svg>
+                  <span>Simpan ke Alur Kanban</span>
+                </>
+              )}
             </button>
           </div>
         </div>

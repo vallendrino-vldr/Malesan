@@ -130,8 +130,10 @@ export function DemoBypassModal({
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ember/15 border border-ember/30 text-ember text-base">
-              ⚡
+            <div className="flex size-9 items-center justify-center rounded-xl bg-ember/15 border border-ember/30 text-ember">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-ember">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+              </svg>
             </div>
             <div>
               <h3 className="font-display text-base font-bold text-ink">
@@ -145,9 +147,12 @@ export function DemoBypassModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-muted hover:bg-obsidian hover:text-ink transition-colors"
+            aria-label="Tutup modal"
+            className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-obsidian hover:text-ink transition-colors cursor-pointer"
           >
-            ✕
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -156,7 +161,7 @@ export function DemoBypassModal({
           <div className="mt-5 space-y-4">
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs">
               <div className="flex items-center gap-2 font-bold text-emerald-400">
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Status: Mode Tester Sedang Aktif</span>
               </div>
               <p className="mt-1 text-micro text-muted">
@@ -166,14 +171,21 @@ export function DemoBypassModal({
 
             {isSuccess && (
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-micro text-emerald-400 font-medium flex items-center gap-2">
-                <span>✓</span>
+                <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5 shrink-0">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
                 <span>Mode Tester berhasil dinonaktifkan. Memuat ulang...</span>
               </div>
             )}
 
             {errorMessage && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-micro text-red-400 font-medium">
-                ⚠️ {errorMessage}
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-micro text-red-400 font-medium flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{errorMessage}</span>
               </div>
             )}
 
@@ -182,14 +194,18 @@ export function DemoBypassModal({
                 type="button"
                 onClick={handleDeactivate}
                 disabled={isLoading}
-                className="w-full rounded-xl border border-red-500/40 bg-red-500/15 py-2.5 font-display text-xs font-bold text-red-400 hover:bg-red-500/25 active:scale-[0.99] transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-red-500/40 bg-red-500/15 h-11 font-display text-xs font-bold text-red-400 hover:bg-red-500/25 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
               >
-                {isLoading ? "Memproses..." : "🔴 Nonaktifkan Mode Tester"}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                  <line x1="12" y1="2" x2="12" y2="12" />
+                </svg>
+                <span>{isLoading ? "Memproses..." : "Nonaktifkan Mode Tester"}</span>
               </button>
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full rounded-xl border border-hairline bg-surface py-2 text-xs font-medium text-muted hover:text-ink transition-colors"
+                className="w-full rounded-xl border border-hairline bg-surface h-10 text-xs font-medium text-muted hover:text-ink transition-colors cursor-pointer"
               >
                 Tutup
               </button>
@@ -215,7 +231,7 @@ export function DemoBypassModal({
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-micro text-muted hover:text-ink"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-micro text-muted hover:text-ink cursor-pointer"
                 >
                   {showPassword ? "Sembunyi" : "Lihat"}
                 </button>
@@ -224,15 +240,22 @@ export function DemoBypassModal({
 
             {/* Error Message */}
             {errorMessage && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-micro text-red-400 font-medium">
-                ⚠️ {errorMessage}
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-micro text-red-400 font-medium flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{errorMessage}</span>
               </div>
             )}
 
             {/* Success Message */}
             {isSuccess && (
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-micro text-emerald-400 font-medium flex items-center gap-2">
-                <span>✓</span>
+                <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5 shrink-0">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
                 <span>Mode Tester Aktif! Silakan mulai rekaman dari landing page.</span>
               </div>
             )}
@@ -241,17 +264,22 @@ export function DemoBypassModal({
             <button
               type="submit"
               disabled={isLoading || isSuccess}
-              className="w-full rounded-xl bg-ember py-2.5 font-display text-xs font-bold text-obsidian shadow-sm transition-all hover:bg-ember-lo active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full rounded-xl bg-ember h-11 font-display text-xs font-bold text-obsidian shadow-sm transition-all hover:bg-ember-lo active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>
-                  <span className="h-3.5 w-3.5 rounded-full border-2 border-obsidian border-t-transparent animate-spin" />
+                  <span className="size-3.5 rounded-full border-2 border-obsidian border-t-transparent animate-spin" />
                   <span>Memverifikasi...</span>
                 </>
               ) : isSuccess ? (
                 <span>Siap Merekam!</span>
               ) : (
-                <span>Aktifkan Mode Tester →</span>
+                <>
+                  <span>Aktifkan Mode Tester</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </>
               )}
             </button>
           </form>

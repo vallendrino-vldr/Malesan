@@ -2963,14 +2963,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setModalType("step");
                             setIsVoiceModalOpen(true);
                           }}
-                          className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 flex items-center gap-1.5"
+                          className="btn-ember h-11 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 flex items-center gap-1.5"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                             <line x1="12" x2="12" y1="19" y2="22" />
                           </svg>
-                          <span>🎙️ Uji Rekam Suara (Wajib)</span>
+                          <span>Uji Rekam Suara (Wajib)</span>
                         </button>
                         <span className="text-[9px] text-amber-400 font-bold">
                           {currentStepVoiceResult
@@ -3142,14 +3142,14 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         setModalType("exam");
                         setIsVoiceModalOpen(true);
                       }}
-                      className="btn-ember h-10 sm:h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
+                      className="btn-ember h-11 px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                         <line x1="12" x2="12" y1="19" y2="22" />
                       </svg>
-                      <span>{voiceExamResult?.isPassed ? "🎙️ Buka Pop-up Uji Suara (Lulus)" : "🎙️ Buka Pop-up Uji Suara"}</span>
+                      <span>{voiceExamResult?.isPassed ? "Buka Pop-up Uji Suara (Lulus)" : "Buka Pop-up Uji Suara"}</span>
                     </button>
                   </div>
                 </div>

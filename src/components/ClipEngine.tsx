@@ -354,7 +354,7 @@ export function Pill({
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+      className={`cursor-pointer rounded-full border px-3.5 py-2 min-h-11 sm:min-h-8 inline-flex items-center justify-center text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
         capitalize ? "capitalize" : ""
       } ${on ? "border-ember/45 bg-ember/10 text-ember" : "border-hairline text-muted hover:text-ink"}`}
     >
@@ -386,7 +386,7 @@ export function CopyBtn({
         }
       }}
       className={`cursor-pointer text-micro font-semibold text-muted underline-offset-2 hover:text-ember hover:underline ${
-        inline ? "" : "mt-3 block"
+        inline ? "min-h-11 sm:min-h-auto inline-flex items-center" : "mt-3 min-h-11 sm:min-h-auto inline-flex items-center"
       }`}
     >
       {done ? "Kesalin!" : label}
