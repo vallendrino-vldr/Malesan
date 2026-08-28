@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useSyncExternalStore } from "react";
+import { useState, useRef, useEffect, useCallback, useSyncExternalStore, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 type Level = "beginner" | "intermediate" | "advanced";
@@ -2042,7 +2042,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
   useEffect(() => {
     if (!isCalling) return;
     const interval = setInterval(() => {
-      setCallDuration((prev) => prev + 1);
+      setCallDuration((prev: number) => prev + 1);
     }, 1000);
     return () => clearInterval(interval);
   }, [isCalling]);
