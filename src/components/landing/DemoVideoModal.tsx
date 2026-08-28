@@ -45,7 +45,7 @@ export function DemoVideoModal({
       {/* Modal Dialog Container with Unified Header */}
       <div className="relative z-10 w-full max-w-3xl overflow-hidden rounded-3xl border border-white/[0.15] bg-[#0c0c0e] shadow-2xl animate-scaleUp">
         <TutorialVideoPlayer
-          videoSrc="/tutorial/tutorial-demo.mp4"
+          videoSrc="/tutorial/tutorial-demo-v2.mp4"
           autoPlay={true}
           onClose={onClose}
         />

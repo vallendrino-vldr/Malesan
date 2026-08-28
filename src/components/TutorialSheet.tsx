@@ -296,7 +296,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
               {/* Interactive Video Tutorial with +10 Bonus Credits Reward */}
               <section className="overflow-hidden rounded-xl border border-white/[0.08] bg-obsidian">
                 <TutorialVideoPlayer
-                  videoSrc={TUTORIAL_VIDEO_URL || "/tutorial/tutorial-demo.mp4"}
+                  videoSrc={TUTORIAL_VIDEO_URL || "/tutorial/tutorial-demo-v2.mp4"}
                   captionsSrc={TUTORIAL_CAPTIONS_URL}
                 />
               </section>

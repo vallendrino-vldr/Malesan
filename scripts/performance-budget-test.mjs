@@ -1,13 +1,14 @@
-﻿import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 const root = process.cwd();
 const kb = (bytes) => Math.round(bytes / 1024);
 const assetBudgets = [
-  ["public/tutorial/tutorial-demo.mp4", 19_000],
-  ["public/branding/logo-social.png", 1_600],
-  ["public/branding/app-icon.png", 1_600],
-  ["public/branding/logo-header.png", 900],
+  ["public/tutorial/tutorial-demo-v2.mp4", 5_600],
+  ["public/tutorial/tutorial-poster.webp", 25],
+  ["public/branding/logo-social.png", 750],
+  ["public/branding/app-icon.png", 170],
+  ["public/branding/logo-header.png", 125],
 ];
 for (const [relativePath, maxKb] of assetBudgets) {
   const sizeKb = kb((await stat(path.join(root, relativePath))).size);

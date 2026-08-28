@@ -18,7 +18,7 @@ interface TutorialVideoPlayerProps {
 }
 
 export function TutorialVideoPlayer({
-  videoSrc = "/tutorial/tutorial-demo.mp4",
+  videoSrc = "/tutorial/tutorial-demo-v2.mp4",
   captionsSrc,
   onRewardClaimed,
   onClose,
@@ -212,6 +212,7 @@ export function TutorialVideoPlayer({
         <video
           ref={videoRef}
           src={videoSrc}
+          poster="/tutorial/tutorial-poster.webp"
           playsInline
           preload="metadata"
           autoPlay={autoPlay}

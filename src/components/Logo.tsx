@@ -15,8 +15,8 @@ export function LogoMark({ className = "size-7" }: { className?: string }) {
       alt="Malesan"
       width={128}
       height={128}
+      sizes="(max-width: 640px) 28px, 32px"
       priority
-      unoptimized
       className={`${className} object-contain rounded-xl shadow-xs`}
     />
   );
@@ -81,8 +81,8 @@ export function Logo({
           alt="Malesan — AI Creative Companion"
           width={217}
           height={72}
+          sizes="(max-width: 640px) 130px, (max-width: 1024px) 160px, 217px"
           priority
-          unoptimized
           className={`${markClass} w-auto object-contain`}
         />
       </span>
