@@ -542,11 +542,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
             {/* View Mode Toggle & Rancang 7 Hari Action */}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               {/* Segmented View Switcher */}
-              <div className="flex h-11 sm:h-9 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 shrink-0">
+              <div className="flex h-12 sm:h-9 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setViewMode("kanban")}
-                  className={`flex h-10 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  className={`flex h-11 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "kanban"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
@@ -562,7 +562,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 <button
                   type="button"
                   onClick={() => setViewMode("calendar")}
-                  className={`flex h-10 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                  className={`flex h-11 sm:h-8 flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
                     viewMode === "calendar"
                       ? "bg-surface-raised text-ink shadow-xs"
                       : "text-muted hover:text-ink"
