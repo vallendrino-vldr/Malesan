@@ -2772,54 +2772,54 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     <span className="text-[10px] font-bold text-muted uppercase tracking-wider block">
                       Dengarkan Perbandingan Suara:
                     </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                      {/* WRONG AUDIO BUTTON */}
-                      <div className="rounded-xl sm:rounded-2xl border border-rose-500/30 bg-rose-500/10 p-2.5 sm:p-3.5 flex flex-col justify-between space-y-2">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {/* WRONG AUDIO CARD */}
+                      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-2.5 sm:p-3 flex items-center justify-between gap-2.5 min-w-0">
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
+                            <span className="text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider truncate">
                               {activeStep.wrongAudio.label}
                             </span>
-                            <span className="size-1.5 sm:size-2 rounded-full bg-rose-500" />
                           </div>
-                          <p className="text-[11px] sm:text-xs font-bold text-ink truncate">{activeStep.wrongAudio.text}</p>
+                          <p className="text-xs font-bold text-ink truncate">{activeStep.wrongAudio.text}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText, "alex", null, "en-US")}
-                          className="h-11 sm:h-10 px-3 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
+                          className="h-8 px-2.5 sm:px-3 rounded-lg border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-xs cursor-pointer"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          <span className="truncate">{currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Memutar..." : "Putar Bunyi Salah"}</span>
+                          <span>{currentlyPlayingAudioText === activeStep.wrongAudio.sampleText ? "Memutar..." : "Putar Salah"}</span>
                         </button>
                       </div>
 
-                      {/* CORRECT AUDIO BUTTON */}
-                      <div className="rounded-xl sm:rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 sm:p-3.5 flex flex-col justify-between space-y-2">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                      {/* CORRECT AUDIO CARD */}
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 sm:p-3 flex items-center justify-between gap-2.5 min-w-0">
+                        <div className="min-w-0 flex-1 space-y-0.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="size-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            <span className="text-[9px] sm:text-[10px] font-bold text-emerald-400 uppercase tracking-wider truncate">
                               {activeStep.correctAudio.label}
                             </span>
-                            <span className="size-1.5 sm:size-2 rounded-full bg-emerald-400" />
                           </div>
-                          <p className="text-[11px] sm:text-xs font-bold text-ink truncate">{activeStep.correctAudio.text}</p>
+                          <p className="text-xs font-bold text-ink truncate">{activeStep.correctAudio.text}</p>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => playSpeechAudio(activeStep.correctAudio.sampleText, "david", null, "en-US")}
-                          className="btn-ember h-11 sm:h-10 px-3 rounded-xl text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 cursor-pointer w-full"
+                          className="btn-ember h-8 px-2.5 sm:px-3 rounded-lg text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-sm hover:brightness-105 cursor-pointer"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          <span className="truncate">{currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Memutar..." : "Putar Bunyi Benar (Bule)"}</span>
+                          <span>{currentlyPlayingAudioText === activeStep.correctAudio.sampleText ? "Memutar..." : "Putar Benar"}</span>
                         </button>
                       </div>
                     </div>
@@ -2867,17 +2867,16 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               if (drillAnswer === null) {
                                 setDrillAnswer(optIdx);
                                 if (opt.isCorrect && !currentStepVoiceResult?.isPassed) {
-                                  // Automatically open the voice validation modal!
                                   setModalType("step");
                                   setIsVoiceModalOpen(true);
                                 }
                               }
                             }}
-                            className={`rounded-xl sm:rounded-2xl border p-2.5 sm:p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
+                            className={`rounded-xl border p-2.5 sm:p-3 flex items-center justify-between gap-2.5 transition-all cursor-pointer group w-full min-w-0 ${cardStyle}`}
                           >
-                            <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
                               <div
-                                className={`size-7 sm:size-8 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
+                                className={`size-7 rounded-full flex items-center justify-center font-display font-bold text-xs shrink-0 transition-all ${
                                   drillAnswer !== null && isRight
                                     ? "bg-emerald-400 text-obsidian font-bold"
                                     : drillAnswer !== null && isChosen
@@ -2889,10 +2888,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               </div>
 
                               <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors leading-snug">
+                                <p className="text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors leading-snug truncate">
                                   {opt.text}
                                 </p>
-                                <p className="text-[10px] sm:text-[11px] text-muted leading-tight">
+                                <p className="text-[10px] sm:text-[11px] text-muted leading-tight truncate">
                                   {opt.subtext}
                                 </p>
                               </div>
@@ -2904,18 +2903,18 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                 e.stopPropagation();
                                 playSpeechAudio(
                                   opt.soundSample,
-                                  opt.isCorrect ? "david" : ("indonesian" as unknown as Persona),
+                                  opt.isCorrect ? "david" : "alex",
                                   null,
-                                  opt.isCorrect ? "en-US" : "id"
+                                  "en-US"
                                 );
                               }}
-                              className="btn-ember h-11 sm:h-9 px-3 rounded-lg sm:rounded-xl text-obsidian text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1.5 shrink-0 self-start sm:self-auto shadow-sm hover:brightness-105"
+                              className="btn-ember h-8 px-2.5 rounded-lg text-obsidian text-xs font-bold transition-all flex items-center justify-center gap-1 shrink-0 shadow-xs hover:brightness-105 cursor-pointer"
                             >
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                               </svg>
-                              <span>{currentlyPlayingAudioText === opt.soundSample ? "Memutar..." : "Putar Suara"}</span>
+                              <span>{currentlyPlayingAudioText === opt.soundSample ? "..." : "Putar"}</span>
                             </button>
                           </div>
                         );
@@ -2934,9 +2933,10 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     )}
                   </div>
 
-                  {/* CLEAN NAVIGATION & POPUP TRIGGER BAR */}
-                  <div className="flex items-center justify-between pt-2.5 border-t border-hairline/60 gap-2">
+                  {/* CLEAN NAVIGATION & POPUP TRIGGER BAR (OVERFLOW-PROOF) */}
+                  <div className="flex items-center justify-between pt-2.5 border-t border-hairline/60 gap-2 w-full min-w-0">
                     <button
+                      type="button"
                       disabled={activeStepIndex === 0}
                       onClick={() => {
                         setActiveStepIndex((prev) => prev - 1);
@@ -2944,58 +2944,61 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                         setStepVoiceRecordedText("");
                         scrollToDrillTop();
                       }}
-                      className="h-11 sm:h-10 px-3 sm:px-4 rounded-xl border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
+                      className="h-8 sm:h-9 px-3 rounded-lg border border-hairline bg-surface text-xs font-bold text-ink hover:bg-surface-raised disabled:opacity-30 cursor-pointer shrink-0"
                     >
                       ← Sebelumnya
                     </button>
 
                     {/* Step Navigation or Voice Popup Trigger */}
                     {drillAnswer === null || !activeStep.audioDrill.options[drillAnswer]?.isCorrect ? (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] sm:text-[11px] font-mono font-bold text-muted bg-surface-raised px-2.5 sm:px-3 py-1.5 rounded-xl border border-hairline">
+                      <div className="min-w-0 flex-1 text-right">
+                        <span className="text-[10px] sm:text-xs font-medium text-muted bg-surface-raised px-2.5 py-1.5 rounded-lg border border-hairline inline-block max-w-full truncate">
                           {drillAnswer === null ? "Pilih jawaban kuis di atas" : "Pilih opsi yang benar"}
                         </span>
                       </div>
                     ) : !currentStepVoiceResult?.isPassed ? (
-                      <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex flex-col items-end gap-0.5 min-w-0 shrink-0">
                         <button
+                          type="button"
                           onClick={() => {
                             setModalType("step");
                             setIsVoiceModalOpen(true);
                           }}
-                          className="btn-ember h-11 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0 flex items-center gap-1.5"
+                          className="btn-ember h-8 sm:h-9 px-3 sm:px-4 rounded-lg font-display text-xs font-bold text-obsidian shadow-sm animate-pulse cursor-pointer shrink-0 flex items-center gap-1.5"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                             <line x1="12" x2="12" y1="19" y2="22" />
                           </svg>
-                          <span>Uji Rekam Suara (Wajib)</span>
+                          <span>Uji Rekam Suara</span>
                         </button>
-                        <span className="text-[9px] text-amber-400 font-bold">
+                        <span className="text-[9px] text-amber-400 font-bold truncate max-w-full">
                           {currentStepVoiceResult
-                            ? `Skor suara ${currentStepVoiceResult.score}/100 — Buka pop-up rekam ulang`
-                            : "Buka pop-up rekam suara untuk lanjut"}
+                            ? `Skor ${currentStepVoiceResult.score}/100`
+                            : "Wajib rekam suara untuk lanjut"}
                         </span>
                       </div>
                     ) : activeStepIndex < activeStage.steps.length - 1 ? (
-                      <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex flex-col items-end gap-0.5 min-w-0 shrink-0">
                         <button
+                          type="button"
                           onClick={() => {
                             setActiveStepIndex((prev) => prev + 1);
                             setDrillAnswer(null);
                             setStepVoiceRecordedText("");
                             scrollToDrillTop();
                           }}
-                          className="btn-ember h-9 sm:h-10 px-4 sm:px-5 rounded-xl font-display text-xs font-bold text-obsidian shadow-md cursor-pointer shrink-0"
+                          className="btn-ember h-8 sm:h-9 px-3.5 sm:px-4 rounded-lg font-display text-xs font-bold text-obsidian shadow-sm cursor-pointer shrink-0"
                         >
                           Langkah Berikutnya →
                         </button>
                         <span className="text-[9px] text-emerald-400 font-bold">✓ Lolos Uji Suara</span>
                       </div>
                     ) : (
-                      <div className="flex flex-col items-end gap-1 shrink-0">
+                      <div className="flex flex-col items-end gap-0.5 min-w-0 shrink-0">
                         <button
+                          type="button"
                           onClick={() => {
                             setIsExamMode(true);
                             setExamAnswers({});
@@ -3003,9 +3006,9 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             setVoiceExamRecordedText("");
                             scrollToDrillTop();
                           }}
-                          className="btn-ember h-9 sm:h-10 px-4 sm:px-6 rounded-xl font-display text-xs font-bold text-obsidian shadow-md animate-pulse cursor-pointer shrink-0"
+                          className="btn-ember h-8 sm:h-9 px-3.5 sm:px-4 rounded-lg font-display text-xs font-bold text-obsidian shadow-sm animate-pulse cursor-pointer shrink-0"
                         >
-                          Ujian Kelulusan Tahap Ini →
+                          Ujian Kelulusan Tahap →
                         </button>
                         <span className="text-[9px] text-emerald-400 font-bold">✓ Lolos Uji Suara</span>
                       </div>
@@ -3064,7 +3067,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                               onClick={() => {
                                 setExamAnswers((prev) => ({ ...prev, [qIdx]: optIdx }));
                               }}
-                              className={`rounded-xl sm:rounded-2xl border p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all cursor-pointer w-full min-w-0 ${style}`}
+                              className={`rounded-xl border p-2.5 sm:p-3 flex items-center justify-between gap-2 transition-all cursor-pointer w-full min-w-0 ${style}`}
                             >
                               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <div
@@ -3087,17 +3090,18 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                                     e.stopPropagation();
                                     playSpeechAudio(
                                       opt.soundSample || opt.text,
-                                      optIdx === q.correctIndex ? "david" : ("indonesian" as unknown as Persona),
+                                      optIdx === q.correctIndex ? "david" : "alex",
                                       null,
-                                      optIdx === q.correctIndex ? "en-US" : "id"
+                                      "en-US"
                                     );
                                   }}
-                                  className="btn-ember h-7 sm:h-8 px-2.5 sm:px-3 rounded-lg text-obsidian text-[10px] sm:text-[11px] font-bold transition-all flex items-center gap-1 shrink-0 self-start sm:self-auto shadow-xs"
+                                  className="btn-ember h-8 px-2.5 sm:px-3 rounded-lg text-obsidian text-xs font-bold transition-all flex items-center gap-1 shrink-0 shadow-xs cursor-pointer hover:brightness-105"
                                 >
                                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                                   </svg>
-                                  Dengar
+                                  <span>{currentlyPlayingAudioText === (opt.soundSample || opt.text) ? "..." : "Dengar"}</span>
                                 </button>
                               )}
                             </div>
