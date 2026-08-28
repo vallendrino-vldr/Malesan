@@ -140,6 +140,7 @@ for (const file of routeFiles) {
     file.includes("questions") ||
     file.includes("demo-bypass") ||
     file.includes("telegram") ||
+    file.includes("version") ||
     file.includes("auth");
 
   if (!isPublicRoute) {
