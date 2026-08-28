@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { VibeQuestions } from "./VibeQuestions";
+import LancarNgodingRoot from "./LancarNgoding/LancarNgodingRoot";
 import {
   VIBE_KIT_DOCS,
   type VibeKitOutput,
@@ -48,6 +49,7 @@ const STARTERS: { label: string; seed: string }[] = [
 
 export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
   const router = useRouter();
+  const [hubMode, setHubMode] = useState<"learn" | "vibe">("learn");
   const [idea, setIdea] = useState("");
   const IDEA_STARTERS = STARTERS;
   const [stack, setStack] = useState("");
@@ -194,29 +196,62 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
   }
 
   return (
-    <section className="space-y-6">
-      <header>
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-3 py-1 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
-            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
-            <path d="M5 3v4" />
-            <path d="M19 17v4" />
-            <path d="M3 5h4" />
-            <path d="M17 19h4" />
-          </svg>
-          <span>AI Builder Studio</span>
-        </div>
-        <h2 className="mt-3 font-display text-2xl font-bold leading-tight tracking-display-md text-ink sm:text-3xl">
-          Ceritain aplikasi yang mau lo bikin.
-        </h2>
-        <p className="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-muted">
-          AI coding agent butuh instruksi matang. Malesan bakal racik seluruh Blueprint Arsitektur siap koding — PRD, design system, roadmap, aturan agent, skema database, dan prompt pembuka.
-        </p>
-      </header>
+    <section className="space-y-5">
+      {/* Creation Hub Mode Switcher */}
+      <div className="surface-card rounded-2xl border border-hairline/80 p-1 flex items-center gap-1 shadow-xs max-w-md mx-auto">
+        <button
+          type="button"
+          onClick={() => setHubMode("learn")}
+          className={`flex-1 h-8.5 flex items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-all ${
+            hubMode === "learn"
+              ? "bg-ember text-obsidian font-bold shadow-xs"
+              : "text-muted hover:text-ink"
+          }`}
+        >
+          <span>🧠</span>
+          <span className="font-display">Lancar Ngoding</span>
+        </button>
 
-      {/* ---- input hero ---- */}
-      <div className="surface-card rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/80 via-surface to-obsidian p-5 sm:p-6 shadow-md">
-        <label htmlFor="vibe-idea" className="eyebrow block text-ember font-bold">
+        <button
+          type="button"
+          onClick={() => setHubMode("vibe")}
+          className={`flex-1 h-8.5 flex items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-all ${
+            hubMode === "vibe"
+              ? "bg-ember text-obsidian font-bold shadow-xs"
+              : "text-muted hover:text-ink"
+          }`}
+        >
+          <span>⚡</span>
+          <span className="font-display">Bikin App AI</span>
+        </button>
+      </div>
+
+      {hubMode === "learn" ? (
+        <LancarNgodingRoot />
+      ) : (
+        <div className="space-y-6 animate-fadeIn">
+          <header>
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-ember/15 px-3 py-1 text-micro font-bold tracking-wider text-ember border border-ember/30 uppercase">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-ember">
+                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                <path d="M5 3v4" />
+                <path d="M19 17v4" />
+                <path d="M3 5h4" />
+                <path d="M17 19h4" />
+              </svg>
+              <span>AI Builder Studio</span>
+            </div>
+            <h2 className="mt-3 font-display text-2xl font-bold leading-tight tracking-display-md text-ink sm:text-3xl">
+              Ceritain aplikasi yang mau lo bikin.
+            </h2>
+            <p className="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-muted">
+              AI coding agent butuh instruksi matang. Malesan bakal racik seluruh Blueprint Arsitektur siap koding — PRD, design system, roadmap, aturan agent, skema database, dan prompt pembuka.
+            </p>
+          </header>
+
+          {/* ---- input hero ---- */}
+          <div className="surface-card rounded-3xl border border-ember/35 bg-gradient-to-b from-surface-raised/80 via-surface to-obsidian p-5 sm:p-6 shadow-md">
+            <label htmlFor="vibe-idea" className="eyebrow block text-ember font-bold">
           Ide &amp; Konsep Aplikasi
         </label>
         <textarea
@@ -439,6 +474,8 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
               </pre>
             </div>
           ))}
+        </div>
+      )}
         </div>
       )}
     </section>
