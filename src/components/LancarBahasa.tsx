@@ -2482,7 +2482,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
           {/* 100% FLEXIBLE ANTI-OFFSIDE LEVEL SELECTOR */}
           <div className="w-full lg:w-auto shrink-0 min-w-0">
-            <div className="grid grid-cols-3 w-full gap-1 rounded-2xl border border-hairline bg-surface-raised/90 p-1 shadow-xs min-w-0">
+            <div className="grid grid-cols-3 w-full gap-1 rounded-xl border border-hairline bg-surface-raised/90 p-0.5 sm:p-1 shadow-xs min-w-0">
               {[
                 { id: "beginner", name: "Pemula", cefr: "A1-A2" },
                 { id: "intermediate", name: "Menengah", cefr: "B1-B2" },
@@ -2493,7 +2493,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                   <button
                     key={lvl.id}
                     onClick={() => setLevel(lvl.id as Level)}
-                    className={`h-11 sm:h-9 px-1.5 sm:px-3.5 rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center justify-center gap-1 min-w-0 truncate cursor-pointer ${
+                    className={`h-8 sm:h-8 px-2 sm:px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 min-w-0 truncate cursor-pointer ${
                       isActive
                         ? "bg-ember text-obsidian shadow-sm ring-1 ring-ember/50 font-display"
                         : "text-muted hover:text-ink hover:bg-surface"
@@ -2515,13 +2515,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
         </div>
 
         {/* 🛡️ AUTO-SAVE STATUS & QUICK SYNC STRIP */}
-        <div className="flex flex-wrap items-center justify-between gap-2 bg-surface-raised/40 px-3 py-1.5 rounded-xl border border-hairline/70 text-[10px] sm:text-[11px]">
-          <div className="flex items-center gap-1.5 text-muted min-w-0 truncate">
+        <div className="flex items-center justify-between gap-2 bg-surface-raised/40 px-3 py-1.5 rounded-xl border border-hairline/70 text-[10px] sm:text-[11px] min-w-0">
+          <div className="flex items-center gap-1.5 text-muted min-w-0 flex-1">
             <span className="size-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="font-medium text-ink truncate">Progres Otomatis Tersimpan</span>
-            <span className="text-muted/70 hidden xs:inline">• Terakhir: {lastSavedTimestamp}</span>
+            <span className="font-medium text-ink truncate text-[10px] sm:text-[11px]">Progres Otomatis Tersimpan</span>
+            <span className="text-muted/70 hidden md:inline">• Terakhir: {lastSavedTimestamp}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {saveNotice && (
               <span className="text-emerald-400 font-bold text-[10px] animate-in fade-in">
                 ✓ {saveNotice}
@@ -2530,7 +2530,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
             <button
               type="button"
               onClick={triggerManualSave}
-              className="h-11 sm:h-6 px-3 sm:px-2 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[11px] sm:text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+              className="h-6.5 sm:h-6 px-2.5 rounded-lg border border-ember/30 bg-ember/10 hover:bg-ember/20 text-ember text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0"
               title="Simpan status belajar dan riwayat chat ke memori browser sekarang"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
@@ -2538,13 +2538,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 <polyline points="17 21 17 13 7 13 7 21" />
                 <polyline points="7 3 7 8 15 8" />
               </svg>
-              <span>Simpan Progres</span>
+              <span>Simpan</span>
             </button>
           </div>
         </div>
 
         {/* 6 COMPACT STREAMLINED SUB-MODULE TABS */}
-        <div className="border-t border-hairline/60 pt-2.5 sm:pt-3">
+        <div className="border-t border-hairline/60 pt-2 sm:pt-2.5">
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
             {[
               {
@@ -2552,7 +2552,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Belajar 0-100%",
                 sub: "Uji Suara Pop-up",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 sm:size-3.5">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
                     <path d="M6 6h10" />
                     <path d="M6 10h10" />
@@ -2564,7 +2564,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Bicara AI",
                 sub: "Live Speaking",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 sm:size-3.5">
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                     <line x1="12" x2="12" y1="19" y2="22" />
@@ -2576,7 +2576,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Roleplay",
                 sub: "Simulasi Skenario",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 sm:size-3.5">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                   </svg>
                 ),
@@ -2586,7 +2586,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Kuis",
                 sub: "Kuis Kilat Pro",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 sm:size-3.5">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -2598,7 +2598,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Esai",
                 sub: "Ujian & IELTS",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 sm:size-3.5">
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
@@ -2609,7 +2609,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                 label: "Rapor",
                 sub: "Riwayat & Nilai",
                 icon: (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 sm:size-4">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 sm:size-3.5">
                     <path d="M3 3v18h18" />
                     <path d="m19 9-5 5-4-4-3 3" />
                   </svg>
@@ -2624,24 +2624,24 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                     if (isCalling) endCall();
                     setMode(tab.id as Mode);
                   }}
-                  className={`h-11 sm:h-12 rounded-xl sm:rounded-2xl border p-1.5 sm:p-2 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
+                  className={`h-9 sm:h-10 rounded-xl border p-1 sm:p-1.5 transition-all text-left flex items-center gap-1.5 sm:gap-2 w-full min-w-0 cursor-pointer ${
                     isCurrent
                       ? "border-ember/70 bg-ember/15 text-ink shadow-sm ring-1 ring-ember/30"
                       : "border-hairline bg-surface hover:border-hairline/90 hover:bg-surface-raised text-muted"
                   }`}
                 >
                   <div
-                    className={`size-6 sm:size-7 shrink-0 rounded-lg sm:rounded-xl flex items-center justify-center ${
+                    className={`size-5 sm:size-6 shrink-0 rounded-lg flex items-center justify-center ${
                       isCurrent ? "bg-ember text-obsidian font-bold" : "bg-surface-raised border border-hairline text-muted"
                     }`}
                   >
                     {tab.icon}
                   </div>
                   <div className="min-w-0 flex-1 truncate">
-                    <span className={`text-[11px] sm:text-xs font-bold block truncate ${isCurrent ? "text-ember" : "text-ink"}`}>
+                    <span className={`text-[10px] sm:text-xs font-bold block truncate ${isCurrent ? "text-ember" : "text-ink"}`}>
                       {tab.label}
                     </span>
-                    <span className="hidden sm:block text-[10px] text-muted truncate">{tab.sub}</span>
+                    <span className="hidden sm:block text-[9px] sm:text-[10px] text-muted truncate">{tab.sub}</span>
                   </div>
                 </button>
               );
