@@ -198,26 +198,31 @@ function Banner({
   onClose: () => void;
 }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.6rem)] z-40 px-4">
-      <div className="surface-card pointer-events-auto mx-auto flex max-w-md items-center gap-3 rounded-xl border border-ember/30 px-4 py-3">
-        <p className="min-w-0 flex-1 text-sm leading-snug text-ink">{text}</p>
-        <button
-          type="button"
-          onClick={onAction}
-          className="btn-ember h-11 shrink-0 rounded-lg px-3.5 font-display text-sm font-bold text-obsidian"
-        >
-          {action}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Tutup"
-          className="grid size-11 shrink-0 place-items-center text-muted transition-colors hover:text-ink"
-        >
-          <svg viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden="true">
-            <path d="M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7l1.4-1.4 6.3 6.3 6.3-6.3z" />
-          </svg>
-        </button>
+    <div className="pointer-events-none fixed inset-x-0 bottom-4 sm:bottom-6 z-50 px-3 flex justify-center animate-in fade-in slide-in-from-bottom-3 duration-300">
+      <div className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-2.5 rounded-2xl border border-ember/40 bg-surface/95 px-3.5 py-2 sm:py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="size-2 rounded-full bg-ember animate-pulse shrink-0" />
+          <p className="min-w-0 truncate text-xs font-medium text-ink leading-tight">{text}</p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={onAction}
+            className="btn-ember h-8 shrink-0 rounded-xl px-3 font-display text-xs font-bold text-obsidian shadow-sm transition-all hover:brightness-105 active:scale-[0.98] cursor-pointer"
+          >
+            {action}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-obsidian hover:text-ink cursor-pointer"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   );

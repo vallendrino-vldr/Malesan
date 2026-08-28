@@ -293,13 +293,13 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
         wrongAudio: {
           label: "BUNYI SALAH (Lidah Kaku Indo):",
           text: "H dibaca 'Hek' / R getar keras 'Rrr'",
-          sampleText: "Hek, hek, abjad H dibaca hek. Rrr, getar keras rrr.",
+          sampleText: "Heck. ... Heck.",
           explanation: "Menambahkan letupan H kasar dan getaran lidah berlebihan.",
         },
         correctAudio: {
           label: "BUNYI BENAR (Native Bule):",
           text: "H dibaca 'Eitch' / R dibaca 'Ar' lembut",
-          sampleText: "The letter H is pronounced aitch, and the letter R is smooth.",
+          sampleText: "Aitch. ... Aitch.",
           explanation: "Murni melafalkan vokal 'ei' diikuti desisan halus 'tch'.",
         },
         tongueTip: "Tarik ujung lidah ke belakang menjauhi gigi seri saat menyebut huruf R.",
@@ -315,7 +315,7 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
             {
               text: "Pelafalan 'Hek'",
               subtext: "Ejaan: 'HEK' (Dengan bunyi H kasar di awal)",
-              soundSample: "Hek, abjad H dibaca hek.",
+              soundSample: "The letter H is pronounced heck.",
               isCorrect: false,
             },
           ],
@@ -505,8 +505,8 @@ const AUDIO_GATED_STAGES: AudioGatedStage[] = [
       {
         question: "Dengarkan audio di bawah. Manakah pelafalan abjad 'H' yang benar?",
         options: [
-          { text: "Eitch (tanpa bunyi H di awal)", subtext: "Ejaan: 'EITCH'", soundSample: "H is pronounced Eitch." },
-          { text: "Hek (dengan bunyi H kasar)", subtext: "Ejaan: 'HEK'", soundSample: "Hek is wrong." },
+          { text: "Eitch (tanpa bunyi H di awal)", subtext: "Ejaan: 'EITCH'", soundSample: "Aitch." },
+          { text: "Hek (dengan bunyi H kasar)", subtext: "Ejaan: 'HEK'", soundSample: "Heck." },
         ],
         correctIndex: 0,
         explanation: "Huruf H dibaca murni 'Eitch'.",
@@ -2787,7 +2787,7 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
 
                         <button
                           type="button"
-                          onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText, "indonesian" as unknown as Persona, null, "id")}
+                          onClick={() => playSpeechAudio(activeStep.wrongAudio.sampleText, "alex", null, "en-US")}
                           className="h-11 sm:h-10 px-3 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer w-full"
                         >
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
