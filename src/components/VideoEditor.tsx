@@ -36,7 +36,7 @@ const SOCIAL_PRESETS = [
     id: "hormozi",
     label: "Hormozi",
     hint: "Kalimat tebal, kata aktif membesar dengan glow lime",
-    mbps: 4.5,
+    mbps: 6.0,
     maxWords: 4,
     maxGap: 0.5,
     style: {
@@ -57,7 +57,7 @@ const SOCIAL_PRESETS = [
     id: "tiktok",
     label: "TikTok",
     hint: "Satu kata, outline tebal, pop cepat yang kontras",
-    mbps: 4.5,
+    mbps: 6.0,
     maxWords: 3,
     maxGap: 0.48,
     style: {
@@ -78,7 +78,7 @@ const SOCIAL_PRESETS = [
     id: "business",
     label: "Minimal",
     hint: "Kapsul hitam bersih, putih tenang, highlight amber halus",
-    mbps: 4.0,
+    mbps: 5.5,
     maxWords: 5,
     maxGap: 0.65,
     style: {

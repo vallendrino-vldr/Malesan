@@ -417,7 +417,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><rect width="14" height="20" x="5" y="2" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                       Pengguna HP Android / iOS
                     </p>
-                    <p className="text-[10px] text-muted leading-relaxed">Download video lewat aplikasi downloader di HP, lalu buka tab <strong>Video Studio</strong> untuk auto-potong & pasang subtitle.</p>
+                    <p className="text-[10px] text-muted leading-relaxed">
+                      <a href="/malesan.apk" download="malesan-v1.0.apk" className="text-emerald-400 font-bold underline hover:text-emerald-300">Download Malesan APK (1.5 MB)</a> atau unggah video di tab <strong>Video Studio</strong> untuk auto-potong & subtitle.
+                    </p>
                   </div>
                 </div>
               </div>

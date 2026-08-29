@@ -24,7 +24,7 @@ export function bitrateFor(mbps: number, _W?: number, _H?: number, _fps?: number
   void _W;
   void _H;
   void _fps;
-  const targetMbps = Math.max(2.5, Math.min(8, mbps || 4.5));
+  const targetMbps = Math.max(3.5, Math.min(10, mbps || 6.0));
   return Math.round(targetMbps * 1_000_000);
 }
 
@@ -55,7 +55,14 @@ export function drawFrame(
   const crop = layout.trajectory?.length
     ? trackedCoverCrop(sw, sh, W, H, cropFocusAt(layout.trajectory, t))
     : coverCrop(sw, sh, W, H, layout.focus);
+
+  ctx.save();
+  try {
+    ctx.filter = "contrast(1.04) brightness(1.02) saturate(1.03)";
+  } catch {}
   ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
+  ctx.restore();
+
   const a = activeAt(lines, t);
   if (a) drawCaption(ctx, a.line, t, style, W, H);
   if (watermark) drawWatermark(ctx, W, H);

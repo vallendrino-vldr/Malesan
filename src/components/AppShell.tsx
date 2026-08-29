@@ -170,6 +170,19 @@ export function AppShell({
 
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+            <a
+              href="/malesan.apk"
+              download="malesan-v1.0.apk"
+              title="Download Malesan Android Standalone App (1.5 MB)"
+              className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 sm:px-3 text-xs font-bold text-emerald-400 hover:border-emerald-500/60 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-xs"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 sm:size-4 shrink-0">
+                <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.996-3.4572c.1557-.2696.0633-.6144-.2063-.7701-.2696-.1557-.6144-.0633-.7701.2063l-2.0287 3.5139C15.3435 8.1673 13.7226 7.8286 12 7.8286s-3.3435.3387-4.8724.9857L5.0989 5.3004c-.1557-.2696-.5005-.362-.7701-.2063-.2696.1557-.362.5005-.2063.7701l1.996 3.4572C2.715 11.2778.3478 15.228 0 19.8665h24c-.3478-4.6385-2.715-8.5887-6.1185-10.5451" />
+              </svg>
+              <span className="hidden sm:inline">App Android</span>
+              <span className="sm:hidden">APK</span>
+            </a>
+
             <div className="hidden items-center gap-2 sm:flex">
               <RefreshButton variant="icon" />
               <TutorialSheet />
