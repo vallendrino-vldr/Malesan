@@ -10,7 +10,7 @@ import { getCost, getDashboardNotice, getVideoCostPerMin, getVideoNoWatermarkCos
 import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
-import { StudioPanel, StudioHeroCard, StudioTile, StudioWideTile } from "@/components/StudioPanel";
+import { StudioPanel, StudioHeroCard, StudioTile, StudioWideTile, StudioAutoClipWideTile } from "@/components/StudioPanel";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { CopyField } from "@/components/CopyField";
@@ -534,6 +534,9 @@ export default async function AppPage({
 
               {/* WIDE FLAGSHIP CARD: LANCAR INGGRIS (Client Component, Server/Client boundary safe) */}
               <StudioWideTile mod="lancar_bahasa" cost={costLancarBahasa} />
+
+              {/* WIDE FLAGSHIP CARD: AUTO CLIP YOUTUBE (Flagship Feature directly under Lancar Inggris) */}
+              <StudioAutoClipWideTile cost={costClip} />
             </div>
           </section>
 

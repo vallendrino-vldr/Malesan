@@ -53,7 +53,9 @@ async function handle(raw) {
     const ffmpeg = findTool("ffmpeg", process.env.MALESAN_FFMPEG_PATH);
     const output = join(work, "clip.mp4");
     await run(ytDlp, [
-      "--no-playlist", "--max-filesize", "2G", "--merge-output-format", "mp4",
+      "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
+      "--extractor-args", "youtube:player_client=android,web",
+      "--merge-output-format", "mp4",
       "--download-sections", `*${job.startTime}-${job.endTime}`,
       "--force-keyframes-at-cuts", "--ffmpeg-location", ffmpeg,
       "-o", output, job.sourceUrl,

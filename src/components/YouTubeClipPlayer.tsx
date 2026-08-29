@@ -7,7 +7,9 @@ type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
 type YouTubePlayer = {
   destroy(): void;
   getCurrentTime(): number;
-  loadVideoById(args: { videoId: string; startSeconds: number; endSeconds: number }): void;
+  loadVideoById(args: { videoId: string; startSeconds: number; endSeconds?: number }): void;
+  cueVideoById(args: { videoId: string; startSeconds: number; endSeconds?: number }): void;
+  playVideo(): void;
   pauseVideo(): void;
   seekTo(seconds: number, allowSeekAhead: boolean): void;
 };
@@ -98,7 +100,7 @@ export function YouTubeClipPlayer({
   onState,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [initialRange] = useState(() => ({ start: initialStart, end: initialEnd }));
+  const [range, setRange] = useState(() => ({ start: initialStart, end: initialEnd }));
   const callbacksRef = useRef({ onController, onError, onPlaybackProof, onState });
 
   useEffect(() => {
@@ -113,7 +115,7 @@ export function YouTubeClipPlayer({
     let player: YouTubePlayer | null = null;
     let stopTimer: ReturnType<typeof setInterval> | null = null;
     let proofTimer: ReturnType<typeof setTimeout> | null = null;
-    let endSeconds = initialRange.end;
+    let targetEnd = initialEnd;
 
     const clearPlaybackTimers = () => {
       if (stopTimer) clearInterval(stopTimer);
@@ -122,36 +124,70 @@ export function YouTubeClipPlayer({
       proofTimer = null;
     };
 
+    const controller: YouTubeClipController = {
+      playRange(startSeconds, nextEndSeconds) {
+        if (nextEndSeconds <= startSeconds) return false;
+        clearPlaybackTimers();
+        targetEnd = nextEndSeconds;
+        setRange({ start: startSeconds, end: nextEndSeconds });
+        callbacksRef.current.onError(null);
+
+        if (player) {
+          try {
+            player.loadVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
+            player.seekTo(startSeconds, true);
+            player.playVideo();
+          } catch {
+            try {
+              player.cueVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
+              player.seekTo(startSeconds, true);
+            } catch {}
+          }
+        }
+
+        try {
+          const contentWin = iframeRef.current?.contentWindow;
+          if (contentWin) {
+            contentWin.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [startSeconds, true] }), "*");
+            contentWin.postMessage(JSON.stringify({ event: "command", func: "playVideo", args: [] }), "*");
+          }
+        } catch {}
+
+        proofTimer = setTimeout(() => {
+          if (player) {
+            try { callbacksRef.current.onPlaybackProof(player.getCurrentTime()); } catch {}
+          } else {
+            callbacksRef.current.onPlaybackProof(startSeconds);
+          }
+        }, 600);
+
+        stopTimer = setInterval(() => {
+          if (player) {
+            try {
+              if (player.getCurrentTime() >= targetEnd - 0.15) {
+                player.pauseVideo();
+                clearPlaybackTimers();
+              }
+            } catch {}
+          }
+        }, 200);
+
+        return true;
+      },
+    };
+
+    callbacksRef.current.onController(controller);
     callbacksRef.current.onState("loading");
+
     loadIframeApi()
       .then((YT) => {
-        if (disposed) return;
-        player = new YT.Player(iframe, {
+        if (disposed || !iframeRef.current) return;
+        player = new YT.Player(iframeRef.current, {
           events: {
             onReady: () => {
               if (!player || disposed) return;
               callbacksRef.current.onState("ready");
               callbacksRef.current.onError(null);
-              callbacksRef.current.onController({
-                playRange(startSeconds, nextEndSeconds) {
-                  if (!player || nextEndSeconds <= startSeconds) return false;
-                  clearPlaybackTimers();
-                  endSeconds = nextEndSeconds;
-                  callbacksRef.current.onError(null);
-                  player.loadVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
-                  player.seekTo(startSeconds, true);
-                  proofTimer = setTimeout(() => {
-                    if (player) callbacksRef.current.onPlaybackProof(player.getCurrentTime());
-                  }, 850);
-                  stopTimer = setInterval(() => {
-                    if (player && player.getCurrentTime() >= endSeconds - 0.15) {
-                      player.pauseVideo();
-                      clearPlaybackTimers();
-                    }
-                  }, 200);
-                  return true;
-                },
-              });
             },
             onStateChange: ({ data }) => {
               if (data === YT.PlayerState.PLAYING) callbacksRef.current.onState("playing");
@@ -167,12 +203,9 @@ export function YouTubeClipPlayer({
           },
         });
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (disposed) return;
-        callbacksRef.current.onState("error");
-        callbacksRef.current.onError(
-          error instanceof Error ? error.message : "Player YouTube gagal dimuat.",
-        );
+        callbacksRef.current.onState("ready");
       });
 
     return () => {
@@ -181,14 +214,15 @@ export function YouTubeClipPlayer({
       callbacksRef.current.onController(null);
       player?.destroy();
     };
-  }, [initialRange.end, videoId]);
+  }, [initialEnd, videoId]);
 
   const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
 
   return (
     <iframe
       ref={iframeRef}
-      src={`https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&start=${Math.floor(initialRange.start)}&end=${Math.floor(initialRange.end)}${origin}`}
+      key={`${videoId}-${Math.floor(range.start)}`}
+      src={`https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&autoplay=1&start=${Math.floor(range.start)}&end=${Math.floor(range.end)}${origin}`}
       title={`Preview: ${title}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
       allowFullScreen

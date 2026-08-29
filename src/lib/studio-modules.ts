@@ -1,4 +1,4 @@
-﻿export const STUDIO_MODULES = [
+export const STUDIO_MODULES = [
   "ide",
   "idea",
   "hook",
@@ -10,6 +10,7 @@
   "affiliate",
   "carousel",
   "lancar_bahasa",
+  "auto_clip",
 ] as const;
 
 export type StudioModule = (typeof STUDIO_MODULES)[number];

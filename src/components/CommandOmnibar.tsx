@@ -129,6 +129,24 @@ export function CommandOmnibar({
         },
       },
       {
+        id: "studio-auto-clip",
+        title: "Auto Clip YouTube (Momen Viral & Face Track)",
+        category: "Studio",
+        subtitle: "Tempel link YouTube, potong momen viral, subtitle & face track 9:16",
+        badge: "AI Flagship",
+        icon: (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
+            <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+            <polygon points="10 15 15 12 10 9 10 15" />
+          </svg>
+        ),
+        onSelect: () => {
+          onSelectTab("studio");
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "auto_clip" }));
+          onClose();
+        },
+      },
+      {
         id: "studio-video-cc",
         title: "Subtitle Video Otomatis (Auto-CC)",
         category: "Studio",

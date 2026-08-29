@@ -97,7 +97,15 @@ const SOCIAL_PRESETS = [
   },
 ] as const;
 
-export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWatermarkCost: number }) {
+export function VideoEditor({
+  cost,
+  noWatermarkCost,
+  mode = "auto_clip",
+}: {
+  cost: number;
+  noWatermarkCost: number;
+  mode?: "auto_clip" | "subtitle";
+}) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
@@ -348,41 +356,84 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
 
       <header>
         <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
-          Auto Clip Video
+          {mode === "auto_clip" ? "Auto Clip Video" : "Subtitle Video (Auto Caption)"}
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Tempel link YouTube, pilih momen rekomendasi, lalu preview langsung lompat ke bagian itu.
-          <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
+          {mode === "auto_clip" ? (
+            <>
+              Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
+              <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
+            </>
+          ) : (
+            <>
+              Upload rekaman video kamu, AI otomatis transkrip &amp; pasang subtitle animasi siap tayang.
+              <span className="text-ember"> Mulai dari {cost} kredit / menit.</span>
+            </>
+          )}
         </p>
       </header>
 
-      <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
+      {mode === "auto_clip" ? (
+        <>
+          <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
 
-      {!file ? (
-        <details className="group rounded-2xl border border-hairline bg-surface">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
-            <span>Pakai file sendiri</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="size-4 shrink-0 transition-transform group-open:rotate-180"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </summary>
-          <div className="border-t border-hairline p-3">
-            <p className="mb-3 text-micro leading-relaxed text-muted">
-              Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari {cost} kredit / menit.
-            </p>
-            <UploadDrop onPick={onPick} />
-          </div>
-        </details>
+          {!file ? (
+            <details className="group rounded-2xl border border-hairline bg-surface">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+                <span>Pakai file sendiri</span>
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-4 shrink-0 transition-transform group-open:rotate-180"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              <div className="border-t border-hairline p-3">
+                <p className="mb-3 text-micro leading-relaxed text-muted">
+                  Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari {cost} kredit / menit.
+                </p>
+                <UploadDrop onPick={onPick} />
+              </div>
+            </details>
+          ) : null}
+        </>
       ) : (
+        <>
+          {!file ? (
+            <div className="space-y-4">
+              <UploadDrop onPick={onPick} />
+              <details className="group rounded-2xl border border-hairline bg-surface">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+                  <span>Mau potong klip dari YouTube?</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="size-4 shrink-0 transition-transform group-open:rotate-180"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </summary>
+                <div className="border-t border-hairline p-3">
+                  <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
+                </div>
+              </details>
+            </div>
+          ) : null}
+        </>
+      )}
+
+      {file ? (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
           <div className="lg:flex-1">
             <VideoPreviewPlayer
@@ -503,7 +554,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
             </button>
           </div>
         </div>
-      )}
+      ) : null}
 
       {error && (
         <p className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">

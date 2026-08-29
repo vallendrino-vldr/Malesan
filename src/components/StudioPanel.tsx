@@ -151,8 +151,10 @@ export function StudioPanel({
         <ClipEngine cost={clipCost} />
       ) : mod === "thread" ? (
         <ThreadEngine cost={threadCost} />
+      ) : mod === "auto_clip" ? (
+        <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} mode="auto_clip" />
       ) : mod === "video" ? (
-        <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} />
+        <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} mode="subtitle" />
       ) : mod === "affiliate" ? (
         <AffiliateEngine cost={affiliateCost} />
       ) : mod === "carousel" ? (
@@ -324,6 +326,63 @@ export function StudioWideTile({
               </div>
               <p className="mt-0.5 text-[11px] sm:text-xs text-muted leading-tight truncate sm:whitespace-normal">
                 Speaking AI native, roleplay skenario nyata, kuis interaktif &amp; evaluasi esai.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-micro font-bold text-muted group-hover:text-ember transition-colors hidden md:inline">
+              Buka Studio
+            </span>
+            <span className="inline-flex size-6 sm:size-7 items-center justify-center rounded-lg bg-surface border border-hairline text-muted group-hover:border-ember group-hover:bg-ember group-hover:text-obsidian transition-all">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3 sm:size-3.5">
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </span>
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+}
+
+export function StudioAutoClipWideTile({
+  cost = 4,
+}: {
+  cost?: number;
+}) {
+  return (
+    <div className="col-span-2 lg:col-span-5">
+      <button
+        type="button"
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "auto_clip" }));
+        }}
+        className="group relative w-full overflow-hidden rounded-2xl border border-ember/35 bg-gradient-to-r from-surface-raised via-surface to-ember/10 p-3.5 sm:p-4 text-left shadow-xs transition-all duration-200 hover:border-ember/65 hover:shadow-md active:scale-[0.995]"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex size-9 sm:size-10 shrink-0 items-center justify-center rounded-xl border border-ember/40 bg-ember/15 text-ember transition-transform group-hover:scale-105">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 sm:size-5">
+                <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
+                <polygon points="10 15 15 12 10 9 10 15" />
+              </svg>
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
+                  Auto Clip YouTube
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-ember uppercase tracking-wider">
+                  AI Flagship
+                </span>
+                <span className="rounded-md bg-surface px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-ember border border-hairline">
+                  {cost} kredit
+                </span>
+              </div>
+              <p className="mt-0.5 text-[11px] sm:text-xs text-muted leading-tight truncate sm:whitespace-normal">
+                Tempel link YouTube, AI otomatis potong momen viral, tempel subtitle &amp; auto face track 9:16.
               </p>
             </div>
           </div>

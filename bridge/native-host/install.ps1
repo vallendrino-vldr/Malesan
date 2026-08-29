@@ -27,8 +27,8 @@ try {
 
   $YtDlp = Join-Path $Tools 'yt-dlp.exe'
   $Checksum = Join-Path $Temp 'SHA2-256SUMS'
-  Invoke-WebRequest "https://github.com/yt-dlp/yt-dlp/releases/download/$YtDlpVersion/yt-dlp.exe" -OutFile $YtDlp
-  Invoke-WebRequest "https://github.com/yt-dlp/yt-dlp/releases/download/$YtDlpVersion/SHA2-256SUMS" -OutFile $Checksum
+  Invoke-WebRequest "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe" -OutFile $YtDlp
+  Invoke-WebRequest "https://github.com/yt-dlp/yt-dlp/releases/latest/download/SHA2-256SUMS" -OutFile $Checksum
   $Expected = ((Select-String -Path $Checksum -Pattern '^[0-9a-f]{64}\s+yt-dlp\.exe$').Line -split '\s+')[0]
   $Actual = (Get-FileHash $YtDlp -Algorithm SHA256).Hash.ToLowerInvariant()
   if (!$Expected -or $Actual -ne $Expected) { throw 'Checksum yt-dlp gak cocok. Instalasi dihentikan.' }
