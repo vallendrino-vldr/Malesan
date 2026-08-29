@@ -25,14 +25,10 @@ export default function NgodingRoadmapView({
   const totalLevels = curriculum.length;
   const progressPercent = Math.round((completedCount / totalLevels) * 100);
 
-  // Filter lessons for active track
-  const [startLvl, endLvl] = currentTrack.levelRange;
-  const trackLessons = curriculum.filter(
-    (l) => l.level >= startLvl && l.level <= endLvl
-  );
+  // Filter lessons ONLY for the active track
+  const trackLessons = curriculum.filter((l) => l.track === activeTrackId);
 
-  // Determine which levels are unlocked
-  // Level 1 is always unlocked. Next level is unlocked if previous level is completed.
+  // Check if level is unlocked (Level 1 is always unlocked; next is unlocked if previous is done)
   const isLevelUnlocked = (levelNum: number) => {
     if (levelNum === 1) return true;
     const prevLesson = curriculum.find((l) => l.level === levelNum - 1);
@@ -42,22 +38,30 @@ export default function NgodingRoadmapView({
 
   const isLevelDone = (lessonId: string) => progress.completedLevelIds.includes(lessonId);
 
+  // Find the primary active quest in this track (first unlocked but not done, or first if none done, or last if all done)
+  const activeTrackQuest =
+    trackLessons.find((l) => isLevelUnlocked(l.level) && !isLevelDone(l.id)) ||
+    trackLessons[0];
+
+  const isActiveQuestUnlocked = activeTrackQuest ? isLevelUnlocked(activeTrackQuest.level) : false;
+  const isActiveQuestDone = activeTrackQuest ? isLevelDone(activeTrackQuest.id) : false;
+
   return (
-    <div className="space-y-4 max-w-2xl mx-auto pb-12 animate-fadeIn">
+    <div className="space-y-3.5 max-w-2xl mx-auto pb-12 animate-fadeIn">
       {/* Gamification HUD Summary */}
-      <div className="surface-card rounded-2xl border border-hairline/80 p-4 space-y-3 shadow-xs">
+      <div className="surface-card rounded-2xl border border-hairline/80 p-3.5 sm:p-4 space-y-3 shadow-xs">
         <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
           {/* Streak & XP Badges */}
           <div className="flex items-center gap-2">
-            <div className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-orange-500/15 border border-orange-500/30 px-3 text-xs font-bold text-orange-400">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-orange-400">
+            <div className="inline-flex h-7.5 items-center gap-1.5 rounded-xl bg-orange-500/15 border border-orange-500/30 px-2.5 text-xs font-bold text-orange-400">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-orange-400">
                 <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
               </svg>
               <span>{progress.streak} Hari Streak</span>
             </div>
 
-            <div className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-ember/15 border border-ember/30 px-3 text-xs font-bold text-ember">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-ember">
+            <div className="inline-flex h-7.5 items-center gap-1.5 rounded-xl bg-ember/15 border border-ember/30 px-2.5 text-xs font-bold text-ember">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
               <span>{progress.xp} Total XP</span>
@@ -68,7 +72,7 @@ export default function NgodingRoadmapView({
           <button
             type="button"
             onClick={onOpenGlossary}
-            className="flex h-8 items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/70 px-3 text-xs font-semibold text-muted hover:text-ink hover:border-ember/40 transition-colors"
+            className="flex h-7.5 items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised/70 px-2.5 text-xs font-semibold text-muted hover:text-ink hover:border-ember/40 transition-colors"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
@@ -79,12 +83,12 @@ export default function NgodingRoadmapView({
         </div>
 
         {/* Progress Bar */}
-        <div className="space-y-1.5 pt-1">
+        <div className="space-y-1 pt-0.5">
           <div className="flex items-center justify-between text-micro font-mono text-muted">
             <span>Petualangan Belajar</span>
             <span>{completedCount}/{totalLevels} Selesai ({progressPercent}%)</span>
           </div>
-          <div className="w-full h-2.5 rounded-full bg-surface-raised border border-hairline/60 overflow-hidden">
+          <div className="w-full h-2 rounded-full bg-surface-raised border border-hairline/60 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-ember-lo to-ember transition-all duration-500 rounded-full"
               style={{ width: `${progressPercent}%` }}
@@ -94,7 +98,7 @@ export default function NgodingRoadmapView({
       </div>
 
       {/* Track Selector Tabs */}
-      <div className="grid grid-cols-3 h-10 items-center rounded-2xl border border-hairline bg-surface/70 p-1 w-full gap-1 shadow-xs">
+      <div className="grid grid-cols-3 h-9 items-center rounded-xl border border-hairline bg-surface/70 p-1 w-full gap-1 shadow-xs">
         {TRACKS.map((t) => {
           const isActive = t.id === activeTrackId;
           return (
@@ -102,7 +106,7 @@ export default function NgodingRoadmapView({
               key={t.id}
               type="button"
               onClick={() => setActiveTrackId(t.id)}
-              className={`flex h-8 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-bold transition-all ${
+              className={`flex h-7 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${
                 isActive
                   ? "bg-ember text-obsidian shadow-sm"
                   : "text-muted hover:text-ink hover:bg-surface-raised/40"
@@ -114,101 +118,122 @@ export default function NgodingRoadmapView({
         })}
       </div>
 
-      {/* Track Overview Banner */}
-      <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3 flex items-center justify-between gap-2">
-        <div>
-          <h3 className="font-display text-xs font-bold text-ember">{currentTrack.name}</h3>
-          <p className="text-[11px] text-muted">{currentTrack.desc}</p>
+      {/* Primary Highlight Hero Quest Card */}
+      {activeTrackQuest && (
+        <div className="surface-card rounded-2xl border-2 border-ember bg-gradient-to-br from-ember/15 via-ember/5 to-transparent p-4 sm:p-5 space-y-3 shadow-lg shadow-ember/10">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex h-5.5 items-center rounded-md bg-ember/20 px-2 font-mono text-[10px] font-bold text-ember border border-ember/40">
+              MISI UTAMA · LEVEL {activeTrackQuest.level}
+            </span>
+            <span className="text-micro font-mono text-muted bg-surface-raised/80 px-2 py-0.5 rounded border border-hairline/60">
+              +{activeTrackQuest.xpReward} XP
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <div className="text-micro font-mono text-muted/90 uppercase tracking-wider">{activeTrackQuest.topic}</div>
+            <h3 className="font-display text-base sm:text-lg font-bold text-ink">{activeTrackQuest.title}</h3>
+            <p className="text-xs text-muted leading-relaxed line-clamp-2">{activeTrackQuest.analogy}</p>
+          </div>
+
+          <div className="pt-1">
+            {isActiveQuestUnlocked ? (
+              <button
+                type="button"
+                onClick={() => onSelectLevel(activeTrackQuest.level)}
+                className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-ember px-4 font-display text-xs sm:text-sm font-bold text-obsidian hover:bg-ember-lo active:scale-[0.99] transition-all shadow-md shadow-ember/25"
+              >
+                <span>{isActiveQuestDone ? "Ulangi Misi Ini 🔄" : "Mulai Misi Level " + activeTrackQuest.level + " 🚀"}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            ) : (
+              <div className="flex h-9 items-center justify-center rounded-xl bg-surface-raised text-xs text-muted font-medium border border-hairline">
+                🔒 Selesaikan level sebelumnya untuk membuka
+              </div>
+            )}
+          </div>
         </div>
-        <span className="text-[10px] font-mono text-muted/75 bg-surface px-2 py-0.5 rounded border border-hairline/40 shrink-0">
-          Level {startLvl}–{endLvl}
-        </span>
-      </div>
+      )}
 
-      {/* Level Roadmap Skill Tree Cards */}
-      <div className="space-y-2.5">
-        {trackLessons.map((lesson) => {
-          const unlocked = isLevelUnlocked(lesson.level);
-          const completed = isLevelDone(lesson.id);
+      {/* Compact Track Level List (Zero-Clutter) */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between px-1 text-micro font-mono text-muted uppercase">
+          <span>Daftar Level ({currentTrack.name})</span>
+          <span>{trackLessons.filter((l) => isLevelDone(l.id)).length}/{trackLessons.length} Selesai</span>
+        </div>
 
-          return (
-            <div
-              key={lesson.id}
-              className={`relative surface-card rounded-2xl border p-4 transition-all duration-200 ${
-                completed
-                  ? "border-emerald-500/40 bg-gradient-to-r from-emerald-500/[0.06] to-transparent shadow-xs"
-                  : unlocked
-                  ? "border-ember/50 bg-gradient-to-r from-ember/[0.08] to-transparent shadow-sm hover:border-ember"
-                  : "border-hairline/40 bg-surface/30 opacity-60"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                {/* Left info */}
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`inline-flex h-5.5 items-center rounded-md px-2 font-mono text-[10px] font-bold border ${
-                        completed
-                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
-                          : unlocked
-                          ? "bg-ember/20 text-ember border-ember/40"
-                          : "bg-surface-raised text-muted border-hairline"
-                      }`}
-                    >
-                      LEVEL {lesson.level}
-                    </span>
+        <div className="space-y-1.5">
+          {trackLessons.map((lesson) => {
+            const unlocked = isLevelUnlocked(lesson.level);
+            const completed = isLevelDone(lesson.id);
+            const isCurrentHero = activeTrackQuest?.id === lesson.id;
 
-                    <span className="text-micro font-medium text-muted tracking-tight">
+            return (
+              <div
+                key={lesson.id}
+                className={`flex items-center justify-between gap-2.5 rounded-xl border px-3 py-2 transition-all ${
+                  completed
+                    ? "border-emerald-500/30 bg-emerald-500/[0.04] text-ink"
+                    : isCurrentHero
+                    ? "border-ember/60 bg-ember/[0.06] text-ink"
+                    : unlocked
+                    ? "border-hairline bg-surface/70 hover:border-ember/30 text-ink"
+                    : "border-hairline/30 bg-surface/20 text-muted/60 opacity-60"
+                }`}
+              >
+                {/* Left indicator & Title */}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <span
+                    className={`inline-flex size-6 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold border ${
+                      completed
+                        ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                        : unlocked
+                        ? "bg-ember/20 text-ember border-ember/40"
+                        : "bg-surface-raised text-muted/60 border-hairline/40"
+                    }`}
+                  >
+                    {completed ? "✓" : lesson.level}
+                  </span>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-display text-xs font-bold truncate text-ink">
+                        {lesson.title}
+                      </span>
+                      {completed && <span className="text-[10px] text-amber-400 shrink-0">⭐⭐⭐</span>}
+                    </div>
+                    <span className="text-[10px] font-mono text-muted truncate block">
                       {lesson.topic}
                     </span>
-
-                    {completed && (
-                      <span className="inline-flex items-center gap-1 text-emerald-400 font-bold text-micro">
-                        <span>✓ Selesai</span>
-                        <span className="text-amber-400">⭐⭐⭐</span>
-                      </span>
-                    )}
                   </div>
-
-                  <h4 className="font-display text-sm sm:text-base font-bold text-ink leading-snug">
-                    {lesson.title}
-                  </h4>
-
-                  <p className="text-xs text-muted leading-relaxed line-clamp-2">
-                    {lesson.analogy}
-                  </p>
                 </div>
 
-                {/* Right Action Button */}
-                <div className="shrink-0 pt-0.5">
+                {/* Right Action */}
+                <div className="shrink-0">
                   {unlocked ? (
                     <button
                       type="button"
                       onClick={() => onSelectLevel(lesson.level)}
-                      className={`flex h-8.5 items-center gap-1.5 rounded-xl px-3.5 font-display text-xs font-bold transition-all active:scale-95 shadow-sm ${
+                      className={`h-7 px-2.5 rounded-lg font-display text-[11px] font-bold transition-all active:scale-95 ${
                         completed
-                          ? "bg-surface-raised border border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/15"
-                          : "bg-ember text-obsidian hover:bg-ember-lo shadow-ember/20"
+                          ? "bg-surface-raised border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                          : "bg-ember text-obsidian hover:bg-ember-lo"
                       }`}
                     >
-                      <span>{completed ? "Ulangi" : "Mulai Misi"}</span>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                      </svg>
+                      {completed ? "Ulangi" : "Mulai"}
                     </button>
                   ) : (
-                    <div className="flex size-8.5 items-center justify-center rounded-xl border border-hairline/60 bg-surface text-muted/60" title="Selesaikan level sebelumnya untuk membuka">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                      </svg>
-                    </div>
+                    <span className="text-micro font-mono text-muted/40 px-2 py-0.5">
+                      🔒 Terkunci
+                    </span>
                   )}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

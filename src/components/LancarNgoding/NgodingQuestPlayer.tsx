@@ -1,8 +1,14 @@
-"use client";
+﻿"use client";
 
 import React, { useState } from "react";
 import { LessonItem } from "./StepLearnView";
-import { runJavaScriptSandbox, validateLessonCode, SandboxResult, ValidationResult } from "@/lib/code-sandbox";
+import {
+  runJavaScriptSandbox,
+  validateLessonCode,
+  getLessonChallenge,
+  SandboxResult,
+  ValidationResult,
+} from "@/lib/code-sandbox";
 
 interface Props {
   lesson: LessonItem;
@@ -21,12 +27,11 @@ export default function NgodingQuestPlayer({
 }: Props) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
 
-  // Sandbox State
-  const defaultStarterCode = lesson.codeSnippet.includes("___")
-    ? lesson.codeSnippet.replace(/___/g, lesson.correctAnswer)
-    : lesson.codeSnippet;
+  // Get tailored puzzle & objective for this level
+  const challenge = getLessonChallenge(lesson.level);
 
-  const [userCode, setUserCode] = useState(defaultStarterCode);
+  // Sandbox State
+  const [userCode, setUserCode] = useState(challenge.starterCode);
   const [sandboxResult, setSandboxResult] = useState<SandboxResult | null>(null);
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
@@ -103,8 +108,8 @@ export default function NgodingQuestPlayer({
               {currentStep === 1
                 ? "Konsep Kilat"
                 : currentStep === 2
-                ? "Praktek & Validasi Sandbox"
-                : "Kuis Pemahaman"}
+                ? "Misi Tantangan Sandbox"
+                : "Kuis Pengunci Ilmu"}
             </span>
             <span>{Math.round((currentStep / 3) * 100)}%</span>
           </div>
@@ -194,12 +199,12 @@ export default function NgodingQuestPlayer({
       {currentStep === 2 && (
         <div className="surface-card rounded-2xl border border-hairline/80 p-4 sm:p-5 space-y-4 shadow-xs animate-fadeIn">
           {/* Mission Target Objective */}
-          <div className="rounded-xl border border-ember/40 bg-ember/10 p-3.5 space-y-1">
+          <div className="rounded-xl border border-ember/40 bg-ember/10 p-3.5 space-y-1.5">
             <div className="flex items-center gap-2 font-display text-xs font-bold text-ember">
               <span>🎯 Target Misi:</span>
             </div>
-            <p className="text-xs text-ink/90 leading-relaxed">
-              Jalankan kode di bawah dan pastikan program berjalan lancar tanpa error hingga target validasi tercapai!
+            <p className="text-xs sm:text-[13px] text-ink/90 leading-relaxed font-medium">
+              {challenge.objective}
             </p>
           </div>
 
@@ -210,7 +215,7 @@ export default function NgodingQuestPlayer({
               <button
                 type="button"
                 onClick={() => {
-                  setUserCode(defaultStarterCode);
+                  setUserCode(challenge.starterCode);
                   setSandboxResult(null);
                   setValidationResult(null);
                 }}
@@ -223,7 +228,7 @@ export default function NgodingQuestPlayer({
               <textarea
                 value={userCode}
                 onChange={(e) => setUserCode(e.target.value)}
-                rows={6}
+                rows={7}
                 spellCheck={false}
                 className="w-full resize-y bg-transparent font-mono text-xs sm:text-[13px] text-ember-lo focus:outline-none leading-relaxed selection:bg-ember/30"
               />
@@ -254,10 +259,10 @@ export default function NgodingQuestPlayer({
               }`}
             >
               <div className="flex items-center gap-2 font-bold text-xs">
-                <span>{validationResult.isValid ? "✅ VALIDASI BERHASIL!" : "⚠️ VALIDASI BELUM SESUAI"}</span>
+                <span>{validationResult.isValid ? "✅ VALIDASI BERHASIL!" : "⚠️ VALIDASI BELUM TERCAPAI"}</span>
               </div>
               <p className="text-xs text-ink/90 leading-relaxed">{validationResult.message}</p>
-              {validationResult.hint && (
+              {validationResult.hint && !validationResult.isValid && (
                 <p className="text-[11px] text-muted italic">💡 Tips: {validationResult.hint}</p>
               )}
             </div>
@@ -285,7 +290,7 @@ export default function NgodingQuestPlayer({
                   <p className="text-muted italic">Program sukses jalan tanpa pesan log.</p>
                 )
               ) : (
-                <p className="text-muted/60 italic">Klik &quot;Jalankan &amp; Validasi Kode ▶&quot; di atas...</p>
+                <p className="text-muted/60 italic">Selesaikan tantangan di atas lalu klik &quot;Jalankan &amp; Validasi Kode ▶&quot;...</p>
               )}
             </div>
           </div>

@@ -9,7 +9,12 @@
     "type": "fill_blank",
     "question": "Lengkapin kode di bawah biar variabel 'saldo' isinya angka 50000 (bukan teks):",
     "codeSnippet": "let saldo = ___;\nconsole.log(saldo);",
-    "options": ["50000", "\"50000\"", "true", "saldo"],
+    "options": [
+      "50000",
+      "\"50000\"",
+      "true",
+      "saldo"
+    ],
     "correctAnswer": "50000",
     "explanation": "Angka gak butuh tanda petik. Kalo lu tulis \"50000\" pake petik, komputer nganggep itu TEKS. Bedanya kerasa pas lu coba tambah: 50000 + 1 hasilnya 50001, tapi \"50000\" + 1 hasilnya \"500001\". Serem kan kalo itu saldo e-wallet lu?",
     "hint": "Tulis angkanya polos aja, jangan dikasih baju tanda kutip.",
@@ -46,7 +51,12 @@
     "type": "fill_blank",
     "question": "Lengkapin biar output-nya jadi 'Halo Fadli, saldo lu 50000'. Isi bagian kosongnya:",
     "codeSnippet": "let nama = \"Fadli\";\nlet saldo = 50000;\n\nconsole.log(`Halo ___, saldo lu ${saldo}`);",
-    "options": ["${nama}", "$nama", "{nama}", "\"nama\""],
+    "options": [
+      "${nama}",
+      "$nama",
+      "{nama}",
+      "\"nama\""
+    ],
     "correctAnswer": "${nama}",
     "explanation": "Di dalam backtick (`), lubang buat nyolokin variabel formatnya ${namaVariabel}. Wajib ada tanda dolar DAN kurung kurawal. Kalo lu tulis {nama} doang, dia bakal muncul apa adanya jadi teks '{nama}' — malu kan kalo user liat.",
     "hint": "Duitnya jangan lupa. Dolar dulu, baru kurung kurawal.",
@@ -125,7 +135,12 @@
     "type": "fill_blank",
     "question": "Lengkapin biar 'Kopi Sachet' masuk ke urutan paling akhir keranjang:",
     "codeSnippet": "let keranjang = [\"Indomie\", \"Telur\"];\n\nkeranjang.___(\"Kopi Sachet\");\n\nconsole.log(keranjang);\n// Harapan: [\"Indomie\", \"Telur\", \"Kopi Sachet\"]",
-    "options": ["push", "pop", "add", "append"],
+    "options": [
+      "push",
+      "pop",
+      "add",
+      "append"
+    ],
     "correctAnswer": "push",
     "explanation": "push() nambahin item di ujung belakang array. Sodara-sodaranya: pop() buat NGAMBIL item terakhir (kayak batalin belanjaan), unshift() nyelak di depan antrean, dan shift() ngambil dari depan. Ingat: 'add' dan 'append' itu bahasa Python/Java, di JavaScript gak ada.",
     "hint": "Bahasa Inggrisnya 'dorong'. Barangnya didorong ke belakang.",
@@ -195,25 +210,30 @@
     "xpReward": 25
   },
   {
-    "id": "track2_lvl1_q11",
+    "id": "track2_lvl11_q11",
     "track": "menengah",
-    "level": 1,
+    "level": 11,
     "topic": "Event Listener",
     "title": "Bel Rumah yang Nunggu Dipencet",
     "analogy": "addEventListener itu masang bel di pintu. Lu gak tau kapan tamunya dateng, tapi begitu dipencet, alarm di dalem rumah langsung bunyi. Kode lu nunggu, bukan ngejar.",
     "type": "fill_blank",
     "question": "Lengkapin biar tombol nyala pas diklik:",
     "codeSnippet": "const tombol = document.querySelector(\"#btnCheckout\");\n\ntombol.addEventListener(\"___\", () => {\n  console.log(\"Checkout diproses!\");\n});",
-    "options": ["click", "onclick", "press", "tap"],
+    "options": [
+      "click",
+      "onclick",
+      "press",
+      "tap"
+    ],
     "correctAnswer": "click",
     "explanation": "Nama event-nya 'click' polos, tanpa 'on'. Awalan 'on' cuma dipake kalo lu nulis di atribut HTML (onclick=\"...\") — cara jadul yang bikin kode berantakan. Event lain yang sering kepake: 'submit' buat form, 'input' buat ngetik realtime, 'change' buat dropdown.",
     "hint": "Buang 'on'-nya. Sisain kata kerjanya doang.",
     "xpReward": 30
   },
   {
-    "id": "track2_lvl2_q12",
+    "id": "track2_lvl12_q12",
     "track": "menengah",
-    "level": 2,
+    "level": 12,
     "topic": "Event Object & preventDefault",
     "title": "Bug Hunt: Form Kabur Sebelum Data Kekirim",
     "analogy": "Form HTML itu punya insting bawaan: begitu di-submit, dia langsung refresh halaman kayak orang kabur abis ngasih surat cinta. preventDefault() itu tangan lu yang narik bajunya biar dia diem dulu.",
@@ -232,9 +252,9 @@
     "xpReward": 30
   },
   {
-    "id": "track2_lvl3_q13",
+    "id": "track2_lvl13_q13",
     "track": "menengah",
-    "level": 3,
+    "level": 13,
     "topic": "Fetch API & Promise",
     "title": "Pesen Makanan Lewat Ojol",
     "analogy": "fetch() itu lu klik 'Pesan' di aplikasi ojol. Makanannya GAK langsung nongol di meja — yang lu dapet cuma notifikasi 'Pesanan diproses'. Notifikasi itu namanya Promise: janji bahwa makanannya bakal dateng.",
@@ -253,25 +273,30 @@
     "xpReward": 35
   },
   {
-    "id": "track2_lvl4_q14",
+    "id": "track2_lvl14_q14",
     "track": "menengah",
-    "level": 4,
+    "level": 14,
     "topic": "Response & JSON Parsing",
     "title": "Buka Bungkus Nasi Padang",
     "analogy": "Response dari server itu nasi padang yang masih dibungkus kertas cokelat. .json() itu proses buka bungkusnya. Kalo gak dibuka, lu cuma megang bungkusan, bukan makanannya.",
     "type": "fill_blank",
     "question": "Lengkapin biar data produknya kebaca sebagai object JavaScript:",
     "codeSnippet": "fetch(\"https://api.contoh.com/produk\")\n  .then((response) => response.___())\n  .then((data) => {\n    console.log(data.nama);\n  });",
-    "options": ["json", "text", "parse", "data"],
+    "options": [
+      "json",
+      "text",
+      "parse",
+      "data"
+    ],
     "correctAnswer": "json",
     "explanation": "response.json() nerjemahin teks mentah dari server jadi object JavaScript yang bisa lu titik-titik (data.nama, data.harga). Perhatiin ada DUA .then(): yang pertama buka bungkusnya, yang kedua baru makan isinya. Kenapa dua? Karena buka bungkus juga butuh waktu, jadi dia balikin Promise lagi.",
     "hint": "Format standar tukar data di web, tiga huruf, singkatan dari JavaScript Object Notation.",
     "xpReward": 35
   },
   {
-    "id": "track2_lvl5_q15",
+    "id": "track2_lvl15_q15",
     "track": "menengah",
-    "level": 5,
+    "level": 15,
     "topic": "Async/Await",
     "title": "Nunggu Air Mendidih Sebelum Masukin Mie",
     "analogy": "await itu lu berdiri di depan kompor nungguin air mendidih. Kodenya berhenti sebentar di baris itu, gak lanjut masukin mie sebelum airnya siap. Beda sama .then() yang gaya-nya 'nanti kalo udah mendidih, panggil gue ya'.",
@@ -290,9 +315,9 @@
     "xpReward": 35
   },
   {
-    "id": "track2_lvl6_q16",
+    "id": "track2_lvl16_q16",
     "track": "menengah",
-    "level": 6,
+    "level": 16,
     "topic": "Error Handling",
     "title": "Bug Hunt: Aplikasi Mati Total Pas Wifi Putus",
     "analogy": "try/catch itu helm. Lu gak berencana jatoh, tapi kalo kejadian, kepala lu selamet. Tanpa helm, satu error kecil bisa bikin seluruh aplikasi blank putih.",
@@ -311,9 +336,9 @@
     "xpReward": 40
   },
   {
-    "id": "track2_lvl7_q17",
+    "id": "track2_lvl17_q17",
     "track": "menengah",
-    "level": 7,
+    "level": 17,
     "topic": "State (useState)",
     "title": "Papan Tulis Antrean di Puskesmas",
     "analogy": "State itu papan nomor antrean. Tiap kali angkanya diganti, semua orang di ruang tunggu otomatis noleh dan liat angka baru. Kalo lu cuma ganti di buku catatan pribadi, gak ada yang tau.",
@@ -332,9 +357,9 @@
     "xpReward": 40
   },
   {
-    "id": "track2_lvl8_q18",
+    "id": "track2_lvl18_q18",
     "track": "menengah",
-    "level": 8,
+    "level": 18,
     "topic": "Immutable State Update",
     "title": "Bug Hunt: Daftar Belanja yang Gak Nongol",
     "analogy": "Ngubah state pake push() itu kayak nyoret-nyoret daftar belanja yang udah difotokopi — isinya berubah, tapi orang yang megang fotokopian lama gak sadar ada perubahan. React bandingin daftar lama vs baru; kalo alamatnya sama, dia nganggep gak ada yang berubah.",
@@ -353,25 +378,30 @@
     "xpReward": 45
   },
   {
-    "id": "track3_lvl1_q19",
+    "id": "track3_lvl19_q19",
     "track": "mahir",
-    "level": 1,
+    "level": 19,
     "topic": "Supabase Client Setup",
     "title": "Bikin Kartu Akses ke Gudang Data",
     "analogy": "createClient itu bikin kartu akses gudang. Butuh dua hal: alamat gudangnya (URL) sama kartu identitas lu (anon key). Salah satu ketinggalan, satpam gak bakal ngizinin masuk.",
     "type": "fill_blank",
     "question": "Lengkapin setup Supabase client di Next.js:",
     "codeSnippet": "import { createClient } from \"@supabase/supabase-js\";\n\nconst supabase = ___(\n  process.env.NEXT_PUBLIC_SUPABASE_URL,\n  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY\n);",
-    "options": ["createClient", "new Supabase", "connect", "supabase.init"],
+    "options": [
+      "createClient",
+      "new Supabase",
+      "connect",
+      "supabase.init"
+    ],
     "correctAnswer": "createClient",
     "explanation": "createClient(url, anonKey) balikin object yang jadi remote control ke database lu. Perhatiin key-nya diambil dari process.env, bukan ditulis mentah di kode — biar gak keikut ke-push ke GitHub. Anon key emang boleh kelihatan di browser (makanya prefix NEXT_PUBLIC), tapi keamanannya dijaga sama Row Level Security di sisi Supabase, bukan sama kerahasiaan key-nya.",
     "hint": "Nama function-nya sama persis kayak yang di-import di baris pertama.",
     "xpReward": 50
   },
   {
-    "id": "track3_lvl2_q20",
+    "id": "track3_lvl20_q20",
     "track": "mahir",
-    "level": 2,
+    "level": 20,
     "topic": "Supabase Query",
     "title": "Ambil Menu dari Gudang Warung",
     "analogy": "Query Supabase itu kayak ngomong ke pelayan: 'Dari meja produk (.from), ambilin semua menu (.select), tapi yang harganya di bawah 20rb aja (.lt).' Urutannya harus rapi, gak bisa loncat.",
@@ -390,9 +420,9 @@
     "xpReward": 50
   },
   {
-    "id": "track3_lvl3_q21",
+    "id": "track3_lvl21_q21",
     "track": "mahir",
-    "level": 3,
+    "level": 21,
     "topic": "Supabase Insert & Error Handling",
     "title": "Bug Hunt: Data Nyimpen Tapi Kadang Ilang",
     "analogy": "Ini kayak transfer duit terus langsung tutup aplikasi tanpa liat notifikasi. Kalo transfernya gagal, lu gak akan pernah tau — dan pas dicek besok, duitnya masih di rekening lu tapi barangnya udah dikirim.",
@@ -411,9 +441,9 @@
     "xpReward": 55
   },
   {
-    "id": "track3_lvl4_q22",
+    "id": "track3_lvl22_q22",
     "track": "mahir",
-    "level": 4,
+    "level": 22,
     "topic": "Next.js App Router",
     "title": "Server Component vs Client Component",
     "analogy": "Server Component itu koki di dapur — dia yang pegang kunci brankas dan resep rahasia, hasil masakannya doang yang dianter ke meja. Client Component itu pelayan di ruang makan — bisa diajak ngobrol sama tamu (klik, ketik), tapi gak boleh megang kunci brankas.",
@@ -432,25 +462,30 @@
     "xpReward": 55
   },
   {
-    "id": "track3_lvl5_q23",
+    "id": "track3_lvl23_q23",
     "track": "mahir",
-    "level": 5,
+    "level": 23,
     "topic": "Next.js Route Handler",
     "title": "Bikin Loket Pelayanan Sendiri",
     "analogy": "Route Handler itu loket kelurahan yang lu buka sendiri. Ada papan namanya (nama file route.ts), ada jam bukanya (method GET/POST), dan tiap orang yang dateng dilayani terus dikasih surat balasan (Response).",
     "type": "fill_blank",
     "question": "Lengkapin API route di file app/api/chat/route.ts biar bisa nerima kiriman data:",
     "codeSnippet": "// File: app/api/chat/route.ts\n\nexport async function ___(request) {\n  const body = await request.json();\n\n  return Response.json({ balasan: \"Halo \" + body.nama });\n}",
-    "options": ["POST", "GET", "handler", "default"],
+    "options": [
+      "POST",
+      "GET",
+      "handler",
+      "default"
+    ],
     "correctAnswer": "POST",
     "explanation": "Di App Router, nama function-nya ITU method HTTP-nya — export function POST berarti loket ini nerima kiriman data. GET buat ngambil data doang (gak punya body). Nama file wajib 'route.ts', dan folder-nya yang nentuin URL-nya: app/api/chat/route.ts jadi /api/chat. Ini beda sama Pages Router jadul yang pake export default handler.",
     "hint": "Ngirim data ke server pake method apa? Kebalikan dari GET.",
     "xpReward": 60
   },
   {
-    "id": "track3_lvl6_q24",
+    "id": "track3_lvl24_q24",
     "track": "mahir",
-    "level": 6,
+    "level": 24,
     "topic": "API Integration & Keamanan Secret",
     "title": "Bug Hunt: API Key Bocor ke Seluruh Dunia",
     "analogy": "Naro API key di kode client itu kayak nempel PIN ATM di stiker belakang kartu. Emang praktis, tapi siapa aja yang pegang kartunya langsung bisa nguras. Di web, 'siapa aja' itu artinya semua pengunjung website lu yang buka DevTools.",
