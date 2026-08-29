@@ -1,11 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   YouTubeClipPlayer,
   type YouTubeClipController,
 } from "./YouTubeClipPlayer";
+
+const emptySubscribe = () => () => {};
+const getIsMobileSnapshot = () => {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+};
 
 /**
  * AI Viral Radar. Gemini watches the URL server-side; YouTube's official IFrame
@@ -47,10 +53,13 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const [playerState, setPlayerState] = useState<"loading" | "ready" | "playing" | "paused" | "error">("loading");
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [actualTime, setActualTime] = useState<number | null>(null);
-  const [bridgeJob, setBridgeJob] = useState<BridgeJob | null>(null);
-  const [bridgeBusy, setBridgeBusy] = useState(false);
+  
   const [rightsConfirmed, setRightsConfirmed] = useState(false);
+  const [bridgeBusy, setBridgeBusy] = useState(false);
+  const [bridgeJob, setBridgeJob] = useState<BridgeJob | null>(null);
   const [bridgeError, setBridgeError] = useState<string | null>(null);
+
+  const isMobile = useSyncExternalStore(emptySubscribe, getIsMobileSnapshot, () => false);
   const playerRef = useRef<YouTubeClipController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
 
@@ -354,65 +363,112 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             ))}
           </ul>
 
-          <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
-            <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted">
-              <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="mt-1 size-4 shrink-0 accent-ember rounded" />
-              <span>Gue punya hak atau izin buat mengolah video ini. Pemotongan ditagih per menit sesuai durasi; subtitle ditagih terpisah.</span>
-            </label>
-            <button
-              type="button"
-              onClick={startAutoClip}
-              disabled={bridgeBusy || !rightsConfirmed}
-              className="btn-ember relative flex min-h-12 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-all active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
-            >
-              {bridgeBusy ? (
-                <div className="flex items-center gap-2.5">
-                  <div className="size-4 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
-                  <span>Malesan lagi potong klip HD...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
-                    <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
-                  </svg>
-                  <span>Bikin Auto Clip ({clock(clip.startTime)}–{clock(clip.endTime)})</span>
-                </div>
-              )}
-            </button>
-
-            {bridgeBusy ? (
-              <div className="relative overflow-hidden rounded-xl border border-ember/30 bg-surface-raised/80 p-3.5 space-y-2.5" aria-live="polite">
-                <div className="flex items-center justify-between gap-2 text-micro">
-                  <span className="font-semibold text-ember flex items-center gap-1.5">
-                    <span className="size-2 rounded-full bg-ember animate-ping" />
-                    Proses Bridge Berjalan
-                  </span>
-                  <span className="font-mono font-bold text-muted">Kualitas HD 1080p</span>
-                </div>
-                <div className="relative h-2 w-full overflow-hidden rounded-full bg-obsidian border border-hairline">
-                  <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/80 to-ember transition-all duration-300" style={{ width: `${Math.max(bridgeJob?.progress ?? 35, 35)}%` }}>
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
-                  </div>
-                </div>
-                <p className="text-micro text-muted leading-relaxed flex items-center gap-1.5">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0">
-                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                  </svg>
-                  <span>{bridgeJob?.stage || "Mengambil potongan video 1080p & audio tanpa re-encoding..."}</span>
-                </p>
+          {isMobile ? (
+            <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 bg-ember/15 px-2.5 py-0.5 text-[10px] font-bold text-ember uppercase">
+                  ⚡ Momen Terpilih
+                </span>
+                <span className="font-mono text-xs font-bold text-ember">{clock(clip.startTime)}–{clock(clip.endTime)}</span>
               </div>
-            ) : null}
 
-            {bridgeError ? (
-              <div className="rounded-xl border border-danger/40 bg-danger/10 p-3.5 text-mini text-danger space-y-2.5" role="alert">
-                <div className="flex items-start gap-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-danger mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  <div>
-                    <span className="font-bold block">{bridgeError}</span>
-                    <span className="text-micro text-muted block mt-0.5">Malesan Bridge menghubungkan browser kamu dengan alat pemotong video lokal (Chrome, Brave, Edge).</span>
+              <div className="rounded-xl border border-hairline/80 bg-obsidian/80 p-3.5 space-y-1.5">
+                <p className="text-xs font-bold text-ink leading-snug">{clip.hookTitle}</p>
+                <p className="text-micro text-muted leading-relaxed">{clip.reason}</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <a
+                  href={`https://www.youtube.com/watch?v=${scan.videoId}&t=${clip.startTime}s`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-ember flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-4 font-display text-xs font-bold text-obsidian shadow-md transition-all active:scale-[0.99]"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 shrink-0">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                  </svg>
+                  <span>Buka Menit {clock(clip.startTime)} di YouTube ↗</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const studioTab = document.querySelector('button[data-tab="studio"]') as HTMLButtonElement | null;
+                    if (studioTab) studioTab.click();
+                    else router.push("/app?tab=studio");
+                  }}
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-display text-xs font-semibold text-ink hover:border-ember/40 hover:bg-ember/10 hover:text-ember transition-all"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                    <path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/>
+                  </svg>
+                  <span>Edit Subtitle di Video Studio</span>
+                </button>
+              </div>
+
+              <p className="text-[10px] text-muted leading-relaxed">
+                💡 AI sudah menandai klip viral di menit <strong>{clock(clip.startTime)}–{clock(clip.endTime)}</strong>. Di HP, kamu bisa tonton langsung dari YouTube di menit ini atau masukkan video ke tab <strong>Video Studio</strong> untuk pasang subtitle Hormozi 9:16 & auto-face track.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
+              <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted">
+                <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="mt-1 size-4 shrink-0 accent-ember rounded" />
+                <span>Gue punya hak atau izin buat mengolah video ini. Pemotongan ditagih per menit sesuai durasi; subtitle ditagih terpisah.</span>
+              </label>
+              <button
+                type="button"
+                onClick={startAutoClip}
+                disabled={bridgeBusy || !rightsConfirmed}
+                className="btn-ember relative flex min-h-12 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-all active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
+              >
+                {bridgeBusy ? (
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-4 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
+                    <span>Malesan lagi potong klip HD...</span>
                   </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                      <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
+                    </svg>
+                    <span>Bikin Auto Clip ({clock(clip.startTime)}–{clock(clip.endTime)})</span>
+                  </div>
+                )}
+              </button>
+
+              {bridgeBusy ? (
+                <div className="relative overflow-hidden rounded-xl border border-ember/30 bg-surface-raised/80 p-3.5 space-y-2.5" aria-live="polite">
+                  <div className="flex items-center justify-between gap-2 text-micro">
+                    <span className="font-semibold text-ember flex items-center gap-1.5">
+                      <span className="size-2 rounded-full bg-ember animate-ping" />
+                      Proses Bridge Berjalan
+                    </span>
+                    <span className="font-mono font-bold text-muted">Kualitas HD 1080p</span>
+                  </div>
+                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-obsidian border border-hairline">
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/80 to-ember transition-all duration-300" style={{ width: `${Math.max(bridgeJob?.progress ?? 35, 35)}%` }}>
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
+                    </div>
+                  </div>
+                  <p className="text-micro text-muted leading-relaxed flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0">
+                      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                    </svg>
+                    <span>{bridgeJob?.stage || "Mengambil potongan video 1080p & audio tanpa re-encoding..."}</span>
+                  </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              ) : null}
+
+              {bridgeError ? (
+                <div className="rounded-xl border border-danger/40 bg-danger/10 p-3.5 text-mini text-danger space-y-2.5" role="alert">
+                  <div className="flex items-start gap-2">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-danger mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div>
+                      <span className="font-bold block">{bridgeError}</span>
+                      <span className="text-micro text-muted block mt-0.5">Malesan Bridge menghubungkan browser kamu dengan alat pemotong video lokal (Chrome, Brave, Edge).</span>
+                    </div>
+                  </div>
                   <div className="rounded-lg border border-hairline bg-obsidian/60 p-2.5 space-y-1">
                     <p className="text-[11px] font-bold text-ink flex items-center gap-1.5">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -420,19 +476,10 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                     </p>
                     <p className="text-[10px] text-muted leading-relaxed">Jalankan file <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali di folder project, lalu restart browser.</p>
                   </div>
-                  <div className="rounded-lg border border-hairline bg-obsidian/60 p-2.5 space-y-1">
-                    <p className="text-[11px] font-bold text-ink flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><rect width="14" height="20" x="5" y="2" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                      Pengguna HP Android / iOS
-                    </p>
-                    <p className="text-[10px] text-muted leading-relaxed">
-                      <a href="/malesan.apk" download="malesan-v1.0.apk" className="text-ember font-bold underline hover:text-ember-lo">Download Malesan APK (1.5 MB)</a> atau unggah video di tab <strong>Video Studio</strong> untuk auto-potong & subtitle.
-                    </p>
-                  </div>
                 </div>
-              </div>
-            ) : null}
-          </div>
+              ) : null}
+            </div>
+          )}
         </div>
       )}
     </section>

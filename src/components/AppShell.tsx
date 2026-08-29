@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
@@ -10,6 +10,20 @@ import { TutorialSheet } from "./TutorialSheet";
 import { CommandOmnibar } from "./CommandOmnibar";
 import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 import { InstallAppModal } from "./InstallAppModal";
+
+const emptySubscribe = () => () => {};
+const getIsStandaloneSnapshot = () => {
+  if (typeof window === "undefined") return false;
+  return (
+    Boolean((window as unknown as { MalesanNative?: { isNativeApp?: () => boolean } }).MalesanNative?.isNativeApp?.()) ||
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone === true
+  );
+};
+const getIsNativeApkSnapshot = () => {
+  if (typeof window === "undefined") return false;
+  return Boolean((window as unknown as { MalesanNative?: { isNativeApp?: () => boolean } }).MalesanNative?.isNativeApp?.());
+};
 
 export type TabKey = "studio" | "vibe" | "pipeline" | "profil";
 const VALID_TABS: TabKey[] = ["studio", "vibe", "pipeline", "profil"];
@@ -71,6 +85,9 @@ export function AppShell({
   const [current, setCurrent] = useState<TabKey>(active);
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+
+  const isStandalone = useSyncExternalStore(emptySubscribe, getIsStandaloneSnapshot, () => false);
+  const isNativeApk = useSyncExternalStore(emptySubscribe, getIsNativeApkSnapshot, () => false);
 
   // A module sub-view (?m=hook) owns the whole content area, so tab state does
   // not apply — fall back to server-driven navigation for those.
@@ -172,19 +189,29 @@ export function AppShell({
 
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsInstallModalOpen(true)}
-              aria-label="Pasang aplikasi Malesan di HP"
-              className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-semibold text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
-                <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                <line x1="12" y1="18" x2="12.01" y2="18" />
-              </svg>
-              <span className="hidden sm:inline">Pasang App</span>
-              <span className="sm:hidden">App</span>
-            </button>
+            {isNativeApk ? (
+              <div
+                title="Malesan Native APK Engine Aktif"
+                className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 sm:px-3 text-xs font-bold text-amber-400 shadow-xs"
+              >
+                <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>APK Pro</span>
+              </div>
+            ) : !isStandalone ? (
+              <button
+                type="button"
+                onClick={() => setIsInstallModalOpen(true)}
+                aria-label="Pasang aplikasi Malesan di HP"
+                className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-semibold text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
+                  <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+                  <line x1="12" y1="18" x2="12.01" y2="18" />
+                </svg>
+                <span className="hidden sm:inline">Pasang App</span>
+                <span className="sm:hidden">App</span>
+              </button>
+            ) : null}
 
             <div className="hidden items-center gap-2 sm:flex">
               <RefreshButton variant="icon" />

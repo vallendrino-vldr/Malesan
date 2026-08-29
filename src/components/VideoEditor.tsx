@@ -329,6 +329,31 @@ export function VideoEditor({
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
+      // On Native Android APK: save directly to Gallery DCIM/Malesan & trigger haptic
+      const native = (window as unknown as {
+        MalesanNative?: {
+          saveVideoToGallery?: (b64: string, name: string) => boolean;
+          haptic?: (t: string) => void;
+        };
+      }).MalesanNative;
+
+      if (native?.saveVideoToGallery) {
+        try {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const b64 = (reader.result as string)?.split(",")?.[1];
+            if (b64) {
+              native.saveVideoToGallery?.(b64, `Malesan_${base}.${ext}`);
+              native.haptic?.("heavy");
+            }
+          };
+          reader.readAsDataURL(blob);
+        } catch (nativeErr) {
+          console.warn("native gallery save fallback to standard download", nativeErr);
+        }
+      }
+
       setPhase("ready");
       setStatus("");
       setDoneMsg(
