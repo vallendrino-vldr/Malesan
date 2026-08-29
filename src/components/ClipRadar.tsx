@@ -293,30 +293,61 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             ))}
           </ul>
 
-          <div className="space-y-2 rounded-xl border border-ember/25 bg-ember/5 p-3">
-            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-micro leading-relaxed text-muted">
-              <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="size-4 shrink-0 accent-ember" />
+          <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
+            <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted">
+              <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="mt-1 size-4 shrink-0 accent-ember rounded" />
               <span>Gue punya hak atau izin buat mengolah video ini. Pemotongan ditagih per menit sesuai durasi; subtitle ditagih terpisah.</span>
             </label>
             <button
               type="button"
               onClick={startAutoClip}
               disabled={bridgeBusy || !rightsConfirmed}
-              className="relative h-11 w-full overflow-hidden rounded-xl bg-ember px-4 text-sm font-bold text-obsidian disabled:cursor-wait disabled:opacity-70"
+              className="btn-ember relative flex min-h-12 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-all active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
             >
-              {bridgeBusy ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
-              <span className="relative">{bridgeBusy ? "Malesan lagi bikin klip..." : "Bikin Auto Clip"}</span>
+              {bridgeBusy ? (
+                <div className="flex items-center gap-2.5">
+                  <div className="size-4 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
+                  <span>Malesan lagi potong klip HD...</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                    <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
+                  </svg>
+                  <span>Bikin Auto Clip ({clock(clip.startTime)}–{clock(clip.endTime)})</span>
+                </div>
+              )}
             </button>
-            {bridgeJob ? (
-              <div className="space-y-1" aria-live="polite">
-                <div className="h-1 overflow-hidden rounded-full bg-obsidian"><div className="h-full rounded-full bg-ember transition-[width]" style={{ width: `${bridgeJob.progress}%` }} /></div>
-                <p className="text-micro leading-relaxed text-muted">
-                  <span className="md:hidden">Job tersimpan. Buka Malesan di desktop untuk lanjut otomatis.</span>
-                  <span className="hidden md:inline">{bridgeJob.stage ?? "Job tersimpan aman."}</span>
+
+            {bridgeBusy ? (
+              <div className="relative overflow-hidden rounded-xl border border-ember/30 bg-surface-raised/80 p-3.5 space-y-2.5" aria-live="polite">
+                <div className="flex items-center justify-between gap-2 text-micro">
+                  <span className="font-semibold text-ember flex items-center gap-1.5">
+                    <span className="size-2 rounded-full bg-ember animate-ping" />
+                    Proses Bridge Berjalan
+                  </span>
+                  <span className="font-mono font-bold text-muted">Kualitas HD 1080p</span>
+                </div>
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-obsidian border border-hairline">
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/80 to-ember transition-all duration-300" style={{ width: `${Math.max(bridgeJob?.progress ?? 35, 35)}%` }}>
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
+                  </div>
+                </div>
+                <p className="text-micro text-muted leading-relaxed flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
+                  <span>{bridgeJob?.stage || "Mengambil potongan video 1080p & audio tanpa re-encoding..."}</span>
                 </p>
               </div>
-            ) : <p className="text-micro leading-relaxed text-muted">Desktop: potong dari URL lewat Bridge. Mobile: simpan job, lanjut di desktop.</p>}
-            {bridgeError ? <p className="text-micro leading-relaxed text-danger" role="alert">{bridgeError}</p> : null}
+            ) : null}
+
+            {bridgeError ? (
+              <p className="rounded-xl border border-danger/40 bg-danger/10 p-3 text-mini text-danger flex items-start gap-2" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-danger mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>{bridgeError}</span>
+              </p>
+            ) : null}
           </div>
         </div>
       )}

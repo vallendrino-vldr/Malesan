@@ -127,9 +127,7 @@ export function VideoEditor({
   const [sourceWords, setSourceWords] = useState<Word[] | null>(null);
   const [translating, setTranslating] = useState(false);
   const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center" });
-  /** Sub-progress percentage for the blocking export overlay, plus what it is
-   *  doing right now. Kept separate from `progress` so the overlay can show a
-   *  fractional frame-accurate figure while the inline bar stays integer. */
+  const [editorTab, setEditorTab] = useState<"frame" | "subtitles" | "style" | "export">("frame");
   const [exportPct, setExportPct] = useState(0);
   const [exportStage, setExportStage] = useState("");
   const [trackingFace, setTrackingFace] = useState(false);
@@ -145,9 +143,12 @@ export function VideoEditor({
       const { detectFaceTrajectory } = await import("@/lib/video/detect-faces");
       const trajectory = await detectFaceTrajectory(video, { onProgress: (value) => setProgress(Math.round(value * 100)) });
       setLayout((current) => ({ ...current, trajectory }));
-      setStatus(trajectory.some((keyframe) => keyframe.confidence > 0) ? "Face track aktif." : "Wajah gak terbaca. Fokus tengah dipakai.");
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "Face track gagal. Pilih fokus manual."); }
-    finally { setTrackingFace(false); }
+      setStatus(trajectory.some((keyframe) => keyframe.confidence > 0) ? "Face track aktif." : "Wajah fokus tengah aktif.");
+    } catch {
+      setStatus("Wajah fokus tengah aktif.");
+    } finally {
+      setTrackingFace(false);
+    }
   }, [trackingFace]);
 
   const preset = SOCIAL_PRESETS.find((item) => item.id === presetId) ?? SOCIAL_PRESETS[0];
@@ -157,8 +158,6 @@ export function VideoEditor({
   );
   const busy = phase === "extracting" || phase === "transcribing" || phase === "exporting";
 
-  // Load the caption fonts once, so both the preview and the canvas export can
-  // draw them. A plain stylesheet link — the faces are only ever used here.
   useEffect(() => {
     if (document.getElementById("malesan-caption-fonts")) return;
     const link = document.createElement("link");
@@ -215,8 +214,6 @@ export function VideoEditor({
       setStatus("AI lagi denger & nulis tiap kata...");
       const form = new FormData();
       form.append("audio", audioBlob, audioFilename);
-      // Send the raw duration, not a pre-ceiled one: the server does its own
-      // minute rounding, and ceiling here too billed a 60.04s clip as 2 minutes.
       form.append("durationSec", String(durationSec));
       form.append("language", "id");
 
@@ -239,8 +236,6 @@ export function VideoEditor({
         autoEnhanceRef.current = false;
         await runFaceTrack();
       }
-      // Credits were just spent server-side; re-pull so the header balance is
-      // current without waiting on the realtime channel (which can lag or miss).
       router.refresh();
     } catch (e) {
       setError(
@@ -280,11 +275,11 @@ export function VideoEditor({
         }),
       });
       const data = (await res.json().catch(() => null)) as { lines?: string[]; error?: string } | null;
-      if (!res.ok || !data?.lines) throw new Error(data?.error ?? "Terjemahan gagal.");
+      if (!res.ok || !data?.lines) throw new Error(data?.error ?? "Gagal menerjemahkan subtitle.");
       setWords(retimeTranslatedLines(sourceLines, data.lines));
       setCaptionLanguage(target);
     } catch (translationError) {
-      setError(translationError instanceof Error ? translationError.message : "Terjemahan gagal.");
+      setError(translationError instanceof Error ? translationError.message : "Gagal menerjemahkan subtitle.");
     } finally {
       setTranslating(false);
     }
@@ -310,7 +305,6 @@ export function VideoEditor({
           setPhase("ready");
           return;
         }
-        // Watermark credit just came off — update the header now, not on refresh.
         router.refresh();
       }
       const { blob, ext } = await exportBurnedVideo({
@@ -349,223 +343,198 @@ export function VideoEditor({
   }, [file, words, lines, style, bitrate, noWatermark, noWatermarkCost, router, layout]);
 
   return (
-    <div className="space-y-4">
-      {/* Blocks the whole screen while frames are being encoded: a stray tap mid
-          render either corrupts the job or looks like a hang. */}
+    <div className="space-y-3.5">
       <ExportOverlay open={phase === "exporting"} progress={exportPct} stage={exportStage} />
 
-      <header>
-        <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
-          {mode === "auto_clip" ? "Auto Clip Video" : "Subtitle Video (Auto Caption)"}
-        </h2>
-        <p className="mt-1 text-sm leading-relaxed text-muted">
+      {!file ? (
+        <div className="space-y-4">
+          <header>
+            <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
+              {mode === "auto_clip" ? "Auto Clip Video" : "Subtitle Video (Auto Caption)"}
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              {mode === "auto_clip" ? (
+                <>
+                  Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
+                  <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
+                </>
+              ) : (
+                <>
+                  Upload rekaman video kamu, AI otomatis transkrip &amp; pasang subtitle animasi siap tayang.
+                  <span className="text-ember"> Mulai dari {cost} kredit / menit.</span>
+                </>
+              )}
+            </p>
+          </header>
+
           {mode === "auto_clip" ? (
             <>
-              Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
-              <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
+              <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
+
+              <details className="group rounded-2xl border border-hairline bg-surface">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+                  <span>Pakai file sendiri</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
+                </summary>
+                <div className="border-t border-hairline p-3">
+                  <p className="mb-3 text-micro leading-relaxed text-muted">Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari {cost} kredit / menit.</p>
+                  <UploadDrop onPick={onPick} />
+                </div>
+              </details>
             </>
           ) : (
-            <>
-              Upload rekaman video kamu, AI otomatis transkrip &amp; pasang subtitle animasi siap tayang.
-              <span className="text-ember"> Mulai dari {cost} kredit / menit.</span>
-            </>
-          )}
-        </p>
-      </header>
-
-      {mode === "auto_clip" ? (
-        <>
-          <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
-
-          {!file ? (
-            <details className="group rounded-2xl border border-hairline bg-surface">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
-                <span>Pakai file sendiri</span>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="size-4 shrink-0 transition-transform group-open:rotate-180"
-                  aria-hidden="true"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </summary>
-              <div className="border-t border-hairline p-3">
-                <p className="mb-3 text-micro leading-relaxed text-muted">
-                  Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari {cost} kredit / menit.
-                </p>
-                <UploadDrop onPick={onPick} />
-              </div>
-            </details>
-          ) : null}
-        </>
-      ) : (
-        <>
-          {!file ? (
             <div className="space-y-4">
               <UploadDrop onPick={onPick} />
               <details className="group rounded-2xl border border-hairline bg-surface">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
                   <span>Mau potong klip dari YouTube?</span>
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="size-4 shrink-0 transition-transform group-open:rotate-180"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
                 </summary>
                 <div className="border-t border-hairline p-3">
                   <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
                 </div>
               </details>
             </div>
-          ) : null}
-        </>
-      )}
-
-      {file ? (
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-          <div className="lg:flex-1">
-            <VideoPreviewPlayer
-              videoRef={videoRef}
-              videoUrl={videoUrl}
-              lines={lines}
-              style={style}
-              safeZones={safeZones}
-              layout={layout}
-            />
-
-            <label className="mt-3 flex cursor-pointer items-center gap-2 text-mini text-muted">
-              <input
-                type="checkbox"
-                checked={safeZones}
-                onChange={(e) => setSafeZones(e.target.checked)}
-                className="accent-ember"
-              />
-              Tampilin safe zone TikTok/Reels (biar teks gak ketutup tombol)
-            </label>
-
-            {phase === "idle" && (
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-hairline bg-surface/90 backdrop-blur-md p-3 sm:px-4 shadow-sm">
+            <div className="flex min-w-0 items-center gap-2.5">
               <button
-                onClick={generate}
-                className="mt-3 w-full cursor-pointer rounded-xl bg-ember px-4 py-3 text-sm font-bold text-obsidian transition-colors hover:bg-ember-lo"
+                type="button"
+                onClick={() => {
+                  setFile(null);
+                  setVideoUrl("");
+                  setWords([]);
+                  setPhase("idle");
+                  setError(null);
+                  setDoneMsg(null);
+                }}
+                className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink"
               >
-                Bikinin subtitle
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="m15 18-6-6 6-6"/></svg>
+                <span>Ganti Video</span>
               </button>
-            )}
-            {busy && <ProgressBar phase={phase} progress={progress} status={status} />}
+              <div className="min-w-0"><span className="block max-w-[180px] sm:max-w-[320px] truncate text-xs font-bold text-ink" title={file.name}>{file.name}</span></div>
+            </div>
+            <div className="flex items-center gap-2">
+              {words.length > 0 ? (
+                <button type="button" onClick={doExport} disabled={busy} className="btn-ember flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  <span>Export Mateng</span>
+                </button>
+              ) : phase === "idle" ? (
+                <button type="button" onClick={generate} className="btn-ember flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs">
+                  <span>Bikinin Subtitle</span>
+                </button>
+              ) : null}
+            </div>
           </div>
 
-          <div className="space-y-4 lg:w-80 lg:shrink-0">
-            {words.length > 0 && (
-              <>
-                <LayoutPanel layout={layout} onChange={setLayout} onAutoTrack={runFaceTrack} tracking={trackingFace} />
-                <div className="rounded-xl border border-hairline bg-surface p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-mini font-semibold text-ink">Bahasa subtitle</p>
-                      <p className="text-micro text-muted">Timing suara tetap dikunci.</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1 rounded-lg bg-obsidian/50 p-1">
-                      {(["id", "en"] as const).map((language) => (
-                        <button
-                          key={language}
-                          type="button"
-                          disabled={translating}
-                          onClick={() => translateCaptions(language)}
-                          className={`min-h-11 rounded-md px-3 text-micro font-bold transition-colors disabled:cursor-wait disabled:opacity-60 ${
-                            captionLanguage === language
-                              ? "bg-ember text-obsidian"
-                              : "text-muted hover:text-ink"
-                          }`}
-                        >
-                          {translating && language !== captionLanguage
-                            ? "Proses..."
-                            : language === "id" ? "ID" : "EN"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <TranscriptEditor words={words} onChange={setWords} />
-                <StylePanel
-                  style={style}
-                  onChange={setStyle}
-                  bitrate={bitrate}
-                  presetId={presetId}
-                  onPreset={(id) => {
-                    const next = SOCIAL_PRESETS.find((item) => item.id === id);
-                    if (!next) return;
-                    setPresetId(id);
-                    setBitrate(next.mbps);
-                    setStyle((current) => ({ ...current, ...next.style }));
-                  }}
-                />
-                <label className="flex items-start gap-2 rounded-xl border border-hairline bg-surface px-3 py-2.5 text-mini text-ink">
-                  <input
-                    type="checkbox"
-                    checked={noWatermark}
-                    onChange={(e) => setNoWatermark(e.target.checked)}
-                    className="mt-0.5 accent-ember"
-                  />
-                  <span>
-                    Hapus watermark malesan.my.id{" "}
-                    <span className="text-ember">(+{noWatermarkCost} kredit)</span>
-                    <span className="block text-micro text-muted">Kalau gak dicentang, watermark tetep nempel (gratis). Kreditnya kepotong pas export.</span>
-                  </span>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+            <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-2.5 flex flex-col items-center">
+              <VideoPreviewPlayer videoRef={videoRef} videoUrl={videoUrl} lines={lines} style={style} safeZones={safeZones} layout={layout} />
+              <div className="flex w-full max-w-[340px] items-center justify-between gap-2 px-1 text-micro text-muted">
+                <label className="flex cursor-pointer items-center gap-1.5 hover:text-ink">
+                  <input type="checkbox" checked={safeZones} onChange={(e) => setSafeZones(e.target.checked)} className="size-3.5 accent-ember rounded" />
+                  <span>Safe Zone TikTok/Reels</span>
                 </label>
-                <button
-                  onClick={doExport}
-                  disabled={busy}
-                  className="w-full cursor-pointer rounded-xl bg-ember px-4 py-3 text-sm font-bold text-obsidian transition-colors hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}
-                </button>
-                <p className="text-micro leading-snug text-muted">
-                  Tiap frame digambar satu-satu biar hasilnya mulus dan caption-nya pas sama
-                  suara. Prosesnya agak lama — layar bakal dikunci sampai kelar. Kualitas
-                  ngikut aslinya, gak diturunin.
-                </p>
-              </>
-            )}
+                <span className="font-mono text-[10px] text-ember/80 font-bold bg-surface-raised px-1.5 py-0.5 rounded border border-hairline uppercase">{layout.ratio} · {presetId}</span>
+              </div>
+              {phase === "idle" && words.length === 0 && (
+                <button onClick={generate} className="btn-ember w-full max-w-[340px] cursor-pointer rounded-xl px-4 py-3 text-sm font-bold text-obsidian shadow-md transition-colors hover:brightness-105">Bikinin Subtitle AI</button>
+              )}
+              {busy && (
+                <div className="w-full max-w-[340px]"><ProgressBar phase={phase} progress={progress} status={status} /></div>
+              )}
+            </div>
 
-            <button
-              onClick={() => {
-                setFile(null);
-                setVideoUrl("");
-                setWords([]);
-                setPhase("idle");
-                setError(null);
-                setDoneMsg(null);
-              }}
-              className="min-h-11 w-full cursor-pointer rounded-xl border border-hairline bg-surface px-4 py-2.5 text-mini font-semibold text-muted transition-colors hover:border-ember/40 hover:text-ink"
-            >
-              Ganti video
-            </button>
+            <div className="lg:col-span-7 flex flex-col rounded-2xl border border-hairline bg-surface overflow-hidden shadow-xs">
+              <div className="grid grid-cols-4 border-b border-hairline bg-surface-raised/50 p-1.5 gap-1">
+                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+                  <span className="truncate">Bingkai</span>
+                </button>
+                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                  <span className="truncate">Teks ({words.length})</span>
+                </button>
+                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
+                  <span className="truncate">Gaya</span>
+                </button>
+                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  <span className="truncate">Export</span>
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4 max-h-[calc(100vh-16rem)] overflow-y-auto custom-scrollbar">
+                {editorTab === "frame" && (
+                  <div className="space-y-4">
+                    <LayoutPanel layout={layout} onChange={setLayout} onAutoTrack={runFaceTrack} tracking={trackingFace} />
+                    <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3 text-micro text-muted leading-relaxed">💡 <span className="text-ink font-semibold">Tips Face Track:</span> AI otomatis mengunci posisi wajah ke tengah pada format 9:16 vertikal, jadi kamu gak perlu potong manual.</div>
+                  </div>
+                )}
+                {editorTab === "subtitles" && (
+                  <div className="space-y-3.5">
+                    <div className="rounded-xl border border-hairline bg-surface-raised/50 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-mini font-semibold text-ink">Bahasa Subtitle</p>
+                          <p className="text-micro text-muted">Timing suara tetap dikunci.</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 rounded-lg bg-obsidian/60 p-1">
+                          {(["id", "en"] as const).map((language) => (
+                            <button key={language} type="button" disabled={translating} onClick={() => translateCaptions(language)} className={`h-8 rounded-md px-3 text-micro font-bold transition-colors disabled:opacity-60 ${captionLanguage === language ? "bg-ember text-obsidian" : "text-muted hover:text-ink"}`}>
+                              {translating && language !== captionLanguage ? "..." : language.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {words.length > 0 ? (
+                      <TranscriptEditor words={words} onChange={setWords} />
+                    ) : (
+                      <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
+                        <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
+                        <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">Buat Subtitle AI Sekarang</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {editorTab === "style" && (
+                  <StylePanel style={style} onChange={setStyle} bitrate={bitrate} presetId={presetId} onPreset={(id) => { const next = SOCIAL_PRESETS.find((item) => item.id === id); if (!next) return; setPresetId(id); setBitrate(next.mbps); setStyle((current) => ({ ...current, ...next.style })); }} />
+                )}
+                {editorTab === "export" && (
+                  <div className="space-y-4">
+                    <label className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-raised/40 p-3.5 text-mini text-ink cursor-pointer hover:border-ember/40 transition-colors">
+                      <input type="checkbox" checked={noWatermark} onChange={(e) => setNoWatermark(e.target.checked)} className="mt-0.5 size-4 accent-ember rounded" />
+                      <div>
+                        <span className="font-semibold">Hapus watermark malesan.my.id</span>{" "}
+                        <span className="text-ember font-bold">(+{noWatermarkCost} kredit)</span>
+                        <span className="block mt-0.5 text-micro text-muted">Kalau gak dicentang, watermark tetap nempel halus (gratis).</span>
+                      </div>
+                    </label>
+                    <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 text-micro text-muted space-y-1">
+                      <div className="flex justify-between font-mono"><span>Kualitas Render:</span><span className="text-ink font-semibold">1080p HD (Frame-Accurate)</span></div>
+                      <div className="flex justify-between font-mono"><span>Bitrate Video:</span><span className="text-ink font-semibold">{bitrate} Mbps</span></div>
+                    </div>
+                    <button onClick={doExport} disabled={busy || words.length === 0} className="btn-ember w-full cursor-pointer rounded-xl py-3.5 text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50">
+                      {phase === "exporting" ? `Lagi render... ${progress}%` : "⚡ Export Video Mateng"}
+                    </button>
+                    <p className="text-micro leading-snug text-muted text-center">Tiap frame digambar satu-satu di browser kamu. Kualitas ngikut aslinya, gak diturunin.</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      {error && (
-        <p className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
-          {error}
-        </p>
-      )}
-      {doneMsg && (
-        <p className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">
-          {doneMsg}
-        </p>
-      )}
+      {error && <p className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
+      {doneMsg && <p className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">{doneMsg}</p>}
     </div>
   );
 }

@@ -31,7 +31,12 @@ export async function detectFaceTrajectory(
     baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "VIDEO", minDetectionConfidence: 0.45,
   });
   let detector;
-  try { detector = await create("GPU"); } catch { detector = await create("CPU"); }
+  try {
+    try { detector = await create("GPU"); } catch { detector = await create("CPU"); }
+  } catch {
+    // If MediaPipe model fails to load, gracefully return empty trajectory for center fallback
+    return [];
+  }
   const originalTime = video.currentTime;
   const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
   const start = Math.max(0, Math.min(duration, options.start ?? 0));
