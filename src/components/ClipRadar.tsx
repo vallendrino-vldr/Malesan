@@ -272,7 +272,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
         <div ref={resultRef} className="mt-4 space-y-3">
           <div className="overflow-hidden rounded-xl border border-hairline bg-black">
             <YouTubeClipPlayer
-              key={`${scan.videoId}-${clip.startTime}-${clip.endTime}`}
+              key={scan.videoId}
               videoId={scan.videoId}
               title={clip.hookTitle}
               initialStart={clip.startTime}
@@ -284,13 +284,24 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             />
           </div>
 
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <p className="min-w-0 truncate text-mini text-muted" title={scan.title}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="min-w-0 flex-1 truncate text-mini text-muted" title={scan.title}>
               {scan.title}
             </p>
-            <span className="shrink-0 whitespace-nowrap text-micro font-semibold text-ember tabular-nums">
-              {playerState === "playing" ? "Diputar" : "Terpilih"} · {clock(clip.startTime)}–{clock(clip.endTime)}
-            </span>
+            <div className="flex items-center gap-2">
+              <a
+                href={`https://youtu.be/${scan.videoId}?t=${Math.floor(clip.startTime)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-7 items-center gap-1 rounded-md border border-hairline bg-obsidian px-2 text-[11px] font-semibold text-muted hover:border-ember/40 hover:text-ember transition-colors"
+              >
+                <span>Buka {clock(clip.startTime)} di YouTube</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+              </a>
+              <span className="shrink-0 whitespace-nowrap text-micro font-semibold text-ember tabular-nums">
+                {playerState === "playing" ? "Diputar" : "Terpilih"} · {clock(clip.startTime)}–{clock(clip.endTime)}
+              </span>
+            </div>
           </div>
 
           {actualTime !== null && Math.abs(actualTime - clip.startTime) <= 2.5 ? (
@@ -385,10 +396,31 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             ) : null}
 
             {bridgeError ? (
-              <p className="rounded-xl border border-danger/40 bg-danger/10 p-3 text-mini text-danger flex items-start gap-2" role="alert">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-danger mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span>{bridgeError}</span>
-              </p>
+              <div className="rounded-xl border border-danger/40 bg-danger/10 p-3.5 text-mini text-danger space-y-2.5" role="alert">
+                <div className="flex items-start gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-danger mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <div>
+                    <span className="font-bold block">{bridgeError}</span>
+                    <span className="text-micro text-muted block mt-0.5">Malesan Bridge menghubungkan browser kamu dengan alat pemotong video lokal (Chrome, Brave, Edge).</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div className="rounded-lg border border-hairline bg-obsidian/60 p-2.5 space-y-1">
+                    <p className="text-[11px] font-bold text-ink flex items-center gap-1.5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                      Pengguna PC / Laptop
+                    </p>
+                    <p className="text-[10px] text-muted leading-relaxed">Jalankan file <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali di folder project, lalu restart browser.</p>
+                  </div>
+                  <div className="rounded-lg border border-hairline bg-obsidian/60 p-2.5 space-y-1">
+                    <p className="text-[11px] font-bold text-ink flex items-center gap-1.5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><rect width="14" height="20" x="5" y="2" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                      Pengguna HP Android / iOS
+                    </p>
+                    <p className="text-[10px] text-muted leading-relaxed">Download video lewat aplikasi downloader di HP, lalu buka tab <strong>Video Studio</strong> untuk auto-potong & pasang subtitle.</p>
+                  </div>
+                </div>
+              </div>
             ) : null}
           </div>
         </div>

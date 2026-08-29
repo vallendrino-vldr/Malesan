@@ -100,8 +100,14 @@ export function YouTubeClipPlayer({
   onState,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [range, setRange] = useState(() => ({ start: initialStart, end: initialEnd }));
+  const [customRange, setCustomRange] = useState<{ start: number; end: number } | null>(null);
+  const range = customRange ?? { start: initialStart, end: initialEnd };
+  const initialRangeRef = useRef({ start: initialStart, end: initialEnd });
   const callbacksRef = useRef({ onController, onError, onPlaybackProof, onState });
+
+  useEffect(() => {
+    initialRangeRef.current = { start: initialStart, end: initialEnd };
+  }, [initialStart, initialEnd]);
 
   useEffect(() => {
     callbacksRef.current = { onController, onError, onPlaybackProof, onState };
@@ -115,7 +121,7 @@ export function YouTubeClipPlayer({
     let player: YouTubePlayer | null = null;
     let stopTimer: ReturnType<typeof setInterval> | null = null;
     let proofTimer: ReturnType<typeof setTimeout> | null = null;
-    let targetEnd = initialEnd;
+    let targetEnd = initialRangeRef.current.end;
 
     const clearPlaybackTimers = () => {
       if (stopTimer) clearInterval(stopTimer);
@@ -129,7 +135,7 @@ export function YouTubeClipPlayer({
         if (nextEndSeconds <= startSeconds) return false;
         clearPlaybackTimers();
         targetEnd = nextEndSeconds;
-        setRange({ start: startSeconds, end: nextEndSeconds });
+        setCustomRange({ start: startSeconds, end: nextEndSeconds });
         callbacksRef.current.onError(null);
 
         if (player) {
@@ -189,8 +195,10 @@ export function YouTubeClipPlayer({
               callbacksRef.current.onState("ready");
               callbacksRef.current.onError(null);
               try {
-                player.cueVideoById({ videoId, startSeconds: initialStart, endSeconds: initialEnd });
-                player.seekTo(initialStart, true);
+                const s = initialRangeRef.current.start;
+                const e = initialRangeRef.current.end;
+                player.cueVideoById({ videoId, startSeconds: s, endSeconds: e });
+                player.seekTo(s, true);
               } catch {}
             },
             onStateChange: ({ data }) => {
@@ -218,14 +226,13 @@ export function YouTubeClipPlayer({
       callbacksRef.current.onController(null);
       player?.destroy();
     };
-  }, [initialEnd, initialStart, videoId]);
+  }, [videoId]);
 
   const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
 
   return (
     <iframe
       ref={iframeRef}
-      key={`${videoId}-${Math.floor(range.start)}`}
       src={`https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&autoplay=1&start=${Math.floor(range.start)}&end=${Math.floor(range.end)}${origin}`}
       title={`Preview: ${title}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"

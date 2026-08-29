@@ -49,7 +49,16 @@ try {
   $ManifestPath = Join-Path $Root 'com.malesan.bridge.json'
   $Manifest = (Get-Content (Join-Path $PSScriptRoot 'com.malesan.bridge.json') -Raw).Replace('__HOST_PATH__',$HostPath).Replace('__EXTENSION_ID__',$ExtensionId)
   [IO.File]::WriteAllText($ManifestPath, $Manifest, [Text.UTF8Encoding]::new($false))
-  New-Item -Path 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.malesan.bridge' -Force | Out-Null
-  Set-ItemProperty -Path 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.malesan.bridge' -Name '(default)' -Value $ManifestPath
-  Write-Host 'Malesan Bridge terpasang. Tutup dan buka lagi Chrome.' -ForegroundColor Green
+  $RegPaths = @(
+    'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.malesan.bridge',
+    'HKCU:\Software\BraveSoftware\Brave-Browser\NativeMessagingHosts\com.malesan.bridge',
+    'HKCU:\Software\Microsoft\Edge\NativeMessagingHosts\com.malesan.bridge',
+    'HKCU:\Software\Chromium\NativeMessagingHosts\com.malesan.bridge',
+    'HKCU:\Software\Vivaldi\NativeMessagingHosts\com.malesan.bridge'
+  )
+  foreach ($p in $RegPaths) {
+    New-Item -Path $p -Force | Out-Null
+    Set-ItemProperty -Path $p -Name '(default)' -Value $ManifestPath
+  }
+  Write-Host 'Malesan Bridge terpasang untuk Chrome, Brave, Edge, & Chromium! Restart browser lo untuk mulai pakai.' -ForegroundColor Green
 } finally { Remove-Item $Temp -Recurse -Force -ErrorAction SilentlyContinue }
