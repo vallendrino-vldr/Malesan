@@ -14,6 +14,7 @@ import {
 } from "@/lib/video/captions";
 import { exportBurnedVideo } from "@/lib/video/export";
 import { ExportOverlay } from "./ExportOverlay";
+import { ClipRadar } from "./ClipRadar";
 
 /**
  * Video Auto-CC editor.
@@ -246,6 +247,8 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
           video yang teksnya udah nyatu. <span className="text-ember">{cost} kredit / menit.</span>
         </p>
       </header>
+
+      <ClipRadar cost={cost * 2} />
 
       {!file ? (
         <UploadDrop onPick={onPick} />
