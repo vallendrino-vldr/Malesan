@@ -250,18 +250,22 @@ export function MasukWorkspaceView({
                 />
               </div>
 
-              {/* Free Credits Trust Badge */}
-              <div className="mt-6 border-t border-white/[0.06] pt-5">
-                <div className="flex items-start gap-2 text-xs text-muted">
-                  <span className="text-ember font-bold text-sm leading-none">✓</span>
-                  <p className="leading-snug">
-                    <strong className="text-[#F5F5F5] font-semibold">10 kredit gratis</strong> langsung masuk tiap hari. Tanpa perlu kartu kredit.
+              {/* Free Credits & Automatic 1-Click Signup Info */}
+              <div className="mt-6 space-y-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4 text-xs">
+                <div className="flex items-start gap-2.5">
+                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-ember/20 text-ember font-bold text-[10px]">
+                    ✓
+                  </span>
+                  <p className="leading-relaxed text-muted">
+                    <strong className="text-ink font-semibold">10 kredit gratis</strong> langsung masuk tiap hari. Tanpa perlu kartu kredit.
                   </p>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between text-micro text-muted/70">
-                  <span>Belum punya akun? <strong className="text-ember font-medium">Mulai gratis otomatis.</strong></span>
-                  <span className="font-mono">Google 1-Klik</span>
+                <div className="flex items-center gap-2 border-t border-white/[0.06] pt-2.5 text-micro text-muted">
+                  <span className="size-1.5 shrink-0 rounded-full bg-emerald-400" />
+                  <span className="leading-snug">
+                    Belum punya akun? <strong className="text-ember font-medium">Otomatis dibuat baru via Google 1-Klik.</strong>
+                  </span>
                 </div>
               </div>
             </div>

@@ -55,7 +55,12 @@ export function GoogleSignInButton({
 
     // Standard Google OAuth for real users
     const supabase = createClient();
-    const redirectUrl = new URL("/auth/callback", window.location.origin);
+    const origin =
+      typeof window !== "undefined" && window.location.origin.startsWith("http")
+        ? window.location.origin
+        : "https://malesan.my.id";
+
+    const redirectUrl = new URL("/auth/callback", origin);
     if (next && next !== "/" && next !== "") {
       redirectUrl.searchParams.set("next", next);
     }
@@ -67,6 +72,10 @@ export function GoogleSignInButton({
       provider: "google",
       options: {
         redirectTo: redirectUrl.toString(),
+        queryParams: {
+          prompt: "select_account",
+          access_type: "offline",
+        },
       },
     });
 
