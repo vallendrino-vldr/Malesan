@@ -188,6 +188,10 @@ export function YouTubeClipPlayer({
               if (!player || disposed) return;
               callbacksRef.current.onState("ready");
               callbacksRef.current.onError(null);
+              try {
+                player.cueVideoById({ videoId, startSeconds: initialStart, endSeconds: initialEnd });
+                player.seekTo(initialStart, true);
+              } catch {}
             },
             onStateChange: ({ data }) => {
               if (data === YT.PlayerState.PLAYING) callbacksRef.current.onState("playing");
@@ -214,7 +218,7 @@ export function YouTubeClipPlayer({
       callbacksRef.current.onController(null);
       player?.destroy();
     };
-  }, [initialEnd, videoId]);
+  }, [initialEnd, initialStart, videoId]);
 
   const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
 

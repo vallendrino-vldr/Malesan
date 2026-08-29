@@ -637,6 +637,12 @@ function VideoPreviewPlayer({
         className="absolute inset-0 h-full w-full object-cover"
         style={{ objectPosition }}
       />
+      {tracked && (
+        <div className="pointer-events-none absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
+          <span className="size-1.5 rounded-full bg-ember animate-ping" />
+          <span>Face Track Aktif</span>
+        </div>
+      )}
       {safeZones && <SafeZones />}
       {active && <CaptionOverlay line={active.line} now={now} style={style} />}
     </div>

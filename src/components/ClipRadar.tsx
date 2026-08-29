@@ -210,13 +210,23 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       </div>
 
       {loading && (
-        <div className="mt-3 space-y-2" aria-live="polite">
-          <p className="text-mini text-muted">{STEPS[step]}</p>
+        <div className="mt-3.5 space-y-2.5" aria-live="polite">
+          <div className="flex items-center gap-2 text-mini font-semibold text-ember">
+            <span className="size-2 rounded-full bg-ember animate-ping" />
+            <span>{STEPS[step]}</span>
+          </div>
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="animate-shimmer-sweep relative h-16 overflow-hidden rounded-xl border border-hairline bg-obsidian"
-            />
+              className="relative overflow-hidden rounded-xl border border-hairline bg-surface-raised/70 p-3 flex items-start gap-3 shadow-xs"
+            >
+              <div className="size-7 rounded-md bg-ember/20 animate-pulse shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-2 py-0.5">
+                <div className="h-3.5 w-3/4 rounded bg-white/15 animate-pulse" />
+                <div className="h-2.5 w-1/2 rounded bg-white/10 animate-pulse" />
+              </div>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer-sweep" />
+            </div>
           ))}
         </div>
       )}
@@ -231,6 +241,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
         <div ref={resultRef} className="mt-4 space-y-3">
           <div className="overflow-hidden rounded-xl border border-hairline bg-black">
             <YouTubeClipPlayer
+              key={`${scan.videoId}-${clip.startTime}-${clip.endTime}`}
               videoId={scan.videoId}
               title={clip.hookTitle}
               initialStart={clip.startTime}
