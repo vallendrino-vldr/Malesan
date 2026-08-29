@@ -28,6 +28,10 @@ export type CaptionStyle = {
   mode: "word" | "line";
   /** Caption size multiplier (~0.7 small to ~1.6 huge). 1 = the tuned default. */
   fontScale: number;
+  /** Scale applied only to the currently-spoken word. */
+  activeScale: number;
+  /** Optional glow around the currently-spoken word. */
+  activeGlow: boolean;
   /** Optional entrance motion, rendered into the final pixels too. */
   animation: "none" | "pop" | "fade";
 };
@@ -75,6 +79,8 @@ export const DEFAULT_STYLE: CaptionStyle = {
   position: 0.72,
   mode: "word",
   fontScale: 1,
+  activeScale: 1,
+  activeGlow: false,
   animation: "pop",
 };
 
@@ -132,6 +138,31 @@ export function activeAt(lines: Line[], t: number): { line: Line; wordIdx: numbe
     }
   }
   return null;
+}
+
+/**
+ * Replace each caption line with translated words while keeping that line's
+ * original start and end exactly. Individual translated words divide the same
+ * window by character weight, which reads more naturally than equal slices.
+ */
+export function retimeTranslatedLines(lines: Line[], translated: string[]): Word[] {
+  if (translated.length !== lines.length) throw new Error("Jumlah baris terjemahan gak cocok.");
+  return lines.flatMap((line, lineIndex) => {
+    const tokens = translated[lineIndex]?.trim().split(/\s+/).filter(Boolean) ?? [];
+    if (!tokens.length) throw new Error("Ada baris terjemahan yang kosong.");
+    const duration = Math.max(0.01, line.end - line.start);
+    const weights = tokens.map((token) => Math.max(1, token.replace(/[^\p{L}\p{N}]/gu, "").length));
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    let elapsed = 0;
+    return tokens.map((word, tokenIndex) => {
+      const start = line.start + (elapsed / totalWeight) * duration;
+      elapsed += weights[tokenIndex];
+      const end = tokenIndex === tokens.length - 1
+        ? line.end
+        : line.start + (elapsed / totalWeight) * duration;
+      return { word, start, end };
+    });
+  });
 }
 
 /** "#rrggbb" -> ASS "&Haabbggrr" (alpha 00 = opaque, colours are reversed). */

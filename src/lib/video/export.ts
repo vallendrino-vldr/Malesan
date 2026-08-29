@@ -1,7 +1,7 @@
 "use client";
 
 import { activeAt, type CaptionStyle, type Line } from "./captions";
-import { bitrateFor, drawFrame, frameSize } from "./draw";
+import { bitrateFor, drawFrame, frameSize, type VideoLayout } from "./draw";
 import { canUseWebCodecs, exportFrameByFrame, UnsupportedEncoder } from "./encode";
 
 /**
@@ -35,6 +35,8 @@ export type ExportOpts = {
   bitrateMbps: number;
   /** Burn the malesan.my.id mark. False only after the credit was charged. */
   watermark: boolean;
+  /** Output aspect ratio and horizontal subject focus. */
+  layout: VideoLayout;
   onProgress: (ratio: number) => void;
   /** Short label for the blocking overlay, so the user knows what is happening. */
   onStage?: (stage: string) => void;
@@ -59,7 +61,7 @@ export async function exportBurnedVideo(
 /* ------------------------------------------------- legacy real-time fallback */
 
 async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: string }> {
-  const { file, lines, style, bitrateMbps, watermark, onProgress, onStage } = opts;
+  const { file, lines, style, bitrateMbps, watermark, layout, onProgress, onStage } = opts;
   onStage?.("Nge-render (mode kompatibel)");
 
   const video = document.createElement("video");
@@ -77,7 +79,7 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
 
   await once(video, "loadedmetadata");
 
-  const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920);
+  const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920, layout.ratio);
 
   try {
     await document.fonts.load(`${style.bold ? 800 : 600} ${Math.round(H * 0.06)}px "${style.fontFamily}"`);
@@ -136,7 +138,7 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   const stopped = new Promise<void>((res) => (rec.onstop = () => res()));
 
   const paint = (t: number) => {
-    drawFrame(ctx, video, lines, t, style, W, H, watermark);
+    drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
     vTrack?.requestFrame?.();
     onProgress(Math.min(0.999, t / (video.duration || 1)));
   };
@@ -177,7 +179,7 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   });
   cancelAnimationFrame(raf);
 
-  drawFrame(ctx, video, lines, video.duration || 0, style, W, H, watermark);
+  drawFrame(ctx, video, lines, video.duration || 0, style, W, H, watermark, layout);
   vTrack?.requestFrame?.();
   rec.stop();
   await stopped;

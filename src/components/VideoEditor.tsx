@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   activeAt,
   groupLines,
+  retimeTranslatedLines,
   DEFAULT_STYLE,
   CAPTION_FONTS,
   CAPTION_FONTS_HREF,
@@ -13,9 +14,9 @@ import {
   type Word,
 } from "@/lib/video/captions";
 import { exportBurnedVideo } from "@/lib/video/export";
+import type { VideoLayout } from "@/lib/video/draw";
 import { ExportOverlay } from "./ExportOverlay";
 import { ClipRadar } from "./ClipRadar";
-
 /**
  * Video Auto-CC editor.
  *
@@ -30,31 +31,67 @@ type Phase = "idle" | "extracting" | "transcribing" | "ready" | "exporting";
 
 const SOCIAL_PRESETS = [
   {
+    id: "hormozi",
+    label: "Hormozi",
+    hint: "Kalimat tebal, kata aktif membesar dengan glow lime",
+    mbps: 12,
+    maxWords: 4,
+    maxGap: 0.5,
+    style: {
+      fontFamily: "Montserrat",
+      bold: true,
+      textColor: "#ffffff",
+      highlightColor: "#c8ff36",
+      style: "plain" as const,
+      position: 0.58,
+      fontScale: 1.04,
+      activeScale: 1.1,
+      activeGlow: true,
+      mode: "line" as const,
+      animation: "none" as const,
+    },
+  },
+  {
     id: "tiktok",
     label: "TikTok",
-    hint: "Cepat, besar, aman dari tombol kanan",
+    hint: "Satu kata, outline tebal, pop cepat yang kontras",
     mbps: 12,
     maxWords: 3,
     maxGap: 0.48,
-    style: { position: 0.58, fontScale: 1.08, mode: "word" as const },
+    style: {
+      fontFamily: "Archivo Black",
+      bold: true,
+      textColor: "#ffffff",
+      highlightColor: "#ffdf39",
+      style: "outline" as const,
+      position: 0.62,
+      fontScale: 1.08,
+      activeScale: 1,
+      activeGlow: false,
+      mode: "word" as const,
+      animation: "pop" as const,
+    },
   },
   {
-    id: "reels",
-    label: "Reels",
-    hint: "Kalimat pendek di area tengah-bawah",
-    mbps: 12,
-    maxWords: 4,
-    maxGap: 0.55,
-    style: { position: 0.65, fontScale: 0.95, mode: "line" as const },
-  },
-  {
-    id: "shorts",
-    label: "Shorts",
-    hint: "Lebih lega dan bitrate paling tajam",
+    id: "business",
+    label: "Minimal",
+    hint: "Kapsul hitam bersih, putih tenang, highlight amber halus",
     mbps: 16,
     maxWords: 5,
     maxGap: 0.65,
-    style: { position: 0.66, fontScale: 1, mode: "line" as const },
+    style: {
+      fontFamily: "Poppins",
+      bold: false,
+      textColor: "#ffffff",
+      highlightColor: "#ffb067",
+      style: "box" as const,
+      position: 0.68,
+      fontScale: 0.9,
+      activeScale: 1,
+      activeGlow: false,
+      mode: "line" as const,
+      animation: "fade" as const,
+    },
   },
 ] as const;
 
@@ -73,9 +110,13 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
   }));
   const [safeZones, setSafeZones] = useState(false);
   const [bitrate, setBitrate] = useState(12);
-  const [presetId, setPresetId] = useState<(typeof SOCIAL_PRESETS)[number]["id"]>("tiktok");
+  const [presetId, setPresetId] = useState<(typeof SOCIAL_PRESETS)[number]["id"]>("hormozi");
   const [noWatermark, setNoWatermark] = useState(false);
   const [doneMsg, setDoneMsg] = useState<string | null>(null);
+  const [captionLanguage, setCaptionLanguage] = useState<"id" | "en">("id");
+  const [sourceWords, setSourceWords] = useState<Word[] | null>(null);
+  const [translating, setTranslating] = useState(false);
+  const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center" });
   /** Sub-progress percentage for the blocking export overlay, plus what it is
    *  doing right now. Kept separate from `progress` so the overlay can show a
    *  fractional frame-accurate figure while the inline bar stays integer. */
@@ -112,6 +153,8 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
     if (!f) return;
     setError(null);
     setWords([]);
+    setSourceWords(null);
+    setCaptionLanguage("id");
     setPhase("idle");
     if (videoUrl) URL.revokeObjectURL(videoUrl);
     setFile(f);
@@ -161,6 +204,8 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
         return;
       }
       setWords(data.words);
+      setSourceWords(data.words);
+      setCaptionLanguage("id");
 
       setPhase("ready");
       setStatus("");
@@ -174,6 +219,37 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setPhase("idle");
     }
   }, [file, router]);
+
+  const translateCaptions = useCallback(async (target: "id" | "en") => {
+    if (!words.length || translating || target === captionLanguage) return;
+    if (target === "id" && sourceWords) {
+      setWords(sourceWords);
+      setCaptionLanguage("id");
+      setError(null);
+      return;
+    }
+    const sourceLines = groupLines(words, preset.maxWords, preset.maxGap);
+    setTranslating(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/video/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target,
+          lines: sourceLines.map((line) => line.words.map((word) => word.word).join(" ")),
+        }),
+      });
+      const data = (await res.json().catch(() => null)) as { lines?: string[]; error?: string } | null;
+      if (!res.ok || !data?.lines) throw new Error(data?.error ?? "Terjemahan gagal.");
+      setWords(retimeTranslatedLines(sourceLines, data.lines));
+      setCaptionLanguage(target);
+    } catch (translationError) {
+      setError(translationError instanceof Error ? translationError.message : "Terjemahan gagal.");
+    } finally {
+      setTranslating(false);
+    }
+  }, [captionLanguage, preset.maxGap, preset.maxWords, sourceWords, translating, words]);
 
   const doExport = useCallback(async () => {
     if (!file || !words.length) return;
@@ -204,6 +280,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
         style,
         bitrateMbps: bitrate,
         watermark: !noWatermark,
+        layout,
         onProgress: (r) => {
           setProgress(Math.round(r * 100));
           setExportPct(r * 100);
@@ -230,7 +307,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
     }
-  }, [file, words, lines, style, bitrate, noWatermark, noWatermarkCost, router]);
+  }, [file, words, lines, style, bitrate, noWatermark, noWatermarkCost, router, layout]);
 
   return (
     <div className="space-y-4">
@@ -261,6 +338,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
               lines={lines}
               style={style}
               safeZones={safeZones}
+              layout={layout}
             />
 
             <label className="mt-3 flex cursor-pointer items-center gap-2 text-mini text-muted">
@@ -287,6 +365,34 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
           <div className="space-y-4 lg:w-80 lg:shrink-0">
             {words.length > 0 && (
               <>
+                <LayoutPanel layout={layout} onChange={setLayout} />
+                <div className="rounded-xl border border-hairline bg-surface p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-mini font-semibold text-ink">Bahasa subtitle</p>
+                      <p className="text-micro text-muted">Timing suara tetap dikunci.</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 rounded-lg bg-obsidian/50 p-1">
+                      {(["id", "en"] as const).map((language) => (
+                        <button
+                          key={language}
+                          type="button"
+                          disabled={translating}
+                          onClick={() => translateCaptions(language)}
+                          className={`min-h-11 rounded-md px-3 text-micro font-bold transition-colors disabled:cursor-wait disabled:opacity-60 ${
+                            captionLanguage === language
+                              ? "bg-ember text-obsidian"
+                              : "text-muted hover:text-ink"
+                          }`}
+                        >
+                          {translating && language !== captionLanguage
+                            ? "Proses..."
+                            : language === "id" ? "ID" : "EN"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <TranscriptEditor words={words} onChange={setWords} />
                 <StylePanel
                   style={style}
@@ -401,12 +507,14 @@ function VideoPreviewPlayer({
   lines,
   style,
   safeZones,
+  layout,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
   lines: Line[];
   style: CaptionStyle;
   safeZones: boolean;
+  layout: VideoLayout;
 }) {
   const [now, setNow] = useState(0);
   const rafRef = useRef<number | null>(null);
@@ -429,9 +537,14 @@ function VideoPreviewPlayer({
   }, [videoRef]);
 
   const active = activeAt(lines, now);
+  const aspectRatio = layout.ratio === "9:16" ? "9 / 16" : layout.ratio === "16:9" ? "16 / 9" : "1 / 1";
+  const objectPosition = layout.focus === "left" ? "left center" : layout.focus === "right" ? "right center" : "center";
 
   return (
-    <div className="relative mx-auto aspect-[9/16] max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black">
+    <div
+      className="relative mx-auto max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black transition-[aspect-ratio] duration-300"
+      style={{ aspectRatio }}
+    >
       <video
         ref={videoRef}
         src={videoUrl}
@@ -439,7 +552,8 @@ function VideoPreviewPlayer({
         playsInline
         onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
         onSeeked={(e) => setNow(e.currentTarget.currentTime)}
-        className="absolute inset-0 h-full w-full object-contain"
+        className="absolute inset-0 h-full w-full object-cover"
+        style={{ objectPosition }}
       />
       {safeZones && <SafeZones />}
       {active && <CaptionOverlay line={active.line} now={now} style={style} />}
@@ -485,12 +599,72 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
         }}
       >
         {shown.map((w, i) => (
-          <span key={i} style={{ color: w.active ? style.highlightColor : undefined }}>
+          <span
+            key={i}
+            style={{
+              color: w.active ? style.highlightColor : undefined,
+              display: "inline-block",
+              transform: w.active && style.activeScale !== 1 ? `scale(${style.activeScale})` : undefined,
+              textShadow: w.active && style.activeGlow
+                ? `0 0 0.45em ${style.highlightColor}, 0 0 0.9em ${style.highlightColor}`
+                : undefined,
+              marginInline: w.active && style.activeScale > 1 ? "0.04em" : undefined,
+            }}
+          >
             {w.text}
             {i < shown.length - 1 ? " " : ""}
           </span>
         ))}
       </p>
+    </div>
+  );
+}
+
+function LayoutPanel({
+  layout,
+  onChange,
+}: {
+  layout: VideoLayout;
+  onChange: (layout: VideoLayout) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3">
+      <div>
+        <p className="text-mini font-semibold text-ink">Bingkai video</p>
+        <p className="text-micro text-muted">Pilih rasio, lalu geser fokus subjek.</p>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
+          <button
+            key={ratio}
+            type="button"
+            onClick={() => onChange({ ...layout, ratio })}
+            className={`min-h-11 rounded-lg border px-2 font-mono text-micro font-bold transition-colors ${
+              layout.ratio === ratio
+                ? "border-ember bg-ember/15 text-ember"
+                : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+            }`}
+          >
+            {ratio}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {(["left", "center", "right"] as const).map((focus) => (
+          <button
+            key={focus}
+            type="button"
+            onClick={() => onChange({ ...layout, focus })}
+            className={`min-h-11 rounded-lg border px-2 text-micro font-semibold transition-colors ${
+              layout.focus === focus
+                ? "border-ember bg-ember/15 text-ember"
+                : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+            }`}
+          >
+            {focus === "left" ? "Kiri" : focus === "right" ? "Kanan" : "Tengah"}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,33 +1,18 @@
 "use client";
 
 import { activeAt, type CaptionStyle, type Line } from "./captions";
+import { coverCrop, type VideoLayout } from "./layout";
+
+export { coverCrop, frameSize } from "./layout";
+export type { VideoLayout, VideoFocus, VideoRatio } from "./layout";
 
 /**
- * Everything that puts pixels on the export canvas.
- *
- * Split out of export.ts so the deterministic WebCodecs encoder and the legacy
- * real-time recorder draw the *same* frame from the *same* code. If these ever
- * diverge, the two export paths silently produce different videos.
+ * Shared canvas drawing primitives used by both export pipelines. Keeping every
+ * pixel operation here guarantees the deterministic WebCodecs path and the
+ * MediaRecorder fallback produce the same picture.
  */
 
 export const even = (n: number) => (n % 2 === 0 ? n : n - 1);
-
-/**
- * Export resolution. Never downscales: a source above 1080 is left exactly as it
- * is, and a small source is upscaled so the short side reaches 1080 (the caption
- * text is drawn at the output size, so this is what keeps it crisp). Capped at
- * 2.5x so memory stays sane.
- */
-export function frameSize(sw: number, sh: number): { W: number; H: number } {
-  const short = Math.min(sw, sh);
-  let scale = 1;
-  if (short < 720) {
-    scale = Math.min(720 / short, 2.5);
-  } else if (short > 1080) {
-    scale = 1080 / short;
-  }
-  return { W: even(Math.round(sw * scale)), H: even(Math.round(sh * scale)) };
-}
 
 /**
  * Honour the chosen preset but never fall below what the resolution needs to look
@@ -49,10 +34,22 @@ export function drawFrame(
   W: number,
   H: number,
   watermark: boolean,
+  layout: VideoLayout = { ratio: "9:16", focus: "center" },
 ) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(video, 0, 0, W, H);
+  const source = video as CanvasImageSource & {
+    videoWidth?: number;
+    videoHeight?: number;
+    displayWidth?: number;
+    displayHeight?: number;
+    width?: number;
+    height?: number;
+  };
+  const sw = source.videoWidth || source.displayWidth || source.width || W;
+  const sh = source.videoHeight || source.displayHeight || source.height || H;
+  const crop = coverCrop(sw, sh, W, H, layout.focus);
+  ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
   const a = activeAt(lines, t);
   if (a) drawCaption(ctx, a.line, t, style, W, H);
   if (watermark) drawWatermark(ctx, W, H);
@@ -106,23 +103,24 @@ export function drawCaption(
   const space = ctx.measureText(" ").width;
   const maxW = W * 0.9;
 
-  const rows: { words: { text: string; idx: number; w: number }[]; width: number }[] = [];
-  let row: { text: string; idx: number; w: number }[] = [];
+  const rows: { words: { text: string; idx: number; w: number; scale: number }[]; width: number }[] = [];
+  let row: { text: string; idx: number; w: number; scale: number }[] = [];
   let rowW = 0;
   render.forEach((w, i) => {
-    const tw = ctx.measureText(w.text).width;
+    const scale = w.active ? style.activeScale : 1;
+    const tw = ctx.measureText(w.text).width * scale;
     const add = row.length ? space + tw : tw;
     if (rowW + add > maxW && row.length) {
       rows.push({ words: row, width: rowW });
       row = [];
       rowW = 0;
     }
-    row.push({ text: w.text, idx: i, w: tw });
+    row.push({ text: w.text, idx: i, w: tw, scale });
     rowW += row.length === 1 ? tw : space + tw;
   });
   if (row.length) rows.push({ words: row, width: rowW });
 
-  const lineH = fontPx * 1.25;
+  const lineH = fontPx * Math.max(1.25, style.activeScale * 1.12);
   const totalH = rows.length * lineH;
   const cy0 = H * style.position - totalH / 2 + lineH / 2;
 
@@ -137,7 +135,9 @@ export function drawCaption(
     }
     for (const word of r.words) {
       const cx = x + word.w / 2;
-      const color = render[word.idx].active ? style.highlightColor : style.textColor;
+      const active = render[word.idx].active;
+      const color = active ? style.highlightColor : style.textColor;
+      ctx.font = `${style.bold ? 800 : 600} ${fontPx * word.scale}px "${style.fontFamily}", sans-serif`;
       if (style.style === "outline") {
         ctx.lineJoin = "round";
         ctx.lineWidth = fontPx * 0.16;
@@ -146,6 +146,10 @@ export function drawCaption(
       } else if (style.style === "plain") {
         ctx.shadowColor = "rgba(0,0,0,0.85)";
         ctx.shadowBlur = fontPx * 0.25;
+      }
+      if (active && style.activeGlow) {
+        ctx.shadowColor = style.highlightColor;
+        ctx.shadowBlur = fontPx * 0.45;
       }
       ctx.fillStyle = color;
       ctx.fillText(word.text, cx, cy);

@@ -19,6 +19,20 @@ assert.equal(captions.activeAt(lines, 0.35)?.wordIdx, 1, "active word timing mus
 assert.equal(captions.activeAt(lines, 5), null, "captions must disappear after their line");
 assert.equal(captions.DEFAULT_STYLE.animation, "pop");
 
+const translatedWords = captions.retimeTranslatedLines(lines, ["One two three", "four again"]);
+assert.equal(translatedWords[0].start, lines[0].start, "translation must preserve line start");
+assert.equal(translatedWords[2].end, lines[0].end, "translation must preserve first line end");
+assert.equal(translatedWords.at(-1).end, lines.at(-1).end, "translation must preserve final line end");
+assert.ok(
+  translatedWords.every((word, i) => i === 0 || word.start >= translatedWords[i - 1].end),
+  "translated word timings must stay ordered and non-overlapping",
+);
+assert.throws(
+  () => captions.retimeTranslatedLines(lines, ["one line only"]),
+  /Jumlah baris/,
+  "mismatched model output must never corrupt caption timing",
+);
+
 const ass = captions.buildAss(lines, { ...captions.DEFAULT_STYLE, fontScale: 1.5 }, 1080, 1920);
 assert.match(ass, /Style: CC,Anton,158,/, "ASS fallback must honor caption size");
 const drawSource = readFileSync(resolve("src/lib/video/draw.ts"), "utf8");
@@ -35,7 +49,23 @@ const puncWords = [
 const puncLines = captions.groupLines(puncWords, 4, 1.0);
 assert.equal(puncLines.length, 2, "punctuation (.!?) must break line naturally");
 
-assert.match(drawSource, /scale = 1080 \/ short/);
+const layout = await import(pathToFileURL(resolve("src/lib/video/layout.ts")));
+const portrait = layout.frameSize(1920, 1080, "9:16");
+assert.equal(portrait.W / portrait.H, 9 / 16, "portrait output ratio must be exact");
+const square = layout.frameSize(1920, 1080, "1:1");
+assert.deepEqual(square, { W: square.H, H: square.H }, "square output must have equal dimensions");
+const leftCrop = layout.coverCrop(1920, 1080, 1080, 1920, "left");
+const centerCrop = layout.coverCrop(1920, 1080, 1080, 1920, "center");
+const rightCrop = layout.coverCrop(1920, 1080, 1080, 1920, "right");
+assert.equal(leftCrop.sx, 0, "left focus must anchor source left edge");
+assert.ok(centerCrop.sx > leftCrop.sx, "center focus must move crop window");
+assert.ok(rightCrop.sx > centerCrop.sx, "right focus must anchor farther right");
+assert.equal(layout.normalizedTimestampUs(0.133333, 0.133333), 0, "first decoded frame must mux at timestamp zero");
+assert.equal(
+  layout.normalizedTimestampUs(0.266666, 0.133333),
+  133333,
+  "later decoded frames must keep their relative timing",
+);
 
 const yt = await import(pathToFileURL(resolve("src/lib/video/youtube.ts")));
 

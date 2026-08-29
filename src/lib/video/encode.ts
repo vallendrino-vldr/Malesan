@@ -1,7 +1,8 @@
 "use client";
 
 import { Muxer, FileSystemWritableFileStreamTarget } from "mp4-muxer";
-import { bitrateFor, drawFrame, frameSize } from "./draw";
+import { bitrateFor, drawFrame, frameSize, type VideoLayout } from "./draw";
+import { normalizedTimestampUs } from "./layout";
 import type { CaptionStyle, Line } from "./captions";
 
 /**
@@ -37,6 +38,7 @@ export type EncodeOpts = {
   style: CaptionStyle;
   bitrateMbps: number;
   watermark: boolean;
+  layout: VideoLayout;
   /** 0..1 over the whole job, frame-accurate. */
   onProgress: (ratio: number) => void;
   /** Short human label for the overlay, e.g. "Nyiapin audio". */
@@ -71,7 +73,7 @@ export function canUseWebCodecs(): boolean {
 export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob; ext: string }> {
   if (!canUseWebCodecs()) throw new UnsupportedEncoder("WebCodecs tidak tersedia");
 
-  const { file, lines, style, bitrateMbps, watermark, onProgress, onStage } = opts;
+  const { file, lines, style, bitrateMbps, watermark, layout, onProgress, onStage } = opts;
   onStage?.("Nyiapin video");
 
   const video = document.createElement("video");
@@ -100,7 +102,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     throw new Error("Durasi videonya gak kebaca. Coba video lain.");
   }
 
-  const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920);
+  const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920, layout.ratio);
   const fps = await probeFps(video);
   const bitrate = bitrateFor(bitrateMbps, W, H, fps);
   const totalFrames = Math.max(1, Math.round(duration * fps));
@@ -203,6 +205,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
 
     let frameIndex = 0;
     let lastRenderedTime = -1;
+    let firstMediaTime: number | null = null;
 
     if (typeof rvfc.requestVideoFrameCallback === "function") {
       video.currentTime = 0;
@@ -233,10 +236,11 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
           }
           const t = meta.mediaTime;
           if (t > lastRenderedTime || lastRenderedTime < 0) {
+            firstMediaTime ??= t;
             lastRenderedTime = t;
-            drawFrame(ctx, video, lines, t, style, W, H, watermark);
+            drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
             const frame = new VideoFrame(canvas, {
-              timestamp: Math.round(t * 1_000_000),
+              timestamp: normalizedTimestampUs(t, firstMediaTime),
               duration: frameDurUs,
             });
             videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
@@ -257,7 +261,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
         if (failure) throw failure;
         const t = i / fps;
         await seekToFrame(video, Math.min(t, Math.max(0, duration - 1e-3)));
-        drawFrame(ctx, video, lines, t, style, W, H, watermark);
+        drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
 
         const frame = new VideoFrame(canvas, {
           timestamp: Math.round(t * 1_000_000),
