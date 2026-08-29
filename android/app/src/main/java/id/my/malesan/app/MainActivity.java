@@ -162,11 +162,21 @@ public class MainActivity extends Activity {
                 String host = uri.getHost();
                 if (host == null) return false;
 
-                // Keep internal app, Supabase auth, and Google OAuth inside the WebView
-                if (host.contains("malesan.my.id") ||
-                    host.contains("supabase.co") ||
-                    host.contains("accounts.google.com") ||
-                    host.contains("accounts.youtube.com") ||
+                // Keep Malesan app and Supabase API callback inside WebView
+                if (host.contains("malesan.my.id")) {
+                    return false;
+                }
+
+                // Open Google OAuth in System Browser so Android presents the 1-Tap Google Account Chooser
+                if (host.contains("accounts.google.com") || host.contains("accounts.youtube.com")) {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                        startActivity(intent);
+                        return true;
+                    } catch (Exception ignored) {}
+                }
+
+                if (host.contains("supabase.co") ||
                     host.contains("ssl.gstatic.com") ||
                     host.contains("googleusercontent.com") ||
                     host.contains("googleapis.com")) {
