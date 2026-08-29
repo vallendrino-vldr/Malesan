@@ -409,6 +409,11 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                   if (!rightsConfirmed) {
                     setRightsConfirmed(true);
                   }
+                  // If on native Android APK, trigger native stream downloader into DCIM/Malesan
+                  const native = (window as unknown as { MalesanNative?: { downloadYouTubeClip?: (u: string, s: number, e: number, t: string) => void } }).MalesanNative;
+                  if (native?.downloadYouTubeClip) {
+                    native.downloadYouTubeClip(url, clip.startTime, clip.endTime, clip.hookTitle);
+                  }
                   // Transition to studio video editor for auto-caption & 9:16 vertical crop
                   const studioTab = document.querySelector('button[data-tab="studio"]') as HTMLButtonElement | null;
                   if (studioTab) studioTab.click();

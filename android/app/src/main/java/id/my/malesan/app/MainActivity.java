@@ -311,5 +311,56 @@ public class MainActivity extends Activity {
             }
             return false;
         }
+
+        @JavascriptInterface
+        public String getNativeEngineCapabilities() {
+            return "Native Java Stream Extractor + Scoped MediaStore DCIM/Malesan + Hardware MediaCodec";
+        }
+
+        @JavascriptInterface
+        public void downloadYouTubeClip(final String url, final int startSec, final int endSec, final String title) {
+            haptic("heavy");
+            Toast.makeText(context, "Mengekstrak klip video YouTube...", Toast.LENGTH_SHORT).show();
+            YouTubeStreamExtractor.downloadClipAsync(context, url, startSec, endSec, title, new YouTubeStreamExtractor.StreamCallback() {
+                @Override
+                public void onProgress(int percent, String message) {
+                    final String js = "if (window.onNativeClipProgress) { window.onNativeClipProgress(" + percent + ", '" + message.replace("'", "\\'") + "'); }";
+                    if (context instanceof MainActivity) {
+                        ((MainActivity) context).runOnUiThread(new Runnable() {
+                            @Override public void run() {
+                                ((MainActivity) context).webView.evaluateJavascript(js, null);
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onSuccess(final String localPath, final String filename) {
+                    haptic("heavy");
+                    Toast.makeText(context, "Klip berhasil disimpan ke Galeri HP: " + filename, Toast.LENGTH_LONG).show();
+                    final String js = "if (window.onNativeClipSuccess) { window.onNativeClipSuccess('" + localPath.replace("'", "\\'") + "', '" + filename.replace("'", "\\'") + "'); }";
+                    if (context instanceof MainActivity) {
+                        ((MainActivity) context).runOnUiThread(new Runnable() {
+                            @Override public void run() {
+                                ((MainActivity) context).webView.evaluateJavascript(js, null);
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void onError(final String errorMessage) {
+                    Toast.makeText(context, "Error: " + errorMessage, Toast.LENGTH_LONG).show();
+                    final String js = "if (window.onNativeClipError) { window.onNativeClipError('" + errorMessage.replace("'", "\\'") + "'); }";
+                    if (context instanceof MainActivity) {
+                        ((MainActivity) context).runOnUiThread(new Runnable() {
+                            @Override public void run() {
+                                ((MainActivity) context).webView.evaluateJavascript(js, null);
+                            }
+                        });
+                    }
+                }
+            });
+        }
     }
 }
