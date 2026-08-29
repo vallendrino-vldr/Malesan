@@ -444,7 +444,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
                 setError(null);
                 setDoneMsg(null);
               }}
-              className="w-full cursor-pointer rounded-xl border border-hairline bg-surface px-4 py-2.5 text-mini font-semibold text-muted transition-colors hover:border-ember/40 hover:text-ink"
+              className="min-h-11 w-full cursor-pointer rounded-xl border border-hairline bg-surface px-4 py-2.5 text-mini font-semibold text-muted transition-colors hover:border-ember/40 hover:text-ink"
             >
               Ganti video
             </button>
@@ -743,7 +743,7 @@ function StylePanel({
               type="button"
               onClick={() => onPreset(preset.id)}
               title={preset.hint}
-              className={`h-8 sm:h-8.5 rounded-lg border px-2 text-micro font-semibold transition-colors ${
+              className={`min-h-11 rounded-lg border px-2 text-micro font-semibold transition-colors ${
                 presetId === preset.id
                   ? "border-ember bg-ember/15 text-ember"
                   : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
