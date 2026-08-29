@@ -17,6 +17,13 @@ export interface LessonChallenge {
   hint: string;
 }
 
+export function stripComments(code: string): string {
+  return code
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\/\/.*$/gm, "")
+    .trim();
+}
+
 export function runJavaScriptSandbox(code: string): SandboxResult {
   const logs: string[] = [];
   const start = performance.now();
@@ -92,80 +99,80 @@ export function getLessonChallenge(level: number): LessonChallenge {
   switch (level) {
     case 1:
       return {
-        objective: "Ganti tanda tanya (???) dengan angka 50000 (tanpa tanda kutip!) agar saldo tercetak 50000.",
-        starterCode: `// 🎯 MISI: Ganti tanda tanya ??? di bawah dengan angka 50000 (tanpa tanda kutip!)\nlet saldo = ???;\n\nconsole.log("Saldo Anda:", saldo);`,
-        hint: "Ketik 50000 langsung tanpa tanda petik, lalu klik tombol Jalankan & Validasi Kode.",
+        objective: "Ubah nilai variabel saldo dari 0 menjadi angka 50000 (tanpa tanda kutip), lalu jalankan kode.",
+        starterCode: `let saldo = 0;\n\nconsole.log("Saldo Gue:", saldo);`,
+        hint: "Ganti angka 0 menjadi 50000 tanpa tanda kutip.",
       };
     case 2:
       return {
-        objective: "Ganti 'var' menjadi 'const' untuk namaToko (nilai tetap) dan 'let' untuk totalBelanja (nilai dinamis).",
-        starterCode: `// 🎯 MISI: Ganti 'var' dengan 'const' untuk namaToko dan 'let' untuk totalBelanja!\nvar namaToko = "Warung Bu Sri";\nvar totalBelanja = 0;\n\ntotalBelanja = totalBelanja + 15000;\nconsole.log(namaToko, "Total:", totalBelanja);`,
-        hint: "Ganti kata 'var' pertama jadi 'const', dan 'var' kedua jadi 'let'.",
+        objective: "Ganti 'var' menjadi 'const' untuk namaToko (karena tetap) dan 'let' untuk totalBelanja (karena bertambah).",
+        starterCode: `var namaToko = "Warung Bu Sri";\nvar totalBelanja = 0;\n\ntotalBelanja = totalBelanja + 15000;\nconsole.log(namaToko, "Total:", totalBelanja);`,
+        hint: "Ganti 'var' pertama jadi 'const', dan 'var' kedua jadi 'let'.",
       };
     case 3:
       return {
-        objective: "Lengkapi template literal agar mencetak: 'Halo Fadli, saldo lu 50000'.",
-        starterCode: `// 🎯 MISI: Ganti titik-titik di bawah dengan \${nama} di dalam backtick!\nlet nama = "Fadli";\nlet saldo = 50000;\n\nconsole.log(\`Halo ..., saldo lu \${saldo}\`);`,
-        hint: "Ganti titik-titik dengan ${nama} (pake tanda dolar dan kurung kurawal).",
+        objective: "Gunakan template literal (${nama}) di dalam backtick agar output mencetak: 'Halo Fadli, saldo lu 50000'.",
+        starterCode: `let nama = "Fadli";\nlet saldo = 50000;\n\nconsole.log(\`Halo ..., saldo lu \${saldo}\`);`,
+        hint: "Ganti tanda titik-titik (...) dengan ${nama}.",
       };
     case 4:
       return {
-        objective: "Tulis kondisi di dalam if (...) agar mengecek apakah saldo >= ongkir.",
-        starterCode: `// 🎯 MISI: Tulis kondisi di dalam if (...) agar mengecek saldo >= ongkir!\nlet saldo = 10000;\nlet ongkir = 12000;\n\nif (/* ganti dengan kondisi: saldo >= ongkir */) {\n  console.log("Pesanan diproses!");\n} else {\n  console.log("Saldo lu kurang, top up dulu bos.");\n}`,
-        hint: "Hapus komentar di dalam tanda kurung if dan tulis: saldo >= ongkir",
+        objective: "Tulis kondisi 'saldo >= ongkir' di dalam kurung if agar pesanan diproses ketika saldo cukup.",
+        starterCode: `let saldo = 10000;\nlet ongkir = 12000;\n\nif (saldo == 0) {\n  console.log("Pesanan diproses!");\n} else {\n  console.log("Saldo lu kurang, top up dulu bos.");\n}`,
+        hint: "Ganti kondisi 'saldo == 0' menjadi 'saldo >= ongkir'.",
       };
     case 5:
       return {
-        objective: "Perbaiki bug di baris 4 menjadi '===' agar password yang salah ditolak (Password salah!).",
-        starterCode: `// 🎯 MISI: Temukan & perbaiki bug di baris 4 agar password salah ditolak!\nlet passwordAsli = "rahasia123";\nlet inputUser = "tebakngasal";\n\nif (passwordAsli = inputUser) { // ⚠️ Bug: '=' menimpa nilai!\n  console.log("Login sukses!");\n} else {\n  console.log("Password salah!");\n}`,
+        objective: "Perbaiki bug perbandingan di baris 4 menjadi '===' agar password yang salah ditolak (Password salah!).",
+        starterCode: `let passwordAsli = "rahasia123";\nlet inputUser = "tebakngasal";\n\nif (passwordAsli = inputUser) {\n  console.log("Login sukses!");\n} else {\n  console.log("Password salah!");\n}`,
         hint: "Ganti tanda '=' tunggal di dalam if menjadi '===' (tiga sama dengan).",
       };
     case 6:
       return {
-        objective: "Ambil item 'Es Teh' dari keranjang (ingat index array mulai dari 0!).",
-        starterCode: `// 🎯 MISI: Ambil item 'Es Teh' dari array keranjang belanja!\nlet keranjang = ["Indomie", "Telur", "Es Teh", "Kerupuk"];\n\n// Ganti angka 0 dengan index yang benar untuk 'Es Teh':\nlet pesanan = keranjang[0];\n\nconsole.log("Pesanan:", pesanan);`,
+        objective: "Ambil item 'Es Teh' dari array keranjang (ingat index array dihitung mulai dari 0!).",
+        starterCode: `let keranjang = ["Indomie", "Telur", "Es Teh", "Kerupuk"];\n\nlet pesanan = keranjang[0];\nconsole.log("Pesanan:", pesanan);`,
         hint: "Indomie = 0, Telur = 1, Es Teh = 2. Ganti angka di dalam kurung siku jadi 2.",
       };
     case 7:
       return {
-        objective: "Gunakan method .push() untuk memasukkan 'Kopi Sachet' ke paling belakang keranjang.",
-        starterCode: `// 🎯 MISI: Masukkan 'Kopi Sachet' ke keranjang menggunakan .push()!\nlet keranjang = ["Indomie", "Telur"];\n\n// Ganti kata method_disini dengan push:\nkeranjang.method_disini("Kopi Sachet");\n\nconsole.log(keranjang);`,
-        hint: "Ganti 'method_disini' menjadi 'push'.",
+        objective: "Tambahkan 'Kopi Sachet' ke paling belakang keranjang menggunakan method .push(\"Kopi Sachet\").",
+        starterCode: `let keranjang = ["Indomie", "Telur"];\n\nkeranjang.pop();\n\nconsole.log(keranjang);`,
+        hint: "Ganti 'keranjang.pop();' menjadi 'keranjang.push(\"Kopi Sachet\");'.",
       };
     case 8:
       return {
-        objective: "Lengkapi kondisi loop dengan 'i < anakKos.length' agar mengabsen semua anak kos.",
-        starterCode: `// 🎯 MISI: Lengkapi kondisi loop agar mengabsen semua anak kos!\nlet anakKos = ["Budi", "Sinta", "Joko"];\n\nfor (let i = 0; /* ganti kondisi */; i++) {\n  console.log("Absen: " + anakKos[i]);\n}`,
-        hint: "Tulis 'i < anakKos.length' sebagai kondisi perulangan di tengah for.",
+        objective: "Lengkapi kondisi loop dengan 'i < anakKos.length' agar mengabsen semua nama anak kos.",
+        starterCode: `let anakKos = ["Budi", "Sinta", "Joko"];\n\nfor (let i = 0; i < 1; i++) {\n  console.log("Absen:", anakKos[i]);\n}`,
+        hint: "Ganti kondisi 'i < 1' menjadi 'i < anakKos.length'.",
       };
     case 9:
       return {
         objective: "Tambahkan 'return total;' di dalam function agar nilainya keluar dan tercetak.",
-        starterCode: `// 🎯 MISI: Tambahkan perintah return agar mesin kasir mengeluarkan struk!\nfunction hitungTotal(harga, pajak) {\n  let total = harga + pajak;\n  // Tulis 'return total;' di baris bawah ini:\n  \n}\n\nlet struk = hitungTotal(25000, 2000);\nconsole.log("Struk:", struk);`,
+        starterCode: `function hitungTotal(harga, pajak) {\n  let total = harga + pajak;\n}\n\nlet struk = hitungTotal(25000, 2000);\nconsole.log("Struk:", struk);`,
         hint: "Ketik 'return total;' sebelum kurung kurawal tutup function.",
       };
     case 10:
       return {
         objective: "Ubah spanduk.textContent menjadi 'Selamat Datang'.",
-        starterCode: `// 🎯 MISI: Ubah tulisan spanduk website menjadi 'Selamat Datang'!\nlet spanduk = { textContent: "Loading..." };\n\n// Ganti titik-titik di bawah dengan "Selamat Datang"\nspanduk.textContent = "...";\n\nconsole.log("Spanduk:", spanduk.textContent);`,
-        hint: "Isi spanduk.textContent = \"Selamat Datang\";",
+        starterCode: `let spanduk = { textContent: "Loading..." };\n\nspanduk.textContent = "Loading...";\nconsole.log("Spanduk:", spanduk.textContent);`,
+        hint: "Ubah string menjadi: spanduk.textContent = \"Selamat Datang\";",
       };
     case 11:
       return {
         objective: "Lengkapi nama event listener 'click' agar tombol merespons saat dipencet.",
-        starterCode: `// 🎯 MISI: Daftarkan event 'click' pada tombol!\nlet tombol = {\n  addEventListener: function(event, callback) {\n    if (event === "click") callback();\n  }\n};\n\n// Ganti tanda titik-titik dengan "click":\ntombol.addEventListener("...", () => {\n  console.log("Checkout diproses!");\n});`,
-        hint: "Isi parameter pertama dengan string \"click\".",
+        starterCode: `let tombol = {\n  addEventListener: function(event, callback) {\n    if (event === "click") callback();\n  }\n};\n\ntombol.addEventListener("hover", () => {\n  console.log("Checkout diproses!");\n});`,
+        hint: "Ganti event \"hover\" menjadi \"click\".",
       };
     case 12:
       return {
-        objective: "Panggil e.preventDefault() agar form tidak melakukan refresh browser.",
-        starterCode: `// 🎯 MISI: Panggil e.preventDefault() di baris pertama callback submit!\nlet form = {\n  submit: function(e, callback) { callback(e); }\n};\n\nlet fakeEvent = { defaultPrevented: false, preventDefault: function() { this.defaultPrevented = true; } };\n\nform.submit(fakeEvent, (e) => {\n  // Tulis 'e.preventDefault();' di bawah ini:\n  \n  console.log("Status preventDefault:", e.defaultPrevented);\n});`,
-        hint: "Ketik 'e.preventDefault();' di dalam function callback.",
+        objective: "Panggil e.preventDefault() di baris pertama callback submit agar form tidak refresh.",
+        starterCode: `let form = {\n  submit: function(e, callback) { callback(e); }\n};\n\nlet fakeEvent = { defaultPrevented: false, preventDefault: function() { this.defaultPrevented = true; } };\n\nform.submit(fakeEvent, (e) => {\n  console.log("Status preventDefault:", e.defaultPrevented);\n});`,
+        hint: "Ketik 'e.preventDefault();' di baris atas dalam function callback.",
       };
     default:
       return {
         objective: "Jalankan kode program dan pastikan menghasilkan output yang valid di terminal.",
-        starterCode: `// 🎯 MISI: Lengkapi kode di bawah dan jalankan!\nconsole.log("Misi Level ${level} siap dijalankan!");`,
+        starterCode: `console.log("Misi Level ${level} siap dijalankan!");`,
         hint: "Pastikan kode dieksekusi tanpa error dan mencetak output ke terminal.",
       };
   }
@@ -184,18 +191,12 @@ export function validateLessonCode(
     };
   }
 
-  const cleanCode = code.trim();
+  // Strip all comments before analyzing code keywords
+  const cleanCode = stripComments(code);
   const allLogs = result.logs.join(" ").toLowerCase();
 
   switch (level) {
     case 1:
-      if (cleanCode.includes("???")) {
-        return {
-          isValid: false,
-          message: "Masih ada tanda tanya (???).",
-          hint: "Ganti tanda ??? dengan angka 50000.",
-        };
-      }
       if (cleanCode.includes('"50000"') || cleanCode.includes("'50000'")) {
         return {
           isValid: false,
@@ -206,13 +207,13 @@ export function validateLessonCode(
       if (allLogs.includes("50000")) {
         return {
           isValid: true,
-          message: "Target tercapai! Variabel saldo berhasil mencetak angka 50000 ke terminal.",
+          message: "Target tercapai! Variabel saldo berhasil bernilai angka 50000.",
         };
       }
       return {
         isValid: false,
         message: "Output belum mencetak angka 50000.",
-        hint: "Pastikan saldo diisi 50000 lalu console.log(saldo).",
+        hint: "Ubah saldo menjadi 50000 (contoh: let saldo = 50000;).",
       };
 
     case 2:
@@ -249,13 +250,6 @@ export function validateLessonCode(
       };
 
     case 4:
-      if (cleanCode.includes("/*")) {
-        return {
-          isValid: false,
-          message: "Hapus komentar dan isi kondisi yang sebenarnya.",
-          hint: "Tulis 'saldo >= ongkir' di dalam tanda kurung if.",
-        };
-      }
       if (
         (cleanCode.includes("saldo >= ongkir") || cleanCode.includes("saldo>=ongkir")) &&
         allLogs.includes("saldo lu kurang")
@@ -306,7 +300,7 @@ export function validateLessonCode(
       }
       return {
         isValid: false,
-        message: "Belum menggunakan method .push().",
+        message: "Belum menggunakan method .push(\"Kopi Sachet\").",
         hint: "Tulis keranjang.push(\"Kopi Sachet\");",
       };
 
@@ -314,7 +308,8 @@ export function validateLessonCode(
       if (
         (cleanCode.includes("i < anakKos.length") ||
           cleanCode.includes("i<anakKos.length") ||
-          cleanCode.includes("i < 3")) &&
+          cleanCode.includes("i < 3") ||
+          cleanCode.includes("i <= 2")) &&
         allLogs.includes("budi") &&
         allLogs.includes("joko")
       ) {
