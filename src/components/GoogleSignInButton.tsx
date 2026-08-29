@@ -55,10 +55,18 @@ export function GoogleSignInButton({
 
     // Standard Google OAuth for real users
     const supabase = createClient();
+    const redirectUrl = new URL("/auth/callback", window.location.origin);
+    if (next && next !== "/" && next !== "") {
+      redirectUrl.searchParams.set("next", next);
+    }
+    if (referralCode) {
+      redirectUrl.searchParams.set("ref", referralCode);
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}${referralCode ? `&ref=${encodeURIComponent(referralCode)}` : ""}`,
+        redirectTo: redirectUrl.toString(),
       },
     });
 

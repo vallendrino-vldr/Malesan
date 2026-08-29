@@ -426,7 +426,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       Pengguna HP Android / iOS
                     </p>
                     <p className="text-[10px] text-muted leading-relaxed">
-                      <a href="/malesan.apk" download="malesan-v1.0.apk" className="text-emerald-400 font-bold underline hover:text-emerald-300">Download Malesan APK (1.5 MB)</a> atau unggah video di tab <strong>Video Studio</strong> untuk auto-potong & subtitle.
+                      <a href="/malesan.apk" download="malesan-v1.0.apk" className="text-ember font-bold underline hover:text-ember-lo">Download Malesan APK (1.5 MB)</a> atau unggah video di tab <strong>Video Studio</strong> untuk auto-potong & subtitle.
                     </p>
                   </div>
                 </div>
