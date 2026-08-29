@@ -145,7 +145,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     // is wrong. A downloaded local file plays fine either way — only HTTP
     // progressive streaming cares where the index sits.
     fastStart: "in-memory",
-    video: { codec: "avc", width: W, height: H, frameRate: fps },
+    video: { codec: "avc", width: W, height: H, frameRate: Math.max(1, Math.round(fps)) },
     ...(audio
       ? {
           audio: {
@@ -170,7 +170,7 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     width: W,
     height: H,
     bitrate,
-    framerate: fps,
+    framerate: Math.max(1, Math.round(fps)),
     avc: { format: "avc" },
     hardwareAcceleration: "prefer-hardware",
     latencyMode: "quality",
@@ -437,9 +437,9 @@ async function probeFps(video: HTMLVideoElement): Promise<number> {
   gaps.sort((a, b) => a - b);
   const median = gaps[Math.floor(gaps.length / 2)];
   const raw = 1 / median;
-  const common = [23.976, 24, 25, 29.97, 30, 48, 50, 59.94, 60];
+  const common = [24, 25, 30, 48, 50, 60];
   const near = common.reduce((best, c) => (Math.abs(c - raw) < Math.abs(best - raw) ? c : best), 30);
-  return Math.abs(near - raw) / near < 0.12 ? near : Math.min(60, Math.max(15, Math.round(raw)));
+  return Math.abs(near - raw) / near < 0.15 ? near : Math.min(60, Math.max(15, Math.round(raw)));
 }
 
 /** Seek to an exact time with frame presentation verification. */

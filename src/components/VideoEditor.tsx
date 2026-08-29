@@ -399,8 +399,8 @@ export function VideoEditor({
         </div>
       ) : (
         <div className="space-y-3.5">
-          <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-hairline bg-surface/90 backdrop-blur-md p-3 sm:px-4 shadow-sm">
-            <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-hairline bg-surface/90 backdrop-blur-md p-3 sm:px-4 shadow-sm">
+            <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
               <button
                 type="button"
                 onClick={() => {
@@ -411,21 +411,21 @@ export function VideoEditor({
                   setError(null);
                   setDoneMsg(null);
                 }}
-                className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink"
+                className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="m15 18-6-6 6-6"/></svg>
                 <span>Ganti Video</span>
               </button>
-              <div className="min-w-0"><span className="block max-w-[180px] sm:max-w-[320px] truncate text-xs font-bold text-ink" title={file.name}>{file.name}</span></div>
+              <div className="min-w-0"><span className="block max-w-[150px] sm:max-w-[320px] truncate text-xs font-bold text-ink" title={file.name}>{file.name}</span></div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               {words.length > 0 ? (
-                <button type="button" onClick={doExport} disabled={busy} className="btn-ember flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
+                <button type="button" onClick={doExport} disabled={busy} className="btn-ember flex h-8.5 w-full sm:w-auto justify-center cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <span>Export Mateng</span>
                 </button>
               ) : phase === "idle" ? (
-                <button type="button" onClick={generate} className="btn-ember flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs">
+                <button type="button" onClick={generate} className="btn-ember flex h-8.5 w-full sm:w-auto justify-center cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs">
                   <span>Bikinin Subtitle</span>
                 </button>
               ) : null}
@@ -451,20 +451,20 @@ export function VideoEditor({
             </div>
 
             <div className="lg:col-span-7 flex flex-col rounded-2xl border border-hairline bg-surface overflow-hidden shadow-xs">
-              <div className="grid grid-cols-4 border-b border-hairline bg-surface-raised/50 p-1.5 gap-1">
-                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+              <div className="grid grid-cols-4 border-b border-hairline bg-surface-raised/50 p-1 gap-1">
+                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
                   <span className="truncate">Bingkai</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                  <span className="truncate">Teks ({words.length})</span>
+                  <span className="truncate">Teks</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
                   <span className="truncate">Gaya</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <span className="truncate">Export</span>
                 </button>
@@ -618,7 +618,7 @@ function VideoPreviewPlayer({
 
   return (
     <div
-      className="relative mx-auto max-h-[70vh] w-full max-w-sm overflow-hidden rounded-2xl border border-hairline bg-black transition-[aspect-ratio] duration-300"
+      className="relative mx-auto max-h-[46vh] sm:max-h-[64vh] w-full max-w-[320px] sm:max-w-[360px] overflow-hidden rounded-2xl border border-hairline bg-black shadow-lg transition-[aspect-ratio] duration-300"
       style={{ aspectRatio }}
     >
       <video
@@ -651,15 +651,15 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
       : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center"
+      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-3 text-center"
       style={{ top: `${style.position * 100}%` }}
     >
       <p
-        className="max-w-[92%] leading-tight"
+        className="max-w-[94%] leading-tight"
         style={{
           fontFamily: `"${style.fontFamily}", sans-serif`,
           fontWeight: style.bold ? 800 : 600,
-          fontSize: `calc(${style.mode === "word" ? "clamp(24px, 9vw, 46px)" : "clamp(18px, 7vw, 34px)"} * ${style.fontScale})`,
+          fontSize: `calc(${style.mode === "word" ? "clamp(22px, 8.5vw, 44px)" : "clamp(16px, 6.5vw, 32px)"} * ${style.fontScale})`,
           color: style.textColor,
           textShadow:
             style.style === "outline"
@@ -677,18 +677,17 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
         {shown.map((w, i) => (
           <span
             key={i}
+            className="inline-block"
             style={{
               color: w.active ? style.highlightColor : undefined,
-              display: "inline-block",
               transform: w.active && style.activeScale !== 1 ? `scale(${style.activeScale})` : undefined,
               textShadow: w.active && style.activeGlow
                 ? `0 0 0.45em ${style.highlightColor}, 0 0 0.9em ${style.highlightColor}`
                 : undefined,
-              marginInline: w.active && style.activeScale > 1 ? "0.04em" : undefined,
+              marginInline: "0.14em",
             }}
           >
             {w.text}
-            {i < shown.length - 1 ? " " : ""}
           </span>
         ))}
       </p>

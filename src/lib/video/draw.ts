@@ -103,7 +103,7 @@ export function drawCaption(
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  const space = ctx.measureText(" ").width;
+  const space = Math.max(fontPx * 0.28, ctx.measureText(" ").width);
   const maxW = W * 0.9;
 
   const rows: { words: { text: string; idx: number; w: number; scale: number }[]; width: number }[] = [];
