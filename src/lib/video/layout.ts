@@ -1,6 +1,8 @@
+import type { CropKeyframe } from "./face-track";
+
 export type VideoRatio = "9:16" | "1:1" | "16:9";
 export type VideoFocus = "left" | "center" | "right";
-export type VideoLayout = { ratio: VideoRatio; focus: VideoFocus };
+export type VideoLayout = { ratio: VideoRatio; focus: VideoFocus; trajectory?: readonly CropKeyframe[] };
 
 const even = (n: number) => (n % 2 === 0 ? n : n - 1);
 

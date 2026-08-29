@@ -1,6 +1,7 @@
 "use client";
 
 import { activeAt, type CaptionStyle, type Line } from "./captions";
+import { cropFocusAt, trackedCoverCrop } from "./face-track";
 import { coverCrop, type VideoLayout } from "./layout";
 
 export { coverCrop, frameSize } from "./layout";
@@ -48,7 +49,9 @@ export function drawFrame(
   };
   const sw = source.videoWidth || source.displayWidth || source.width || W;
   const sh = source.videoHeight || source.displayHeight || source.height || H;
-  const crop = coverCrop(sw, sh, W, H, layout.focus);
+  const crop = layout.trajectory?.length
+    ? trackedCoverCrop(sw, sh, W, H, cropFocusAt(layout.trajectory, t))
+    : coverCrop(sw, sh, W, H, layout.focus);
   ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
   const a = activeAt(lines, t);
   if (a) drawCaption(ctx, a.line, t, style, W, H);

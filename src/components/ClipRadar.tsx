@@ -23,6 +23,8 @@ type Clip = {
 };
 
 type Scan = { videoId: string; title: string; clips: Clip[] };
+type BridgeJob = { id: string; status: string; progress: number; stage: string | null; credit_amount?: number };
+type ChromeExternal = { runtime?: { sendMessage(extensionId: string, message: unknown, callback: (response: { ok?: boolean; error?: string; downloadUrl?: string } | undefined) => void): void; lastError?: { message?: string } } };
 
 const STEPS = [
   "Baca link videonya...",
@@ -34,7 +36,7 @@ const STEPS = [
 const clock = (sec: number) =>
   `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
 
-export function ClipRadar({ cost }: { cost: number }) {
+export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (file: File) => void }) {
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,10 @@ export function ClipRadar({ cost }: { cost: number }) {
   const [playerState, setPlayerState] = useState<"loading" | "ready" | "playing" | "paused" | "error">("loading");
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [actualTime, setActualTime] = useState<number | null>(null);
+  const [bridgeJob, setBridgeJob] = useState<BridgeJob | null>(null);
+  const [bridgeBusy, setBridgeBusy] = useState(false);
+  const [rightsConfirmed, setRightsConfirmed] = useState(false);
+  const [bridgeError, setBridgeError] = useState<string | null>(null);
   const playerRef = useRef<YouTubeClipController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
 
@@ -102,6 +108,46 @@ export function ClipRadar({ cost }: { cost: number }) {
   };
 
   const clip = scan?.clips[active];
+
+  const startAutoClip = async () => {
+    if (!scan || !clip || bridgeBusy) return;
+    setBridgeBusy(true);
+    setBridgeError(null);
+    try {
+      const response = await fetch("/api/video/auto-clip", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceUrl: url, title: scan.title, clipTitle: clip.hookTitle, startTime: clip.startTime, endTime: clip.endTime, ratio: "9:16", focus: "auto", captionPreset: "default", language: "id", rightsConfirmed }),
+      });
+      const created = await response.json().catch(() => null) as ({ job?: BridgeJob; claimToken?: string; error?: string } | null);
+      if (!response.ok || !created?.job || !created.claimToken) throw new Error(created?.error ?? "Job Auto Clip gagal dibuat.");
+      setBridgeJob(created.job);
+      if (window.innerWidth < 768) return;
+      const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
+      const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
+      if (!extensionId || !chromeRuntime) throw new Error("Malesan Bridge belum terpasang. Install Bridge sekali, lalu coba lagi.");
+      const result = await new Promise<{ ok?: boolean; error?: string; downloadUrl?: string }>((resolve, reject) => {
+        chromeRuntime.sendMessage(extensionId, { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }, (value) => {
+          if (chromeRuntime.lastError) reject(new Error(chromeRuntime.lastError.message ?? "Bridge gak merespons.")); else resolve(value ?? {});
+        });
+      });
+      if (!result.ok || !result.downloadUrl) throw new Error(result.error ?? "Bridge gagal memproses klip.");
+      const fileResponse = await fetch(result.downloadUrl);
+      if (!fileResponse.ok) throw new Error("Hasil Bridge gak bisa dibuka.");
+      const blob = await fileResponse.blob();
+      const filename = `${clip.hookTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "malesan-clip"}.mp4`;
+      const localFile = new File([blob], filename, { type: blob.type || "video/mp4" });
+      if (onClipReady) onClipReady(localFile);
+      else {
+        const anchor = document.createElement("a");
+        anchor.href = URL.createObjectURL(blob); anchor.download = filename; anchor.click();
+        setTimeout(() => URL.revokeObjectURL(anchor.href), 30_000);
+      }
+      setBridgeJob({ ...created.job, status: "ready", progress: 100, stage: "Klip siap" });
+      router.refresh();
+    } catch (reason) {
+      setBridgeError(reason instanceof Error ? reason.message : "Auto Clip gagal. Coba lagi.");
+    } finally { setBridgeBusy(false); }
+  };
 
   const playClip = (index: number) => {
     const selected = scan?.clips[index];
@@ -247,10 +293,31 @@ export function ClipRadar({ cost }: { cost: number }) {
             ))}
           </ul>
 
-          <p className="rounded-xl border border-ember/20 bg-ember/5 px-3 py-2.5 text-micro leading-relaxed text-muted">
-            Preview ini langsung dari YouTube. Auto potong, subtitle, dan face track dari URL lagi
-            disiapkan lewat Malesan Bridge—bukan download-upload manual.
-          </p>
+          <div className="space-y-2 rounded-xl border border-ember/25 bg-ember/5 p-3">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-micro leading-relaxed text-muted">
+              <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="size-4 shrink-0 accent-ember" />
+              <span>Gue punya hak atau izin buat mengolah video ini. Pemotongan ditagih per menit sesuai durasi; subtitle ditagih terpisah.</span>
+            </label>
+            <button
+              type="button"
+              onClick={startAutoClip}
+              disabled={bridgeBusy || !rightsConfirmed}
+              className="relative h-11 w-full overflow-hidden rounded-xl bg-ember px-4 text-sm font-bold text-obsidian disabled:cursor-wait disabled:opacity-70"
+            >
+              {bridgeBusy ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
+              <span className="relative">{bridgeBusy ? "Malesan lagi bikin klip..." : "Bikin Auto Clip"}</span>
+            </button>
+            {bridgeJob ? (
+              <div className="space-y-1" aria-live="polite">
+                <div className="h-1 overflow-hidden rounded-full bg-obsidian"><div className="h-full rounded-full bg-ember transition-[width]" style={{ width: `${bridgeJob.progress}%` }} /></div>
+                <p className="text-micro leading-relaxed text-muted">
+                  <span className="md:hidden">Job tersimpan. Buka Malesan di desktop untuk lanjut otomatis.</span>
+                  <span className="hidden md:inline">{bridgeJob.stage ?? "Job tersimpan aman."}</span>
+                </p>
+              </div>
+            ) : <p className="text-micro leading-relaxed text-muted">Desktop: potong dari URL lewat Bridge. Mobile: simpan job, lanjut di desktop.</p>}
+            {bridgeError ? <p className="text-micro leading-relaxed text-danger" role="alert">{bridgeError}</p> : null}
+          </div>
         </div>
       )}
     </section>

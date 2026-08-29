@@ -67,6 +67,20 @@ assert.equal(
   "later decoded frames must keep their relative timing",
 );
 
+const faceTrack = await import(pathToFileURL(resolve("src/lib/video/face-track.ts")));
+const trajectory = faceTrack.buildCropTrajectory([
+  { time: 0, faces: [{ x: 0.05, y: 0.2, width: 0.2, height: 0.3, score: 0.95 }] },
+  { time: 0.2, faces: [{ x: 0.7, y: 0.2, width: 0.2, height: 0.3, score: 0.95 }] },
+  { time: 0.4, faces: [] },
+]);
+assert.equal(trajectory.length, 3, "every analyzed sample must yield a crop keyframe");
+assert.ok(Math.abs(trajectory[1].x - trajectory[0].x) < 0.1, "single-frame subject jump must be bounded");
+const midpoint = faceTrack.cropFocusAt(trajectory, 0.1);
+assert.ok(midpoint.x >= trajectory[0].x && midpoint.x <= trajectory[1].x, "preview/export interpolation must stay between adjacent keyframes");
+const trackedCrop = faceTrack.trackedCoverCrop(1920, 1080, 1080, 1920, { time: 0, x: 1, y: 1, confidence: 1 });
+assert.ok(trackedCrop.sx >= 0 && trackedCrop.sx + trackedCrop.sw <= 1920, "tracked crop must never leave source width");
+assert.ok(trackedCrop.sy >= 0 && trackedCrop.sy + trackedCrop.sh <= 1080, "tracked crop must never leave source height");
+
 const yt = await import(pathToFileURL(resolve("src/lib/video/youtube.ts")));
 
 assert.equal(yt.parseYouTubeId("https://youtu.be/dQw4w9WgXcQ?t=42"), "dQw4w9WgXcQ");

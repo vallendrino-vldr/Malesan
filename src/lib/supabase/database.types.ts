@@ -1,1279 +1,1677 @@
-/**
- * Generated from the live schema. Do not hand-edit.
- *
- * Regenerate after every migration — a stale copy of this file is worse than no
- * types at all, because it type-checks against a database that no longer exists.
- */
 export type Json =
   | string
   | number
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
-
-/**
- * Outcome of the automated payment-proof reading. Stored as plain text in
- * Postgres — narrowed here because every consumer switches on it.
- * See src/lib/payments/proof-check.ts.
- */
-export type ProofVerdict = "pass" | "suspect" | "fail" | "error" | "unchecked";
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
-  };
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
-      ai_providers: {
-        Row: {
-          api_key_encrypted: string | null;
-          balance_currency: string;
-          balance_path: string | null;
-          balance_url: string | null;
-          base_url: string | null;
-          consecutive_failures: number;
-          created_at: string;
-          id: string;
-          is_active: boolean;
-          key_source: string;
-          label: string;
-          last_checked_at: string | null;
-          last_error: string | null;
-          last_latency_ms: number | null;
-          last_ok_at: string | null;
-          low_balance_threshold: number | null;
-          notes: string | null;
-          priority: number;
-          protocol: string;
-          slug: string;
-          updated_at: string;
-        };
-        Insert: {
-          api_key_encrypted?: string | null;
-          balance_currency?: string;
-          balance_path?: string | null;
-          balance_url?: string | null;
-          base_url?: string | null;
-          consecutive_failures?: number;
-          created_at?: string;
-          id?: string;
-          is_active?: boolean;
-          key_source?: string;
-          label: string;
-          last_checked_at?: string | null;
-          last_error?: string | null;
-          last_latency_ms?: number | null;
-          last_ok_at?: string | null;
-          low_balance_threshold?: number | null;
-          notes?: string | null;
-          priority?: number;
-          protocol?: string;
-          slug: string;
-          updated_at?: string;
-        };
-        Update: {
-          api_key_encrypted?: string | null;
-          balance_currency?: string;
-          balance_path?: string | null;
-          balance_url?: string | null;
-          base_url?: string | null;
-          consecutive_failures?: number;
-          created_at?: string;
-          id?: string;
-          is_active?: boolean;
-          key_source?: string;
-          label?: string;
-          last_checked_at?: string | null;
-          last_error?: string | null;
-          last_latency_ms?: number | null;
-          last_ok_at?: string | null;
-          low_balance_threshold?: number | null;
-          notes?: string | null;
-          priority?: number;
-          protocol?: string;
-          slug?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       ai_models: {
         Row: {
-          capabilities: string[];
-          context_length: number | null;
-          created_at: string;
-          discovered_at: string | null;
-          id: string;
-          input_price_usd_per_mtok: number;
-          is_active: boolean;
-          label: string | null;
-          model_id: string;
-          output_price_usd_per_mtok: number;
-          provider_id: string;
-          source: string;
-          supports_schema: boolean;
-          supports_streaming: boolean;
-          updated_at: string;
-          pricing_mode: string;
-          package_price_idr: number | null;
-          package_tokens: number | null;
-          package_expires_at: string | null;
-        };
+          capabilities: string[]
+          context_length: number | null
+          created_at: string
+          discovered_at: string | null
+          id: string
+          input_price_usd_per_mtok: number
+          is_active: boolean
+          label: string | null
+          model_id: string
+          output_price_usd_per_mtok: number
+          package_expires_at: string | null
+          package_price_idr: number | null
+          package_tokens: number | null
+          pricing_mode: string
+          provider_id: string
+          source: string
+          supports_schema: boolean
+          supports_streaming: boolean
+          updated_at: string
+        }
         Insert: {
-          pricing_mode?: string;
-          package_price_idr?: number | null;
-          package_tokens?: number | null;
-          package_expires_at?: string | null;
-          capabilities?: string[];
-          context_length?: number | null;
-          created_at?: string;
-          discovered_at?: string | null;
-          id?: string;
-          input_price_usd_per_mtok?: number;
-          is_active?: boolean;
-          label?: string | null;
-          model_id: string;
-          output_price_usd_per_mtok?: number;
-          provider_id: string;
-          source?: string;
-          supports_schema?: boolean;
-          supports_streaming?: boolean;
-          updated_at?: string;
-        };
+          capabilities?: string[]
+          context_length?: number | null
+          created_at?: string
+          discovered_at?: string | null
+          id?: string
+          input_price_usd_per_mtok?: number
+          is_active?: boolean
+          label?: string | null
+          model_id: string
+          output_price_usd_per_mtok?: number
+          package_expires_at?: string | null
+          package_price_idr?: number | null
+          package_tokens?: number | null
+          pricing_mode?: string
+          provider_id: string
+          source?: string
+          supports_schema?: boolean
+          supports_streaming?: boolean
+          updated_at?: string
+        }
         Update: {
-          pricing_mode?: string;
-          package_price_idr?: number | null;
-          package_tokens?: number | null;
-          package_expires_at?: string | null;
-          capabilities?: string[];
-          context_length?: number | null;
-          created_at?: string;
-          discovered_at?: string | null;
-          id?: string;
-          input_price_usd_per_mtok?: number;
-          is_active?: boolean;
-          label?: string | null;
-          model_id?: string;
-          output_price_usd_per_mtok?: number;
-          provider_id?: string;
-          source?: string;
-          supports_schema?: boolean;
-          supports_streaming?: boolean;
-          updated_at?: string;
-        };
+          capabilities?: string[]
+          context_length?: number | null
+          created_at?: string
+          discovered_at?: string | null
+          id?: string
+          input_price_usd_per_mtok?: number
+          is_active?: boolean
+          label?: string | null
+          model_id?: string
+          output_price_usd_per_mtok?: number
+          package_expires_at?: string | null
+          package_price_idr?: number | null
+          package_tokens?: number | null
+          pricing_mode?: string
+          provider_id?: string
+          source?: string
+          supports_schema?: boolean
+          supports_streaming?: boolean
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "ai_models_provider_id_fkey";
-            columns: ["provider_id"];
-            isOneToOne: false;
-            referencedRelation: "ai_providers";
-            referencedColumns: ["id"];
+            foreignKeyName: "ai_models_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ai_providers"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-      ai_routes: {
-        Row: {
-          fallback_model_ids: string[];
-          feature: string;
-          is_active: boolean;
-          label: string | null;
-          mode: string;
-          notes: string | null;
-          prefer: string;
-          primary_model_id: string | null;
-          required_capabilities: string[];
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          fallback_model_ids?: string[];
-          feature: string;
-          is_active?: boolean;
-          label?: string | null;
-          mode?: string;
-          notes?: string | null;
-          prefer?: string;
-          primary_model_id?: string | null;
-          required_capabilities?: string[];
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          fallback_model_ids?: string[];
-          feature?: string;
-          is_active?: boolean;
-          label?: string | null;
-          mode?: string;
-          notes?: string | null;
-          prefer?: string;
-          primary_model_id?: string | null;
-          required_capabilities?: string[];
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "ai_routes_primary_model_id_fkey";
-            columns: ["primary_model_id"];
-            isOneToOne: false;
-            referencedRelation: "ai_models";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      ai_usage_log: {
-        Row: {
-          attempt: number;
-          cost_idr: number;
-          created_at: string;
-          credits_charged: number;
-          error_message: string | null;
-          feature: string;
-          id: number;
-          input_tokens: number;
-          latency_ms: number | null;
-          model_id: string | null;
-          output_tokens: number;
-          provider_id: string | null;
-          provider_slug: string | null;
-          ref_id: string | null;
-          status: string;
-          user_id: string | null;
-        };
-        Insert: {
-          attempt?: number;
-          cost_idr?: number;
-          created_at?: string;
-          credits_charged?: number;
-          error_message?: string | null;
-          feature: string;
-          id?: number;
-          input_tokens?: number;
-          latency_ms?: number | null;
-          model_id?: string | null;
-          output_tokens?: number;
-          provider_id?: string | null;
-          provider_slug?: string | null;
-          ref_id?: string | null;
-          status?: string;
-          user_id?: string | null;
-        };
-        Update: {
-          attempt?: number;
-          cost_idr?: number;
-          created_at?: string;
-          credits_charged?: number;
-          error_message?: string | null;
-          feature?: string;
-          id?: number;
-          input_tokens?: number;
-          latency_ms?: number | null;
-          model_id?: string | null;
-          output_tokens?: number;
-          provider_id?: string | null;
-          provider_slug?: string | null;
-          ref_id?: string | null;
-          status?: string;
-          user_id?: string | null;
-        };
-        Relationships: [];
-      };
+        ]
+      }
       ai_provider_balance: {
         Row: {
-          amount: number | null;
-          checked_at: string;
-          currency: string | null;
-          id: number;
-          provider_id: string;
-          raw: Json | null;
-        };
+          amount: number | null
+          checked_at: string
+          currency: string | null
+          id: number
+          provider_id: string
+          raw: Json | null
+          remaining_tokens: number | null
+          total_tokens: number | null
+          used_tokens: number | null
+        }
         Insert: {
-          amount?: number | null;
-          checked_at?: string;
-          currency?: string | null;
-          id?: number;
-          provider_id: string;
-          raw?: Json | null;
-        };
+          amount?: number | null
+          checked_at?: string
+          currency?: string | null
+          id?: number
+          provider_id: string
+          raw?: Json | null
+          remaining_tokens?: number | null
+          total_tokens?: number | null
+          used_tokens?: number | null
+        }
         Update: {
-          amount?: number | null;
-          checked_at?: string;
-          currency?: string | null;
-          id?: number;
-          provider_id?: string;
-          raw?: Json | null;
-        };
+          amount?: number | null
+          checked_at?: string
+          currency?: string | null
+          id?: number
+          provider_id?: string
+          raw?: Json | null
+          remaining_tokens?: number | null
+          total_tokens?: number | null
+          used_tokens?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "ai_provider_balance_provider_id_fkey";
-            columns: ["provider_id"];
-            isOneToOne: false;
-            referencedRelation: "ai_providers";
-            referencedColumns: ["id"];
+            foreignKeyName: "ai_provider_balance_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ai_providers"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-      profiles: {
+        ]
+      }
+      ai_providers: {
         Row: {
-          avatar_url: string | null;
-          ban_reason: string | null;
-          created_at: string;
-          credits_free: number;
-          credits_paid: number;
-          display_name: string | null;
-          email: string;
-          fingerprint_hash: string | null;
-          free_trial_used: boolean;
-          id: string;
-          is_banned: boolean;
-          is_pro: boolean;
-          last_refill_date: string;
-          onboarding_completed: boolean;
-          referral_code: string;
-          referred_by: string | null;
-          role: string;
-          signup_ip_hash: string | null;
-        };
+          api_key_encrypted: string | null
+          balance_currency: string
+          balance_kind: string
+          balance_path: string | null
+          balance_url: string | null
+          base_url: string | null
+          consecutive_failures: number
+          created_at: string
+          id: string
+          is_active: boolean
+          key_source: string
+          label: string
+          last_checked_at: string | null
+          last_error: string | null
+          last_latency_ms: number | null
+          last_ok_at: string | null
+          low_balance_threshold: number | null
+          notes: string | null
+          priority: number
+          protocol: string
+          slug: string
+          updated_at: string
+        }
         Insert: {
-          avatar_url?: string | null;
-          ban_reason?: string | null;
-          created_at?: string;
-          credits_free?: number;
-          credits_paid?: number;
-          display_name?: string | null;
-          email: string;
-          fingerprint_hash?: string | null;
-          free_trial_used?: boolean;
-          id: string;
-          is_banned?: boolean;
-          is_pro?: boolean;
-          last_refill_date?: string;
-          onboarding_completed?: boolean;
-          referral_code: string;
-          referred_by?: string | null;
-          role?: string;
-          signup_ip_hash?: string | null;
-        };
+          api_key_encrypted?: string | null
+          balance_currency?: string
+          balance_kind?: string
+          balance_path?: string | null
+          balance_url?: string | null
+          base_url?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_source?: string
+          label: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          last_latency_ms?: number | null
+          last_ok_at?: string | null
+          low_balance_threshold?: number | null
+          notes?: string | null
+          priority?: number
+          protocol?: string
+          slug: string
+          updated_at?: string
+        }
         Update: {
-          avatar_url?: string | null;
-          ban_reason?: string | null;
-          created_at?: string;
-          credits_free?: number;
-          credits_paid?: number;
-          display_name?: string | null;
-          email?: string;
-          fingerprint_hash?: string | null;
-          free_trial_used?: boolean;
-          id?: string;
-          is_banned?: boolean;
-          is_pro?: boolean;
-          last_refill_date?: string;
-          onboarding_completed?: boolean;
-          referral_code?: string;
-          referred_by?: string | null;
-          role?: string;
-          signup_ip_hash?: string | null;
-        };
+          api_key_encrypted?: string | null
+          balance_currency?: string
+          balance_kind?: string
+          balance_path?: string | null
+          balance_url?: string | null
+          base_url?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          key_source?: string
+          label?: string
+          last_checked_at?: string | null
+          last_error?: string | null
+          last_latency_ms?: number | null
+          last_ok_at?: string | null
+          low_balance_threshold?: number | null
+          notes?: string | null
+          priority?: number
+          protocol?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_routes: {
+        Row: {
+          fallback_model_ids: string[]
+          feature: string
+          is_active: boolean
+          label: string | null
+          mode: string
+          notes: string | null
+          prefer: string
+          primary_model_id: string | null
+          required_capabilities: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          fallback_model_ids?: string[]
+          feature: string
+          is_active?: boolean
+          label?: string | null
+          mode?: string
+          notes?: string | null
+          prefer?: string
+          primary_model_id?: string | null
+          required_capabilities?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          fallback_model_ids?: string[]
+          feature?: string
+          is_active?: boolean
+          label?: string | null
+          mode?: string
+          notes?: string | null
+          prefer?: string
+          primary_model_id?: string | null
+          required_capabilities?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "profiles_referred_by_fkey";
-            columns: ["referred_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      credit_ledger: {
-        Row: {
-          balance_after: number;
-          bucket: string;
-          created_at: string;
-          delta: number;
-          id: number;
-          reason: string;
-          ref_id: string | null;
-          user_id: string;
-        };
-        Insert: {
-          balance_after: number;
-          bucket: string;
-          created_at?: string;
-          delta: number;
-          id?: number;
-          reason: string;
-          ref_id?: string | null;
-          user_id: string;
-        };
-        Update: {
-          balance_after?: number;
-          bucket?: string;
-          created_at?: string;
-          delta?: number;
-          id?: number;
-          reason?: string;
-          ref_id?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "credit_ledger_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      gemini_usage: {
-        Row: {
-          usage_date: string;
-          key_index: number;
-          model: string;
-          request_count: number;
-          error_count: number;
-          token_count: number;
-          updated_at: string;
-          input_tokens: number;
-          output_tokens: number;
-        };
-        Insert: {
-          usage_date?: string;
-          key_index: number;
-          model: string;
-          request_count?: number;
-          error_count?: number;
-          token_count?: number;
-          updated_at?: string;
-          input_tokens?: number;
-          output_tokens?: number;
-        };
-        Update: {
-          usage_date?: string;
-          key_index?: number;
-          model?: string;
-          request_count?: number;
-          error_count?: number;
-          token_count?: number;
-          updated_at?: string;
-          input_tokens?: number;
-          output_tokens?: number;
-        };
-        Relationships: [];
-      };
-      user_api_keys: {
-        Row: {
-          user_id: string;
-          provider: string;
-          key_encrypted: string;
-          is_active: boolean;
-          last_verified_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          user_id: string;
-          provider?: string;
-          key_encrypted: string;
-          is_active?: boolean;
-          last_verified_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          user_id?: string;
-          provider?: string;
-          key_encrypted?: string;
-          is_active?: boolean;
-          last_verified_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "user_api_keys_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      creator_dna: {
-        Row: {
-          user_id: string;
-          niche: string | null;
-          target_audience: string | null;
-          tone: string | null;
-          platforms: string[] | null;
-          output_language: string;
-          banned_words: string[] | null;
-          brand_notes: string | null;
-          ai_persona_summary: string | null;
-          updated_at: string;
-          // Added by migration `creator_dna_depth`. Verified present in
-          // information_schema before being written here — this file is
-          // generated, and hand-editing it to describe columns that do not
-          // exist produces a build that type-checks and then fails at runtime.
-          work_context: string;
-          client_brief: string | null;
-          industry: string | null;
-          goals: string | null;
-          persona_style: string | null;
-          experience_level: string | null;
-          content_pillars: string[] | null;
-          posting_frequency: string | null;
-          reference_creators: string | null;
-          humor_level: number | null;
-          cta_url: string | null;
-          cta_label: string | null;
-          cta_enabled: boolean;
-        };
-        Insert: {
-          user_id: string;
-          work_context?: string;
-          client_brief?: string | null;
-          industry?: string | null;
-          goals?: string | null;
-          persona_style?: string | null;
-          experience_level?: string | null;
-          content_pillars?: string[] | null;
-          posting_frequency?: string | null;
-          reference_creators?: string | null;
-          humor_level?: number | null;
-          niche?: string | null;
-          target_audience?: string | null;
-          tone?: string | null;
-          platforms?: string[] | null;
-          output_language?: string;
-          banned_words?: string[] | null;
-          brand_notes?: string | null;
-          ai_persona_summary?: string | null;
-          updated_at?: string;
-          cta_url?: string | null;
-          cta_label?: string | null;
-          cta_enabled?: boolean;
-        };
-        Update: {
-          user_id?: string;
-          niche?: string | null;
-          target_audience?: string | null;
-          tone?: string | null;
-          platforms?: string[] | null;
-          output_language?: string;
-          banned_words?: string[] | null;
-          brand_notes?: string | null;
-          ai_persona_summary?: string | null;
-          updated_at?: string;
-          cta_url?: string | null;
-          cta_label?: string | null;
-          cta_enabled?: boolean;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "creator_dna_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      generations: {
-        Row: {
-          id: string;
-          user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate" | "carousel";
-          platform: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
-          input: Json | null;
-          output: Json | null;
-          model_used: string | null;
-          credits_spent: number;
-          is_favorite: boolean;
-          performance_rating: number | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          module: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate" | "carousel";
-          platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
-          input?: Json | null;
-          output?: Json | null;
-          model_used?: string | null;
-          credits_spent: number;
-          is_favorite?: boolean;
-          performance_rating?: number | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          module?: "ide_hari_ini" | "idea" | "hook" | "script" | "repurpose" | "vibe_kit" | "clip" | "thread" | "affiliate" | "carousel";
-          platform?: "tiktok" | "instagram" | "youtube" | "x" | "threads" | null;
-          input?: Json | null;
-          output?: Json | null;
-          model_used?: string | null;
-          credits_spent?: number;
-          is_favorite?: boolean;
-          performance_rating?: number | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "generations_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      pipeline_cards: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          content: Json | null;
-          status: "ide" | "draft" | "siap" | "posted";
-          generation_id: string | null;
-          created_at: string;
-          schedule_label: string | null;
-          schedule_reason: string | null;
-          sort_order: number;
-          updated_at: string;
-          scheduled_date: string | null;
-          scheduled_time: string | null;
-          ai_score: number | null;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          title: string;
-          content?: Json | null;
-          status?: "ide" | "draft" | "siap" | "posted";
-          generation_id?: string | null;
-          created_at?: string;
-          schedule_label?: string | null;
-          schedule_reason?: string | null;
-          sort_order?: number;
-          updated_at?: string;
-          scheduled_date?: string | null;
-          scheduled_time?: string | null;
-          ai_score?: number | null;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          content?: Json | null;
-          status?: "ide" | "draft" | "siap" | "posted";
-          generation_id?: string | null;
-          created_at?: string;
-          schedule_label?: string | null;
-          schedule_reason?: string | null;
-          sort_order?: number;
-          updated_at?: string;
-          scheduled_date?: string | null;
-          scheduled_time?: string | null;
-          ai_score?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "pipeline_cards_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "ai_routes_primary_model_id_fkey"
+            columns: ["primary_model_id"]
+            isOneToOne: false
+            referencedRelation: "ai_models"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pipeline_cards_generation_id_fkey";
-            columns: ["generation_id"];
-            isOneToOne: false;
-            referencedRelation: "generations";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      personas: {
+            foreignKeyName: "ai_routes_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage_log: {
         Row: {
-          id: string;
-          user_id: string;
-          name: string;
-          voice: string;
-          is_default: boolean;
-          created_at: string;
-          updated_at: string;
-        };
+          attempt: number
+          cost_idr: number
+          created_at: string
+          credits_charged: number
+          error_message: string | null
+          feature: string
+          id: number
+          input_tokens: number
+          latency_ms: number | null
+          model_id: string | null
+          output_tokens: number
+          provider_id: string | null
+          provider_slug: string | null
+          ref_id: string | null
+          status: string
+          user_id: string | null
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          name: string;
-          voice: string;
-          is_default?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
+          attempt?: number
+          cost_idr?: number
+          created_at?: string
+          credits_charged?: number
+          error_message?: string | null
+          feature: string
+          id?: number
+          input_tokens?: number
+          latency_ms?: number | null
+          model_id?: string | null
+          output_tokens?: number
+          provider_id?: string | null
+          provider_slug?: string | null
+          ref_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          name?: string;
-          voice?: string;
-          is_default?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
+          attempt?: number
+          cost_idr?: number
+          created_at?: string
+          credits_charged?: number
+          error_message?: string | null
+          feature?: string
+          id?: number
+          input_tokens?: number
+          latency_ms?: number | null
+          model_id?: string | null
+          output_tokens?: number
+          provider_id?: string | null
+          provider_slug?: string | null
+          ref_id?: string | null
+          status?: string
+          user_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "personas_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      drafts: {
-        Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          content: string;
-          pipeline_card_id: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          title?: string;
-          content?: string;
-          pipeline_card_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          content?: string;
-          pipeline_card_id?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "drafts_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      credit_packs: {
-        Row: {
-          id: string;
-          credits: number;
-          price_idr: number;
-          is_active: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          credits: number;
-          price_idr: number;
-          is_active?: boolean;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          credits?: number;
-          price_idr?: number;
-          is_active?: boolean;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      topups: {
-        Row: {
-          id: string;
-          user_id: string;
-          amount_idr: number;
-          credits: number;
-          method: "bank_transfer" | "qris" | "voucher" | "manual_admin";
-          proof_url: string | null;
-          proof_path: string | null;
-          proof_hash: string | null;
-          check_verdict: ProofVerdict;
-          check_detail: Json | null;
-          status: "pending" | "approved" | "rejected";
-          reviewed_by: string | null;
-          reviewed_at: string | null;
-          note: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          amount_idr: number;
-          credits: number;
-          method: "bank_transfer" | "qris" | "voucher" | "manual_admin";
-          proof_url?: string | null;
-          proof_path?: string | null;
-          proof_hash?: string | null;
-          check_verdict?: ProofVerdict;
-          check_detail?: Json | null;
-          status?: "pending" | "approved" | "rejected";
-          reviewed_by?: string | null;
-          reviewed_at?: string | null;
-          note?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          amount_idr?: number;
-          credits?: number;
-          method?: "bank_transfer" | "qris" | "voucher" | "manual_admin";
-          proof_url?: string | null;
-          proof_path?: string | null;
-          proof_hash?: string | null;
-          check_verdict?: ProofVerdict;
-          check_detail?: Json | null;
-          status?: "pending" | "approved" | "rejected";
-          reviewed_by?: string | null;
-          reviewed_at?: string | null;
-          note?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "topups_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "ai_usage_log_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "ai_providers"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "topups_reviewed_by_fkey";
-            columns: ["reviewed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      vouchers: {
-        Row: {
-          code: string;
-          credits: number;
-          is_redeemed: boolean;
-          redeemed_by: string | null;
-          redeemed_at: string | null;
-          created_by: string | null;
-          expires_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          code: string;
-          credits: number;
-          is_redeemed?: boolean;
-          redeemed_by?: string | null;
-          redeemed_at?: string | null;
-          created_by?: string | null;
-          expires_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          code?: string;
-          credits?: number;
-          is_redeemed?: boolean;
-          redeemed_by?: string | null;
-          redeemed_at?: string | null;
-          created_by?: string | null;
-          expires_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "vouchers_redeemed_by_fkey";
-            columns: ["redeemed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "ai_usage_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "vouchers_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      referrals: {
-        Row: {
-          id: string;
-          referrer_id: string;
-          referee_id: string;
-          status: "pending" | "credited" | "voided";
-          void_reason: string | null;
-          credited_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          referrer_id: string;
-          referee_id: string;
-          status?: "pending" | "credited" | "voided";
-          void_reason?: string | null;
-          credited_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          referrer_id?: string;
-          referee_id?: string;
-          status?: "pending" | "credited" | "voided";
-          void_reason?: string | null;
-          credited_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "referrals_referrer_id_fkey";
-            columns: ["referrer_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "referrals_referee_id_fkey";
-            columns: ["referee_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      trends: {
-        Row: {
-          id: string;
-          source: string;
-          title: string;
-          summary: string | null;
-          category: string | null;
-          region: string | null;
-          is_active: boolean;
-          captured_at: string;
-        };
-        Insert: {
-          id?: string;
-          source: string;
-          title: string;
-          summary?: string | null;
-          category?: string | null;
-          region?: string | null;
-          is_active?: boolean;
-          captured_at?: string;
-        };
-        Update: {
-          id?: string;
-          source?: string;
-          title?: string;
-          summary?: string | null;
-          category?: string | null;
-          region?: string | null;
-          is_active?: boolean;
-          captured_at?: string;
-        };
-        Relationships: [];
-      };
-      rate_limits: {
-        Row: {
-          user_id: string;
-          scope: string;
-          window_start: string;
-          request_count: number;
-        };
-        Insert: {
-          user_id: string;
-          scope?: string;
-          window_start: string;
-          request_count?: number;
-        };
-        Update: {
-          user_id?: string;
-          scope?: string;
-          window_start?: string;
-          request_count?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rate_limits_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-      // Added by migration `app_config`. Verified present before being written
-      // here — see the note on creator_dna above.
-      // Added by migration `error_log_and_user_activity`. Verified present in
-      // information_schema before being written here.
-      error_log: {
-        Row: {
-          id: number;
-          scope: string;
-          module: string | null;
-          key_index: number | null;
-          model: string | null;
-          status: number | null;
-          message: string;
-          user_id: string | null;
-          created_at: string;
-        };
-        Insert: {
-          scope: string;
-          message: string;
-          module?: string | null;
-          key_index?: number | null;
-          model?: string | null;
-          status?: number | null;
-          user_id?: string | null;
-        };
-        Update: Record<string, never>;
-        Relationships: [];
-      };
+        ]
+      }
       app_config: {
         Row: {
-          key: string;
-          value: Json;
-          description: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          description: string | null
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
         Insert: {
-          key: string;
-          value: Json;
-          description?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          description?: string | null
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
         Update: {
-          key?: string;
-          value?: Json;
-          description?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [];
-      };
+          description?: string | null
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
-          id: number;
-          actor_id: string | null;
-          action: string;
-          target_type: string | null;
-          target_id: string | null;
-          metadata: Json | null;
-          created_at: string;
-        };
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: number
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+        }
         Insert: {
-          id?: number;
-          actor_id?: string | null;
-          action: string;
-          target_type?: string | null;
-          target_id?: string | null;
-          metadata?: Json | null;
-          created_at?: string;
-        };
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: number
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
         Update: {
-          id?: number;
-          actor_id?: string | null;
-          action?: string;
-          target_type?: string | null;
-          target_id?: string | null;
-          metadata?: Json | null;
-          created_at?: string;
-        };
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: number
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "audit_log_actor_id_fkey";
-            columns: ["actor_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "audit_log_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_clip_jobs: {
+        Row: {
+          bridge_claimed_at: string | null
+          bridge_token_expires_at: string | null
+          bridge_token_hash: string | null
+          bridge_token_used_at: string | null
+          caption_preset: string
+          clip_title: string
+          created_at: string
+          credit_amount: number
+          credit_ref: string | null
+          end_time: number
+          error_code: string | null
+          error_message: string | null
+          focus: string
+          id: string
+          language: string
+          output_bytes: number | null
+          output_name: string | null
+          progress: number
+          ratio: string
+          source_url: string
+          stage: string | null
+          start_time: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          video_id: string
+          worker_token_expires_at: string | null
+          worker_token_hash: string | null
+        }
+        Insert: {
+          bridge_claimed_at?: string | null
+          bridge_token_expires_at?: string | null
+          bridge_token_hash?: string | null
+          bridge_token_used_at?: string | null
+          caption_preset?: string
+          clip_title: string
+          created_at?: string
+          credit_amount: number
+          credit_ref?: string | null
+          end_time: number
+          error_code?: string | null
+          error_message?: string | null
+          focus?: string
+          id?: string
+          language?: string
+          output_bytes?: number | null
+          output_name?: string | null
+          progress?: number
+          ratio?: string
+          source_url: string
+          stage?: string | null
+          start_time: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          video_id: string
+          worker_token_expires_at?: string | null
+          worker_token_hash?: string | null
+        }
+        Update: {
+          bridge_claimed_at?: string | null
+          bridge_token_expires_at?: string | null
+          bridge_token_hash?: string | null
+          bridge_token_used_at?: string | null
+          caption_preset?: string
+          clip_title?: string
+          created_at?: string
+          credit_amount?: number
+          credit_ref?: string | null
+          end_time?: number
+          error_code?: string | null
+          error_message?: string | null
+          focus?: string
+          id?: string
+          language?: string
+          output_bytes?: number | null
+          output_name?: string | null
+          progress?: number
+          ratio?: string
+          source_url?: string
+          stage?: string | null
+          start_time?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          video_id?: string
+          worker_token_expires_at?: string | null
+          worker_token_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_clip_jobs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creator_dna: {
+        Row: {
+          ai_persona_summary: string | null
+          banned_words: string[] | null
+          brand_notes: string | null
+          client_brief: string | null
+          content_pillars: string[] | null
+          cta_enabled: boolean
+          cta_label: string | null
+          cta_url: string | null
+          experience_level: string | null
+          goals: string | null
+          humor_level: number | null
+          industry: string | null
+          niche: string | null
+          output_language: string
+          persona_style: string | null
+          platforms: string[] | null
+          posting_frequency: string | null
+          reference_creators: string | null
+          target_audience: string | null
+          tone: string | null
+          updated_at: string
+          user_id: string
+          work_context: string
+        }
+        Insert: {
+          ai_persona_summary?: string | null
+          banned_words?: string[] | null
+          brand_notes?: string | null
+          client_brief?: string | null
+          content_pillars?: string[] | null
+          cta_enabled?: boolean
+          cta_label?: string | null
+          cta_url?: string | null
+          experience_level?: string | null
+          goals?: string | null
+          humor_level?: number | null
+          industry?: string | null
+          niche?: string | null
+          output_language?: string
+          persona_style?: string | null
+          platforms?: string[] | null
+          posting_frequency?: string | null
+          reference_creators?: string | null
+          target_audience?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+          work_context?: string
+        }
+        Update: {
+          ai_persona_summary?: string | null
+          banned_words?: string[] | null
+          brand_notes?: string | null
+          client_brief?: string | null
+          content_pillars?: string[] | null
+          cta_enabled?: boolean
+          cta_label?: string | null
+          cta_url?: string | null
+          experience_level?: string | null
+          goals?: string | null
+          humor_level?: number | null
+          industry?: string | null
+          niche?: string | null
+          output_language?: string
+          persona_style?: string | null
+          platforms?: string[] | null
+          posting_frequency?: string | null
+          reference_creators?: string | null
+          target_audience?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+          work_context?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_dna_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_ledger: {
+        Row: {
+          balance_after: number
+          bucket: string
+          created_at: string
+          delta: number
+          id: number
+          reason: string
+          ref_id: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_after: number
+          bucket: string
+          created_at?: string
+          delta: number
+          id?: number
+          reason: string
+          ref_id?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_after?: number
+          bucket?: string
+          created_at?: string
+          delta?: number
+          id?: number
+          reason?: string
+          ref_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_packs: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          is_active: boolean
+          price_idr: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id?: string
+          is_active?: boolean
+          price_idr: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          is_active?: boolean
+          price_idr?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      drafts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          pipeline_card_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          pipeline_card_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          pipeline_card_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drafts_pipeline_card_id_fkey"
+            columns: ["pipeline_card_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      error_log: {
+        Row: {
+          created_at: string
+          id: number
+          key_index: number | null
+          message: string
+          model: string | null
+          module: string | null
+          scope: string
+          status: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          key_index?: number | null
+          message: string
+          model?: string | null
+          module?: string | null
+          scope: string
+          status?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          key_index?: number | null
+          message?: string
+          model?: string | null
+          module?: string | null
+          scope?: string
+          status?: number | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      gemini_usage: {
+        Row: {
+          error_count: number
+          input_tokens: number
+          key_index: number
+          model: string
+          output_tokens: number
+          request_count: number
+          token_count: number
+          updated_at: string
+          usage_date: string
+        }
+        Insert: {
+          error_count?: number
+          input_tokens?: number
+          key_index: number
+          model: string
+          output_tokens?: number
+          request_count?: number
+          token_count?: number
+          updated_at?: string
+          usage_date?: string
+        }
+        Update: {
+          error_count?: number
+          input_tokens?: number
+          key_index?: number
+          model?: string
+          output_tokens?: number
+          request_count?: number
+          token_count?: number
+          updated_at?: string
+          usage_date?: string
+        }
+        Relationships: []
+      }
+      generations: {
+        Row: {
+          created_at: string
+          credits_spent: number
+          id: string
+          input: Json | null
+          is_favorite: boolean
+          model_used: string | null
+          module: string
+          output: Json | null
+          performance_rating: number | null
+          platform: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits_spent: number
+          id?: string
+          input?: Json | null
+          is_favorite?: boolean
+          model_used?: string | null
+          module: string
+          output?: Json | null
+          performance_rating?: number | null
+          platform?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits_spent?: number
+          id?: string
+          input?: Json | null
+          is_favorite?: boolean
+          model_used?: string | null
+          module?: string
+          output?: Json | null
+          performance_rating?: number | null
+          platform?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      personas: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+          user_id: string
+          voice: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+          voice: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+          voice?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personas_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pipeline_cards: {
+        Row: {
+          ai_score: number | null
+          content: Json | null
+          created_at: string
+          generation_id: string | null
+          id: string
+          schedule_label: string | null
+          schedule_reason: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_score?: number | null
+          content?: Json | null
+          created_at?: string
+          generation_id?: string | null
+          id?: string
+          schedule_label?: string | null
+          schedule_reason?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_score?: number | null
+          content?: Json | null
+          created_at?: string
+          generation_id?: string | null
+          id?: string
+          schedule_label?: string | null
+          schedule_reason?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_cards_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          ban_reason: string | null
+          created_at: string
+          credits_free: number
+          credits_paid: number
+          display_name: string | null
+          email: string
+          fingerprint_hash: string | null
+          free_trial_used: boolean
+          id: string
+          is_banned: boolean
+          is_pro: boolean
+          last_refill_date: string
+          onboarding_completed: boolean
+          referral_code: string
+          referred_by: string | null
+          role: string
+          signup_ip_hash: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          ban_reason?: string | null
+          created_at?: string
+          credits_free?: number
+          credits_paid?: number
+          display_name?: string | null
+          email: string
+          fingerprint_hash?: string | null
+          free_trial_used?: boolean
+          id: string
+          is_banned?: boolean
+          is_pro?: boolean
+          last_refill_date?: string
+          onboarding_completed?: boolean
+          referral_code: string
+          referred_by?: string | null
+          role?: string
+          signup_ip_hash?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          ban_reason?: string | null
+          created_at?: string
+          credits_free?: number
+          credits_paid?: number
+          display_name?: string | null
+          email?: string
+          fingerprint_hash?: string | null
+          free_trial_used?: boolean
+          id?: string
+          is_banned?: boolean
+          is_pro?: boolean
+          last_refill_date?: string
+          onboarding_completed?: boolean
+          referral_code?: string
+          referred_by?: string | null
+          role?: string
+          signup_ip_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rate_limits: {
+        Row: {
+          request_count: number
+          scope: string
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          request_count?: number
+          scope?: string
+          user_id: string
+          window_start: string
+        }
+        Update: {
+          request_count?: number
+          scope?: string
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rate_limits_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          credited_at: string | null
+          id: string
+          referee_id: string
+          referrer_id: string
+          status: string
+          void_reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          referee_id: string
+          referrer_id: string
+          status?: string
+          void_reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          referee_id?: string
+          referrer_id?: string
+          status?: string
+          void_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referee_id_fkey"
+            columns: ["referee_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      topups: {
+        Row: {
+          amount_idr: number
+          check_detail: Json | null
+          check_verdict: string
+          created_at: string
+          credits: number
+          id: string
+          method: string
+          note: string | null
+          proof_hash: string | null
+          proof_path: string | null
+          proof_url: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_idr: number
+          check_detail?: Json | null
+          check_verdict?: string
+          created_at?: string
+          credits: number
+          id?: string
+          method: string
+          note?: string | null
+          proof_hash?: string | null
+          proof_path?: string | null
+          proof_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_idr?: number
+          check_detail?: Json | null
+          check_verdict?: string
+          created_at?: string
+          credits?: number
+          id?: string
+          method?: string
+          note?: string | null
+          proof_hash?: string | null
+          proof_path?: string | null
+          proof_url?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topups_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "topups_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trends: {
+        Row: {
+          captured_at: string
+          category: string | null
+          content_angle: string | null
+          id: string
+          is_active: boolean
+          region: string | null
+          source: string
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          captured_at?: string
+          category?: string | null
+          content_angle?: string | null
+          id?: string
+          is_active?: boolean
+          region?: string | null
+          source: string
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          captured_at?: string
+          category?: string | null
+          content_angle?: string | null
+          id?: string
+          is_active?: boolean
+          region?: string | null
+          source?: string
+          summary?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      user_api_keys: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          key_encrypted: string
+          last_verified_at: string | null
+          provider: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          key_encrypted: string
+          last_verified_at?: string | null
+          provider?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          key_encrypted?: string
+          last_verified_at?: string | null
+          provider?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_feedback: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          id: string
+          message: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string
+          id?: string
+          message: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vibe_projects: {
         Row: {
-          id: string;
-          user_id: string;
-          generation_id: string | null;
-          name: string;
-          one_liner: string | null;
-          stack: string | null;
-          docs: Json;
-          created_at: string;
-          updated_at: string;
-        };
+          created_at: string
+          docs: Json
+          generation_id: string | null
+          id: string
+          name: string
+          one_liner: string | null
+          stack: string | null
+          updated_at: string
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          generation_id?: string | null;
-          name: string;
-          one_liner?: string | null;
-          stack?: string | null;
-          docs?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          docs?: Json
+          generation_id?: string | null
+          id?: string
+          name: string
+          one_liner?: string | null
+          stack?: string | null
+          updated_at?: string
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          generation_id?: string | null;
-          name?: string;
-          one_liner?: string | null;
-          stack?: string | null;
-          docs?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          docs?: Json
+          generation_id?: string | null
+          id?: string
+          name?: string
+          one_liner?: string | null
+          stack?: string | null
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "vibe_projects_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "vibe_projects_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "generations"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
-    Views: Record<never, never>;
+          {
+            foreignKeyName: "vibe_projects_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          created_by: string | null
+          credits: number
+          expires_at: string | null
+          is_redeemed: boolean
+          redeemed_at: string | null
+          redeemed_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          created_by?: string | null
+          credits: number
+          expires_at?: string | null
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          credits?: number
+          expires_at?: string | null
+          is_redeemed?: boolean
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vouchers_redeemed_by_fkey"
+            columns: ["redeemed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
-      /**
-       * Admin panel only. One row per user with generation count, credits
-       * spent, which modules they used and when they were last active.
-       * Added by migration `error_log_and_user_activity`.
-       */
       admin_user_activity: {
-        Args: { p_days?: number };
+        Args: { p_days?: number }
         Returns: {
-          user_id: string;
-          email: string;
-          display_name: string | null;
-          role: string;
-          is_pro: boolean;
-          is_banned: boolean;
-          credits_total: number;
-          generations: number;
-          credits_spent: number;
-          modules_used: string[] | null;
-          last_active: string | null;
-          joined: string;
-        }[];
-      };
-      /** service_role only. Upserts one Gemini call into gemini_usage. */
-      record_gemini_usage: {
+          credits_spent: number
+          credits_total: number
+          display_name: string
+          email: string
+          generations: number
+          is_banned: boolean
+          is_pro: boolean
+          joined: string
+          last_active: string
+          modules_used: string[]
+          role: string
+          user_id: string
+        }[]
+      }
+      charge_auto_clip_job: {
         Args: {
-          p_key_index: number;
-          p_model: string;
-          p_tokens?: number;
-          p_is_error?: boolean;
-        };
-        Returns: undefined;
-      };
-      /** service_role only. Today's request and error counts per key. */
-      gemini_pool_used_today: {
-        Args: never;
-        Returns: { key_index: number; requests: number; errors: number }[];
-      };
-      /**
-       * service_role only. Same aggregate as above plus tokens and the last
-       * write, for the admin key panel. Separate rather than a widened
-       * signature because the quota guard depends on the shape above.
-       */
-      gemini_pool_report_today: {
-        Args: never;
+          p_credit_ref: string
+          p_job: string
+          p_worker_token_hash: string
+        }
         Returns: {
-          key_index: number;
-          requests: number;
-          errors: number;
-          tokens: number;
-          last_used_at: string | null;
-        }[];
-      };
-      gen_referral_code: { Args: never; Returns: string };
-      is_admin: { Args: never; Returns: boolean };
-      /** service_role only. Atomic cross-instance AI request throttle. */
+          bridge_claimed_at: string | null
+          bridge_token_expires_at: string | null
+          bridge_token_hash: string | null
+          bridge_token_used_at: string | null
+          caption_preset: string
+          clip_title: string
+          created_at: string
+          credit_amount: number
+          credit_ref: string | null
+          end_time: number
+          error_code: string | null
+          error_message: string | null
+          focus: string
+          id: string
+          language: string
+          output_bytes: number | null
+          output_name: string | null
+          progress: number
+          ratio: string
+          source_url: string
+          stage: string | null
+          start_time: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          video_id: string
+          worker_token_expires_at: string | null
+          worker_token_hash: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "auto_clip_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_auto_clip_job: {
+        Args: {
+          p_credit_ref: string
+          p_job: string
+          p_token_hash: string
+          p_worker_token_hash: string
+        }
+        Returns: {
+          bridge_claimed_at: string | null
+          bridge_token_expires_at: string | null
+          bridge_token_hash: string | null
+          bridge_token_used_at: string | null
+          caption_preset: string
+          clip_title: string
+          created_at: string
+          credit_amount: number
+          credit_ref: string | null
+          end_time: number
+          error_code: string | null
+          error_message: string | null
+          focus: string
+          id: string
+          language: string
+          output_bytes: number | null
+          output_name: string | null
+          progress: number
+          ratio: string
+          source_url: string
+          stage: string | null
+          start_time: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          video_id: string
+          worker_token_expires_at: string | null
+          worker_token_hash: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "auto_clip_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      claim_daily_refill: { Args: { p_user: string }; Returns: number }
       consume_rate_limit: {
         Args: {
-          p_user: string;
-          p_scope: string;
-          p_limit: number;
-          p_window_seconds?: number;
-        };
+          p_limit: number
+          p_scope: string
+          p_user: string
+          p_window_seconds?: number
+        }
         Returns: {
-          allowed: boolean;
-          retry_after_seconds: number;
-          request_count: number;
-        }[];
-      };
-      /** service_role only. Throws INSUFFICIENT_CREDITS. Returns the new total balance. */
-      spend_credits: {
-        Args: {
-          p_user: string;
-          p_amount: number;
-          p_reason: string;
-          p_ref?: string | null;
-        };
-        Returns: number;
-      };
-      /** service_role only. Sets credits_free to 10; does not add. Idempotent per day. */
-      claim_daily_refill: { Args: { p_user: string }; Returns: number };
-      /** service_role only. Admin/system grants. */
-      /** service_role only. Exact ledger-driven reversal of a spend, by ref. Idempotent. */
-      refund_credits: {
-        Args: { p_user: string; p_ref: string; p_reason?: string };
-        Returns: number;
-      };
+          allowed: boolean
+          request_count: number
+          retry_after_seconds: number
+        }[]
+      }
+      gemini_pool_report_today: {
+        Args: never
+        Returns: {
+          errors: number
+          key_index: number
+          last_used_at: string
+          requests: number
+          tokens: number
+        }[]
+      }
+      gemini_pool_used_today: {
+        Args: never
+        Returns: {
+          errors: number
+          key_index: number
+          requests: number
+        }[]
+      }
+      gen_referral_code: { Args: never; Returns: string }
       grant_credits: {
         Args: {
-          p_user: string;
-          p_amount: number;
-          p_bucket: "free" | "paid";
-          p_reason: string;
-          p_ref?: string | null;
-        };
-        Returns: number;
-      };
-    };
-    Enums: Record<never, never>;
-    CompositeTypes: Record<never, never>;
-  };
-};
+          p_amount: number
+          p_bucket: string
+          p_reason: string
+          p_ref?: string
+          p_user: string
+        }
+        Returns: number
+      }
+      is_admin: { Args: never; Returns: boolean }
+      record_gemini_usage: {
+        Args: {
+          p_input_tokens?: number
+          p_is_error?: boolean
+          p_key_index: number
+          p_model: string
+          p_output_tokens?: number
+          p_tokens?: number
+        }
+        Returns: undefined
+      }
+      refund_credits:
+        | {
+            Args: { p_amount: number; p_reason: string; p_user: string }
+            Returns: number
+          }
+        | {
+            Args: { p_reason?: string; p_ref: string; p_user: string }
+            Returns: number
+          }
+      spend_credits: {
+        Args: {
+          p_amount: number
+          p_reason: string
+          p_ref?: string
+          p_user: string
+        }
+        Returns: number
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
 
-/** Convenience alias — the shape of a profiles row. */
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-export type CreatorDna = Database["public"]["Tables"]["creator_dna"]["Row"];
-export type Generation = Database["public"]["Tables"]["generations"]["Row"];
-export type PipelineCard = Database["public"]["Tables"]["pipeline_cards"]["Row"];
-export type CreditPack = Database["public"]["Tables"]["credit_packs"]["Row"];
-export type Topup = Database["public"]["Tables"]["topups"]["Row"];
-export type Voucher = Database["public"]["Tables"]["vouchers"]["Row"];
-export type Referral = Database["public"]["Tables"]["referrals"]["Row"];
-export type Trend = Database["public"]["Tables"]["trends"]["Row"];
-export type AuditLog = Database["public"]["Tables"]["audit_log"]["Row"];
-export type Persona = Database["public"]["Tables"]["personas"]["Row"];
-export type Draft = Database["public"]["Tables"]["drafts"]["Row"];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
-/** AI Provider Management Layer. Narrowed shapes live in src/lib/ai/types.ts. */
-export type AiProvider = Database["public"]["Tables"]["ai_providers"]["Row"];
-export type AiModel = Database["public"]["Tables"]["ai_models"]["Row"];
-export type AiRoute = Database["public"]["Tables"]["ai_routes"]["Row"];
-export type AiUsageLog = Database["public"]["Tables"]["ai_usage_log"]["Row"];
-export type AiProviderBalance =
-  Database["public"]["Tables"]["ai_provider_balance"]["Row"];
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
+
+// Project convenience aliases. `supabase gen types` owns schema declarations above.
+export type CreatorDna = Tables<"creator_dna">
+export type Draft = Tables<"drafts">
+export type Persona = Tables<"personas">
+export type PipelineCard = Tables<"pipeline_cards">
+export type ProofVerdict = "pass" | "suspect" | "fail" | "error" | "unchecked"

@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Malesan Bridge",
+  "version": "0.1.0",
+  "description": "Menghubungkan Auto Clip Malesan ke pemrosesan video lokal.",
+  "permissions": ["nativeMessaging"],
+  "background": { "service_worker": "background.js" },
+  "externally_connectable": {
+    "matches": [
+      "https://malesan.my.id/*",
+      "https://www.malesan.my.id/*",
+      "http://localhost:3000/*",
+      "http://localhost:3001/*",
+      "http://127.0.0.1:3000/*"
+    ]
+  }
+}

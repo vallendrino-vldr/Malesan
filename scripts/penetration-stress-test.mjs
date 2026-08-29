@@ -145,7 +145,7 @@ for (const file of routeFiles) {
     file.includes("auth");
 
   if (!isPublicRoute) {
-    if (content.includes("getUser") || content.includes("auth.getUser") || content.includes("spendCredits") || content.includes("verifyOtp")) {
+    if (content.includes("getUser") || content.includes("auth.getUser") || content.includes("spendCredits") || content.includes("verifyOtp") || content.includes("claim_token_hash") || content.includes("worker_token_hash") || content.includes("timingSafeEqual")) {
       authEnforcedCount++;
     }
   } else {

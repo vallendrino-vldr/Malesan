@@ -1,5 +1,7 @@
 "use client";
 
+import { cropFocusAt } from "@/lib/video/face-track";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -122,8 +124,23 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
    *  fractional frame-accurate figure while the inline bar stays integer. */
   const [exportPct, setExportPct] = useState(0);
   const [exportStage, setExportStage] = useState("");
+  const [trackingFace, setTrackingFace] = useState(false);
+  const [autoProcess, setAutoProcess] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const autoEnhanceRef = useRef(false);
+  const runFaceTrack = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || trackingFace) return;
+    setTrackingFace(true); setError(null); setStatus("AI lagi ngikutin wajah...");
+    try {
+      const { detectFaceTrajectory } = await import("@/lib/video/detect-faces");
+      const trajectory = await detectFaceTrajectory(video, { onProgress: (value) => setProgress(Math.round(value * 100)) });
+      setLayout((current) => ({ ...current, trajectory }));
+      setStatus(trajectory.some((keyframe) => keyframe.confidence > 0) ? "Face track aktif." : "Wajah gak terbaca. Fokus tengah dipakai.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Face track gagal. Pilih fokus manual."); }
+    finally { setTrackingFace(false); }
+  }, [trackingFace]);
 
   const preset = SOCIAL_PRESETS.find((item) => item.id === presetId) ?? SOCIAL_PRESETS[0];
   const lines = useMemo(
@@ -151,6 +168,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
 
   const onPick = (f: File | null) => {
     if (!f) return;
+    setAutoProcess(false);
     setError(null);
     setWords([]);
     setSourceWords(null);
@@ -209,6 +227,10 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
 
       setPhase("ready");
       setStatus("");
+      if (autoEnhanceRef.current) {
+        autoEnhanceRef.current = false;
+        await runFaceTrack();
+      }
       // Credits were just spent server-side; re-pull so the header balance is
       // current without waiting on the realtime channel (which can lag or miss).
       router.refresh();
@@ -218,7 +240,16 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
       );
       setPhase("idle");
     }
-  }, [file, router]);
+  }, [file, router, runFaceTrack]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!autoProcess || !video || !file) return;
+    const start = () => { setAutoProcess(false); void generate(); };
+    if (video.readyState >= 1 && Number.isFinite(video.duration)) start();
+    else video.addEventListener("loadedmetadata", start, { once: true });
+    return () => video.removeEventListener("loadedmetadata", start);
+  }, [autoProcess, file, generate]);
 
   const translateCaptions = useCallback(async (target: "id" | "en") => {
     if (!words.length || translating || target === captionLanguage) return;
@@ -325,7 +356,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
         </p>
       </header>
 
-      <ClipRadar cost={cost * 2} />
+      <ClipRadar cost={cost * 2} onClipReady={(bridgeFile) => { autoEnhanceRef.current = true; onPick(bridgeFile); setAutoProcess(true); }} />
 
       {!file ? (
         <details className="group rounded-2xl border border-hairline bg-surface">
@@ -387,7 +418,7 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
           <div className="space-y-4 lg:w-80 lg:shrink-0">
             {words.length > 0 && (
               <>
-                <LayoutPanel layout={layout} onChange={setLayout} />
+                <LayoutPanel layout={layout} onChange={setLayout} onAutoTrack={runFaceTrack} tracking={trackingFace} />
                 <div className="rounded-xl border border-hairline bg-surface p-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -560,7 +591,10 @@ function VideoPreviewPlayer({
 
   const active = activeAt(lines, now);
   const aspectRatio = layout.ratio === "9:16" ? "9 / 16" : layout.ratio === "16:9" ? "16 / 9" : "1 / 1";
-  const objectPosition = layout.focus === "left" ? "left center" : layout.focus === "right" ? "right center" : "center";
+  const tracked = layout.trajectory?.length ? cropFocusAt(layout.trajectory, now) : null;
+  const objectPosition = tracked
+    ? `${(tracked.x * 100).toFixed(2)}% ${(tracked.y * 100).toFixed(2)}%`
+    : layout.focus === "left" ? "left center" : layout.focus === "right" ? "right center" : "center";
 
   return (
     <div
@@ -645,16 +679,24 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
 function LayoutPanel({
   layout,
   onChange,
+  onAutoTrack,
+  tracking,
 }: {
   layout: VideoLayout;
   onChange: (layout: VideoLayout) => void;
+  onAutoTrack: () => void;
+  tracking: boolean;
 }) {
   return (
     <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3">
       <div>
         <p className="text-mini font-semibold text-ink">Bingkai video</p>
-        <p className="text-micro text-muted">Pilih rasio, lalu geser fokus subjek.</p>
+        <p className="text-micro text-muted">Auto ikuti wajah, atau pilih fokus manual.</p>
       </div>
+      <button type="button" onClick={onAutoTrack} disabled={tracking} className={`relative h-11 w-full overflow-hidden rounded-lg border px-3 text-mini font-semibold ${layout.trajectory?.length ? "border-ember bg-ember/15 text-ember" : "border-hairline bg-obsidian/30 text-ink"}`}>
+        {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
+        <span className="relative">{tracking ? "Lagi lacak wajah..." : layout.trajectory?.length ? "Face Track Aktif" : "Auto Face Track"}</span>
+      </button>
       <div className="grid grid-cols-3 gap-1.5">
         {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
           <button
@@ -676,9 +718,9 @@ function LayoutPanel({
           <button
             key={focus}
             type="button"
-            onClick={() => onChange({ ...layout, focus })}
+            onClick={() => onChange({ ratio: layout.ratio, focus })}
             className={`min-h-11 rounded-lg border px-2 text-micro font-semibold transition-colors ${
-              layout.focus === focus
+              !layout.trajectory?.length && layout.focus === focus
                 ? "border-ember bg-ember/15 text-ember"
                 : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
             }`}
