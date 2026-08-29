@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  YouTubeClipPlayer,
+  type YouTubeClipController,
+} from "./YouTubeClipPlayer";
 
 /**
- * AI Viral Radar.
- *
- * Paste a YouTube link, get the moments worth cutting. The video is never
- * uploaded or downloaded — the server reads its caption track, and playback
- * here is a plain YouTube embed seeked to the chosen range. That is the whole
- * trick behind "no upload needed".
+ * AI Viral Radar. Gemini watches the URL server-side; YouTube's official IFrame
+ * API handles interactive preview ranges here. Media bytes never cross either
+ * boundary, so export remains a separate local-file capability until Bridge is
+ * installed.
  */
 
 type Clip = {
@@ -40,7 +42,23 @@ export function ClipRadar({ cost }: { cost: number }) {
   const [error, setError] = useState<string | null>(null);
   const [scan, setScan] = useState<Scan | null>(null);
   const [active, setActive] = useState(0);
+  const [playerState, setPlayerState] = useState<"loading" | "ready" | "playing" | "paused" | "error">("loading");
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [actualTime, setActualTime] = useState<number | null>(null);
+  const playerRef = useRef<YouTubeClipController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+
+  const setController = useCallback((controller: YouTubeClipController | null) => {
+    playerRef.current = controller;
+  }, []);
+
+  const setPlayerError = useCallback((message: string | null) => {
+    setPreviewError(message);
+  }, []);
+
+  const provePlayback = useCallback((seconds: number) => {
+    setActualTime(seconds);
+  }, []);
 
   // Walk the status label forward while the request is in flight. The server
   // gives us no progress events, so this is honest pacing, not a fake bar.
@@ -55,6 +73,8 @@ export function ClipRadar({ cost }: { cost: number }) {
     setLoading(true);
     setStep(0);
     setError(null);
+    setPreviewError(null);
+    setActualTime(null);
     setScan(null);
     try {
       const res = await fetch("/api/video/youtube-clip", {
@@ -82,6 +102,17 @@ export function ClipRadar({ cost }: { cost: number }) {
   };
 
   const clip = scan?.clips[active];
+
+  const playClip = (index: number) => {
+    const selected = scan?.clips[index];
+    if (!selected) return;
+    setActive(index);
+    setActualTime(null);
+    setPreviewError(null);
+    if (!playerRef.current?.playRange(selected.startTime, selected.endTime)) {
+      setPreviewError("Player belum siap. Tunggu sebentar lalu tap momennya lagi.");
+    }
+  };
 
   return (
     <section className="rounded-2xl border border-hairline bg-surface p-4">
@@ -114,6 +145,7 @@ export function ClipRadar({ cost }: { cost: number }) {
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <input
           type="url"
+          name="youtube-url"
           inputMode="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -152,29 +184,48 @@ export function ClipRadar({ cost }: { cost: number }) {
       {scan && clip && (
         <div ref={resultRef} className="mt-4 space-y-3">
           <div className="overflow-hidden rounded-xl border border-hairline bg-black">
-            <iframe
-              // Re-keying on the clip forces the embed to reload at the new
-              // start time; the YouTube player ignores src changes otherwise.
-              key={`${scan.videoId}-${clip.startTime}`}
-              src={`https://www.youtube-nocookie.com/embed/${scan.videoId}?start=${clip.startTime}&end=${clip.endTime}&rel=0`}
+            <YouTubeClipPlayer
+              videoId={scan.videoId}
               title={clip.hookTitle}
-              allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
-              allowFullScreen
-              className="aspect-video w-full"
+              initialStart={clip.startTime}
+              initialEnd={clip.endTime}
+              onController={setController}
+              onError={setPlayerError}
+              onPlaybackProof={provePlayback}
+              onState={setPlayerState}
             />
           </div>
 
-          <p className="truncate text-mini text-muted" title={scan.title}>
-            {scan.title}
-          </p>
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <p className="min-w-0 truncate text-mini text-muted" title={scan.title}>
+              {scan.title}
+            </p>
+            <span className="shrink-0 whitespace-nowrap text-micro font-semibold text-ember tabular-nums">
+              {playerState === "playing" ? "Diputar" : "Terpilih"} · {clock(clip.startTime)}–{clock(clip.endTime)}
+            </span>
+          </div>
+
+          {actualTime !== null && Math.abs(actualTime - clip.startTime) <= 2.5 ? (
+            <p className="text-micro text-success" role="status">
+              Preview pindah ke {clock(actualTime)}.
+            </p>
+          ) : null}
+
+          {previewError ? (
+            <p className="rounded-xl border border-danger/40 bg-danger/10 px-3 py-2.5 text-mini text-danger" role="alert">
+              {previewError}
+            </p>
+          ) : null}
 
           <ul className="grid grid-cols-1 gap-2">
             {scan.clips.map((c, i) => (
               <li key={`${c.startTime}-${i}`}>
                 <button
-                  onClick={() => setActive(i)}
-                  aria-current={i === active}
-                  className={`flex w-full min-h-11 cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                  onClick={() => playClip(i)}
+                  disabled={playerState === "loading"}
+                  aria-current={i === active ? "true" : undefined}
+                  aria-label={`Putar ${c.hookTitle}, ${clock(c.startTime)} sampai ${clock(c.endTime)}`}
+                  className={`flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-wait disabled:opacity-60 ${
                     i === active
                       ? "border-ember/60 bg-ember/10"
                       : "border-hairline bg-obsidian hover:border-ember/40"
@@ -196,8 +247,9 @@ export function ClipRadar({ cost }: { cost: number }) {
             ))}
           </ul>
 
-          <p className="text-micro leading-relaxed text-muted">
-            Mau caption otomatis di potongan ini? Download klipnya dulu, terus upload di bawah.
+          <p className="rounded-xl border border-ember/20 bg-ember/5 px-3 py-2.5 text-micro leading-relaxed text-muted">
+            Preview ini langsung dari YouTube. Auto potong, subtitle, dan face track dari URL lagi
+            disiapkan lewat Malesan Bridge—bukan download-upload manual.
           </p>
         </div>
       )}

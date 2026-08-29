@@ -136,7 +136,7 @@ assert.match(tutorial, /NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL/);
 
 const videoEditor = read("src/components/VideoEditor.tsx");
 assert.match(videoEditor, /<details[\s\S]*?>[\s\S]*?Atur sendiri/);
-assert.match(videoEditor, /Subtitle Otomatis/);
+assert.match(videoEditor, /Auto Clip Video/);
 
 for (const file of [
   "src/app/page.tsx",

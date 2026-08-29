@@ -317,18 +317,40 @@ export function VideoEditor({ cost, noWatermarkCost }: { cost: number; noWaterma
 
       <header>
         <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
-          Subtitle Otomatis
+          Auto Clip Video
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Upload video, AI tulisin subtitle-nya per kata, atur gayanya, terus export jadi
-          video yang teksnya udah nyatu. <span className="text-ember">{cost} kredit / menit.</span>
+          Tempel link YouTube, pilih momen rekomendasi, lalu preview langsung lompat ke bagian itu.
+          <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
         </p>
       </header>
 
       <ClipRadar cost={cost * 2} />
 
       {!file ? (
-        <UploadDrop onPick={onPick} />
+        <details className="group rounded-2xl border border-hairline bg-surface">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
+            <span>Pakai file sendiri</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4 shrink-0 transition-transform group-open:rotate-180"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="border-t border-hairline p-3">
+            <p className="mb-3 text-micro leading-relaxed text-muted">
+              Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari {cost} kredit / menit.
+            </p>
+            <UploadDrop onPick={onPick} />
+          </div>
+        </details>
       ) : (
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
           <div className="lg:flex-1">
