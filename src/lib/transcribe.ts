@@ -70,7 +70,9 @@ async function postWithRotation(
     form.append("response_format", "verbose_json");
     form.append("timestamp_granularities[]", "word");
     form.append("temperature", "0");
-    if (opts?.prompt) form.append("prompt", opts.prompt);
+    const defaultPrompt =
+      "Transkrip video konten kreator Indonesia. Percakapan santai, bahasa gaul Jaksel / campur Inggris seperti unboxing, mystery box, review, worth it, guys, content creator, subscribe, shock, aesthetic, relate, honestly, literally, gokil, beneran.";
+    form.append("prompt", opts?.prompt || defaultPrompt);
     form.append("language", opts?.language || "id");
 
     let res: Response;

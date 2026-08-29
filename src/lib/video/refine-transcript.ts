@@ -14,27 +14,21 @@ import type { Word } from "@/lib/transcribe";
 async function refineChunk(chunkWords: Word[]): Promise<Word[]> {
   if (!chunkWords.length) return chunkWords;
   const chunkText = chunkWords.map((w) => w.word).join(" ");
-  const prompt = `Kamu adalah model AI korektor fonetik speech-to-text khusus bahasa Indonesia lisan / percakapan sehari-hari.
-Tugas kamu adalah memperbaiki kata-kata yang SALAH DENGAR (misheard phonetics / acoustic errors) dari audio mikrofon HP yang bervolume rendah atau berbisik.
+  const prompt = `Kamu adalah model AI korektor fonetik speech-to-text khusus video konten kreator Indonesia (percakapan kasual, bahasa gaul, dan bilingual / campur Inggris).
+Tugas kamu adalah memperbaiki kata-kata yang SALAH DENGAR (misheard phonetics / acoustic errors).
 
-Karakteristik kesalahan dengar fonetik bahasa Indonesia:
-1. Huruf b/d tertukar (misal: "dulu ngapa" / "lu ngapa" sebenarnya adalah "bilang apa").
-2. Huruf vokal e (schwa) tertukar dengan a/u (misal: "alas-alas" / "alus-alus" sebenarnya adalah "elus-elus").
-3. Frasa pengulangan kata kerja (misal: "elus-elus", "jalan-jalan", "tanya-tanya").
-4. Bahasa gaul, kasual, romantis, atau santai sehari-hari antar teman / pasangan.
+Aturan & Karakteristik:
+1. PERTAHANKAN istilah bahasa Inggris yang wajar diucapkan kreator (misal: "mystery box", "unboxing", "review", "worth it", "gameplay", "content creator", "aesthetic", "subscribe", "literally", "guys"). JANGAN terjemahkan istilah Inggris ke bahasa Indonesia jika memang diucapkan dalam bahasa Inggris!
+2. Perbaiki fonetik salah dengar bahasa Indonesia (misal: "dulu ngapa" -> "bilang apa", "alas-alas" -> "elus-elus").
+3. Pertahankan tanda baca asli pada posisi yang sesuai.
+4. Jumlah kata output HARUS PERSIS ${chunkWords.length} item.
+5. Output HANYA JSON array string murni. Contoh: ["kata1", "kata2", "kata3"]
 
 Kalimat mentah yang didengar:
 "${chunkText}"
 
 Daftar kata terdeteksi:
-${chunkWords.map((w, i) => `${i}: "${w.word}"`).join(", ")}
-
-Instruksi:
-1. Analisis kalimat secara semantik dan fonetik: apa kalimat wajar yang sebenarnya diucapkan oleh manusia dalam konteks percakapan tersebut?
-2. Perbaiki kata-kata yang keliru dengar menjadi kata bahasa Indonesia yang tepat dan masuk akal.
-3. Pertahankan tanda baca asli pada posisi yang sesuai.
-4. Jumlah kata output HARUS PERSIS ${chunkWords.length} item.
-5. Output HANYA JSON array string murni. Contoh: ["kata1", "kata2", "kata3"]`;
+${chunkWords.map((w, i) => `${i}: "${w.word}"`).join(", ")}`;
 
   try {
     const rawRes = await generate({
