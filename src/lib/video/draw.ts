@@ -20,9 +20,12 @@ export const even = (n: number) => (n % 2 === 0 ? n : n - 1);
  * clean. Grain is almost always starvation: ~0.3 bits per pixel per second is the
  * floor that keeps text edges sharp through the codec.
  */
-export function bitrateFor(mbps: number, W: number, H: number, fps: number): number {
-  const floor = Math.round(W * H * Math.max(fps, 24) * 0.3);
-  return Math.max(Math.round(mbps * 1_000_000), floor);
+export function bitrateFor(mbps: number, _W?: number, _H?: number, _fps?: number): number {
+  void _W;
+  void _H;
+  void _fps;
+  const targetMbps = Math.max(2.5, Math.min(8, mbps || 4.5));
+  return Math.round(targetMbps * 1_000_000);
 }
 
 /** Paint one complete export frame: video, caption, watermark. */

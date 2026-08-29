@@ -4,21 +4,18 @@ export type VideoRatio = "9:16" | "1:1" | "16:9";
 export type VideoFocus = "left" | "center" | "right";
 export type VideoLayout = { ratio: VideoRatio; focus: VideoFocus; trajectory?: readonly CropKeyframe[] };
 
-const even = (n: number) => (n % 2 === 0 ? n : n - 1);
-
 export const ratioValue = (ratio: VideoRatio) => {
   if (ratio === "9:16") return 9 / 16;
   if (ratio === "16:9") return 16 / 9;
   return 1;
 };
 
-export function frameSize(sw: number, sh: number, ratio: VideoRatio = "9:16"): { W: number; H: number } {
-  const short = Math.min(sw, sh);
-  const targetShort = Math.max(720, Math.min(1080, short));
-  const value = ratioValue(ratio);
-  return value <= 1
-    ? { W: even(Math.round(targetShort)), H: even(Math.round(targetShort / value)) }
-    : { W: even(Math.round(targetShort * value)), H: even(Math.round(targetShort)) };
+export function frameSize(_sw?: number, _sh?: number, ratio: VideoRatio = "9:16"): { W: number; H: number } {
+  void _sw;
+  void _sh;
+  if (ratio === "9:16") return { W: 1080, H: 1920 };
+  if (ratio === "1:1") return { W: 1080, H: 1080 };
+  return { W: 1920, H: 1080 };
 }
 
 export function coverCrop(

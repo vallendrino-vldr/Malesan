@@ -36,7 +36,7 @@ const SOCIAL_PRESETS = [
     id: "hormozi",
     label: "Hormozi",
     hint: "Kalimat tebal, kata aktif membesar dengan glow lime",
-    mbps: 12,
+    mbps: 4.5,
     maxWords: 4,
     maxGap: 0.5,
     style: {
@@ -57,7 +57,7 @@ const SOCIAL_PRESETS = [
     id: "tiktok",
     label: "TikTok",
     hint: "Satu kata, outline tebal, pop cepat yang kontras",
-    mbps: 12,
+    mbps: 4.5,
     maxWords: 3,
     maxGap: 0.48,
     style: {
@@ -78,7 +78,7 @@ const SOCIAL_PRESETS = [
     id: "business",
     label: "Minimal",
     hint: "Kapsul hitam bersih, putih tenang, highlight amber halus",
-    mbps: 16,
+    mbps: 4.0,
     maxWords: 5,
     maxGap: 0.65,
     style: {
@@ -474,7 +474,10 @@ export function VideoEditor({
                 {editorTab === "frame" && (
                   <div className="space-y-4">
                     <LayoutPanel layout={layout} onChange={setLayout} onAutoTrack={runFaceTrack} tracking={trackingFace} />
-                    <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3 text-micro text-muted leading-relaxed">💡 <span className="text-ink font-semibold">Tips Face Track:</span> AI otomatis mengunci posisi wajah ke tengah pada format 9:16 vertikal, jadi kamu gak perlu potong manual.</div>
+                    <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3 text-micro text-muted leading-relaxed flex items-start gap-2">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                      <span><strong className="text-ink font-semibold">Tips Face Track:</strong> AI otomatis mengunci posisi wajah ke tengah pada format 9:16 vertikal, jadi kamu gak perlu potong manual.</span>
+                    </div>
                   </div>
                 )}
                 {editorTab === "subtitles" && (
@@ -518,13 +521,16 @@ export function VideoEditor({
                       </div>
                     </label>
                     <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 text-micro text-muted space-y-1">
-                      <div className="flex justify-between font-mono"><span>Kualitas Render:</span><span className="text-ink font-semibold">1080p HD (Frame-Accurate)</span></div>
-                      <div className="flex justify-between font-mono"><span>Bitrate Video:</span><span className="text-ink font-semibold">{bitrate} Mbps</span></div>
+                      <div className="flex justify-between font-mono"><span>Kualitas Render:</span><span className="text-ink font-semibold">1080p HD (1080x1920)</span></div>
+                      <div className="flex justify-between font-mono"><span>Bitrate Video:</span><span className="text-ink font-semibold">{bitrate} Mbps (Ukuran Ringan)</span></div>
                     </div>
-                    <button onClick={doExport} disabled={busy || words.length === 0} className="btn-ember w-full cursor-pointer rounded-xl py-3.5 text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50">
-                      {phase === "exporting" ? `Lagi render... ${progress}%` : "⚡ Export Video Mateng"}
+                    <button onClick={doExport} disabled={busy || words.length === 0} className="btn-ember flex items-center justify-center gap-2 w-full cursor-pointer rounded-xl py-3.5 text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                      </svg>
+                      <span>{phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}</span>
                     </button>
-                    <p className="text-micro leading-snug text-muted text-center">Tiap frame digambar satu-satu di browser kamu. Kualitas ngikut aslinya, gak diturunin.</p>
+                    <p className="text-micro leading-snug text-muted text-center">Tiap frame digambar satu-satu di browser kamu. Kualitas 1080p HD jernih tanpa beban ukuran berlebih.</p>
                   </div>
                 )}
               </div>

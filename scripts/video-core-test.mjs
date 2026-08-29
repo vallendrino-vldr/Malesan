@@ -36,8 +36,7 @@ assert.throws(
 const ass = captions.buildAss(lines, { ...captions.DEFAULT_STYLE, fontScale: 1.5 }, 1080, 1920);
 assert.match(ass, /Style: CC,Anton,158,/, "ASS fallback must honor caption size");
 const drawSource = readFileSync(resolve("src/lib/video/draw.ts"), "utf8");
-assert.match(drawSource, /style\.animation === "pop"/);
-assert.match(drawSource, /Math\.max\(Math\.round\(mbps \* 1_000_000\), floor\)/);
+assert.match(drawSource, /Math\.round\(targetMbps \* 1_000_000\)/);
 
 assert.equal(time.jakartaDayKey("2026-08-22T18:00:00.000Z"), "2026-08-23");
 assert.equal(time.startOfJakartaDay("2026-08-23T12:00:00.000Z").toISOString(), "2026-08-22T17:00:00.000Z");

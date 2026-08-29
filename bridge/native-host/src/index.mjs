@@ -54,8 +54,8 @@ async function handle(raw) {
     const output = join(work, "clip.mp4");
     await run(ytDlp, [
       "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
-      "--extractor-args", "youtube:player_client=android,web",
-      "-f", "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
+      "--extractor-args", "youtube:player_client=web,android",
+      "-f", "bestvideo[height>=1080]+bestaudio/bestvideo+bestaudio/best",
       "--format-sort", "res:1080,fps:60,vcodec:h264,acodec:m4a,res,size",
       "--merge-output-format", "mp4",
       "--download-sections", `*${job.startTime}-${job.endTime}`,
