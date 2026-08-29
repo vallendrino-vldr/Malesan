@@ -756,11 +756,28 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 138, 61, 0.15) 30%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 138, 61, 0.15) 70%,
     transparent 100%
   );
-  animation: shimmer-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: shimmer-sweep 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   will-change: transform;
+}
+
+@keyframes shimmer-glow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer-glow {
+  background: linear-gradient(90deg, #1c1917 0%, #292524 25%, #ff8a3d35 50%, #292524 75%, #1c1917 100%);
+  background-size: 200% 100%;
+  animation: shimmer-glow 1.8s infinite linear;
 }
 
 .animate-ticker-marquee:hover {

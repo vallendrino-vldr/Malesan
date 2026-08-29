@@ -98,18 +98,19 @@ Aturan keras:
 
 Balas HANYA JSON array.`;
 
-  let clips;
+  let clips: ReturnType<typeof normalizeClips> = [];
   try {
     const raw = await generate({
       prompt,
       tier: "free",
+      provider: "gemini",
       video: {
         url: `https://www.youtube.com/watch?v=${videoId}`,
         fps: SCAN_FPS,
         startSec: 0,
         endSec: MAX_SCAN_SEC,
       },
-      signal: AbortSignal.timeout(45_000),
+      signal: AbortSignal.timeout(52_000),
       schema: {
         type: "array",
         items: {
@@ -127,11 +128,29 @@ Balas HANYA JSON array.`;
     });
     clips = normalizeClips(JSON.parse(raw), MAX_SCAN_SEC);
   } catch (err) {
-    console.error("viral scan failed", err);
-    return json(
-      { error: "AI-nya lagi ngadat pas baca video ini. Kredit lo belum kepotong — coba lagi." },
-      502,
-    );
+    console.error("viral scan primary failed, attempting fallback prompt", err);
+    try {
+      const fallbackRaw = await generate({
+        prompt: `${prompt}\n\nPENTING: Keluarkan HANYA raw JSON array valid tanpa formatting markdown apapun. Contoh: [{"viralScore":95,"hookTitle":"Judul Hook Menarik","startTime":10,"endTime":45,"reason":"Alasan kuat"}]`,
+        tier: "free",
+        provider: "gemini",
+        video: {
+          url: `https://www.youtube.com/watch?v=${videoId}`,
+          fps: SCAN_FPS,
+          startSec: 0,
+          endSec: MAX_SCAN_SEC,
+        },
+        signal: AbortSignal.timeout(52_000),
+      });
+      const cleaned = fallbackRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      clips = normalizeClips(JSON.parse(cleaned), MAX_SCAN_SEC);
+    } catch (fallbackErr) {
+      console.error("viral scan fallback also failed", fallbackErr);
+      return json(
+        { error: "AI sedang sibuk atau video ini memiliki batasan pemutaran dari YouTube. Kredit lo belum kepotong — coba lagi bentar ya." },
+        502,
+      );
+    }
   }
 
   if (!clips.length) {

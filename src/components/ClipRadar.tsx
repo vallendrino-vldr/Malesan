@@ -210,24 +210,55 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       </div>
 
       {loading && (
-        <div className="mt-3.5 space-y-2.5" aria-live="polite">
-          <div className="flex items-center gap-2 text-mini font-semibold text-ember">
-            <span className="size-2 rounded-full bg-ember animate-ping" />
-            <span>{STEPS[step]}</span>
-          </div>
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="relative overflow-hidden rounded-xl border border-hairline bg-surface-raised/70 p-3 flex items-start gap-3 shadow-xs"
-            >
-              <div className="size-7 rounded-md bg-ember/20 animate-pulse shrink-0 mt-0.5" />
-              <div className="flex-1 space-y-2 py-0.5">
-                <div className="h-3.5 w-3/4 rounded bg-white/15 animate-pulse" />
-                <div className="h-2.5 w-1/2 rounded bg-white/10 animate-pulse" />
+        <div className="mt-4 space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-b from-ember/10 via-surface-raised/80 to-surface-raised/40 p-4 shadow-lg" aria-live="polite">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex size-3">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-75" />
+                  <span className="relative inline-flex size-3 rounded-full bg-ember" />
+                </span>
+                <p className="text-xs font-bold text-ink">
+                  {STEPS[step]}
+                </p>
               </div>
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer-sweep" />
+              <span className="text-[11px] font-semibold text-ember tabular-nums">
+                Langkah {step + 1} dari {STEPS.length}
+              </span>
             </div>
-          ))}
+
+            {/* Live Progress Bar */}
+            <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-obsidian/80">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-ember/60 via-ember to-amber-400 transition-all duration-700 ease-out"
+                style={{ width: `${Math.min(95, 25 + step * 24)}%` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer-sweep" />
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {[98, 92, 85].map((mockScore, i) => (
+              <div
+                key={i}
+                className="animate-shimmer-glow relative overflow-hidden rounded-xl border border-hairline/70 p-3.5 flex items-start gap-3 shadow-xs"
+              >
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-ember/20 text-xs font-bold text-ember animate-pulse">
+                  {mockScore}
+                </div>
+                <div className="flex-1 space-y-2 py-0.5">
+                  <div
+                    className="h-4 rounded bg-white/20 animate-pulse"
+                    style={{ width: i === 0 ? "75%" : i === 1 ? "85%" : "65%" }}
+                  />
+                  <div
+                    className="h-3 rounded bg-white/10 animate-pulse"
+                    style={{ width: i === 0 ? "90%" : i === 1 ? "70%" : "80%" }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
