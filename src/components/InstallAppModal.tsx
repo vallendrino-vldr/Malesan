@@ -129,25 +129,28 @@ export function InstallAppModal({
 
           <div className="rounded-2xl border border-hairline/80 bg-surface/50 p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-ink">File Standalone APK</span>
-              <span className="text-micro font-mono text-muted">1.5 MB</span>
+              <span className="text-xs font-bold text-ink">Mode APK Pro (Native Engine)</span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/10 px-2 py-0.5 text-[10px] font-mono font-bold text-ember">
+                ⚡ Native Android
+              </span>
             </div>
 
             <p className="text-xs text-muted leading-relaxed">
-              Bagi pengguna yang membutuhkan file installer mentah <code>.apk</code> untuk Android 8.0+.
+              Dilengkapi <strong>Native Java Stream Extractor</strong>, <strong>YouTube Share Sheet Auto-Scan</strong>, getaran hardware haptic, dan penyimpanan langsung ke <strong>Galeri HP (DCIM/Malesan)</strong>.
             </p>
 
             <a
               href="/malesan.apk"
-              download="malesan-v1.0.apk"
-              className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-display text-xs font-semibold text-ink hover:border-ember/40 hover:bg-ember/10 hover:text-ember transition-all"
+              download="malesan.apk"
+              onClick={onClose}
+              className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-display text-xs font-semibold text-ink transition-all hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.99]"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>Download File APK (1.5 MB)</span>
+              <span>Download APK Pro (Native Engine)</span>
             </a>
           </div>
         </div>
