@@ -6,23 +6,26 @@ import { generate } from "@/lib/gemini/client";
 import { aiRateLimit } from "@/lib/rate-limit";
 import { notifyGeneration } from "@/lib/telegram";
 import {
-  ingestYouTube,
+  fetchYouTubeMeta,
+  MAX_SCAN_SEC,
   normalizeClips,
   parseYouTubeId,
+  SCAN_FPS,
   YouTubeError,
 } from "@/lib/video/youtube";
 
 /**
  * AI Viral Radar for a pasted YouTube link.
  *
- * Nothing here downloads video. We read the published caption track (a few
- * dozen KB) and let the model find the moments worth cutting; the browser then
- * plays those ranges straight from YouTube. That is what makes a one-hour
- * podcast scannable inside a 60-second serverless budget.
+ * Nothing here downloads video, and nothing here reads a transcript: YouTube
+ * bot-walls datacenter IPs, and its caption endpoints now demand a token only
+ * its own player can mint. Instead Gemini is handed the YouTube URL and watches
+ * the video on Google's side, which sidesteps the wall entirely and has the
+ * bonus of the model seeing the visuals, not just the words.
  *
  * Priced as a flat two minutes of the video rate: one Gemini pass regardless of
  * length, so per-minute billing would punish exactly the long videos this is
- * most useful for.
+ * most useful for. The scan window cap is what keeps that flat price honest.
  */
 
 export const runtime = "nodejs";
@@ -67,34 +70,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let ingest;
+  // oEmbed doubles as an existence check: a private or deleted video fails here
+  // for a few hundred bytes instead of after a full video-token Gemini call.
+  let meta;
   try {
-    ingest = await ingestYouTube(videoId);
+    meta = await fetchYouTubeMeta(videoId);
   } catch (err) {
     if (err instanceof YouTubeError) {
-      return json({ error: err.message }, err.code === "no_transcript" ? 422 : 400);
+      return json({ error: err.message }, err.code === "unavailable" ? 404 : 502);
     }
-    console.error("youtube ingest failed", err);
+    console.error("youtube meta failed", err);
     return json({ error: "Gagal baca videonya. Coba lagi bentar ya." }, 502);
   }
 
-  const script = ingest.segments
-    .map((s) => `[${Math.round(s.start)}] ${s.text}`)
-    .join("\n");
-
-  const prompt = `Kamu editor konten viral Indonesia. Di bawah ini transkrip video YouTube berjudul "${ingest.title}" (durasi ${ingest.durationSec} detik). Tiap baris diawali [detik-mulai].
-
-${script}
+  const prompt = `Kamu editor konten viral Indonesia. Tonton video YouTube ini berjudul "${meta.title}".
 
 Cari 3 sampai 5 potongan PALING BERPOTENSI VIRAL kalau dipotong jadi konten pendek (TikTok/Reels/Shorts).
 
 Aturan keras:
-1. startTime dan endTime dalam DETIK (angka), diambil dari penanda [detik] di transkrip.
+1. startTime dan endTime dalam DETIK (angka bulat), dihitung dari awal video. Wajib akurat sesuai isi video.
 2. Durasi tiap potongan antara 20 sampai 90 detik. Potongan harus berdiri sendiri: mulai dari kalimat pembuka yang nyantol, selesai di kalimat penutup yang tuntas.
 3. Potongan tidak boleh saling tumpang tindih.
 4. hookTitle: judul clickbait bahasa Indonesia santai, maksimal 8 kata, tanpa tanda kutip.
-5. reason: satu kalimat kenapa ini nempel (emosi / kontroversi / solusi praktis / cerita).
+5. reason: satu kalimat bahasa Indonesia kenapa ini nempel (emosi / kontroversi / solusi praktis / cerita).
 6. viralScore: 1-100, makin nempel makin tinggi.
+7. WAJIB semua teks dalam Bahasa Indonesia.
 
 Balas HANYA JSON array.`;
 
@@ -103,6 +103,12 @@ Balas HANYA JSON array.`;
     const raw = await generate({
       prompt,
       tier: "free",
+      video: {
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        fps: SCAN_FPS,
+        startSec: 0,
+        endSec: MAX_SCAN_SEC,
+      },
       signal: AbortSignal.timeout(45_000),
       schema: {
         type: "array",
@@ -119,7 +125,7 @@ Balas HANYA JSON array.`;
         },
       },
     });
-    clips = normalizeClips(JSON.parse(raw), ingest.durationSec);
+    clips = normalizeClips(JSON.parse(raw), MAX_SCAN_SEC);
   } catch (err) {
     console.error("viral scan failed", err);
     return json(
@@ -145,7 +151,7 @@ Balas HANYA JSON array.`;
       email: user.email || "user@malesan",
       moduleName: "Clip Radar YouTube",
       creditsSpent: cost,
-      details: `${ingest.title} — ${clips.length} clip`,
+      details: `${meta.title} — ${clips.length} clip`,
     });
   } catch (teleErr) {
     console.warn("[youtube-clip] Telegram notification error:", teleErr);
@@ -153,9 +159,9 @@ Balas HANYA JSON array.`;
 
   return json(
     {
-      videoId: ingest.videoId,
-      title: ingest.title,
-      durationSec: ingest.durationSec,
+      videoId,
+      title: meta.title,
+      author: meta.author,
       clips,
       creditsSpent: cost,
     },

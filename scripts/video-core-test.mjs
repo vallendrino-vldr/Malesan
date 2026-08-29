@@ -45,32 +45,49 @@ assert.equal(yt.parseYouTubeId("https://m.youtube.com/shorts/dQw4w9WgXcQ"), "dQw
 assert.equal(yt.parseYouTubeId("https://vimeo.com/12345"), null, "non-YouTube host must be rejected");
 assert.equal(yt.parseYouTubeId("https://www.youtube.com/watch?v=short"), null, "malformed id must be rejected");
 
-const merged = yt.mergeSegments(
-  [
-    { start: 0, end: 2, text: "halo" },
-    { start: 2, end: 4, text: "semua" },
-    { start: 30, end: 32, text: "lanjut" },
-  ],
-  15,
-);
-assert.equal(merged.length, 2, "cues within the block window must merge");
-assert.equal(merged[0].text, "halo semua");
+// The video part is the whole feature: if its envelope is wrong, Gemini simply
+// answers about nothing and the user sees "no moments found" instead of an error.
+const providers = await import(pathToFileURL(resolve("src/lib/gemini/providers.ts")));
+const req = providers.adapterFor("gemini").buildRequest({
+  apiKey: "k",
+  model: "m",
+  prompt: "p",
+  stream: false,
+  video: { url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ", fps: 0.2, startSec: 0, endSec: 1800 },
+});
+const sentParts = JSON.parse(req.body).contents[0].parts;
+assert.equal(sentParts[0].file_data.file_uri, "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+assert.equal(sentParts[0].video_metadata.fps, 0.2, "fps must be sent — it is 2x the token bill");
+assert.equal(sentParts[0].video_metadata.end_offset, "1800s", "scan window must be bounded");
+assert.equal(sentParts.at(-1).text, "p", "prompt must stay last so it reads as being about the video");
 
 const clips = yt.normalizeClips(
   [
     { viralScore: 900, hookTitle: "A", startTime: 10, endTime: 60, reason: "r" },
     { viralScore: 80, hookTitle: "B", startTime: 20, endTime: 55, reason: "r" }, // overlaps A
-    { viralScore: 70, hookTitle: "C", startTime: 100, endTime: 103, reason: "r" }, // too short
+    { viralScore: 70, hookTitle: "C", startTime: 100, endTime: 110, reason: "r" }, // short: padded
     { viralScore: 60, hookTitle: "", startTime: 200, endTime: 240, reason: "r" }, // no hook
     { viralScore: 50, hookTitle: "D", startTime: 300, endTime: 340, reason: "r" },
+    { viralScore: 40, hookTitle: "E", startTime: 400, endTime: 399, reason: "r" }, // end before start
   ],
   600,
 );
 assert.deepEqual(
   clips.map((c) => c.hookTitle),
-  ["A", "D"],
-  "overlapping, too-short and unlabelled clips must be dropped",
+  ["A", "C", "D"],
+  "overlapping, unlabelled and inverted clips must be dropped; short ones padded",
 );
 assert.equal(clips[0].viralScore, 100, "viral score must be clamped to 100");
+const padded = clips.find((c) => c.hookTitle === "C");
+assert.equal(padded.endTime - padded.startTime, 20, "a too-short clip must be padded, not dropped");
+
+// Padding at the very end of the window must borrow from the front rather than
+// run past it, or the player would seek somewhere that does not exist.
+const tail = yt.normalizeClips(
+  [{ viralScore: 90, hookTitle: "T", startTime: 592, endTime: 598, reason: "r" }],
+  600,
+);
+assert.equal(tail[0].endTime, 600);
+assert.equal(tail[0].startTime, 580, "padding must not run past the end of the scanned window");
 
 console.log("Video/time core: pacing, timing, sizing, pricing day boundary verified");

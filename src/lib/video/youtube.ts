@@ -3,33 +3,28 @@
  *
  * We never download the video. Vercel's datacenter IPs get bot-walled by
  * YouTube's media endpoints, serverless has a 60s ceiling, and a 300MB pull
- * would blow the bandwidth budget anyway. What we actually need to find viral
- * moments is the *words plus their timestamps* — and YouTube already publishes
- * those as a caption track, a few dozen KB of JSON.
+ * would blow the bandwidth budget anyway.
  *
- * So: read the watch page once, lift the caption track list out of the embedded
- * player response, fetch one track. Playback stays client-side in an embed.
+ * The first version of this file scraped the caption track out of the watch
+ * page. That is dead: YouTube now returns `LOGIN_REQUIRED` to datacenter IPs,
+ * and even when a signed caption `baseUrl` does come back, fetching it returns
+ * HTTP 200 with zero bytes unless the request carries a proof-of-origin token
+ * minted by their player. Verified against three videos from two networks —
+ * this is a wall, not a flaky call, so there is nothing to retry.
+ *
+ * What replaced it: Gemini accepts a YouTube URL as a `file_data` part and
+ * watches the video itself. Google-to-Google, so YouTube's bot defences never
+ * enter the picture, and the model sees the visuals rather than only the words.
+ * Metadata comes from the public oEmbed endpoint, which is not walled.
  */
-
-export type TranscriptSegment = { start: number; end: number; text: string };
 
 export type YouTubeMeta = {
   videoId: string;
   title: string;
-  durationSec: number;
+  author: string;
 };
 
-export type YouTubeIngest = YouTubeMeta & {
-  lang: string;
-  segments: TranscriptSegment[];
-};
-
-export type YouTubeErrorCode =
-  | "bad_url"
-  | "unavailable"
-  | "blocked"
-  | "no_transcript"
-  | "too_long";
+export type YouTubeErrorCode = "bad_url" | "unavailable" | "blocked" | "no_transcript";
 
 export class YouTubeError extends Error {
   code: YouTubeErrorCode;
@@ -41,9 +36,24 @@ export class YouTubeError extends Error {
   }
 }
 
-/** Hard ceiling on what we will scan. Longer than this and the prompt costs
- *  more than the clip is worth. */
-export const MAX_VIDEO_SEC = 90 * 60;
+/**
+ * How much of a video we hand to the model.
+ *
+ * Video tokens scale linearly with the watched span: ~34k tokens for 15 minutes
+ * at 0.2fps, measured. Without a ceiling a three-hour podcast would cost ~50x a
+ * short one for the same flat credit price, so we cap the scan window and say so
+ * in the UI rather than quietly billing for it.
+ */
+export const MAX_SCAN_SEC = 30 * 60;
+
+/**
+ * Frames per second handed to the model.
+ *
+ * 1fps (the default) costs ~80k tokens on a 15-minute video; 0.2fps costs ~34k
+ * for the same clip picks. We are hunting for topic changes measured in tens of
+ * seconds, not individual frames, so the extra resolution buys nothing.
+ */
+export const SCAN_FPS = 0.2;
 
 /**
  * Pull the 11-char id out of any shape of YouTube link a person might paste:
@@ -81,140 +91,43 @@ export function parseYouTubeId(input: string): string | null {
   return null;
 }
 
-type CaptionTrack = { baseUrl: string; languageCode?: string; kind?: string };
-
-async function getWatchPage(videoId: string): Promise<string> {
-  const res = await fetch(`https://www.youtube.com/watch?v=${videoId}&hl=id`, {
-    headers: {
-      // Without a browser UA YouTube serves a stripped page with no player
-      // response at all, which reads as "no transcript" and is a lie.
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Safari/537.36",
-      "Accept-Language": "id-ID,id;q=0.9,en;q=0.8",
-    },
-    signal: AbortSignal.timeout(12_000),
-    cache: "no-store",
-  });
-  if (res.status === 404) {
-    throw new YouTubeError("unavailable", "Videonya gak ketemu. Cek lagi linknya ya.");
+/**
+ * Title and channel via oEmbed.
+ *
+ * This endpoint answers datacenter IPs happily (the watch page does not) and
+ * doubles as an existence check: a private, deleted or bogus id returns 401/404
+ * here, which lets us fail before spending a Gemini call on it. It does not
+ * expose duration — nothing public does anymore — which is why the scan window
+ * is capped by policy instead of measured.
+ */
+export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
+  let res: Response;
+  try {
+    res = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+      { signal: AbortSignal.timeout(8_000), cache: "no-store" },
+    );
+  } catch {
+    throw new YouTubeError("blocked", "Gagal nyambung ke YouTube. Coba lagi bentar ya.");
+  }
+  if (res.status === 401 || res.status === 403 || res.status === 404 || res.status === 400) {
+    throw new YouTubeError(
+      "unavailable",
+      "Videonya gak ketemu atau private. Pastikan videonya publik ya.",
+    );
   }
   if (!res.ok) {
     throw new YouTubeError("blocked", "YouTube lagi nolak permintaan kita. Coba lagi bentar.");
   }
-  return res.text();
-}
+  const data = (await res.json().catch(() => null)) as {
+    title?: string;
+    author_name?: string;
+  } | null;
 
-function readMeta(html: string, videoId: string): YouTubeMeta {
-  if (/"status":"(LOGIN_REQUIRED|UNPLAYABLE|ERROR)"/.test(html)) {
-    throw new YouTubeError(
-      "unavailable",
-      "Video ini private / dibatasi umur, jadi gak bisa dibaca. Coba video publik.",
-    );
-  }
-  const title =
-    html.match(/"videoDetails":\{.*?"title":"(.*?)"/)?.[1] ??
-    html.match(/<meta name="title" content="([^"]*)"/)?.[1] ??
-    "Video YouTube";
-  const durationSec = Number(html.match(/"lengthSeconds":"(\d+)"/)?.[1] ?? 0);
   return {
     videoId,
-    // The title is JSON-escaped inside the page source.
-    title: JSON.parse(`"${title.replace(/"/g, '\\"')}"`) as string,
-    durationSec,
-  };
-}
-
-function pickTrack(html: string): CaptionTrack {
-  const block = html.match(/"captionTracks":(\[.*?\])/)?.[1];
-  if (!block) {
-    throw new YouTubeError(
-      "no_transcript",
-      "Video ini gak punya subtitle sama sekali, jadi AI gak bisa baca isinya.",
-    );
-  }
-  let tracks: CaptionTrack[];
-  try {
-    tracks = JSON.parse(block) as CaptionTrack[];
-  } catch {
-    throw new YouTubeError("no_transcript", "Subtitle videonya gak kebaca formatnya.");
-  }
-  const usable = tracks.filter((t) => t?.baseUrl);
-  // Prefer a real Indonesian track, then real English, then whatever auto-caption
-  // exists — auto captions are messier but still carry the timings we need.
-  const byLang = (lang: string, auto: boolean) =>
-    usable.find(
-      (t) => t.languageCode?.startsWith(lang) && (auto ? t.kind === "asr" : t.kind !== "asr"),
-    );
-  const track =
-    byLang("id", false) ?? byLang("en", false) ?? byLang("id", true) ?? usable[0];
-  if (!track) {
-    throw new YouTubeError("no_transcript", "Video ini gak punya subtitle yang bisa dipakai.");
-  }
-  return track;
-}
-
-type Json3 = {
-  events?: { tStartMs?: number; dDurationMs?: number; segs?: { utf8?: string }[] }[];
-};
-
-async function getSegments(track: CaptionTrack): Promise<TranscriptSegment[]> {
-  const url = `${track.baseUrl.replace(/&fmt=\w+/, "")}&fmt=json3`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(12_000), cache: "no-store" });
-  if (!res.ok) throw new YouTubeError("no_transcript", "Gagal ngambil subtitle videonya.");
-  const data = (await res.json().catch(() => null)) as Json3 | null;
-
-  const segments: TranscriptSegment[] = [];
-  for (const ev of data?.events ?? []) {
-    const text = (ev.segs ?? [])
-      .map((s) => s.utf8 ?? "")
-      .join("")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!text || typeof ev.tStartMs !== "number") continue;
-    const start = ev.tStartMs / 1000;
-    segments.push({ start, end: start + (ev.dDurationMs ?? 4000) / 1000, text });
-  }
-  if (!segments.length) {
-    throw new YouTubeError("no_transcript", "Subtitle videonya kosong, gak ada omongan kebaca.");
-  }
-  return segments;
-}
-
-/**
- * Glue tiny caption cues into ~15s blocks.
- *
- * Auto-captions arrive as two- or three-word fragments; a one-hour video is
- * thousands of them. Merging cuts the prompt by roughly 10x while keeping
- * timestamps accurate to well inside a clip boundary.
- */
-export function mergeSegments(segments: TranscriptSegment[], blockSec = 15): TranscriptSegment[] {
-  const out: TranscriptSegment[] = [];
-  for (const s of segments) {
-    const last = out[out.length - 1];
-    if (last && s.end - last.start <= blockSec) {
-      last.end = s.end;
-      last.text = `${last.text} ${s.text}`;
-    } else {
-      out.push({ ...s });
-    }
-  }
-  return out;
-}
-
-export async function ingestYouTube(videoId: string): Promise<YouTubeIngest> {
-  const html = await getWatchPage(videoId);
-  const meta = readMeta(html, videoId);
-  if (meta.durationSec > MAX_VIDEO_SEC) {
-    throw new YouTubeError("too_long", "Maksimal 90 menit per video buat sekarang.");
-  }
-  const track = pickTrack(html);
-  const segments = mergeSegments(await getSegments(track));
-  return {
-    ...meta,
-    // Fall back to the last cue's end when the page hides lengthSeconds.
-    durationSec: meta.durationSec || Math.ceil(segments[segments.length - 1].end),
-    lang: track.languageCode ?? "id",
-    segments,
+    title: data?.title?.trim() || "Video YouTube",
+    author: data?.author_name?.trim() || "",
   };
 }
 
@@ -226,12 +139,17 @@ export type ViralClip = {
   reason: string;
 };
 
+/** A clip shorter than this is not postable; longer than this is not a Short. */
+export const MIN_CLIP_SEC = 20;
+export const MAX_CLIP_SEC = 180;
+
 /**
  * Make the model's answer safe to render.
  *
  * An LLM will happily return an end before its start, a score of 1200, a clip
- * running past the end of the video, or five copies of the same moment. The UI
- * seeks a player to these numbers, so they get clamped here rather than trusted.
+ * running past the window we asked it to watch, or five copies of the same
+ * moment. The UI seeks a player to these numbers, so they get clamped here
+ * rather than trusted.
  */
 export function normalizeClips(raw: unknown, durationSec: number, max = 5): ViralClip[] {
   if (!Array.isArray(raw)) return [];
@@ -239,12 +157,23 @@ export function normalizeClips(raw: unknown, durationSec: number, max = 5): Vira
 
   for (const item of raw) {
     const c = item as Partial<ViralClip>;
-    const start = Math.max(0, Math.min(Number(c.startTime), durationSec - 5));
-    const end = Math.min(Number(c.endTime), durationSec);
+    let start = Math.max(0, Math.min(Number(c.startTime), durationSec - 5));
+    let end = Math.min(Number(c.endTime), durationSec);
     const hookTitle = String(c.hookTitle ?? "").trim();
-    if (!Number.isFinite(start) || !Number.isFinite(end)) continue;
-    if (end - start < 8 || end - start > 180) continue;
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+    if (end - start > MAX_CLIP_SEC) continue;
     if (!hookTitle) continue;
+
+    // The model marks the exact quote, which is often ~10s — correct, but too
+    // short to post. Pad it out instead of dropping it: the highest-scoring
+    // moment in a video is frequently the tersest one, and a viewer would
+    // rather trim a little tail than lose the pick entirely.
+    if (end - start < MIN_CLIP_SEC) {
+      end = Math.min(durationSec, start + MIN_CLIP_SEC);
+      // Ran into the end of the window — take the missing seconds from the front.
+      if (end - start < MIN_CLIP_SEC) start = Math.max(0, end - MIN_CLIP_SEC);
+    }
+
     // Drop a moment that overlaps one we already took by more than half.
     if (
       clips.some(

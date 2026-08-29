@@ -6,6 +6,7 @@ import {
   supportsStreaming,
   type InlineImage,
   type ProviderName,
+  type VideoSource,
 } from "./providers";
 import { getProviderConfig } from "@/lib/config";
 import { assertSafeOutboundUrl } from "@/lib/security/outbound-url";
@@ -57,6 +58,12 @@ export type GenerateArgs = {
    */
   images?: InlineImage[];
   /**
+   * A YouTube video for the model to watch. Gemini-only: Google fetches it
+   * server-side, which is the only way to read a YouTube video from a
+   * datacenter IP at all. Ignored by other providers.
+   */
+  video?: VideoSource;
+  /**
    * Reports token usage once the stream has finished.
    *
    * A generator cannot return a value the consumer can reach with `for await`,
@@ -107,6 +114,7 @@ async function callOnce(
     baseUrl: args.baseUrl,
     stream: stream && supportsStreaming(provider),
     images: args.images,
+    video: args.video,
   });
   // A gateway URL is admin-controlled. Re-check immediately before sending the
   // secret, including DNS resolution, so an internal/metadata target never

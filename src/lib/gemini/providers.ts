@@ -30,6 +30,25 @@ export type ProviderRequest = {
 export type InlineImage = { mimeType: string; data: string };
 
 /**
+ * A video the model watches by URL rather than by upload.
+ *
+ * Only Gemini supports this, and in practice only for YouTube links: Google
+ * fetches the video on its own side, which is the entire point — it sidesteps
+ * the bot-walling that makes fetching YouTube from a server impossible.
+ *
+ * `fps` and the offsets exist for billing, not fidelity. Video tokens scale
+ * with the watched span, so an unbounded call on a long video costs many times
+ * a short one.
+ */
+export type VideoSource = {
+  url: string;
+  fps?: number;
+  startSec?: number;
+  endSec?: number;
+};
+
+
+/**
  * One decoded SSE frame from a streaming response.
  *
  * Every vendor wraps its deltas differently, and the token counts arrive on
@@ -55,6 +74,7 @@ export type Adapter = {
     baseUrl?: string;
     stream: boolean;
     images?: InlineImage[];
+    video?: VideoSource;
   }): ProviderRequest;
   /** Returns the assistant text, or "" when the response carried none. */
   extractText(json: unknown): string;
@@ -95,17 +115,28 @@ function toJsonSchema(s: unknown): unknown {
 }
 
 const gemini: Adapter = {
-  buildRequest({ apiKey, model, prompt, schema, stream, baseUrl, images }) {
+  buildRequest({ apiKey, model, prompt, schema, stream, baseUrl, images, video }) {
     const root = baseUrl?.trim() || GEMINI_ROOT;
     const method = stream ? "streamGenerateContent?alt=sse" : "generateContent";
-    // Image parts come before the text so the instruction reads as being about
+    // Media parts come before the text so the instruction reads as being about
     // the picture rather than the picture being an afterthought to the prompt.
-    const parts = [
+    const parts: Record<string, unknown>[] = [
       ...(images ?? []).map((i) => ({
         inline_data: { mime_type: i.mimeType, data: i.data },
       })),
       { text: prompt },
     ];
+    if (video) {
+      parts.unshift({
+        file_data: { file_uri: video.url },
+        video_metadata: {
+          ...(video.fps ? { fps: video.fps } : {}),
+          ...(video.startSec !== undefined ? { start_offset: `${video.startSec}s` } : {}),
+          ...(video.endSec !== undefined ? { end_offset: `${video.endSec}s` } : {}),
+        },
+      });
+    }
+
     return {
       url: `${root}/${model}:${method}`,
       headers: { "x-goog-api-key": apiKey, "Content-Type": "application/json" },

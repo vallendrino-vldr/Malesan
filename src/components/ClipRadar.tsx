@@ -20,12 +20,12 @@ type Clip = {
   reason: string;
 };
 
-type Scan = { videoId: string; title: string; durationSec: number; clips: Clip[] };
+type Scan = { videoId: string; title: string; clips: Clip[] };
 
 const STEPS = [
   "Baca link videonya...",
-  "Ngambil transkrip dari YouTube...",
-  "AI lagi nyisir momen paling nempel...",
+  "AI lagi nonton videonya...",
+  "Nyisir momen paling nempel...",
   "Nyusun ranking viral...",
 ];
 
