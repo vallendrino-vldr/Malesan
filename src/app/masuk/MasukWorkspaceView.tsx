@@ -117,10 +117,10 @@ export function MasukWorkspaceView({
         }`}>
 
           {/* =======================================================================
-              LEFT COLUMN: Living AI Companion Scene (7 Cols Desktop)
+              LEFT COLUMN: Living AI Companion Scene (7 Cols Desktop, Order 2 on Mobile)
              ======================================================================= */}
-          <div className="relative flex flex-col items-center lg:col-span-7">
-            <div className="relative w-full overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-[#141210]/90 to-[#0d0c0a]/95 p-6 sm:p-8 lg:p-10 shadow-2xl backdrop-blur-2xl">
+          <div className="relative flex flex-col items-center lg:col-span-7 order-2 lg:order-1">
+            <div className="relative w-full overflow-hidden rounded-3xl border border-white/[0.08] bg-gradient-to-b from-[#141210]/90 to-[#0d0c0a]/95 p-5 sm:p-8 lg:p-10 shadow-2xl backdrop-blur-2xl">
               {/* Internal Ambient Radial Lighting */}
               <div
                 aria-hidden="true"
@@ -145,20 +145,20 @@ export function MasukWorkspaceView({
               </div>
 
               {/* Central Living Mascot Hologram Stage */}
-              <div className="relative my-6 sm:my-8 flex flex-col items-center justify-center">
+              <div className="relative my-4 sm:my-8 flex flex-col items-center justify-center">
                 {/* Slow Rotating Orbit Rings */}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute size-56 sm:size-64 rounded-full border border-dashed border-ember/20 animate-[spin_40s_linear_infinite]"
+                  className="pointer-events-none absolute size-44 sm:size-64 rounded-full border border-dashed border-ember/20 animate-[spin_40s_linear_infinite]"
                 />
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute size-44 sm:size-52 rounded-full border border-ember/15 animate-[spin_25s_linear_infinite_reverse]"
+                  className="pointer-events-none absolute size-36 sm:size-52 rounded-full border border-ember/15 animate-[spin_25s_linear_infinite_reverse]"
                 />
 
                 {/* Floating AI Speech Thought Bubble with Beak Pointer */}
                 <div
-                  className={`relative z-20 mb-4 sm:mb-6 max-w-xs sm:max-w-sm rounded-2xl border border-ember/30 bg-surface/95 px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all duration-300 ${
+                  className={`relative z-20 mb-3 sm:mb-6 max-w-xs sm:max-w-sm rounded-2xl border border-ember/30 bg-surface/95 px-4 py-2.5 sm:py-3 shadow-[0_8px_24px_rgba(0,0,0,0.5)] backdrop-blur-md transition-all duration-300 ${
                     fadeThought ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-2 scale-95"
                   }`}
                 >
@@ -174,14 +174,14 @@ export function MasukWorkspaceView({
 
                 {/* Living Mascot with continuous breathing motion */}
                 <div className="relative z-10 flex flex-col items-center">
-                  <div className="size-28 sm:size-36 lg:size-40 animate-[bounce-gentle_3s_ease-in-out_infinite] drop-shadow-[0_12px_28px_rgba(255,138,61,0.25)]">
+                  <div className="size-24 sm:size-36 lg:size-40 animate-[bounce-gentle_3s_ease-in-out_infinite] drop-shadow-[0_12px_28px_rgba(255,138,61,0.25)]">
                     <Mascot mood="ready" className="size-full" />
                   </div>
 
                   {/* Holographic Glowing Base Pedestal */}
                   <div
                     aria-hidden="true"
-                    className="mt-2 h-2.5 w-28 sm:w-36 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,138,61,0.7)_0%,transparent_75%)] blur-[2px]"
+                    className="mt-2 h-2.5 w-24 sm:w-36 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,138,61,0.7)_0%,transparent_75%)] blur-[2px]"
                   />
                 </div>
               </div>
@@ -206,9 +206,9 @@ export function MasukWorkspaceView({
           </div>
 
           {/* =======================================================================
-              RIGHT COLUMN: Immersive Login Panel (5 Cols Desktop)
+              RIGHT COLUMN: Immersive Login Panel (5 Cols Desktop, Order 1 on Mobile)
              ======================================================================= */}
-          <div className="relative flex flex-col lg:col-span-5">
+          <div className="relative flex flex-col lg:col-span-5 order-1 lg:order-2">
             <div className="relative w-full rounded-3xl border border-white/[0.08] bg-surface/70 p-6 sm:p-8 lg:p-9 shadow-2xl backdrop-blur-2xl">
               {/* Subtle top ember glow inside card */}
               <div

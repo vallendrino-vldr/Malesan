@@ -121,10 +121,18 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       const created = await response.json().catch(() => null) as ({ job?: BridgeJob; claimToken?: string; error?: string } | null);
       if (!response.ok || !created?.job || !created.claimToken) throw new Error(created?.error ?? "Job Auto Clip gagal dibuat.");
       setBridgeJob(created.job);
-      if (window.innerWidth < 768) return;
+
       const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
       const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
-      if (!extensionId || !chromeRuntime) throw new Error("Malesan Bridge belum terpasang. Install Bridge sekali, lalu coba lagi.");
+
+      if (window.innerWidth < 768 || !chromeRuntime) {
+        throw new Error(
+          window.innerWidth < 768
+            ? "Pemotongan video lokal otomatis memerlukan Chrome di PC/Laptop dengan Malesan Bridge. Di HP Android, kamu bisa buka video langsung di YouTube atau unggah file di Video Studio."
+            : "Malesan Bridge belum terdeteksi di browser ini. Jalankan INSTALL_MALESAN_BRIDGE.cmd sekali, lalu coba lagi."
+        );
+      }
+
       const result = await new Promise<{ ok?: boolean; error?: string; downloadUrl?: string }>((resolve, reject) => {
         chromeRuntime.sendMessage(extensionId, { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }, (value) => {
           if (chromeRuntime.lastError) reject(new Error(chromeRuntime.lastError.message ?? "Bridge gak merespons.")); else resolve(value ?? {});

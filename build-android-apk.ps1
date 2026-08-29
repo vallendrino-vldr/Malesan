@@ -27,9 +27,11 @@ New-Item -ItemType Directory -Force $Work, "$Work\compiled_res", "$Work\classes"
 Write-Host "[1/6] Compiling Android resources with AAPT2..." -ForegroundColor Cyan
 & $Aapt2 compile --dir "android\app\src\main\res" -o "$Work\compiled_res.zip"
 
-Write-Host "[2/6] Linking Android resources & generating R.java..." -ForegroundColor Cyan
+Write-Host "[2/6] Linking Android resources with targetSdkVersion 34..." -ForegroundColor Cyan
 & $Aapt2 link `
     -I $PlatformJar `
+    --min-sdk-version 26 `
+    --target-sdk-version 34 `
     --manifest "android\app\src\main\AndroidManifest.xml" `
     --java "$Work\gen" `
     -o "$Work\base.apk" `

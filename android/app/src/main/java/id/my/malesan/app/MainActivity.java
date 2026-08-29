@@ -17,6 +17,7 @@ import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
@@ -46,8 +47,10 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Immersive obsidian theme matching Malesan dark aesthetic
         Window window = getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         window.setStatusBarColor(0xFF0B0A09);
         window.setNavigationBarColor(0xFF0B0A09);
 
@@ -77,6 +80,7 @@ public class MainActivity extends Activity {
         String action = intent.getAction();
         String type = intent.getType();
 
+        // YouTube Share Intent Handler
         if (Intent.ACTION_SEND.equals(action) && "text/plain".equals(type)) {
             String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
             if (sharedText != null) {
@@ -92,7 +96,7 @@ public class MainActivity extends Activity {
         }
 
         Uri data = intent.getData();
-        if (data != null && "malesan.my.id".equals(data.getHost())) {
+        if (data != null) {
             webView.loadUrl(data.toString());
         } else {
             webView.loadUrl(BASE_URL + "/app");
@@ -120,8 +124,34 @@ public class MainActivity extends Activity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
 
+        // Hardware Acceleration & High-FPS Smooth Rendering
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setBackgroundColor(0xFF0B0A09);
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+        // Eliminate "Gepeng" distorted viewport scaling
+        settings.setUseWideViewPort(false);
+        settings.setLoadWithOverviewMode(false);
+        settings.setTextZoom(100);
+        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+
+        // Support popups & multiple windows for Google OAuth login
+        settings.setSupportMultipleWindows(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+        // Enable Cookies & Third-Party Cookies for Supabase + Google OAuth
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            cookieManager.setAcceptThirdPartyCookies(webView, true);
+        }
+
+        // Clean User Agent without '; wv' to allow Google Sign-In (avoid 403 disallowed_useragent)
+        String defaultUa = settings.getUserAgentString();
+        if (defaultUa != null) {
+            String cleanUa = defaultUa.replace("; wv", "").replaceAll("Version/[0-9.]+\\s*", "");
+            settings.setUserAgentString(cleanUa);
+        }
     }
 
     private void initWebClients() {
@@ -130,9 +160,20 @@ public class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 String host = uri.getHost();
-                if (host != null && host.contains("malesan.my.id")) {
+                if (host == null) return false;
+
+                // Keep internal app, Supabase auth, and Google OAuth inside the WebView
+                if (host.contains("malesan.my.id") ||
+                    host.contains("supabase.co") ||
+                    host.contains("accounts.google.com") ||
+                    host.contains("accounts.youtube.com") ||
+                    host.contains("ssl.gstatic.com") ||
+                    host.contains("googleusercontent.com") ||
+                    host.contains("googleapis.com")) {
                     return false;
                 }
+
+                // External links open in default browser
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW, uri);
                     startActivity(intent);
@@ -224,7 +265,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public String getAppVersion() {
-            return "1.0.0";
+            return "1.0.1";
         }
 
         @JavascriptInterface
