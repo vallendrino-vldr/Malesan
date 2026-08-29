@@ -44,7 +44,10 @@ const clock = (sec: number) =>
 
 export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (file: File) => void }) {
   const router = useRouter();
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("yt_share") || new URLSearchParams(window.location.search).get("url") || "";
+  });
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +65,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const isMobile = useSyncExternalStore(emptySubscribe, getIsMobileSnapshot, () => false);
   const playerRef = useRef<YouTubeClipController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
+  const autoTriggeredRef = useRef(false);
 
   const setController = useCallback((controller: YouTubeClipController | null) => {
     playerRef.current = controller;
@@ -83,8 +87,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
     return () => clearInterval(id);
   }, [loading]);
 
-  const run = async () => {
-    if (!url.trim() || loading) return;
+  const run = useCallback(async (targetUrl?: string) => {
+    const inputUrl = targetUrl || url;
+    if (!inputUrl.trim() || loading) return;
     setLoading(true);
     setStep(0);
     setError(null);
@@ -95,7 +100,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       const res = await fetch("/api/video/youtube-clip", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: inputUrl }),
       });
       const data = (await res.json().catch(() => null)) as (Scan & { error?: string }) | null;
       if (!res.ok || !data?.clips?.length) {
@@ -114,7 +119,22 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
     } finally {
       setLoading(false);
     }
-  };
+  }, [url, loading, router]);
+
+  // Auto-trigger scan when shared from YouTube mobile app (via yt_share param)
+  useEffect(() => {
+    if (autoTriggeredRef.current || !url.trim()) return;
+    autoTriggeredRef.current = true;
+    const cleanUrl = new URL(window.location.href);
+    if (cleanUrl.searchParams.has("yt_share")) {
+      cleanUrl.searchParams.delete("yt_share");
+      window.history.replaceState(null, "", cleanUrl.toString());
+    }
+    const timer = setTimeout(() => {
+      void run(url);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [url, run]);
 
   const clip = scan?.clips[active];
 
@@ -218,7 +238,8 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
           className="h-11 w-full min-w-0 rounded-xl border border-hairline bg-obsidian px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ember/60"
         />
         <button
-          onClick={run}
+          type="button"
+          onClick={() => void run()}
           disabled={loading || !url.trim()}
           className="h-11 shrink-0 cursor-pointer rounded-xl bg-ember px-4 text-sm font-bold text-obsidian transition-colors hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50 sm:w-40"
         >
