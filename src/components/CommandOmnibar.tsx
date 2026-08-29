@@ -223,7 +223,7 @@ export function CommandOmnibar({
       },
       {
         id: "studio-vibe-coding",
-        title: "Bikin App (Vibe Coding)",
+        title: "Ngoding (Lancar Ngoding & Bikin App)",
         category: "Studio",
         subtitle: "Rancang prototipe web app interaktif",
         badge: "5 Kredit",

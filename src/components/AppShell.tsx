@@ -23,7 +23,7 @@ const TABS: { key: TabKey; label: string; icon: ReactNode }[] = [
   },
   {
     key: "vibe",
-    label: "Bikin App",
+    label: "Ngoding",
     icon: (
       <path d="M9.4 16.6 4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4Zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4Z" />
     ),
