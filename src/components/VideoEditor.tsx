@@ -1157,7 +1157,6 @@ function VideoPreviewPlayer({
     // Map drag pixels to pan ratio: dragging left reveals right, dragging right reveals left
     const panSensitivity = 0.003;
     const nextPanX = Math.max(0, Math.min(1, startPosRef.current.panX - deltaX * panSensitivity));
-    setCurrentPanX(nextPanX);
     onManualPanChange?.(nextPanX);
   };
 
