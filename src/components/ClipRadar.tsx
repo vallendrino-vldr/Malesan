@@ -184,9 +184,43 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
 
   const startAutoClip = async () => {
     if (!scan || !clip || bridgeBusy) return;
+    setBridgeError(null);
+
+    const nativeShell = await getNativeShell();
+    const isNativeApk = Boolean(nativeShell?.capabilities.includes("native-auto-clip"));
+    const isMobileDevice = typeof window !== "undefined" && (/Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || window.innerWidth < 768);
+
+    if (!isNativeApk) {
+      if (isMobileDevice) {
+        setBridgeError("Mode Web HP / PWA tidak memiliki mesin pemotong YouTube lokal. Buka via aplikasi APK Android Malesan (Gratis) atau pilih 'Pakai file sendiri' di bawah.");
+        return;
+      }
+      const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
+      const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
+      let bridgeAlive = false;
+      if (chromeRuntime?.sendMessage) {
+        bridgeAlive = await new Promise<boolean>((resolve) => {
+          const t = setTimeout(() => resolve(false), 800);
+          try {
+            chromeRuntime.sendMessage(extensionId, { type: "PING" }, (res) => {
+              clearTimeout(t);
+              if (chromeRuntime.lastError) resolve(false);
+              else resolve(res?.ok !== false);
+            });
+          } catch {
+            clearTimeout(t);
+            resolve(false);
+          }
+        });
+      }
+      if (!bridgeAlive) {
+        setBridgeError("Malesan Bridge belum terpasang di browser PC kamu. Silakan unduh installer 1-klik di bawah.");
+        return;
+      }
+    }
+
     setBridgeBusy(true);
     setBridgeStartedAt(Date.now());
-    setBridgeError(null);
     let claimedJobId: string | null = null;
     let claimedWorkerToken: string | null = null;
     try {
@@ -199,8 +233,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       setBridgeJob(created.job);
 
       let downloadUrl: string;
-      const nativeShell = await getNativeShell();
-      if (nativeShell?.capabilities.includes("native-auto-clip")) {
+      if (isNativeApk) {
         const claimed = await fetch("/api/bridge/auto-clip/claim", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jobId: created.job.id, claimToken: created.claimToken }),

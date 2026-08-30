@@ -7,8 +7,16 @@ const ALLOWED = new Set([
 
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   const origin = sender.url ? new URL(sender.url).origin : "";
-  if (!ALLOWED.has(origin) || !message || message.type !== "MALESAN_AUTO_CLIP") {
+  if (!ALLOWED.has(origin) || !message) {
     sendResponse({ ok: false, error: "Permintaan Bridge ditolak." });
+    return false;
+  }
+  if (message.type === "PING") {
+    sendResponse({ ok: true, pong: true, version: "2.1.3" });
+    return false;
+  }
+  if (message.type !== "MALESAN_AUTO_CLIP") {
+    sendResponse({ ok: false, error: "Tipe pesan tidak didukung." });
     return false;
   }
   chrome.runtime.sendNativeMessage(HOST, message, (response) => {

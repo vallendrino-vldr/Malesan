@@ -56,11 +56,12 @@ async function handle(raw) {
       "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
       "--js-runtimes", "node",
       "--extractor-args", "youtube:player_client=web,android",
-      "-f", "bestvideo+bestaudio/best",
-      "--format-sort", "res:2160,res:1440,res:1080,fps:60,vcodec:h264,acodec:m4a,res,size",
+      "--downloader", "ffmpeg",
+      "--concurrent-fragments", "4",
+      "-f", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=720][ext=mp4]+ba[ext=m4a]/bv*+ba/bestvideo+bestaudio/best",
       "--merge-output-format", "mp4",
       "--download-sections", `*${job.startTime}-${job.endTime}`,
-      "--force-keyframes-at-cuts", "--ffmpeg-location", ffmpeg,
+      "--ffmpeg-location", ffmpeg,
       "-o", output, job.sourceUrl,
     ], work);
     if (!existsSync(output) || (await stat(output)).size === 0) throw new Error("Output video kosong.");
