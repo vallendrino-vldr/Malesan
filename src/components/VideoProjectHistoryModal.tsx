@@ -110,8 +110,10 @@ export function VideoProjectHistoryModal({
             </div>
           ) : projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-mist space-y-3">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-2xl">
-                📂
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-ember">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                </svg>
               </div>
               <div>
                 <p className="font-bold text-white text-sm">Belum Ada Riwayat Proyek</p>
@@ -141,9 +143,20 @@ export function VideoProjectHistoryModal({
                       {project.title || "Video Proyek Tanpa Judul"}
                     </h4>
                     <div className="flex items-center gap-2 text-[11px] text-mist mt-0.5">
-                      <span>⏱️ {formatDuration(project.durationSec)}</span>
+                      <span className="flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span>{formatDuration(project.durationSec)}</span>
+                      </span>
                       <span>•</span>
-                      <span>💬 {project.words.length} Kata</span>
+                      <span className="flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-mist">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+                        <span>{project.words.length} Kata</span>
+                      </span>
                       <span>•</span>
                       <span>{formatDate(project.updatedAt)}</span>
                     </div>
@@ -151,8 +164,11 @@ export function VideoProjectHistoryModal({
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="py-1 px-2.5 rounded-lg bg-ember/20 text-ember font-bold text-[11px] border border-ember/30 group-hover:bg-ember group-hover:text-obsidian transition-all">
-                    Buka ↗
+                  <span className="flex items-center gap-1 py-1 px-2.5 rounded-lg bg-ember/20 text-ember font-bold text-[11px] border border-ember/30 group-hover:bg-ember group-hover:text-obsidian transition-all">
+                    <span>Buka</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                    </svg>
                   </span>
                   <button
                     type="button"

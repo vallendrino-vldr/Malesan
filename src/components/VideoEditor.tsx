@@ -607,36 +607,61 @@ export function VideoEditor({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
-            <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-2.5 flex flex-col items-center">
-              <VideoPreviewPlayer
-                videoRef={videoRef}
-                videoUrl={videoUrl}
-                lines={lines}
-                style={style}
-                safeZones={safeZones}
-                layout={layout}
-                watermark={!noWatermark}
-                onTimeChange={setCurrentTimeNow}
-                onDurationChange={setVideoDuration}
-              />
-              <div className="flex w-full max-w-[340px] items-center justify-between gap-2 px-1 text-micro text-muted">
+          {/* APK Pro Performance Badge / Web Notice */}
+          {!isNativeAPK ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-ember/30 bg-ember/10 text-xs text-white">
+              <div className="flex items-center gap-2">
+                <span className="size-2 rounded-full bg-ember animate-pulse shrink-0" />
+                <span className="text-[11px] text-mist">
+                  <strong className="text-white">Performa Terbaik di APK Pro:</strong> Akselerasi hardware 60fps & simpan langsung ke Galeri HP (DCIM).
+                </span>
+              </div>
+              <a
+                href="/malesan.apk"
+                download
+                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ember text-obsidian font-extrabold text-[10px] hover:bg-ember/90 shadow-xs"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                <span>Unduh APK Pro</span>
+              </a>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400">
+              <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Akselerasi Native APK Aktif (Hardware 60fps & Simpan Otomatis DCIM)</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-start">
+            {/* Left/Top Video Player (Sticky on mobile for live single-screen editing) */}
+            <div className="lg:col-span-5 sticky top-0 lg:top-4 z-20 -mx-3 -mt-1 px-3 py-1.5 lg:mx-0 lg:mt-0 lg:p-0 bg-obsidian/95 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-b lg:border-b-0 border-white/10 space-y-1 flex flex-col items-center shadow-lg lg:shadow-none">
+              <div className="w-full flex justify-center">
+                <VideoPreviewPlayer
+                  videoRef={videoRef}
+                  videoUrl={videoUrl}
+                  lines={lines}
+                  style={style}
+                  safeZones={safeZones}
+                  layout={layout}
+                  watermark={!noWatermark}
+                  onTimeChange={setCurrentTimeNow}
+                  onDurationChange={setVideoDuration}
+                />
+              </div>
+              <div className="flex w-full max-w-[320px] items-center justify-between gap-2 px-1 text-[11px] text-muted">
                 <label className="flex cursor-pointer items-center gap-1.5 hover:text-ink">
                   <input type="checkbox" checked={safeZones} onChange={(e) => setSafeZones(e.target.checked)} className="size-3.5 accent-ember rounded" />
-                  <span>Safe Zone TikTok/Reels</span>
+                  <span>Safe Zone</span>
                 </label>
                 <span className="font-mono text-[10px] text-ember/80 font-bold bg-surface-raised px-1.5 py-0.5 rounded border border-hairline uppercase">{layout.ratio} · {presetId}</span>
               </div>
-              {phase === "idle" && words.length === 0 && (
-                <button onClick={generate} className="btn-ember w-full max-w-[340px] cursor-pointer rounded-xl px-4 py-3 text-sm font-bold text-obsidian shadow-md transition-colors hover:brightness-105">Bikinin Subtitle AI</button>
-              )}
               {busy && (
-                <div className="w-full max-w-[340px]"><ProgressBar phase={phase} progress={progress} status={status} /></div>
+                <div className="w-full max-w-[320px]"><ProgressBar phase={phase} progress={progress} status={status} /></div>
               )}
             </div>
 
             <div className="lg:col-span-7 flex flex-col rounded-2xl border border-hairline bg-surface overflow-hidden shadow-xs">
-              <div className="grid grid-cols-4 border-b border-hairline bg-surface-raised/50 p-1 gap-1">
+              <div className="grid grid-cols-4 sticky top-[245px] lg:static z-10 bg-surface-raised border-b border-hairline p-1 gap-1">
                 <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
                   <span className="truncate">Bingkai</span>
@@ -909,10 +934,10 @@ function VideoPreviewPlayer({
 
   const containerRatioClass =
     layout.ratio === "9:16"
-      ? "aspect-[9/16] max-w-[270px] sm:max-w-[310px] md:max-w-[340px]"
+      ? "aspect-[9/16] h-[210px] sm:h-[260px] lg:h-auto w-auto max-w-[280px] lg:max-w-[340px]"
       : layout.ratio === "16:9"
-      ? "aspect-video max-w-[480px]"
-      : "aspect-square max-w-[340px]";
+      ? "aspect-video h-[170px] sm:h-[220px] lg:h-auto w-auto max-w-[340px] lg:max-w-[480px]"
+      : "aspect-square h-[190px] sm:h-[240px] lg:h-auto w-auto max-w-[280px] lg:max-w-[340px]";
 
   return (
     <div

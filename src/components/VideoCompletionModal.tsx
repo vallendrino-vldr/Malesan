@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 
@@ -30,13 +30,13 @@ export function VideoCompletionModal({
 
         {/* Celebration Header */}
         <div className="text-center space-y-1.5 relative z-10">
-          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-ember/20 text-ember border border-ember/40 shadow-lg shadow-ember/20 animate-bounce">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-ember/20 text-ember border border-ember/40 shadow-lg shadow-ember/20">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-7">
               <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
             </svg>
           </div>
           <h3 className="font-display text-xl font-extrabold text-white tracking-wide">
-            🎉 Video Berhasil Di-render!
+            Video Berhasil Di-render
           </h3>
           <p className="text-xs text-mist">
             Hasil video Full HD 1080p kamu sudah siap dipublikasikan ke TikTok, Reels, & Shorts.
@@ -46,7 +46,11 @@ export function VideoCompletionModal({
         {/* Storage Location Card */}
         <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 p-4 space-y-2">
           <div className="flex items-center gap-2 text-xs font-bold text-white/90">
-            <span className="flex size-5 items-center justify-center rounded-md bg-ember/20 text-ember text-[11px]">📁</span>
+            <span className="flex size-5 items-center justify-center rounded-md bg-ember/20 text-ember text-[11px]">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+              </svg>
+            </span>
             <span>Lokasi Penyimpanan File:</span>
           </div>
 

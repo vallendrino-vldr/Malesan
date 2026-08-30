@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import type { ManualKeyframe } from "@/lib/video/keyframe-engine";
@@ -176,13 +176,16 @@ export function VideoKeyframeControls({
                   handlePan(0.2);
                   onFramingModeChange("preset_left");
                 }}
-                className={`py-1.5 px-2 rounded-lg border text-xs font-bold transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-bold transition-all ${
                   Math.abs(panInput - 0.2) < 0.05
                     ? "border-ember bg-ember/20 text-ember"
                     : "border-white/10 bg-white/5 text-mist hover:text-white"
                 }`}
               >
-                👈 Kiri (Host)
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+                </svg>
+                <span>Kiri (Host)</span>
               </button>
               <button
                 type="button"
@@ -190,13 +193,17 @@ export function VideoKeyframeControls({
                   handlePan(0.5);
                   onFramingModeChange("preset_center");
                 }}
-                className={`py-1.5 px-2 rounded-lg border text-xs font-bold transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-bold transition-all ${
                   Math.abs(panInput - 0.5) < 0.05
                     ? "border-ember bg-ember/20 text-ember"
                     : "border-white/10 bg-white/5 text-mist hover:text-white"
                 }`}
               >
-                🎯 Tengah
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                  <circle cx="12" cy="12" r="9" />
+                  <circle cx="12" cy="12" r="3" fill="currentColor" />
+                </svg>
+                <span>Tengah</span>
               </button>
               <button
                 type="button"
@@ -204,13 +211,16 @@ export function VideoKeyframeControls({
                   handlePan(0.8);
                   onFramingModeChange("preset_right");
                 }}
-                className={`py-1.5 px-2 rounded-lg border text-xs font-bold transition-all ${
+                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg border text-xs font-bold transition-all ${
                   Math.abs(panInput - 0.8) < 0.05
                     ? "border-ember bg-ember/20 text-ember"
                     : "border-white/10 bg-white/5 text-mist hover:text-white"
                 }`}
               >
-                👉 Kanan (Tamu)
+                <span>Kanan (Tamu)</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
               </button>
             </div>
           </div>
@@ -306,7 +316,11 @@ export function VideoKeyframeControls({
                         : "border-white/10 bg-white/5 text-mist hover:text-white"
                     }`}
                   >
-                    <span>⏱️ {formatTime(kf.time)}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>{formatTime(kf.time)}</span>
                     <span className="text-[10px] text-white/50">({kf.panX < 0.45 ? "Kiri" : kf.panX > 0.55 ? "Kanan" : "Tgh"})</span>
                   </button>
                 ))}
