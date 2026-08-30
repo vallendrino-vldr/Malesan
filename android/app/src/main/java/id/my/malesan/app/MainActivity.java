@@ -332,7 +332,28 @@ public final class MainActivity extends Activity {
                                     .put("share-youtube")
                                     .put("haptics")
                                     .put("native-auto-clip")
-                                    .put("gallery-stream")));
+                                    .put("gallery-stream")
+                                    .put("clipboard-paste")));
+                    break;
+                case "CLIPBOARD_PASTE":
+                    runOnUiThread(() -> {
+                        try {
+                            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                            String text = "";
+                            if (clipboard != null && clipboard.hasPrimaryClip()) {
+                                android.content.ClipData.Item item = clipboard.getPrimaryClip().getItemAt(0);
+                                if (item != null && item.getText() != null) {
+                                    text = item.getText().toString();
+                                }
+                            }
+                            reply(replyProxy, new JSONObject()
+                                    .put("type", "CLIPBOARD_TEXT")
+                                    .put("requestId", requestId)
+                                    .put("text", text));
+                        } catch (Exception e) {
+                            reply(replyProxy, error(requestId, "CLIPBOARD_ERROR", "Gagal membaca clipboard."));
+                        }
+                    });
                     break;
                 case "AUTH_GOOGLE_START":
                     startGoogleSignIn(requestId, replyProxy);

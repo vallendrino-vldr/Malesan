@@ -35,8 +35,10 @@ export async function detectFaceTrajectory(
   try {
     try { detector = await create("GPU"); } catch { detector = await create("CPU"); }
   } catch {
-    // If MediaPipe model fails to load, gracefully return empty trajectory for center fallback
-    return [];
+    // If MediaPipe model fails to load, gracefully return dynamic trajectory for podcast or empty for center fallback
+    return options.mode === "podcast_dynamic"
+      ? buildPodcastSpeakerTrajectory([], Number.isFinite(video.duration) ? video.duration : 60)
+      : [];
   }
   const originalTime = video.currentTime;
   const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
@@ -76,7 +78,7 @@ export async function detectFaceTrajectory(
       options.onProgress?.(Math.min(1, (index + 1) / total));
     }
     return options.mode === "podcast_dynamic"
-      ? buildPodcastSpeakerTrajectory(samples)
+      ? buildPodcastSpeakerTrajectory(samples, duration)
       : buildCropTrajectory(samples);
   } finally {
     detector.close();

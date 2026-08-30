@@ -34,9 +34,9 @@ final class NativeClipEngine {
                 YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
                         .addOption("--no-playlist")
                         .addOption("--no-part")
-                        .addOption("--no-warnings")
                         .addOption("--extractor-args", "youtube:player_client=android,web")
-                        .addOption("--format", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=720][ext=mp4]+ba[ext=m4a]/bv*+ba/bestvideo+bestaudio/best")
+                        .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
+                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                         .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());

@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { getNativeShell, startNativeRequest, subscribeNative } from "@/lib/native/bridge";
+import {
+  getNativeShell,
+  pasteFromNativeClipboard,
+  startNativeRequest,
+  subscribeNative,
+} from "@/lib/native/bridge";
 import {
   YouTubeClipPlayer,
   type YouTubeClipController,
@@ -426,11 +431,17 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
 
       {/* Platform Awareness Engine Banner */}
       {isNativeApk ? (
-        <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-mini">
-          <div className="flex items-center gap-2 text-emerald-400 font-bold text-[11px]">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>🟢 Mesin Pemotong Native APK Aktif — Pemotongan 1080p Instan Tanpa Server</span>
+        <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-micro font-semibold text-emerald-400 shadow-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="relative flex size-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+            </span>
+            <span className="truncate text-[11px] font-bold text-ink">Mesin Native Android Aktif</span>
           </div>
+          <span className="shrink-0 rounded-md border border-emerald-500/20 bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
+            1080p HD
+          </span>
         </div>
       ) : (
         <div className="mt-3 rounded-xl border border-hairline/80 bg-obsidian/70 p-3 text-mini">
@@ -483,10 +494,17 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             type="button"
             onClick={async () => {
               try {
-                const text = await navigator.clipboard.readText();
-                if (text) setUrl(text.trim());
+                const nativeText = await pasteFromNativeClipboard();
+                if (nativeText) {
+                  setUrl(nativeText);
+                  return;
+                }
+                if (typeof navigator !== "undefined" && navigator.clipboard?.readText) {
+                  const text = await navigator.clipboard.readText();
+                  if (text) setUrl(text.trim());
+                }
               } catch {
-                // Ignore if clipboard access is denied
+                // Fallback
               }
             }}
             title="Tempel link otomatis dari clipboard"

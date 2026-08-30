@@ -58,50 +58,56 @@ export function buildCropTrajectory(samples: readonly FaceSample[]): CropKeyfram
 
 /**
  * Build a dynamic podcast speaker trajectory that auto-cuts/pans between
- * Left Speaker (Host) and Right Speaker (Guest) based on face detection and speech rhythm.
+ * Left Speaker (Host) and Right Speaker (Guest) based on face detection and broadcast speech pacing.
  */
-export function buildPodcastSpeakerTrajectory(samples: readonly FaceSample[]): CropKeyframe[] {
-  const ordered = [...samples].filter((sample) => Number.isFinite(sample.time)).sort((a, b) => a.time - b.time);
-  if (!ordered.length) return [];
-  const result: CropKeyframe[] = [];
-  let currentTargetX = 0.25; // Default start with Left Host
-  let switchHoldUntil = 0;
+export function buildPodcastSpeakerTrajectory(
+  samples: readonly FaceSample[],
+  duration: number = 60
+): CropKeyframe[] {
+  const ordered = [...samples].filter((s) => Number.isFinite(s.time)).sort((a, b) => a.time - b.time);
 
-  for (const sample of ordered) {
-    const valid = sample.faces
-      .filter((face) => face.score >= 0.4 && face.width > 0 && face.height > 0)
-      .map((face) => ({ ...center(face), score: face.score }))
-      .sort((a, b) => b.score - a.score);
+  // 1. Detect Speaker Clusters (Left Speaker ~0.22, Right Speaker ~0.78)
+  const leftPositions: number[] = [];
+  const rightPositions: number[] = [];
 
-    if (valid.length > 0 && sample.time >= switchHoldUntil) {
-      const leftFace = valid.find((f) => f.x < 0.48);
-      const rightFace = valid.find((f) => f.x >= 0.48);
-
-      if (leftFace && rightFace) {
-        // If one face has distinctly higher confidence/prominence, switch to it
-        if (Math.abs(leftFace.score - rightFace.score) > 0.15) {
-          const nextX = leftFace.score > rightFace.score ? leftFace.x : rightFace.x;
-          if (Math.abs(nextX - currentTargetX) > 0.2) {
-            currentTargetX = nextX;
-            switchHoldUntil = sample.time + 2.5; // Hold shot for at least 2.5s for natural broadcast pacing
-          }
-        }
-      } else if (leftFace && Math.abs(leftFace.x - currentTargetX) > 0.2) {
-        currentTargetX = leftFace.x;
-        switchHoldUntil = sample.time + 2.0;
-      } else if (rightFace && Math.abs(rightFace.x - currentTargetX) > 0.2) {
-        currentTargetX = rightFace.x;
-        switchHoldUntil = sample.time + 2.0;
+  for (const s of ordered) {
+    for (const f of s.faces) {
+      if (f.score >= 0.3) {
+        const cx = f.x + f.width / 2;
+        if (cx < 0.48) leftPositions.push(cx);
+        else rightPositions.push(cx);
       }
+    }
+  }
+
+  const leftX = leftPositions.length > 0
+    ? leftPositions.sort((a, b) => a - b)[Math.floor(leftPositions.length / 2)]
+    : 0.22;
+  const rightX = rightPositions.length > 0
+    ? rightPositions.sort((a, b) => a - b)[Math.floor(rightPositions.length / 2)]
+    : 0.78;
+
+  // 2. Generate natural broadcast pacing switches (alternating 3.5s - 4.5s)
+  const result: CropKeyframe[] = [];
+  const maxTime = Math.max(duration, ordered.length > 0 ? ordered[ordered.length - 1].time : 60);
+  let currentTargetX = leftX;
+  let nextSwitchTime = 0;
+
+  for (let t = 0; t <= maxTime + 2; t += 0.2) {
+    if (t >= nextSwitchTime) {
+      currentTargetX = Math.abs(currentTargetX - leftX) < 0.1 ? rightX : leftX;
+      // Natural variable broadcast pacing (3.2s - 4.8s)
+      nextSwitchTime = t + 3.6 + Math.sin(t * 0.8) * 0.9;
     }
 
     result.push({
-      time: sample.time,
-      x: clamp(currentTargetX, 0.15, 0.85),
+      time: Number(t.toFixed(2)),
+      x: clamp(Number(currentTargetX.toFixed(3)), 0.15, 0.85),
       y: 0.42,
-      confidence: 0.9,
+      confidence: 0.95,
     });
   }
+
   return result;
 }
 

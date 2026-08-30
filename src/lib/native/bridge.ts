@@ -114,3 +114,14 @@ export async function getNativeShell(): Promise<NativeShell | null> {
     return null;
   }
 }
+
+export async function pasteFromNativeClipboard(): Promise<string> {
+  if (typeof window === "undefined" || !getPort()) return "";
+  try {
+    const res = await requestNative<NativeResponse & { text?: string }>({ type: "CLIPBOARD_PASTE" }, 2_000);
+    if (res.type === "CLIPBOARD_TEXT" && typeof res.text === "string") {
+      return res.text.trim();
+    }
+  } catch {}
+  return "";
+}
