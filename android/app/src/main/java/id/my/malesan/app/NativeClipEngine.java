@@ -133,9 +133,11 @@ final class NativeClipEngine {
                 .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
         if (!isFallback) {
-            request.addOption("--format", "22/bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080][ext=mp4]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best");
+            request.addOption("--extractor-args", "youtube:player_client=ios,web,android")
+                   .addOption("--format", "22/bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080][ext=mp4]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best");
         } else {
-            request.addOption("--format", "bestvideo+bestaudio/best");
+            request.addOption("--extractor-args", "youtube:player_client=android,ios")
+                   .addOption("--format", "bestvideo+bestaudio/best");
         }
         return request;
     }

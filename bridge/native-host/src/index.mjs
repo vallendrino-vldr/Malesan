@@ -55,9 +55,8 @@ async function handle(raw) {
     await run(ytDlp, [
       "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
       "--js-runtimes", "node",
-      "--extractor-args", "youtube:player_client=android,ios",
-      "-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
-      "--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size",
+      "--extractor-args", "youtube:player_client=ios,web,android",
+      "-f", "22/bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080][ext=mp4]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best",
       "--force-keyframes-at-cuts",
       "--merge-output-format", "mp4",
       "--download-sections", `*${job.startTime}-${job.endTime}`,
