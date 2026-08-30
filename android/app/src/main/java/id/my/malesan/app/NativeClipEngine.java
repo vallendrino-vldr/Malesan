@@ -37,32 +37,32 @@ final class NativeClipEngine {
                         .addOption("--no-warnings")
                         .addOption("--downloader", "ffmpeg")
                         .addOption("--concurrent-fragments", "4")
-                        .addOption("--format", "bv*[height<=1080]+ba/bv*[height<=720]+ba/bv*+ba/bestvideo+bestaudio/best")
+                        .addOption("--format", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=720][ext=mp4]+ba[ext=m4a]/bv*+ba/bestvideo+bestaudio/best")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                         .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
                 // Run a smooth continuous progress animator while yt-dlp/ffmpeg executes
                 final java.util.concurrent.atomic.AtomicBoolean running = new java.util.concurrent.atomic.AtomicBoolean(true);
-                final java.util.concurrent.atomic.AtomicInteger syntheticProgress = new java.util.concurrent.atomic.AtomicInteger(10);
+                final java.util.concurrent.atomic.AtomicInteger syntheticProgress = new java.util.concurrent.atomic.AtomicInteger(12);
                 Thread progressTicker = new Thread(() -> {
                     String[] stages = new String[]{
-                        "Mengunduh bagian video...",
+                        "Mengunduh bagian video 1080p...",
                         "Mengambil audio & frame video...",
                         "Memotong durasi klip...",
-                        "Menyatukan sinkronisasi audio...",
+                        "Menyatukan audio & video...",
                         "Finishing render MP4...",
                         "Menyiapkan preview klip..."
                     };
-                    int step = 0;
-                    while (running.get() && syntheticProgress.get() < 99) {
+                    int tick = 0;
+                    while (running.get() && syntheticProgress.get() < 95) {
                         try {
-                            Thread.sleep(800);
+                            Thread.sleep(1200);
                             if (!running.get()) break;
                             int current = syntheticProgress.get();
-                            int increment = current < 60 ? 8 : (current < 90 ? 4 : 1);
-                            int next = Math.min(99, syntheticProgress.addAndGet(increment));
-                            int stageIdx = Math.min(step++ / 2, stages.length - 1);
+                            int step = Math.max(1, (95 - current) / 10);
+                            int next = Math.min(95, syntheticProgress.addAndGet(step));
+                            int stageIdx = Math.min(tick++ / 3, stages.length - 1);
                             listener.onProgress(next, stages[stageIdx]);
                         } catch (InterruptedException e) {
                             break;
