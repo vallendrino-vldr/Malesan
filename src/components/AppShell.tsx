@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { getNativeShell } from "@/lib/native/bridge";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
@@ -11,15 +11,6 @@ import { TutorialSheet } from "./TutorialSheet";
 import { CommandOmnibar } from "./CommandOmnibar";
 import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 import { InstallAppModal } from "./InstallAppModal";
-
-const emptySubscribe = () => () => {};
-const getIsStandaloneSnapshot = () => {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as unknown as { standalone?: boolean }).standalone === true
-  );
-};
 
 export type TabKey = "studio" | "vibe" | "pipeline" | "profil";
 const VALID_TABS: TabKey[] = ["studio", "vibe", "pipeline", "profil"];
@@ -82,9 +73,6 @@ export function AppShell({
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isNativeApk, setIsNativeApk] = useState(false);
-
-  const browserStandalone = useSyncExternalStore(emptySubscribe, getIsStandaloneSnapshot, () => false);
-  const isStandalone = browserStandalone || isNativeApk;
 
   useEffect(() => {
     let active = true;
@@ -204,21 +192,22 @@ export function AppShell({
                 <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
                 <span>APK Pro</span>
               </div>
-            ) : !isStandalone ? (
+            ) : (
               <button
                 type="button"
                 onClick={() => setIsInstallModalOpen(true)}
-                aria-label="Pasang aplikasi Malesan di HP"
-                className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 sm:px-3 text-xs font-semibold text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
+                aria-label="Unduh APK Pro / Pasang Aplikasi Malesan"
+                className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/35 bg-ember/10 px-2.5 sm:px-3 text-xs font-bold text-ember hover:border-ember/60 hover:bg-ember/20 transition-all cursor-pointer shadow-xs"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
-                  <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                  <line x1="12" y1="18" x2="12.01" y2="18" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember shrink-0">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span className="hidden sm:inline">Pasang App</span>
+                <span className="hidden sm:inline">Unduh App</span>
                 <span className="sm:hidden">App</span>
               </button>
-            ) : null}
+            )}
 
             <div className="hidden items-center gap-2 sm:flex">
               <RefreshButton variant="icon" />

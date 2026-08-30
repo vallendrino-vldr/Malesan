@@ -365,6 +365,39 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
         </div>
       </header>
 
+      {/* Platform Awareness Engine Banner */}
+      <div className="mt-3 rounded-xl border border-hairline/80 bg-obsidian/70 p-3 text-mini">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-start gap-2">
+            <span className="text-ember shrink-0 mt-0.5">
+              {isMobile ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              )}
+            </span>
+            <div className="space-y-0.5">
+              <p className="font-bold text-ink text-[11px]">
+                {isMobile ? "📱 Potong Otomatis di HP Butuh APK Android" : "💻 Potong di Komputer Butuh Malesan Bridge"}
+              </p>
+              <p className="text-[10px] text-muted leading-relaxed">
+                {isMobile
+                  ? "Di HP browser/PWA, pasang APK Android Malesan (ada mesin pemotong bawaan). Atau pakai opsi 'Pakai file sendiri' di bawah."
+                  : "Di browser PC, pasang Malesan Bridge (.zip) sekali saja. Atau gunakan opsi 'Pakai file sendiri'."}
+              </p>
+            </div>
+          </div>
+          <a
+            href={isMobile ? "/malesan.apk" : "/malesan-bridge.zip"}
+            download={isMobile ? "malesan.apk" : "malesan-bridge.zip"}
+            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-3 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 active:scale-[0.98]"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>{isMobile ? "Unduh APK Android (.apk)" : "Unduh Bridge (.zip)"}</span>
+          </a>
+        </div>
+      </div>
+
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <input
           type="url"
