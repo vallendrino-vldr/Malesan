@@ -7,6 +7,7 @@ type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
 type YouTubePlayer = {
   destroy(): void;
   getCurrentTime(): number;
+  getDuration?(): number;
   loadVideoById(args: { videoId: string; startSeconds: number; endSeconds?: number }): void;
   cueVideoById(args: { videoId: string; startSeconds: number; endSeconds?: number }): void;
   playVideo(): void;
@@ -47,6 +48,7 @@ type Props = {
   onController: (controller: YouTubeClipController | null) => void;
   onError: (message: string | null) => void;
   onPlaybackProof: (actualSeconds: number) => void;
+  onDuration?: (durationSeconds: number) => void;
   onState: (state: PlayerState) => void;
 };
 
@@ -97,21 +99,28 @@ export function YouTubeClipPlayer({
   onController,
   onError,
   onPlaybackProof,
+  onDuration,
   onState,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [customRange, setCustomRange] = useState<{ start: number; end: number } | null>(null);
-  const range = customRange ?? { start: initialStart, end: initialEnd };
   const initialRangeRef = useRef({ start: initialStart, end: initialEnd });
-  const callbacksRef = useRef({ onController, onError, onPlaybackProof, onState });
+  const callbacksRef = useRef({ onController, onError, onPlaybackProof, onDuration, onState });
 
   useEffect(() => {
     initialRangeRef.current = { start: initialStart, end: initialEnd };
   }, [initialStart, initialEnd]);
 
   useEffect(() => {
-    callbacksRef.current = { onController, onError, onPlaybackProof, onState };
-  }, [onController, onError, onPlaybackProof, onState]);
+    callbacksRef.current = { onController, onError, onPlaybackProof, onDuration, onState };
+  }, [onController, onError, onPlaybackProof, onDuration, onState]);
+
+  // Crucial: keep mount URL static. Modifying the iframe's src attribute in React
+  // forces the browser to reload the entire iframe, destroying the YT.Player bridge,
+  // blocking mobile autoplay, and resetting the player back to 0:01.
+  const [mountSrc] = useState(() => {
+    const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
+    return `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&start=${Math.floor(initialStart)}&end=${Math.floor(initialEnd)}${origin}`;
+  });
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -135,9 +144,9 @@ export function YouTubeClipPlayer({
         if (nextEndSeconds <= startSeconds) return false;
         clearPlaybackTimers();
         targetEnd = nextEndSeconds;
-        setCustomRange({ start: startSeconds, end: nextEndSeconds });
         callbacksRef.current.onError(null);
 
+        // 1. Native IFrame API method invocation
         if (player) {
           try {
             player.loadVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
@@ -147,15 +156,30 @@ export function YouTubeClipPlayer({
             try {
               player.cueVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
               player.seekTo(startSeconds, true);
+              player.playVideo();
             } catch {}
           }
         }
 
+        // 2. Direct postMessage fallback (ensures immediate scrub across any browser)
         try {
           const contentWin = iframeRef.current?.contentWindow;
           if (contentWin) {
-            contentWin.postMessage(JSON.stringify({ event: "command", func: "seekTo", args: [startSeconds, true] }), "*");
-            contentWin.postMessage(JSON.stringify({ event: "command", func: "playVideo", args: [] }), "*");
+            contentWin.postMessage(JSON.stringify({
+              event: "command",
+              func: "loadVideoById",
+              args: [{ videoId, startSeconds, endSeconds: nextEndSeconds }],
+            }), "*");
+            contentWin.postMessage(JSON.stringify({
+              event: "command",
+              func: "seekTo",
+              args: [startSeconds, true],
+            }), "*");
+            contentWin.postMessage(JSON.stringify({
+              event: "command",
+              func: "playVideo",
+              args: [],
+            }), "*");
           }
         } catch {}
 
@@ -195,6 +219,10 @@ export function YouTubeClipPlayer({
               callbacksRef.current.onState("ready");
               callbacksRef.current.onError(null);
               try {
+                const duration = player.getDuration?.();
+                if (typeof duration === "number" && duration > 0) {
+                  callbacksRef.current.onDuration?.(duration);
+                }
                 const s = initialRangeRef.current.start;
                 const e = initialRangeRef.current.end;
                 player.cueVideoById({ videoId, startSeconds: s, endSeconds: e });
@@ -202,6 +230,13 @@ export function YouTubeClipPlayer({
               } catch {}
             },
             onStateChange: ({ data }) => {
+              if (!player || disposed) return;
+              try {
+                const duration = player.getDuration?.();
+                if (typeof duration === "number" && duration > 0) {
+                  callbacksRef.current.onDuration?.(duration);
+                }
+              } catch {}
               if (data === YT.PlayerState.PLAYING) callbacksRef.current.onState("playing");
               if (data === YT.PlayerState.PAUSED || data === YT.PlayerState.ENDED) {
                 callbacksRef.current.onState("paused");
@@ -228,12 +263,10 @@ export function YouTubeClipPlayer({
     };
   }, [videoId]);
 
-  const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
-
   return (
     <iframe
       ref={iframeRef}
-      src={`https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&autoplay=1&start=${Math.floor(range.start)}&end=${Math.floor(range.end)}${origin}`}
+      src={mountSrc}
       title={`Preview: ${title}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
       allowFullScreen

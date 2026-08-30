@@ -29,7 +29,7 @@ type Clip = {
   reason: string;
 };
 
-type Scan = { videoId: string; title: string; clips: Clip[] };
+type Scan = { videoId: string; title: string; duration?: number; clips: Clip[] };
 type BridgeJob = { id: string; status: string; progress: number; stage: string | null; credit_amount?: number };
 type ChromeExternal = { runtime?: { sendMessage(extensionId: string, message: unknown, callback: (response: { ok?: boolean; error?: string; downloadUrl?: string } | undefined) => void): void; lastError?: { message?: string } } };
 
@@ -53,6 +53,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [scan, setScan] = useState<Scan | null>(null);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [active, setActive] = useState(0);
   const [playerState, setPlayerState] = useState<"loading" | "ready" | "playing" | "paused" | "error">("loading");
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -78,6 +79,29 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
 
   const provePlayback = useCallback((seconds: number) => {
     setActualTime(seconds);
+  }, []);
+
+  const handleDuration = useCallback((duration: number) => {
+    if (!duration || duration <= 0) return;
+    setVideoDuration(duration);
+    setScan((prev) => {
+      if (!prev) return null;
+      let changed = false;
+      const updatedClips = prev.clips.map((c) => {
+        if (c.startTime >= duration) {
+          changed = true;
+          const safeStart = Math.max(0, duration - 30);
+          const safeEnd = duration;
+          return { ...c, startTime: safeStart, endTime: safeEnd };
+        }
+        if (c.endTime > duration) {
+          changed = true;
+          return { ...c, endTime: duration };
+        }
+        return c;
+      });
+      return changed ? { ...prev, duration, clips: updatedClips } : prev;
+    });
   }, []);
 
   // Walk the status label forward while the request is in flight. The server
@@ -251,7 +275,18 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
     setActive(index);
     setActualTime(null);
     setPreviewError(null);
-    if (!playerRef.current?.playRange(selected.startTime, selected.endTime)) {
+    const dur = videoDuration ?? scan?.duration;
+    let safeStart = selected.startTime;
+    let safeEnd = selected.endTime;
+    if (dur && dur > 0) {
+      if (safeStart >= dur) {
+        safeStart = Math.max(0, dur - 30);
+        safeEnd = dur;
+      } else if (safeEnd > dur) {
+        safeEnd = dur;
+      }
+    }
+    if (!playerRef.current?.playRange(safeStart, safeEnd)) {
       setPreviewError("Player belum siap. Tunggu sebentar lalu tap momennya lagi.");
     }
   };
@@ -372,11 +407,12 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
               key={scan.videoId}
               videoId={scan.videoId}
               title={clip.hookTitle}
-              initialStart={clip.startTime}
-              initialEnd={clip.endTime}
+              initialStart={scan.clips[0]?.startTime ?? 0}
+              initialEnd={scan.clips[0]?.endTime ?? 60}
               onController={setController}
               onError={setPlayerError}
               onPlaybackProof={provePlayback}
+              onDuration={handleDuration}
               onState={setPlayerState}
             />
           </div>

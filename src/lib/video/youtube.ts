@@ -22,6 +22,7 @@ export type YouTubeMeta = {
   videoId: string;
   title: string;
   author: string;
+  durationSec?: number;
 };
 
 export type YouTubeErrorCode = "bad_url" | "unavailable" | "blocked" | "no_transcript";
@@ -92,13 +93,11 @@ export function parseYouTubeId(input: string): string | null {
 }
 
 /**
- * Title and channel via oEmbed.
+ * Title, channel, and duration.
  *
- * This endpoint answers datacenter IPs happily (the watch page does not) and
- * doubles as an existence check: a private, deleted or bogus id returns 401/404
- * here, which lets us fail before spending a Gemini call on it. It does not
- * expose duration — nothing public does anymore — which is why the scan window
- * is capped by policy instead of measured.
+ * oEmbed answers datacenter IPs happily and doubles as an existence check.
+ * We also perform a lightweight scrape on watch HTML to extract lengthSeconds /
+ * approxDurationMs / itemprop duration so the AI and UI know the exact length.
  */
 export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
   let res: Response;
@@ -124,10 +123,42 @@ export async function fetchYouTubeMeta(videoId: string): Promise<YouTubeMeta> {
     author_name?: string;
   } | null;
 
+  let durationSec: number | undefined;
+  try {
+    const watchRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      signal: AbortSignal.timeout(5_000),
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+      cache: "no-store",
+    });
+    if (watchRes.ok) {
+      const html = await watchRes.text();
+      const lengthMatch = html.match(/"lengthSeconds":"(\d+)"/);
+      const approxMatch = html.match(/"approxDurationMs":"(\d+)"/);
+      const isoMatch = html.match(/itemprop="duration" content="PT([^"]+)"/);
+      if (lengthMatch) {
+        durationSec = parseInt(lengthMatch[1], 10);
+      } else if (approxMatch) {
+        durationSec = Math.round(parseInt(approxMatch[1], 10) / 1000);
+      } else if (isoMatch) {
+        const isoText = isoMatch[1];
+        const h = parseInt(isoText.match(/(\d+)H/)?.[1] || "0", 10);
+        const m = parseInt(isoText.match(/(\d+)M/)?.[1] || "0", 10);
+        const s = parseInt(isoText.match(/(\d+)S/)?.[1] || "0", 10);
+        durationSec = h * 3600 + m * 60 + s;
+      }
+    }
+  } catch {
+    // Best-effort duration probe
+  }
+
   return {
     videoId,
     title: data?.title?.trim() || "Video YouTube",
     author: data?.author_name?.trim() || "",
+    durationSec: durationSec && durationSec > 0 ? durationSec : undefined,
   };
 }
 

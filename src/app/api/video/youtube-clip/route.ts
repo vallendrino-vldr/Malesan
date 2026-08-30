@@ -83,12 +83,20 @@ export async function POST(request: NextRequest) {
     return json({ error: "Gagal baca videonya. Coba lagi bentar ya." }, 502);
   }
 
-  const prompt = `Kamu editor konten viral Indonesia. Tonton video YouTube ini berjudul "${meta.title}".
+  const effectiveScanDuration = meta.durationSec && meta.durationSec > 0
+    ? Math.min(MAX_SCAN_SEC, meta.durationSec)
+    : MAX_SCAN_SEC;
+
+  const durationNotice = meta.durationSec && meta.durationSec > 0
+    ? `\nINFORMASI DURASI: Total panjang video ini adalah ${Math.floor(meta.durationSec / 60)} menit ${meta.durationSec % 60} detik (${meta.durationSec} detik). Semua potongan startTime dan endTime WAJIB berada di dalam rentang 0 sampai ${meta.durationSec} detik.`
+    : "";
+
+  const prompt = `Kamu editor konten viral Indonesia. Tonton video YouTube ini berjudul "${meta.title}".${durationNotice}
 
 Cari 3 sampai 5 potongan PALING BERPOTENSI VIRAL kalau dipotong jadi konten pendek (TikTok/Reels/Shorts).
 
 Aturan keras:
-1. startTime dan endTime dalam DETIK (angka bulat), dihitung dari awal video. Wajib akurat sesuai isi video.
+1. startTime dan endTime dalam DETIK (angka bulat), dihitung dari awal video. Wajib akurat sesuai isi video dan TIDAK BOLEH melebihi total durasi video (${effectiveScanDuration} detik).
 2. Durasi tiap potongan antara 20 sampai 90 detik. Potongan harus berdiri sendiri: mulai dari kalimat pembuka yang nyantol, selesai di kalimat penutup yang tuntas.
 3. Potongan tidak boleh saling tumpang tindih.
 4. hookTitle: judul clickbait bahasa Indonesia santai, maksimal 8 kata, tanpa tanda kutip.
@@ -108,7 +116,7 @@ Balas HANYA JSON array.`;
         url: `https://www.youtube.com/watch?v=${videoId}`,
         fps: SCAN_FPS,
         startSec: 0,
-        endSec: MAX_SCAN_SEC,
+        endSec: effectiveScanDuration,
       },
       signal: AbortSignal.timeout(52_000),
       schema: {
@@ -126,7 +134,7 @@ Balas HANYA JSON array.`;
         },
       },
     });
-    clips = normalizeClips(JSON.parse(raw), MAX_SCAN_SEC);
+    clips = normalizeClips(JSON.parse(raw), effectiveScanDuration);
   } catch (err) {
     console.error("viral scan primary failed, attempting fallback prompt", err);
     try {
@@ -138,12 +146,12 @@ Balas HANYA JSON array.`;
           url: `https://www.youtube.com/watch?v=${videoId}`,
           fps: SCAN_FPS,
           startSec: 0,
-          endSec: MAX_SCAN_SEC,
+          endSec: effectiveScanDuration,
         },
         signal: AbortSignal.timeout(52_000),
       });
       const cleaned = fallbackRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
-      clips = normalizeClips(JSON.parse(cleaned), MAX_SCAN_SEC);
+      clips = normalizeClips(JSON.parse(cleaned), effectiveScanDuration);
     } catch (fallbackErr) {
       console.error("viral scan fallback also failed", fallbackErr);
       return json(
@@ -181,6 +189,7 @@ Balas HANYA JSON array.`;
       videoId,
       title: meta.title,
       author: meta.author,
+      duration: meta.durationSec,
       clips,
       creditsSpent: cost,
     },
