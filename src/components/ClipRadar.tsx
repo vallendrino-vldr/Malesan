@@ -523,7 +523,22 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 </svg>
                 <span className="relative truncate">{bridgeBusy ? (bridgeJob?.stage || "Menyiapkan Auto Clip...") : `Bikin Auto Clip (${clock(clip.startTime)}–${clock(clip.endTime)})`}</span>
               </button>
-              {bridgeBusy && bridgeJob ? <div className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-ember transition-[width] duration-500" style={{ width: `${bridgeJob.progress}%` }} /></div> : null}
+              {bridgeBusy && bridgeJob ? (
+                <div className="space-y-1.5 pt-1">
+                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-ember transition-[width] duration-300 relative overflow-hidden"
+                      style={{ width: `${Math.max(6, bridgeJob.progress)}%` }}
+                    >
+                      <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-micro text-muted font-medium">
+                    <span className="truncate pr-2">{bridgeJob.stage || "Memproses klip..."}</span>
+                    <span className="tabular-nums text-ember font-bold shrink-0">{Math.max(5, Math.round(bridgeJob.progress))}%</span>
+                  </div>
+                </div>
+              ) : null}
               {bridgeError ? <p className="text-mini leading-relaxed text-red-300" role="alert">{bridgeError}</p> : null}
 
               <div className="flex items-center justify-between gap-2 pt-1">

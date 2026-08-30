@@ -27,33 +27,66 @@ final class NativeClipEngine {
             if (!directory.exists() && !directory.mkdirs()) { listener.onError("Storage clip tidak bisa disiapkan."); return; }
             deleteMatches(directory, jobId);
             try {
-                listener.onProgress(1f, "Menyiapkan mesin video...");
+                listener.onProgress(5f, "Menyiapkan pemotong video...");
                 YoutubeDL.getInstance().init(context);
                 FFmpeg.getInstance().init(context);
-                // YouTube frequently rotates its anti-download measures.  The bundled
-                // yt-dlp binary expires quickly, so we self-update on every clip job.
-                // If already current the call returns instantly; on first run it pulls
-                // ~15 MB of the latest nightly.
-                try {
-                    listener.onProgress(2f, "Memperbarui mesin download...");
-                    YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._NIGHTLY);
-                } catch (Throwable ignored) {
-                    // Best-effort — proceed with bundled version if network is down.
-                }
+
                 YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
-                        .addOption("--no-playlist").addOption("--no-part")
-                        .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b")
+                        .addOption("--no-playlist")
+                        .addOption("--no-part")
+                        .addOption("--no-warnings")
+                        .addOption("--format", "b[height<=720][ext=mp4]/18/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                         .addOption("--force-keyframes-at-cuts")
                         .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
-                YoutubeDLResponse response = YoutubeDL.getInstance().execute(request, jobId, false, (percent, eta, line) -> {
-                    listener.onProgress(Math.max(2f, Math.min(98f, percent)), stage(line));
-                    return Unit.INSTANCE;
+
+                // Run a smooth progress animator while yt-dlp/ffmpeg executes
+                final java.util.concurrent.atomic.AtomicBoolean running = new java.util.concurrent.atomic.AtomicBoolean(true);
+                final java.util.concurrent.atomic.AtomicInteger syntheticProgress = new java.util.concurrent.atomic.AtomicInteger(10);
+                Thread progressTicker = new Thread(() -> {
+                    String[] stages = new String[]{
+                        "Mengunduh bagian video...",
+                        "Mengambil audio & frame video...",
+                        "Memotong durasi klip...",
+                        "Menyatukan sinkronisasi audio...",
+                        "Finishing render MP4..."
+                    };
+                    int stageIdx = 0;
+                    while (running.get() && syntheticProgress.get() < 94) {
+                        try {
+                            Thread.sleep(1200);
+                            if (!running.get()) break;
+                            int next = Math.min(94, syntheticProgress.addAndGet(7));
+                            String stageText = stages[Math.min(stageIdx++, stages.length - 1)];
+                            listener.onProgress(next, stageText);
+                        } catch (InterruptedException e) {
+                            break;
+                        }
+                    }
                 });
-                if (response.getExitCode() != 0) throw new IllegalStateException("Pemrosesan video gagal.");
+                progressTicker.setDaemon(true);
+                progressTicker.start();
+
+                YoutubeDLResponse response;
+                try {
+                    response = YoutubeDL.getInstance().execute(request, jobId, false, (percent, eta, line) -> {
+                        if (percent > 0) {
+                            syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
+                            listener.onProgress(Math.max(5f, Math.min(98f, percent)), stage(line));
+                        }
+                        return Unit.INSTANCE;
+                    });
+                } finally {
+                    running.set(false);
+                    progressTicker.interrupt();
+                }
+
+                if (response.getExitCode() != 0) throw new IllegalStateException("Pemrosesan video gagal (exit code: " + response.getExitCode() + ").");
+                listener.onProgress(98f, "Menyelesaikan file klip...");
                 File output = findOutput(directory, jobId);
                 if (output == null || output.length() < 1024) throw new IllegalStateException("Hasil clip kosong.");
+                listener.onProgress(100f, "Klip siap!");
                 listener.onReady(output);
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();
