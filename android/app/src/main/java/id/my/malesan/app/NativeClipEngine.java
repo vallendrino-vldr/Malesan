@@ -30,6 +30,16 @@ final class NativeClipEngine {
                 listener.onProgress(1f, "Menyiapkan mesin video...");
                 YoutubeDL.getInstance().init(context);
                 FFmpeg.getInstance().init(context);
+                // YouTube frequently rotates its anti-download measures.  The bundled
+                // yt-dlp binary expires quickly, so we self-update on every clip job.
+                // If already current the call returns instantly; on first run it pulls
+                // ~15 MB of the latest nightly.
+                try {
+                    listener.onProgress(2f, "Memperbarui mesin download...");
+                    YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._NIGHTLY);
+                } catch (Exception ignored) {
+                    // Best-effort — proceed with bundled version if network is down.
+                }
                 YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
                         .addOption("--no-playlist").addOption("--no-part")
                         .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b")

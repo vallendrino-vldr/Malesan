@@ -194,6 +194,15 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /** Domains that the YouTube embed player and Google auth may navigate to inside iframes.
+     *  These must NOT open in an external app, nor be allowed to hijack the main frame. */
+    private static boolean isEmbedDomain(String host) {
+        return host.equals("youtube.com") || host.endsWith(".youtube.com")
+                || host.equals("youtube-nocookie.com") || host.endsWith(".youtube-nocookie.com")
+                || host.equals("youtu.be")
+                || host.equals("google.com") || host.endsWith(".google.com");
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private void configureWebView() {
         WebSettings settings = webView.getSettings();
@@ -225,6 +234,14 @@ public final class MainActivity extends Activity {
                 Uri uri = request.getUrl();
                 if (isNativeClipUri(uri.toString())) return false;
                 if ("https".equalsIgnoreCase(uri.getScheme()) && isAppHost(uri.getHost())) return false;
+                // YouTube embed iframes (preview player) and Google auth pages must stay
+                // inside the WebView. Block them from hijacking the main frame without
+                // opening an external app — otherwise the user "bounces" to YouTube.
+                String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase(Locale.ROOT);
+                if (isEmbedDomain(host)) {
+                    // Allow iframe navigations; block main-frame hijack silently.
+                    return request.isForMainFrame();
+                }
                 if (request.isForMainFrame()) openExternal(uri);
                 return true;
             }
