@@ -276,6 +276,12 @@ export function VideoEditor({
   }, []);
 
   useEffect(() => {
+    void getNativeShell().then((shell) => {
+      setIsNativeAPK(Boolean(shell?.capabilities.includes("native-auto-clip") || shell?.name === "android"));
+    });
+  }, []);
+
+  useEffect(() => {
     return () => {
       if (videoUrl) URL.revokeObjectURL(videoUrl);
     };
@@ -631,7 +637,7 @@ export function VideoEditor({
           ) : null}
 
           {/* Desktop Dual-Pane & Mobile Centered Pro Canvas */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start pb-24 sm:pb-4">
             {/* Center Video Player Showcase */}
             <div className="lg:col-span-6 flex flex-col items-center space-y-2">
               <div className="w-full flex justify-center">
@@ -1128,10 +1134,10 @@ function VideoPreviewPlayer({
 
   const containerRatioClass =
     layout.ratio === "9:16"
-      ? "aspect-[9/16] max-h-[44vh] sm:max-h-[54vh] w-auto max-w-[300px]"
+      ? "aspect-[9/16] h-[52vh] sm:h-[60vh] max-h-[560px] w-auto max-w-[320px]"
       : layout.ratio === "16:9"
-      ? "aspect-video max-h-[34vh] w-auto max-w-[420px]"
-      : "aspect-square max-h-[38vh] w-auto max-w-[300px]";
+      ? "aspect-video h-[32vh] sm:h-[40vh] max-h-[380px] w-auto max-w-[500px]"
+      : "aspect-square h-[38vh] sm:h-[48vh] max-h-[440px] w-auto max-w-[340px]";
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

@@ -22,6 +22,10 @@ final class NativeClipEngine {
     NativeClipEngine(Context context) { this.context = context.getApplicationContext(); }
 
     void start(String jobId, String sourceUrl, double startSeconds, double endSeconds, Listener listener) {
+        start(jobId, sourceUrl, startSeconds, endSeconds, null, listener);
+    }
+
+    void start(String jobId, String sourceUrl, double startSeconds, double endSeconds, File cookieFile, Listener listener) {
         executor.execute(() -> {
             File directory = new File(context.getCacheDir(), "native-clips");
             if (!directory.exists() && !directory.mkdirs()) { listener.onError("Storage clip tidak bisa disiapkan."); return; }
@@ -70,16 +74,16 @@ final class NativeClipEngine {
 
                 YoutubeDLResponse response = null;
                 try {
-                    // Multi-Tier Adaptive Extractor Pipeline:
+                    // Multi-Tier Adaptive Extractor Pipeline with Guaranteed 1080p Sorting:
                     // Tier 1: Direct Web Full HD 1080p AVC MP4 (Fastest, highest bitrate)
-                    // Tier 2: YouTube Android Official App Client (Bypasses Web Botguard & SABR challenges)
+                    // Tier 2: YouTube iOS & Android Client (Bypasses Web Botguard & SABR challenges)
                     // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music embed restrictions)
                     int[] tiers = new int[]{1, 2, 3};
                     Throwable lastError = null;
                     for (int tier : tiers) {
                         try {
                             deleteMatches(directory, jobId);
-                            YoutubeDLRequest req = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, tier);
+                            YoutubeDLRequest req = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, cookieFile, tier);
                             response = YoutubeDL.getInstance().execute(req, jobId, false, (percent, eta, line) -> {
                                 if (percent > 0) {
                                     syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
@@ -129,10 +133,10 @@ final class NativeClipEngine {
     }
 
     // =========================================================================
-    // 🔒 MULTI-TIER ADAPTIVE EXTRACTOR CONFIGURATION
+    // 🔒 MULTI-TIER ADAPTIVE EXTRACTOR CONFIGURATION (GUARANTEED 1080P FULL HD)
     // Tier 1: Pristine Full HD 1080p AVC MP4 (Web Direct)
-    // Tier 2: Official YouTube Android App Client (Anti-Bot Bypass)
-    // Tier 3: TV Embedded & MWeb Client (Music/VEVO Bypass)
+    // Tier 2: Official YouTube iOS & Android Client (Anti-Bot Bypass + 1080p Sort)
+    // Tier 3: TV Embedded & MWeb Client (Music/VEVO Bypass + 1080p Sort)
     // =========================================================================
     private static YoutubeDLRequest buildRequest(
             String sourceUrl,
@@ -140,6 +144,7 @@ final class NativeClipEngine {
             double endSeconds,
             File directory,
             String jobId,
+            File cookieFile,
             int tier) {
         YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
                 .addOption("--no-playlist")
@@ -149,18 +154,24 @@ final class NativeClipEngine {
                 .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                 .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
+        if (cookieFile != null && cookieFile.exists() && cookieFile.length() > 0) {
+            request.addOption("--cookies", cookieFile.getAbsolutePath());
+        }
+
         switch (tier) {
             case 1: // Primary Tier: Unrestricted Direct Web Full HD 1080p AVC MP4
                 request.addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b")
                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
-            case 2: // Tier 2: Official YouTube Android App Client (Bypasses Web Botguard & SABR challenges)
-                request.addOption("--extractor-args", "youtube:player_client=android,web")
-                       .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/bestvideo+bestaudio/best");
+            case 2: // Tier 2: Official YouTube iOS/Android Client (Bypasses Web Botguard with Strict 1080p Sort)
+                request.addOption("--extractor-args", "youtube:player_client=ios,android,web")
+                       .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/bestvideo+bestaudio/best")
+                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
-            case 3: // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music restrictions)
+            case 3: // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music restrictions with 1080p Sort)
                 request.addOption("--extractor-args", "youtube:player_client=tv_embedded,web_creator,mweb")
-                       .addOption("-f", "bestvideo+bestaudio/best");
+                       .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/bestvideo+bestaudio/best")
+                       .addOption("--format-sort", "res:1080,res:720,vcodec:h264,res,size");
                 break;
             default:
                 request.addOption("-f", "bestvideo+bestaudio/best");

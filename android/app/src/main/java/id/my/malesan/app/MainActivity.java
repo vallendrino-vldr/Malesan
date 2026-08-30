@@ -494,7 +494,8 @@ public final class MainActivity extends Activity {
         }
         activeClipJobId = jobId;
         try {
-            clipEngine.start(jobId, parsedUrl, start, end, new NativeClipEngine.Listener() {
+            File cookieFile = exportYouTubeCookies();
+            clipEngine.start(jobId, parsedUrl, start, end, cookieFile, new NativeClipEngine.Listener() {
                 @Override public void onProgress(float percent, String stage) {
                     runOnUiThread(() -> {
                         try { reply(replyProxy, new JSONObject().put("type", "CLIP_PROGRESS").put("requestId", requestId).put("progress", percent).put("stage", stage)); }
@@ -520,6 +521,36 @@ public final class MainActivity extends Activity {
         } catch (Throwable failure) {
             activeClipJobId = null;
             reply(replyProxy, error(requestId, "CLIP_FAILED", failure.getMessage() == null ? "Gagal memproses clip." : failure.getMessage()));
+        }
+    }
+
+    private File exportYouTubeCookies() {
+        try {
+            CookieManager cookieManager = CookieManager.getInstance();
+            String cookieStr = cookieManager.getCookie("https://www.youtube.com");
+            if (cookieStr == null || cookieStr.trim().isEmpty()) {
+                cookieStr = cookieManager.getCookie("https://youtube.com");
+            }
+            if (cookieStr == null || cookieStr.trim().isEmpty()) return null;
+
+            File cookieFile = new File(getCacheDir(), "yt_cookies.txt");
+            StringBuilder sb = new StringBuilder("# Netscape HTTP Cookie File\n");
+            String[] pairs = cookieStr.split(";");
+            for (String pair : pairs) {
+                String[] kv = pair.trim().split("=", 2);
+                if (kv.length == 2) {
+                    sb.append(".youtube.com\tTRUE\t/\tTRUE\t2147483647\t")
+                      .append(kv[0].trim()).append("\t")
+                      .append(kv[1].trim()).append("\n");
+                }
+            }
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(cookieFile)) {
+                fos.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            return cookieFile;
+        } catch (Exception e) {
+            android.util.Log.w("MainActivity", "Cookie export skipped", e);
+            return null;
         }
     }
 
