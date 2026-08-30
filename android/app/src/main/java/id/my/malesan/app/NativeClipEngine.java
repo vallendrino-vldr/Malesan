@@ -133,12 +133,12 @@ final class NativeClipEngine {
                 .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
         if (!isFallback) {
-            request.addOption("--extractor-args", "youtube:player_client=tv_embedded,android_vr,ios,web,android")
-                   .addOption("-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/best[height>=720]/bestvideo+bestaudio/best")
+            request.addOption("--extractor-args", "youtube:player_client=android_vr,ios,web")
+                   .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bestvideo+bestaudio/best")
                    .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
                    .addOption("--force-keyframes-at-cuts");
         } else {
-            request.addOption("-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/best[height>=720]/bestvideo+bestaudio/best");
+            request.addOption("-f", "best/bestvideo+bestaudio");
         }
         return request;
     }
