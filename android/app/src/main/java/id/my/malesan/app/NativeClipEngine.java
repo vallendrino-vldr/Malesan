@@ -38,7 +38,6 @@ final class NativeClipEngine {
                         .addOption("--format", "bv*[height<=1080]+ba/bv*[height<=720]+ba/bv*+ba/bestvideo+bestaudio/best")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
-                        .addOption("--force-keyframes-at-cuts")
                         .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
                 // Run a smooth continuous progress animator while yt-dlp/ffmpeg executes
