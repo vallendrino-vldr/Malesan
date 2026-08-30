@@ -52,17 +52,56 @@ async function handle(raw) {
     const ytDlp = findTool("yt-dlp", process.env.MALESAN_YTDLP_PATH);
     const ffmpeg = findTool("ffmpeg", process.env.MALESAN_FFMPEG_PATH);
     const output = join(work, "clip.mp4");
-    // 🔒 LOCKED GOLDEN ENGINE CONFIGURATION (PERMANENT - DO NOT ALTER)
-    await run(ytDlp, [
-      "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
-      "--js-runtimes", "node",
-      "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
-      "--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size",
-      "--merge-output-format", "mp4",
-      "--download-sections", `*${job.startTime}-${job.endTime}`,
-      "--ffmpeg-location", ffmpeg,
-      "-o", output, job.sourceUrl,
-    ], work);
+    // Multi-Tier Adaptive Extractor Pipeline:
+    // Tier 1: Direct Web Full HD 1080p AVC MP4
+    // Tier 2: YouTube Android Official Client (Anti-Bot Bypass)
+    // Tier 3: TV Embedded & MWeb Client (Music/VEVO Bypass)
+    const tiers = [
+      [
+        "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
+        "--js-runtimes", "node",
+        "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
+        "--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size",
+        "--merge-output-format", "mp4",
+        "--download-sections", `*${job.startTime}-${job.endTime}`,
+        "--ffmpeg-location", ffmpeg,
+        "-o", output, job.sourceUrl,
+      ],
+      [
+        "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
+        "--js-runtimes", "node",
+        "--extractor-args", "youtube:player_client=android,web",
+        "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/bestvideo+bestaudio/best",
+        "--merge-output-format", "mp4",
+        "--download-sections", `*${job.startTime}-${job.endTime}`,
+        "--ffmpeg-location", ffmpeg,
+        "-o", output, job.sourceUrl,
+      ],
+      [
+        "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
+        "--js-runtimes", "node",
+        "--extractor-args", "youtube:player_client=tv_embedded,web_creator,mweb",
+        "-f", "bestvideo+bestaudio/best",
+        "--merge-output-format", "mp4",
+        "--download-sections", `*${job.startTime}-${job.endTime}`,
+        "--ffmpeg-location", ffmpeg,
+        "-o", output, job.sourceUrl,
+      ],
+    ];
+    let lastError = null;
+    for (const args of tiers) {
+      try {
+        if (existsSync(output)) await rm(output, { force: true }).catch(() => {});
+        await run(ytDlp, args, work);
+        if (existsSync(output) && (await stat(output)).size > 1024) {
+          lastError = null;
+          break;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    if (lastError && (!existsSync(output) || (await stat(output)).size === 0)) throw lastError;
     if (!existsSync(output) || (await stat(output)).size === 0) throw new Error("Output video kosong.");
     const outputBytes = (await stat(output)).size;
     await api(message.apiOrigin, "/api/bridge/auto-clip/acquired", {
