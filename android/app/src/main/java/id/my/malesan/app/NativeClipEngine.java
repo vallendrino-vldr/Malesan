@@ -41,7 +41,7 @@ final class NativeClipEngine {
                         .addOption("--force-keyframes-at-cuts")
                         .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
-                // Run a smooth progress animator while yt-dlp/ffmpeg executes
+                // Run a smooth continuous progress animator while yt-dlp/ffmpeg executes
                 final java.util.concurrent.atomic.AtomicBoolean running = new java.util.concurrent.atomic.AtomicBoolean(true);
                 final java.util.concurrent.atomic.AtomicInteger syntheticProgress = new java.util.concurrent.atomic.AtomicInteger(10);
                 Thread progressTicker = new Thread(() -> {
@@ -50,16 +50,19 @@ final class NativeClipEngine {
                         "Mengambil audio & frame video...",
                         "Memotong durasi klip...",
                         "Menyatukan sinkronisasi audio...",
-                        "Finishing render MP4..."
+                        "Finishing render MP4...",
+                        "Menyiapkan preview klip..."
                     };
-                    int stageIdx = 0;
-                    while (running.get() && syntheticProgress.get() < 94) {
+                    int step = 0;
+                    while (running.get() && syntheticProgress.get() < 99) {
                         try {
-                            Thread.sleep(1200);
+                            Thread.sleep(800);
                             if (!running.get()) break;
-                            int next = Math.min(94, syntheticProgress.addAndGet(7));
-                            String stageText = stages[Math.min(stageIdx++, stages.length - 1)];
-                            listener.onProgress(next, stageText);
+                            int current = syntheticProgress.get();
+                            int increment = current < 60 ? 8 : (current < 90 ? 4 : 1);
+                            int next = Math.min(99, syntheticProgress.addAndGet(increment));
+                            int stageIdx = Math.min(step++ / 2, stages.length - 1);
+                            listener.onProgress(next, stages[stageIdx]);
                         } catch (InterruptedException e) {
                             break;
                         }
@@ -73,7 +76,7 @@ final class NativeClipEngine {
                     response = YoutubeDL.getInstance().execute(request, jobId, false, (percent, eta, line) -> {
                         if (percent > 0) {
                             syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
-                            listener.onProgress(Math.max(5f, Math.min(98f, percent)), stage(line));
+                            listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
                         }
                         return Unit.INSTANCE;
                     });
@@ -83,10 +86,9 @@ final class NativeClipEngine {
                 }
 
                 if (response.getExitCode() != 0) throw new IllegalStateException("Pemrosesan video gagal (exit code: " + response.getExitCode() + ").");
-                listener.onProgress(98f, "Menyelesaikan file klip...");
+                listener.onProgress(100f, "Klip siap!");
                 File output = findOutput(directory, jobId);
                 if (output == null || output.length() < 1024) throw new IllegalStateException("Hasil clip kosong.");
-                listener.onProgress(100f, "Klip siap!");
                 listener.onReady(output);
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt();

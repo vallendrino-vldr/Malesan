@@ -455,7 +455,7 @@ export function VideoEditor({
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
             <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-2.5 flex flex-col items-center">
-              <VideoPreviewPlayer videoRef={videoRef} videoUrl={videoUrl} lines={lines} style={style} safeZones={safeZones} layout={layout} />
+              <VideoPreviewPlayer videoRef={videoRef} videoUrl={videoUrl} lines={lines} style={style} safeZones={safeZones} layout={layout} watermark={!noWatermark} />
               <div className="flex w-full max-w-[340px] items-center justify-between gap-2 px-1 text-micro text-muted">
                 <label className="flex cursor-pointer items-center gap-1.5 hover:text-ink">
                   <input type="checkbox" checked={safeZones} onChange={(e) => setSafeZones(e.target.checked)} className="size-3.5 accent-ember rounded" />
@@ -536,7 +536,7 @@ export function VideoEditor({
                     <label className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-raised/40 p-3.5 text-mini text-ink cursor-pointer hover:border-ember/40 transition-colors">
                       <input type="checkbox" checked={noWatermark} onChange={(e) => setNoWatermark(e.target.checked)} className="mt-0.5 size-4 accent-ember rounded" />
                       <div>
-                        <span className="font-semibold">Hapus watermark malesan.my.id</span>{" "}
+                        <span className="font-semibold">Hapus watermark malesan.ai</span>{" "}
                         <span className="text-ember font-bold">(+{noWatermarkCost} kredit)</span>
                         <span className="block mt-0.5 text-micro text-muted">Kalau gak dicentang, watermark tetap nempel halus (gratis).</span>
                       </div>
@@ -608,6 +608,7 @@ function VideoPreviewPlayer({
   style,
   safeZones,
   layout,
+  watermark = true,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -615,6 +616,7 @@ function VideoPreviewPlayer({
   style: CaptionStyle;
   safeZones: boolean;
   layout: VideoLayout;
+  watermark?: boolean;
 }) {
   const [now, setNow] = useState(0);
   const rafRef = useRef<number | null>(null);
@@ -637,20 +639,51 @@ function VideoPreviewPlayer({
   }, [videoRef]);
 
   const active = activeAt(lines, now);
-  const aspectRatio = layout.ratio === "9:16" ? "9 / 16" : layout.ratio === "16:9" ? "16 / 9" : "1 / 1";
   const tracked = layout.trajectory?.length ? cropFocusAt(layout.trajectory, now) : null;
   const objectPosition = tracked
     ? `${(tracked.x * 100).toFixed(2)}% ${(tracked.y * 100).toFixed(2)}%`
     : layout.focus === "left" ? "left center" : layout.focus === "right" ? "right center" : "center";
 
+  const resolvedVideoSrc = videoUrl
+    ? videoUrl.includes("#t=")
+      ? videoUrl
+      : `${videoUrl}#t=0.001`
+    : undefined;
+
+  const containerRatioClass =
+    layout.ratio === "9:16"
+      ? "aspect-[9/16] max-w-[270px] sm:max-w-[310px] md:max-w-[340px]"
+      : layout.ratio === "16:9"
+      ? "aspect-video max-w-[480px]"
+      : "aspect-square max-w-[340px]";
+
   return (
     <div
-      className="relative mx-auto max-h-[46vh] sm:max-h-[64vh] w-full max-w-[320px] sm:max-w-[360px] overflow-hidden rounded-2xl border border-hairline bg-black shadow-lg transition-[aspect-ratio] duration-300"
-      style={{ aspectRatio }}
+      className={`relative mx-auto w-full overflow-hidden rounded-3xl border-2 border-white/10 bg-black shadow-2xl ring-1 ring-white/5 transition-all duration-300 ${containerRatioClass}`}
     >
+      {/* Smartphone Top Notch Accent for 9:16 */}
+      {layout.ratio === "9:16" && (
+        <div className="pointer-events-none absolute top-0 inset-x-0 z-20 flex justify-center">
+          <div className="h-3 w-16 rounded-b-lg bg-obsidian/80 border-b border-x border-white/10 backdrop-blur-xs flex items-center justify-center">
+            <div className="size-1.5 rounded-full bg-white/20" />
+          </div>
+        </div>
+      )}
+
+      {/* Ultra-Luxury Watermark Preview */}
+      {watermark && (
+        <div className="pointer-events-none absolute top-3.5 left-3.5 z-10 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-ember drop-shadow-[0_0_4px_rgba(255,138,61,0.6)]">
+            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+          </svg>
+          <span className="font-display text-[11px] font-extrabold tracking-wide text-white">malesan<span className="text-ember font-black">.ai</span></span>
+        </div>
+      )}
+
       <video
         ref={videoRef}
-        src={videoUrl}
+        src={resolvedVideoSrc}
+        preload="auto"
         controls
         playsInline
         onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
@@ -659,9 +692,9 @@ function VideoPreviewPlayer({
         style={{ objectPosition }}
       />
       {tracked && (
-        <div className="pointer-events-none absolute top-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
+        <div className="pointer-events-none absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
           <span className="size-1.5 rounded-full bg-ember animate-ping" />
-          <span>Face Track Aktif</span>
+          <span>Face Track</span>
         </div>
       )}
       {safeZones && <SafeZones />}

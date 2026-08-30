@@ -174,45 +174,102 @@ export function drawCaption(
 }
 
 /**
- * The lasting credit — a small, deliberately tasteful pill so a reposted clip
- * still says where it came from without looking like a stock watermark. Kept well
- * clear of the corner so it survives the platform crop.
+ * Ultra-luxury watermark badge — frosted obsidian glass pill with glowing amber sparkle
+ * and crisp two-tone brand typography (malesan.ai).
  */
 export function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const px = Math.max(13, Math.round(H * 0.016));
-  const text = "malesan.my.id";
+  const px = Math.max(14, Math.round(H * 0.017));
+  const brandName = "malesan";
+  const brandExt = ".ai";
+  
   ctx.save();
-  ctx.font = `600 ${px}px "Poppins", "Archivo", system-ui, sans-serif`;
+  ctx.font = `800 ${px}px "Poppins", "Plus Jakarta Sans", system-ui, sans-serif`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
 
-  const dot = px * 0.5;
-  const gap = px * 0.55;
-  const padX = px * 0.85;
-  const padY = px * 0.62;
-  const textW = ctx.measureText(text).width;
-  const pillW = padX * 2 + dot + gap + textW;
+  const brandW = ctx.measureText(brandName).width;
+  ctx.font = `700 ${px}px "Poppins", "Plus Jakarta Sans", system-ui, sans-serif`;
+  const extW = ctx.measureText(brandExt).width;
+
+  const iconSize = px * 0.9;
+  const gap = px * 0.45;
+  const padX = px * 0.9;
+  const padY = px * 0.65;
+  const pillW = padX * 2 + iconSize + gap + brandW + extW;
   const pillH = px + padY * 2;
 
   const x = Math.round(W * 0.045);
   const y = Math.round(H * 0.035);
   const cy = y + pillH / 2;
 
-  ctx.globalAlpha = 1;
+  // 1. Soft ambient shadow
+  ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+  ctx.shadowBlur = px * 0.8;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = px * 0.25;
+
+  // 2. Frosted obsidian pill background
   roundRect(ctx, x, y, pillW, pillH, pillH / 2);
-  ctx.fillStyle = "rgba(11,10,9,0.42)";
+  const bgGrad = ctx.createLinearGradient(x, y, x + pillW, y + pillH);
+  bgGrad.addColorStop(0, "rgba(20, 16, 13, 0.82)");
+  bgGrad.addColorStop(1, "rgba(35, 26, 18, 0.70)");
+  ctx.fillStyle = bgGrad;
   ctx.fill();
-  ctx.lineWidth = Math.max(1, px * 0.06);
-  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+
+  // Reset shadow for crisp borders & text
+  ctx.shadowColor = "transparent";
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // 3. Luxurious hairline border with ember highlight
+  ctx.lineWidth = Math.max(1.2, px * 0.07);
+  const borderGrad = ctx.createLinearGradient(x, y, x + pillW, y + pillH);
+  borderGrad.addColorStop(0, "rgba(255, 170, 80, 0.40)");
+  borderGrad.addColorStop(0.5, "rgba(255, 255, 255, 0.18)");
+  borderGrad.addColorStop(1, "rgba(255, 138, 61, 0.25)");
+  ctx.strokeStyle = borderGrad;
   ctx.stroke();
 
-  ctx.beginPath();
-  ctx.arc(x + padX + dot / 2, cy, dot / 2, 0, Math.PI * 2);
-  ctx.fillStyle = "#ff8a3d";
-  ctx.fill();
+  // 4. Draw luxury 4-point Ember sparkle brandmark
+  const iconX = x + padX + iconSize / 2;
+  const iconY = cy;
+  const r = iconSize * 0.48;
 
-  ctx.fillStyle = "rgba(255,255,255,0.92)";
-  ctx.fillText(text, x + padX + dot + gap, cy + px * 0.03);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(iconX, iconY - r);
+  ctx.quadraticCurveTo(iconX, iconY, iconX + r, iconY);
+  ctx.quadraticCurveTo(iconX, iconY, iconX, iconY + r);
+  ctx.quadraticCurveTo(iconX, iconY, iconX - r, iconY);
+  ctx.quadraticCurveTo(iconX, iconY, iconX, iconY - r);
+  ctx.closePath();
+
+  const iconGrad = ctx.createLinearGradient(iconX - r, iconY - r, iconX + r, iconY + r);
+  iconGrad.addColorStop(0, "#ffb066");
+  iconGrad.addColorStop(1, "#ff6b00");
+  ctx.fillStyle = iconGrad;
+  ctx.shadowColor = "rgba(255, 138, 61, 0.65)";
+  ctx.shadowBlur = px * 0.4;
+  ctx.fill();
+  ctx.restore();
+
+  // 5. Crisp typography ("malesan" in pure white, ".ai" in glowing ember)
+  const textStartX = x + padX + iconSize + gap;
+  
+  ctx.font = `800 ${px}px "Poppins", "Plus Jakarta Sans", system-ui, sans-serif`;
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+  ctx.shadowBlur = 3;
+  ctx.shadowOffsetY = 1;
+  ctx.fillText(brandName, textStartX, cy + px * 0.02);
+
+  ctx.font = `800 ${px}px "Poppins", "Plus Jakarta Sans", system-ui, sans-serif`;
+  ctx.fillStyle = "#ff9a47";
+  ctx.shadowColor = "rgba(255, 138, 61, 0.4)";
+  ctx.shadowBlur = 4;
+  ctx.fillText(brandExt, textStartX + brandW, cy + px * 0.02);
+
   ctx.restore();
 }
 

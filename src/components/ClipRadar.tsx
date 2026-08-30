@@ -63,6 +63,16 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const [bridgeBusy, setBridgeBusy] = useState(false);
   const [bridgeJob, setBridgeJob] = useState<BridgeJob | null>(null);
   const [bridgeError, setBridgeError] = useState<string | null>(null);
+  const [bridgeStartedAt, setBridgeStartedAt] = useState<number | null>(null);
+  const [nowTs, setNowTs] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!bridgeBusy) return;
+    const interval = setInterval(() => setNowTs(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [bridgeBusy]);
+
+  const elapsedSec = bridgeStartedAt && bridgeBusy ? Math.max(0, Math.floor((nowTs - bridgeStartedAt) / 1000)) : 0;
 
   const isMobile = useSyncExternalStore(emptySubscribe, getIsMobileSnapshot, () => false);
   const playerRef = useRef<YouTubeClipController | null>(null);
@@ -173,6 +183,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const startAutoClip = async () => {
     if (!scan || !clip || bridgeBusy) return;
     setBridgeBusy(true);
+    setBridgeStartedAt(Date.now());
     setBridgeError(null);
     let claimedJobId: string | null = null;
     let claimedWorkerToken: string | null = null;
@@ -449,33 +460,41 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             </p>
           ) : null}
 
-          <ul className="grid grid-cols-1 gap-2">
-            {scan.clips.map((c, i) => (
-              <li key={`${c.startTime}-${i}`}>
-                <button
-                  onClick={() => playClip(i)}
-                  aria-current={i === active ? "true" : undefined}
-                  aria-label={`Putar ${c.hookTitle}, ${clock(c.startTime)} sampai ${clock(c.endTime)}`}
-                  className={`flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
-                    i === active
-                      ? "border-ember/60 bg-ember/10"
-                      : "border-hairline bg-obsidian hover:border-ember/40"
-                  }`}
-                >
-                  <span className="mt-0.5 shrink-0 rounded-md bg-ember/15 px-1.5 py-0.5 text-micro font-bold text-ember tabular-nums">
-                    {c.viralScore}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-mini font-semibold leading-snug text-ink">
-                      {c.hookTitle}
+          <ul className="grid grid-cols-1 gap-2.5">
+            {scan.clips.map((c, i) => {
+              const durSec = Math.round(c.endTime - c.startTime);
+              return (
+                <li key={`${c.startTime}-${i}`}>
+                  <button
+                    onClick={() => playClip(i)}
+                    aria-current={i === active ? "true" : undefined}
+                    aria-label={`Putar ${c.hookTitle}, ${clock(c.startTime)} sampai ${clock(c.endTime)} (${durSec} detik)`}
+                    className={`flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition-all ${
+                      i === active
+                        ? "border-ember/60 bg-ember/10 shadow-sm ring-1 ring-ember/20"
+                        : "border-hairline bg-obsidian hover:border-ember/40 hover:bg-surface-raised/30"
+                    }`}
+                  >
+                    <span className="mt-0.5 shrink-0 rounded-md bg-ember/15 px-2 py-0.5 text-micro font-extrabold text-ember tabular-nums">
+                      {c.viralScore}
                     </span>
-                    <span className="mt-0.5 block text-micro leading-relaxed text-muted">
-                      {clock(c.startTime)}–{clock(c.endTime)} · {c.reason}
+                    <span className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="block truncate text-mini font-bold leading-snug text-ink">
+                          {c.hookTitle}
+                        </span>
+                        <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 font-mono text-[10px] font-bold text-ink/90">
+                          ⏱️ {durSec}s
+                        </span>
+                      </div>
+                      <span className="mt-1 block text-micro leading-relaxed text-muted">
+                        {clock(c.startTime)}–{clock(c.endTime)} · {durSec} detik · {c.reason}
+                      </span>
                     </span>
-                  </span>
-                </button>
-              </li>
-            ))}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
 
           {isMobile ? (
@@ -487,7 +506,12 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                   </svg>
                   Momen Terpilih
                 </span>
-                <span className="font-mono text-xs font-bold text-ember">{clock(clip.startTime)}–{clock(clip.endTime)}</span>
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-ember">
+                  <span>{clock(clip.startTime)}–{clock(clip.endTime)}</span>
+                  <span className="rounded-md bg-ember/20 px-1.5 py-0.5 text-[11px] text-ember">
+                    {Math.round(clip.endTime - clip.startTime)} detik
+                  </span>
+                </div>
               </div>
 
               <div className="rounded-xl border border-hairline/80 bg-obsidian/80 p-3.5 space-y-1.5">
@@ -524,18 +548,28 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 <span className="relative truncate">{bridgeBusy ? (bridgeJob?.stage || "Menyiapkan Auto Clip...") : `Bikin Auto Clip (${clock(clip.startTime)}–${clock(clip.endTime)})`}</span>
               </button>
               {bridgeBusy && bridgeJob ? (
-                <div className="space-y-1.5 pt-1">
-                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/10">
+                <div className="space-y-2 pt-1.5">
+                  <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-white/10">
                     <div
-                      className="h-full rounded-full bg-ember transition-[width] duration-300 relative overflow-hidden"
-                      style={{ width: `${Math.max(6, bridgeJob.progress)}%` }}
+                      className="h-full rounded-full bg-gradient-to-r from-ember/80 to-ember transition-[width] duration-300 relative overflow-hidden"
+                      style={{ width: `${Math.max(8, Math.min(99, bridgeJob.progress))}%` }}
                     >
-                      <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+                      <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/50 to-transparent" />
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-micro text-muted font-medium">
-                    <span className="truncate pr-2">{bridgeJob.stage || "Memproses klip..."}</span>
-                    <span className="tabular-nums text-ember font-bold shrink-0">{Math.max(5, Math.round(bridgeJob.progress))}%</span>
+                    <span className="truncate pr-2 font-medium text-ink/90 flex items-center gap-1.5">
+                      <span className="size-2 rounded-full bg-ember animate-ping shrink-0" />
+                      {bridgeJob.stage || "Memotong klip di HP..."}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] text-muted tabular-nums">
+                        ⏳ {elapsedSec}s / est. ~{Math.max(8, Math.min(25, Math.round((clip.endTime - clip.startTime) * 0.35)))}s
+                      </span>
+                      <span className="tabular-nums text-ember font-extrabold text-xs">
+                        {Math.min(99, Math.max(5, Math.round(bridgeJob.progress)))}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : null}
@@ -598,12 +632,14 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                   <div className="flex items-center justify-between gap-2 text-micro">
                     <span className="font-semibold text-ember flex items-center gap-1.5">
                       <span className="size-2 rounded-full bg-ember animate-ping" />
-                      Proses Bridge Berjalan
+                      Proses Auto Clip Berjalan
                     </span>
-                    <span className="font-mono font-bold text-muted">Kualitas HD 1080p</span>
+                    <span className="font-mono text-[11px] font-bold text-muted tabular-nums">
+                      ⏳ {elapsedSec}s · {Math.min(99, Math.max(5, Math.round(bridgeJob?.progress ?? 35)))}%
+                    </span>
                   </div>
                   <div className="relative h-2 w-full overflow-hidden rounded-full bg-obsidian border border-hairline">
-                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/80 to-ember transition-all duration-300" style={{ width: `${Math.max(bridgeJob?.progress ?? 35, 35)}%` }}>
+                    <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/80 to-ember transition-all duration-300" style={{ width: `${Math.max(bridgeJob?.progress ?? 35, 10)}%` }}>
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
                     </div>
                   </div>
