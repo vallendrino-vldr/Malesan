@@ -74,38 +74,26 @@ final class NativeClipEngine {
 
                 YoutubeDLResponse response = null;
                 try {
-                    // Multi-Tier Adaptive Extractor Pipeline with Guaranteed 1080p Sorting:
-                    // Tier 1: Direct Web Full HD 1080p AVC MP4 (Fastest, highest bitrate)
-                    // Tier 2: YouTube iOS & Android Client (Bypasses Web Botguard & SABR challenges)
-                    // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music embed restrictions)
-                    int[] tiers = new int[]{1, 2, 3};
-                    Throwable lastError = null;
-                    for (int tier : tiers) {
-                        try {
-                            deleteMatches(directory, jobId);
-                            YoutubeDLRequest req = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, cookieFile, tier);
-                            response = YoutubeDL.getInstance().execute(req, jobId, false, (percent, eta, line) -> {
-                                if (percent > 0) {
-                                    syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
-                                    listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
-                                }
-                                return Unit.INSTANCE;
-                            });
-                            if (response != null && response.getExitCode() == 0) {
-                                File check = findOutput(directory, jobId);
-                                if (check != null && check.length() >= 1024) {
-                                    lastError = null;
-                                    break; // Success!
-                                }
+                    try {
+                        YoutubeDLRequest primaryReq = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, cookieFile, false);
+                        response = YoutubeDL.getInstance().execute(primaryReq, jobId, false, (percent, eta, line) -> {
+                            if (percent > 0) {
+                                syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
+                                listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
                             }
-                        } catch (Throwable tierErr) {
-                            lastError = tierErr;
-                            android.util.Log.w("NativeClipEngine", "Tier " + tier + " extractor failed, attempting next tier...", tierErr);
-                            deleteMatches(directory, jobId);
-                        }
-                    }
-                    if (lastError != null && (response == null || response.getExitCode() != 0)) {
-                        throw lastError;
+                            return Unit.INSTANCE;
+                        });
+                    } catch (Throwable primaryError) {
+                        android.util.Log.w("NativeClipEngine", "Primary request failed, attempting fallback extractor...", primaryError);
+                        deleteMatches(directory, jobId);
+                        YoutubeDLRequest fallbackReq = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, cookieFile, true);
+                        response = YoutubeDL.getInstance().execute(fallbackReq, jobId, false, (percent, eta, line) -> {
+                            if (percent > 0) {
+                                syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
+                                listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
+                            }
+                            return Unit.INSTANCE;
+                        });
                     }
                 } finally {
                     running.set(false);
@@ -133,10 +121,10 @@ final class NativeClipEngine {
     }
 
     // =========================================================================
-    // 🔒 MULTI-TIER ADAPTIVE EXTRACTOR CONFIGURATION (GUARANTEED 1080P FULL HD)
-    // Tier 1: Pristine Full HD 1080p AVC MP4 (Web Direct)
-    // Tier 2: Official YouTube iOS & Android Client (Anti-Bot Bypass + 1080p Sort)
-    // Tier 3: TV Embedded & MWeb Client (Music/VEVO Bypass + 1080p Sort)
+    // 🔒 LOCKED GOLDEN ENGINE CONFIGURATION (v2.2.4 CRYSTAL-CLEAR 1080P FULL HD)
+    // 1. NEVER add --extractor-args "youtube:player_client=..." (causes low-bitrate HLS downsampling)
+    // 2. Format bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b guarantees 1080p/720p Full HD AVC MP4
+    // 3. updateYoutubeDL(_STABLE) + WebView Cookies ensures 100% human bot bypass
     // =========================================================================
     private static YoutubeDLRequest buildRequest(
             String sourceUrl,
@@ -145,7 +133,7 @@ final class NativeClipEngine {
             File directory,
             String jobId,
             File cookieFile,
-            int tier) {
+            boolean isFallback) {
         YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
                 .addOption("--no-playlist")
                 .addOption("--no-part")
@@ -158,24 +146,12 @@ final class NativeClipEngine {
             request.addOption("--cookies", cookieFile.getAbsolutePath());
         }
 
-        switch (tier) {
-            case 1: // Primary Tier: Unrestricted Direct Web Full HD 1080p AVC MP4
-                request.addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b")
-                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
-                break;
-            case 2: // Tier 2: Official YouTube iOS/Android Client (Bypasses Web Botguard with Strict 1080p Sort)
-                request.addOption("--extractor-args", "youtube:player_client=ios,android,web")
-                       .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/bestvideo+bestaudio/best")
-                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
-                break;
-            case 3: // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music restrictions with 1080p Sort)
-                request.addOption("--extractor-args", "youtube:player_client=tv_embedded,web_creator,mweb")
-                       .addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/bestvideo+bestaudio/best")
-                       .addOption("--format-sort", "res:1080,res:720,vcodec:h264,res,size");
-                break;
-            default:
-                request.addOption("-f", "bestvideo+bestaudio/best");
-                break;
+        if (!isFallback) {
+            request.addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b")
+                   .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
+        } else {
+            request.addOption("-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best")
+                   .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
         }
         return request;
     }

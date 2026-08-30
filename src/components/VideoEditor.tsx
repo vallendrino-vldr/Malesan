@@ -1125,7 +1125,6 @@ function VideoPreviewPlayer({
 
   const objectPosition = `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`;
   const videoTransform = currentZoom > 1.01 ? `scale(${currentZoom.toFixed(2)})` : undefined;
-
   const resolvedVideoSrc = videoUrl
     ? videoUrl.includes("#t=")
       ? videoUrl
@@ -1134,10 +1133,10 @@ function VideoPreviewPlayer({
 
   const containerRatioClass =
     layout.ratio === "9:16"
-      ? "aspect-[9/16] h-[52vh] sm:h-[60vh] max-h-[560px] w-auto max-w-[320px]"
+      ? "aspect-[9/16] h-[40vh] sm:h-[48vh] max-h-[380px] w-auto max-w-[240px]"
       : layout.ratio === "16:9"
-      ? "aspect-video h-[32vh] sm:h-[40vh] max-h-[380px] w-auto max-w-[500px]"
-      : "aspect-square h-[38vh] sm:h-[48vh] max-h-[440px] w-auto max-w-[340px]";
+      ? "aspect-video h-[26vh] sm:h-[34vh] max-h-[300px] w-auto max-w-[420px]"
+      : "aspect-square h-[32vh] sm:h-[40vh] max-h-[340px] w-auto max-w-[280px]";
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -1154,9 +1153,11 @@ function VideoPreviewPlayer({
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const dx = (startPosRef.current.x - e.clientX) / (rect.width * 0.8);
-    const nextPanX = Math.max(0, Math.min(1, startPosRef.current.panX + dx));
+    const deltaX = e.clientX - startPosRef.current.x;
+    // Map drag pixels to pan ratio: dragging left reveals right, dragging right reveals left
+    const panSensitivity = 0.003;
+    const nextPanX = Math.max(0, Math.min(1, startPosRef.current.panX - deltaX * panSensitivity));
+    setCurrentPanX(nextPanX);
     onManualPanChange?.(nextPanX);
   };
 
@@ -1183,9 +1184,9 @@ function VideoPreviewPlayer({
       )}
 
       {/* Interactive Drag Hint */}
-      <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-2.5 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-md shadow-md">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-        <span>Geser layar untuk sudut kamera</span>
+      <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2 py-0.5 text-[9px] font-semibold text-white/90 backdrop-blur-md shadow-md">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+        <span>Geser sudut kamera</span>
       </div>
 
       {isPodcastSplit ? (
