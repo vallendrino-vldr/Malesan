@@ -140,20 +140,19 @@ export function YouTubeClipPlayer({
   onState,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const [activeRange, setActiveRange] = useState<{ start: number; end: number }>({
-    start: initialStart,
-    end: initialEnd,
-  });
-  const initialRangeRef = useRef({ start: initialStart, end: initialEnd });
+  const activeRangeRef = useRef({ start: initialStart, end: initialEnd });
   const callbacksRef = useRef({ onController, onError, onPlaybackProof, onDuration, onState });
-
-  useEffect(() => {
-    initialRangeRef.current = { start: initialStart, end: initialEnd };
-  }, [initialStart, initialEnd]);
 
   useEffect(() => {
     callbacksRef.current = { onController, onError, onPlaybackProof, onDuration, onState };
   }, [onController, onError, onPlaybackProof, onDuration, onState]);
+
+  // Static mount URL: never mutate src in React render. Mutating src reloads the
+  // iframe, resets video back to 0:00, and severs the YouTube Iframe API connection.
+  const [mountSrc] = useState(() => {
+    const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
+    return `https://www.youtube.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&autoplay=1&start=${Math.floor(initialStart)}&end=${Math.floor(initialEnd)}${origin}`;
+  });
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -163,7 +162,7 @@ export function YouTubeClipPlayer({
     let player: YouTubePlayer | null = null;
     let stopTimer: ReturnType<typeof setInterval> | null = null;
     let proofTimer: ReturnType<typeof setTimeout> | null = null;
-    let targetEnd = initialRangeRef.current.end;
+    let targetEnd = activeRangeRef.current.end;
 
     const clearPlaybackTimers = () => {
       if (stopTimer) clearInterval(stopTimer);
@@ -177,23 +176,20 @@ export function YouTubeClipPlayer({
         if (nextEndSeconds <= startSeconds) return false;
         clearPlaybackTimers();
         targetEnd = nextEndSeconds;
+        activeRangeRef.current = { start: startSeconds, end: nextEndSeconds };
         callbacksRef.current.onError(null);
 
-        let didCallPlayer = false;
-
-        // 1. Native IFrame API method invocation
+        // 1. Direct IFrame API method invocation
         if (player) {
           try {
             player.loadVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
             player.seekTo(startSeconds, true);
             player.playVideo();
-            didCallPlayer = true;
           } catch {
             try {
               player.cueVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
               player.seekTo(startSeconds, true);
               player.playVideo();
-              didCallPlayer = true;
             } catch {}
           }
         }
@@ -220,18 +216,13 @@ export function YouTubeClipPlayer({
           }
         } catch {}
 
-        // 3. Fallback range update if native player was not ready
-        if (!didCallPlayer) {
-          setActiveRange({ start: startSeconds, end: nextEndSeconds });
-        }
-
         proofTimer = setTimeout(() => {
           if (player) {
             try { callbacksRef.current.onPlaybackProof(player.getCurrentTime()); } catch {}
           } else {
             callbacksRef.current.onPlaybackProof(startSeconds);
           }
-        }, 600);
+        }, 500);
 
         stopTimer = setInterval(() => {
           if (player) {
@@ -265,10 +256,11 @@ export function YouTubeClipPlayer({
                 if (typeof duration === "number" && duration > 0) {
                   callbacksRef.current.onDuration?.(duration);
                 }
-                const s = initialRangeRef.current.start;
-                const e = initialRangeRef.current.end;
+                const s = activeRangeRef.current.start;
+                const e = activeRangeRef.current.end;
                 player.cueVideoById({ videoId, startSeconds: s, endSeconds: e });
                 player.seekTo(s, true);
+                player.playVideo();
               } catch {}
             },
             onStateChange: ({ data }) => {
@@ -305,13 +297,11 @@ export function YouTubeClipPlayer({
     };
   }, [videoId]);
 
-  const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
-
   return (
     <iframe
       id={`yt-clip-player-${videoId}`}
       ref={iframeRef}
-      src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&autoplay=1&start=${Math.floor(activeRange.start)}&end=${Math.floor(activeRange.end)}${origin}`}
+      src={mountSrc}
       title={`Preview: ${title}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
       allowFullScreen

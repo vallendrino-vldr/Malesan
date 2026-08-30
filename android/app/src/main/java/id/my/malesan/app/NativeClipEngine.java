@@ -37,7 +37,7 @@ final class NativeClipEngine {
                 try {
                     listener.onProgress(2f, "Memperbarui mesin download...");
                     YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._NIGHTLY);
-                } catch (Exception ignored) {
+                } catch (Throwable ignored) {
                     // Best-effort — proceed with bundled version if network is down.
                 }
                 YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
@@ -57,7 +57,7 @@ final class NativeClipEngine {
                 listener.onReady(output);
             } catch (InterruptedException interrupted) {
                 Thread.currentThread().interrupt(); deleteMatches(directory, jobId); listener.onError("Pemrosesan clip dibatalkan.");
-            } catch (Exception failure) {
+            } catch (Throwable failure) {
                 deleteMatches(directory, jobId); listener.onError(failure.getMessage() == null ? "Auto Clip native gagal." : failure.getMessage());
             }
         });

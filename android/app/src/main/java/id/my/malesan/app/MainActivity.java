@@ -450,29 +450,34 @@ public final class MainActivity extends Activity {
             return;
         }
         activeClipJobId = jobId;
-        clipEngine.start(jobId, sourceUrl, start, end, new NativeClipEngine.Listener() {
-            @Override public void onProgress(float percent, String stage) {
-                runOnUiThread(() -> {
-                    try { reply(replyProxy, new JSONObject().put("type", "CLIP_PROGRESS").put("requestId", requestId).put("progress", percent).put("stage", stage)); }
-                    catch (JSONException ignored) { }
-                });
-            }
-            @Override public void onReady(File file) {
-                runOnUiThread(() -> {
-                    activeClipJobId = null;
-                    String token = randomToken();
-                    clipOutputs.put(token, file);
-                    try {
-                        reply(replyProxy, new JSONObject().put("type", "CLIP_READY").put("requestId", requestId)
-                                .put("downloadUrl", "https://appassets.androidplatform.net/native-clip/" + token)
-                                .put("downloadToken", token).put("outputBytes", file.length()));
-                    } catch (JSONException ignored) { }
-                });
-            }
-            @Override public void onError(String message) {
-                runOnUiThread(() -> { activeClipJobId = null; reply(replyProxy, error(requestId, "CLIP_FAILED", message)); });
-            }
-        });
+        try {
+            clipEngine.start(jobId, sourceUrl, start, end, new NativeClipEngine.Listener() {
+                @Override public void onProgress(float percent, String stage) {
+                    runOnUiThread(() -> {
+                        try { reply(replyProxy, new JSONObject().put("type", "CLIP_PROGRESS").put("requestId", requestId).put("progress", percent).put("stage", stage)); }
+                        catch (JSONException ignored) { }
+                    });
+                }
+                @Override public void onReady(File file) {
+                    runOnUiThread(() -> {
+                        activeClipJobId = null;
+                        String token = randomToken();
+                        clipOutputs.put(token, file);
+                        try {
+                            reply(replyProxy, new JSONObject().put("type", "CLIP_READY").put("requestId", requestId)
+                                    .put("downloadUrl", "https://appassets.androidplatform.net/native-clip/" + token)
+                                    .put("downloadToken", token).put("outputBytes", file.length()));
+                        } catch (JSONException ignored) { }
+                    });
+                }
+                @Override public void onError(String message) {
+                    runOnUiThread(() -> { activeClipJobId = null; reply(replyProxy, error(requestId, "CLIP_FAILED", message)); });
+                }
+            });
+        } catch (Throwable failure) {
+            activeClipJobId = null;
+            reply(replyProxy, error(requestId, "CLIP_FAILED", failure.getMessage() == null ? "Gagal memproses clip." : failure.getMessage()));
+        }
     }
 
     private String randomToken() {
