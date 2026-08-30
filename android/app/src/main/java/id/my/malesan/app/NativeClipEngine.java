@@ -34,7 +34,9 @@ final class NativeClipEngine {
                 YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
                         .addOption("--no-playlist")
                         .addOption("--no-part")
-                        .addOption("--extractor-args", "youtube:player_client=android,web")
+                        .addOption("--no-warnings")
+                        .addOption("--no-update")
+                        .addOption("--extractor-args", "youtube:player_client=android,ios;player_skip=webpage,configs,js")
                         .addOption("-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/best[height>=720]/bestvideo+bestaudio/best")
                         .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
                         .addOption("--force-keyframes-at-cuts")
@@ -101,12 +103,31 @@ final class NativeClipEngine {
                 deleteMatches(directory, jobId);
                 String msg = failure.getMessage();
                 if (msg == null || msg.trim().isEmpty()) msg = failure.toString();
-                listener.onError(msg);
+                listener.onError(sanitizeErrorMessage(msg));
             }
         });
     }
     void cancel(String jobId) { YoutubeDL.getInstance().destroyProcessById(jobId); }
     void shutdown() { executor.shutdownNow(); }
+    private static String sanitizeErrorMessage(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return "Gagal memproses klip video.";
+        String lower = raw.toLowerCase(Locale.ROOT);
+        if (lower.contains("429") || lower.contains("too many requests")) {
+            return "YouTube sedang membatasi sementara permintaan video ini. Coba beberapa saat lagi atau gunakan opsi 'Pakai file sendiri'.";
+        }
+        if (lower.contains("sign in") || lower.contains("bot") || lower.contains("cookie")) {
+            return "Video YouTube ini memerlukan verifikasi usia atau login. Coba video lain atau unggah file rekaman langsung.";
+        }
+        if (lower.contains("private") || lower.contains("members-only")) {
+            return "Video YouTube ini bersifat privat atau khusus member.";
+        }
+        if (lower.contains("network") || lower.contains("timeout") || lower.contains("connect")) {
+            return "Koneksi internet terputus saat mengunduh video. Pastikan internet stabil dan coba lagi.";
+        }
+        String cleaned = raw.replaceAll("(?s)WARNING:.*?(ERROR:|$)", "").replaceAll("ERROR:\\s*\\[youtube\\]\\s*", "").trim();
+        if (cleaned.length() > 140) cleaned = cleaned.substring(0, 140) + "...";
+        return cleaned.isEmpty() ? "Gagal memotong video YouTube." : cleaned;
+    }
     private static String stage(String line) {
         if (line == null) return "Mengambil potongan video...";
         String value = line.toLowerCase(Locale.ROOT);
