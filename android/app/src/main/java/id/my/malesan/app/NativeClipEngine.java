@@ -35,7 +35,7 @@ final class NativeClipEngine {
                         .addOption("--no-playlist")
                         .addOption("--no-part")
                         .addOption("--no-warnings")
-                        .addOption("--format", "best[height<=1080][ext=mp4]/best[height<=720][ext=mp4]/bv*[height<=1080][ext=mp4]+ba[ext=m4a]/best")
+                        .addOption("--format", "bv*[height<=1080]+ba/bv*[height<=720]+ba/bv*+ba/bestvideo+bestaudio/best")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                         .addOption("--force-keyframes-at-cuts")

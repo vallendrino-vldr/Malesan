@@ -155,7 +155,7 @@ export function drawCaption(
   });
   if (row.length) rows.push({ words: row, width: rowW });
 
-  const lineH = fontPx * Math.max(1.25, style.activeScale * 1.12);
+  const lineH = Math.round(fontPx * 1.45);
   const totalH = rows.length * lineH;
   const cy0 = H * style.position - totalH / 2 + lineH / 2;
 
@@ -163,28 +163,28 @@ export function drawCaption(
     const cy = cy0 + ri * lineH;
     let x = W / 2 - r.width / 2;
     if (style.style === "box") {
-      const pad = fontPx * 0.28;
-      roundRect(ctx, x - pad, cy - lineH / 2 + fontPx * 0.12, r.width + pad * 2, lineH * 0.86, fontPx * 0.22);
-      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      const pad = fontPx * 0.32;
+      roundRect(ctx, x - pad, cy - lineH * 0.44, r.width + pad * 2, lineH * 0.88, fontPx * 0.24);
+      ctx.fillStyle = "rgba(12,10,8,0.72)";
       ctx.fill();
     }
     for (const word of r.words) {
       const cx = x + word.w / 2;
       const active = render[word.idx].active;
       const color = active ? style.highlightColor : style.textColor;
-      ctx.font = `${style.bold ? 800 : 600} ${fontPx * word.scale}px "${style.fontFamily}", sans-serif`;
+      ctx.font = `${style.bold ? 800 : 700} ${fontPx}px "${style.fontFamily}", sans-serif`;
       if (style.style === "outline") {
         ctx.lineJoin = "round";
-        ctx.lineWidth = fontPx * 0.16;
-        ctx.strokeStyle = "rgba(0,0,0,0.9)";
+        ctx.lineWidth = fontPx * 0.18;
+        ctx.strokeStyle = "rgba(0,0,0,0.95)";
         ctx.strokeText(word.text, cx, cy);
       } else if (style.style === "plain") {
-        ctx.shadowColor = "rgba(0,0,0,0.85)";
-        ctx.shadowBlur = fontPx * 0.25;
+        ctx.shadowColor = "rgba(0,0,0,0.95)";
+        ctx.shadowBlur = fontPx * 0.35;
       }
       if (active && style.activeGlow) {
         ctx.shadowColor = style.highlightColor;
-        ctx.shadowBlur = fontPx * 0.45;
+        ctx.shadowBlur = fontPx * 0.55;
       }
       ctx.fillStyle = color;
       ctx.fillText(word.text, cx, cy);

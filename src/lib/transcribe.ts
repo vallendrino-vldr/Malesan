@@ -70,9 +70,14 @@ async function postWithRotation(
     form.append("response_format", "verbose_json");
     form.append("timestamp_granularities[]", "word");
     form.append("temperature", "0");
-    const defaultPrompt =
-      "Transkrip video percakapan santai, podcast, dan konten kreator. Pertahankan ejaan kata asli dan istilah Inggris/Indonesia secara akurat.";
-    form.append("prompt", opts?.prompt || defaultPrompt);
+    if (opts?.prompt) {
+      form.append("prompt", opts.prompt);
+    } else if (opts?.language === "id") {
+      form.append(
+        "prompt",
+        "Transkrip video percakapan santai bahasa Indonesia, podcast, dan konten kreator. Pertahankan ejaan kata asli secara akurat.",
+      );
+    }
     if (opts?.language && opts.language !== "auto") {
       form.append("language", opts.language);
     }

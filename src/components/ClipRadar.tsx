@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { getNativeShell, startNativeRequest, subscribeNative } from "@/lib/native/bridge";
 import {
@@ -65,6 +66,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const [bridgeError, setBridgeError] = useState<string | null>(null);
   const [bridgeStartedAt, setBridgeStartedAt] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState(() => Date.now());
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   useEffect(() => {
     if (!bridgeBusy) return;
@@ -674,6 +676,74 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
           )}
         </div>
       )}
+
+      {/* Pop-up modal window with blurred backdrop during Auto Clip */}
+      {bridgeBusy && mounted && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true">
+              <div className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-ember/40 bg-surface-raised/95 p-6 shadow-2xl space-y-5 text-center">
+                <div className="pointer-events-none absolute -top-24 -left-24 size-48 rounded-full bg-ember/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-24 -right-24 size-48 rounded-full bg-ember/15 blur-3xl" />
+
+                {/* Animated Spinner & Icon */}
+                <div className="relative mx-auto flex size-20 items-center justify-center">
+                  <div className="absolute inset-0 rounded-full border-4 border-obsidian" />
+                  <div className="absolute inset-0 rounded-full border-4 border-ember border-t-transparent animate-spin" />
+                  <div className="size-14 rounded-full bg-ember/10 flex items-center justify-center text-ember">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-7">
+                      <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <h3 className="font-display text-lg font-bold text-ink">
+                    Memotong Klip HD
+                  </h3>
+                  <p className="text-mini font-semibold text-ember line-clamp-1">
+                    {clip ? clip.hookTitle : "Menyiapkan klip pilihan"}
+                  </p>
+                  {clip ? (
+                    <p className="text-micro text-muted">
+                      Durasi: {clock(clip.startTime)} – {clock(clip.endTime)} ({Math.round(clip.endTime - clip.startTime)} detik)
+                    </p>
+                  ) : null}
+                </div>
+
+                {/* Progress Bar & ETA */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between text-micro font-mono">
+                    <span className="font-semibold text-ember flex items-center gap-1.5 text-left">
+                      <span className="size-2 rounded-full bg-ember animate-ping shrink-0" />
+                      <span className="line-clamp-1">{bridgeJob?.stage || "Memproses di perangkat kamu..."}</span>
+                    </span>
+                    <span className="font-bold text-ink tabular-nums shrink-0 ml-2">
+                      {Math.min(99, Math.max(5, Math.round(bridgeJob?.progress ?? 35)))}%
+                    </span>
+                  </div>
+                  <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-obsidian border border-hairline">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-ember/80 to-ember transition-all duration-300"
+                      style={{ width: `${Math.max(bridgeJob?.progress ?? 35, 10)}%` }}
+                    >
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-muted">
+                    <span>Waktu berjalan: <strong className="text-ink font-mono">{elapsedSec}s</strong></span>
+                    <span className="font-mono text-muted">Kualitas 1080p HD</span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-hairline/60 bg-obsidian/40 p-3 text-micro leading-relaxed text-muted text-left flex items-start gap-2.5">
+                  <span className="text-ember text-sm shrink-0">💡</span>
+                  <span>Proses berjalan di perangkat lo. Layar terkunci sementara agar proses tidak terganggu.</span>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }

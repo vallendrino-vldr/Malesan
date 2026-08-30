@@ -135,8 +135,8 @@ export async function POST(request: NextRequest) {
   // Refine misheard phonetics & colloquial speech using Indonesian contextual AI
   let finalWords = transcript.words;
   let finalText = transcript.text;
-  const detectedLang = transcript.language || (language !== "auto" ? language : "id");
-  if (detectedLang === "id" && finalWords.length > 0) {
+  const detectedLang = (transcript.language || (language !== "auto" ? language : "en")).toLowerCase();
+  if ((detectedLang === "id" || detectedLang === "indonesian") && finalWords.length > 0) {
     const refined = await refineTranscriptWithAI(finalWords, finalText);
     finalWords = refined.words;
     finalText = refined.text;

@@ -772,11 +772,11 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
       : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center z-10"
+      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center z-10 select-none"
       style={{ top: `${style.position * 100}%` }}
     >
       <p
-        className="max-w-[90%] leading-snug drop-shadow-md"
+        className="max-w-[92%] leading-[1.45] drop-shadow-md"
         style={{
           fontFamily: `"${style.fontFamily}", sans-serif`,
           fontWeight: style.bold ? 800 : 700,
@@ -788,25 +788,24 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
               : style.style === "plain"
                 ? "0 2px 8px rgba(0,0,0,0.95)"
                 : "none",
-          background: style.style === "box" ? "rgba(15,12,10,0.7)" : "transparent",
-          padding: style.style === "box" ? "0.2em 0.5em" : 0,
-          borderRadius: style.style === "box" ? "0.4em" : 0,
+          background: style.style === "box" ? "rgba(12,10,8,0.72)" : "transparent",
+          padding: style.style === "box" ? "0.3em 0.6em" : 0,
+          borderRadius: style.style === "box" ? "0.45em" : 0,
           border: style.style === "box" ? "1px solid rgba(255,255,255,0.12)" : "none",
           opacity: style.animation === "fade" ? eased : 1,
-          transform: style.animation === "pop" ? `scale(${0.85 + eased * 0.15})` : undefined,
+          transform: style.animation === "pop" && style.mode === "word" ? `scale(${0.88 + eased * 0.12})` : undefined,
         }}
       >
         {shown.map((w, i) => (
           <span
             key={i}
-            className="inline-block"
+            className="inline-block transition-colors duration-100"
             style={{
               color: w.active ? style.highlightColor : undefined,
-              transform: w.active && style.activeScale !== 1 ? `scale(${style.activeScale})` : undefined,
-              textShadow: w.active && style.activeGlow
-                ? `0 0 0.4em ${style.highlightColor}, 0 0 0.8em ${style.highlightColor}`
+              textShadow: w.active && (style.activeGlow || style.style === "plain")
+                ? `0 0 0.5em ${style.highlightColor}, 0 0 1em ${style.highlightColor}`
                 : undefined,
-              marginInline: "0.12em",
+              marginInline: "0.14em",
             }}
           >
             {w.text}
@@ -991,17 +990,17 @@ function StylePanel({
           </div>
 
           <div>
-            <span className="text-micro text-muted">Munculnya</span>
-            <div className="mt-1 flex gap-1.5">
+            <span className="text-micro font-medium text-muted">Munculnya Teks</span>
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
               {(["word", "line"] as const).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => set({ mode: m })}
-                  className={`h-8 flex-1 rounded-lg border px-2 text-micro font-semibold transition-colors ${
+                  className={`flex h-10 items-center justify-center rounded-xl border px-3 text-mini font-semibold transition-all ${
                     style.mode === m
-                      ? "border-ember bg-ember/15 text-ember"
-                      : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                      ? "border-ember bg-ember/15 text-ember shadow-sm"
+                      : "border-hairline bg-surface-raised/40 text-muted hover:text-ink"
                   }`}
                 >
                   {m === "word" ? "Per kata" : "Per kalimat"}
@@ -1011,11 +1010,11 @@ function StylePanel({
           </div>
 
           <label className="block">
-            <span className="text-micro text-muted">Font</span>
+            <span className="text-micro font-medium text-muted">Font Tulisan</span>
             <select
               value={style.fontFamily}
               onChange={(e) => set({ fontFamily: e.target.value })}
-              className="mt-1 h-8.5 w-full rounded-lg border border-hairline bg-obsidian/40 px-2 text-mini text-ink outline-none focus:border-ember/50"
+              className="mt-1.5 h-10 w-full rounded-xl border border-hairline bg-surface-raised/50 px-3 text-mini font-semibold text-ink outline-none focus:border-ember/50"
             >
               {CAPTION_FONTS.map((f) => (
                 <option key={f.family} value={f.family}>
@@ -1025,35 +1024,38 @@ function StylePanel({
             </select>
           </label>
 
-          <div className="flex gap-1.5">
-            {(["box", "outline", "plain"] as const).map((captionStyle) => (
-              <button
-                key={captionStyle}
-                type="button"
-                onClick={() => set({ style: captionStyle })}
-                className={`h-8 flex-1 rounded-lg border px-2 text-micro font-semibold capitalize transition-colors ${
-                  style.style === captionStyle
-                    ? "border-ember bg-ember/15 text-ember"
-                    : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-                }`}
-              >
-                {captionStyle}
-              </button>
-            ))}
+          <div>
+            <span className="text-micro font-medium text-muted">Gaya Teks</span>
+            <div className="mt-1.5 grid grid-cols-3 gap-2">
+              {(["box", "outline", "plain"] as const).map((captionStyle) => (
+                <button
+                  key={captionStyle}
+                  type="button"
+                  onClick={() => set({ style: captionStyle })}
+                  className={`flex h-10 items-center justify-center rounded-xl border px-2 text-mini font-semibold capitalize transition-all ${
+                    style.style === captionStyle
+                      ? "border-ember bg-ember/15 text-ember shadow-sm"
+                      : "border-hairline bg-surface-raised/40 text-muted hover:text-ink"
+                  }`}
+                >
+                  {captionStyle}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div>
-            <span className="text-micro text-muted">Animasi masuk</span>
-            <div className="mt-1 grid grid-cols-3 gap-1.5">
+            <span className="text-micro font-medium text-muted">Animasi Masuk</span>
+            <div className="mt-1.5 grid grid-cols-3 gap-2">
               {(["none", "pop", "fade"] as const).map((animation) => (
                 <button
                   key={animation}
                   type="button"
                   onClick={() => set({ animation })}
-                  className={`h-8 rounded-lg border px-2 text-micro font-semibold capitalize transition-colors ${
+                  className={`flex h-10 items-center justify-center rounded-xl border px-2 text-mini font-semibold capitalize transition-all ${
                     style.animation === animation
-                      ? "border-ember bg-ember/15 text-ember"
-                      : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                      ? "border-ember bg-ember/15 text-ember shadow-sm"
+                      : "border-hairline bg-surface-raised/40 text-muted hover:text-ink"
                   }`}
                 >
                   {animation === "none" ? "Tanpa" : animation}
@@ -1062,38 +1064,39 @@ function StylePanel({
             </div>
           </div>
 
-          <label className="flex h-8 items-center gap-2 text-mini text-ink cursor-pointer">
+          <label className="flex h-10 items-center gap-2 text-mini text-ink cursor-pointer rounded-xl border border-hairline bg-surface-raised/30 px-3">
             <input
               type="checkbox"
               checked={style.bold}
               onChange={(e) => set({ bold: e.target.checked })}
-              className="size-4 accent-ember"
+              className="size-4 accent-ember rounded"
             />
-            Extra tebal
+            <span className="font-semibold">Huruf ekstra tebal (Extra Bold)</span>
           </label>
 
-          <div>
-            <div className="flex justify-between items-center text-micro text-muted">
-              <span>Posisi Vertikal Subtitle</span>
+          <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 space-y-2">
+            <div className="flex justify-between items-center text-micro">
+              <span className="font-medium text-muted">Posisi Vertikal Subtitle</span>
               <span className="font-mono text-ember font-bold">{Math.round(style.position * 100)}%</span>
             </div>
-            <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "Atas", val: 0.30 },
-                { label: "Tengah", val: 0.50 },
-                { label: "Bawah", val: 0.65 },
+                { label: "Atas", pct: "30%", val: 0.30 },
+                { label: "Tengah", pct: "50%", val: 0.50 },
+                { label: "Bawah", pct: "65%", val: 0.65 },
               ].map((pos) => (
                 <button
                   key={pos.label}
                   type="button"
                   onClick={() => set({ position: pos.val })}
-                  className={`h-8 rounded-lg border px-2 text-micro font-semibold transition-colors ${
+                  className={`flex h-11 flex-col items-center justify-center rounded-xl border px-2 py-1 transition-all ${
                     Math.abs(style.position - pos.val) < 0.05
-                      ? "border-ember bg-ember/15 text-ember"
-                      : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                      ? "border-ember bg-ember/15 text-ember shadow-sm"
+                      : "border-hairline bg-surface-raised/40 text-muted hover:text-ink"
                   }`}
                 >
-                  {pos.label} ({Math.round(pos.val * 100)}%)
+                  <span className="text-mini font-bold leading-tight">{pos.label}</span>
+                  <span className="text-[10px] opacity-75 font-mono">{pos.pct}</span>
                 </button>
               ))}
             </div>

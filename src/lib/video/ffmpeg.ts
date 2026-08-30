@@ -82,7 +82,6 @@ export async function extractAudio(
       "-vn",
       "-ac", "1",
       "-ar", "16000",
-      "-af", "volume=1.4,highpass=f=70,lowpass=f=7500",
       "-c:a", "pcm_s16le",
       outName,
     ]);
