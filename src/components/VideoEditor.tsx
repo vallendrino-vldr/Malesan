@@ -46,8 +46,8 @@ const SOCIAL_PRESETS = [
       textColor: "#ffffff",
       highlightColor: "#c8ff36",
       style: "plain" as const,
-      position: 0.58,
-      fontScale: 1.04,
+      position: 0.65,
+      fontScale: 1.0,
       activeScale: 1.1,
       activeGlow: true,
       mode: "line" as const,
@@ -68,7 +68,7 @@ const SOCIAL_PRESETS = [
       highlightColor: "#ffdf39",
       style: "outline" as const,
       position: 0.62,
-      fontScale: 1.08,
+      fontScale: 1.0,
       activeScale: 1,
       activeGlow: false,
       mode: "word" as const,
@@ -89,7 +89,7 @@ const SOCIAL_PRESETS = [
       highlightColor: "#ffb067",
       style: "box" as const,
       position: 0.68,
-      fontScale: 0.9,
+      fontScale: 0.88,
       activeScale: 1,
       activeGlow: false,
       mode: "line" as const,
@@ -125,6 +125,7 @@ export function VideoEditor({
   const [noWatermark, setNoWatermark] = useState(false);
   const [doneMsg, setDoneMsg] = useState<string | null>(null);
   const [captionLanguage, setCaptionLanguage] = useState<"id" | "en">("id");
+  const [sourceLanguage, setSourceLanguage] = useState<"id" | "en">("id");
   const [sourceWords, setSourceWords] = useState<Word[] | null>(null);
   const [translating, setTranslating] = useState(false);
   const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center" });
@@ -216,11 +217,11 @@ export function VideoEditor({
       const form = new FormData();
       form.append("audio", audioBlob, audioFilename);
       form.append("durationSec", String(durationSec));
-      form.append("language", "id");
+      form.append("language", "auto");
 
       const res = await fetch("/api/video/transcribe", { method: "POST", body: form });
       const data = (await res.json().catch(() => null)) as
-        | { words?: Word[]; error?: string }
+        | { words?: Word[]; language?: string; error?: string }
         | null;
       if (!res.ok || !data?.words?.length) {
         setError(data?.error ?? "Transkripsi gagal. Coba lagi bentar lagi.");
@@ -229,7 +230,9 @@ export function VideoEditor({
       }
       setWords(data.words);
       setSourceWords(data.words);
-      setCaptionLanguage("id");
+      const detected = (data.language || "id") === "en" ? "en" : "id";
+      setSourceLanguage(detected);
+      setCaptionLanguage(detected);
 
       setPhase("ready");
       setStatus("");
@@ -257,9 +260,9 @@ export function VideoEditor({
 
   const translateCaptions = useCallback(async (target: "id" | "en") => {
     if (!words.length || translating || target === captionLanguage) return;
-    if (target === "id" && sourceWords) {
+    if (target === sourceLanguage && sourceWords) {
       setWords(sourceWords);
-      setCaptionLanguage("id");
+      setCaptionLanguage(target);
       setError(null);
       return;
     }
@@ -284,7 +287,7 @@ export function VideoEditor({
     } finally {
       setTranslating(false);
     }
-  }, [captionLanguage, preset.maxGap, preset.maxWords, sourceWords, translating, words]);
+  }, [captionLanguage, preset.maxGap, preset.maxWords, sourceLanguage, sourceWords, translating, words]);
 
   const doExport = useCallback(async () => {
     if (!file || !words.length) return;
@@ -620,6 +623,8 @@ function VideoPreviewPlayer({
 }) {
   const [now, setNow] = useState(0);
   const rafRef = useRef<number | null>(null);
+  const isPodcastSplit = layout.ratio === "9:16" && layout.focus === "podcast_split";
+  const secondaryVideoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -637,6 +642,27 @@ function VideoPreviewPlayer({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [videoRef]);
+
+  // Sync secondary video with primary video during playback/seek for split view
+  useEffect(() => {
+    if (!isPodcastSplit) return;
+    const v1 = videoRef.current;
+    const v2 = secondaryVideoRef.current;
+    if (!v1 || !v2) return;
+
+    const onPlay = () => { void v2.play().catch(() => {}); };
+    const onPause = () => { v2.pause(); };
+    const onSeeking = () => { v2.currentTime = v1.currentTime; };
+
+    v1.addEventListener("play", onPlay);
+    v1.addEventListener("pause", onPause);
+    v1.addEventListener("seeking", onSeeking);
+    return () => {
+      v1.removeEventListener("play", onPlay);
+      v1.removeEventListener("pause", onPause);
+      v1.removeEventListener("seeking", onSeeking);
+    };
+  }, [isPodcastSplit, videoRef]);
 
   const active = activeAt(lines, now);
   const tracked = layout.trajectory?.length ? cropFocusAt(layout.trajectory, now) : null;
@@ -663,7 +689,7 @@ function VideoPreviewPlayer({
     >
       {/* Ultra-Luxury Watermark Preview */}
       {watermark && (
-        <div className="pointer-events-none absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
+        <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
           <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-ember drop-shadow-[0_0_4px_rgba(255,138,61,0.6)]">
             <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
           </svg>
@@ -671,19 +697,57 @@ function VideoPreviewPlayer({
         </div>
       )}
 
-      <video
-        ref={videoRef}
-        src={resolvedVideoSrc}
-        preload="auto"
-        controls
-        playsInline
-        onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
-        onSeeked={(e) => setNow(e.currentTarget.currentTime)}
-        className="absolute inset-0 h-full w-full object-cover"
-        style={{ objectPosition }}
-      />
+      {isPodcastSplit ? (
+        <div className="absolute inset-0 flex flex-col">
+          {/* Top Half: Left Speaker (Host) */}
+          <div className="relative h-1/2 w-full overflow-hidden border-b border-white/30">
+            <video
+              ref={videoRef}
+              src={resolvedVideoSrc}
+              preload="auto"
+              playsInline
+              controls
+              onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
+              onSeeked={(e) => setNow(e.currentTarget.currentTime)}
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ objectPosition: "left center" }}
+            />
+            <span className="pointer-events-none absolute top-2.5 right-2.5 z-10 rounded-md bg-black/70 px-2 py-0.5 text-[9px] font-bold text-white/90 backdrop-blur-xs border border-white/10">
+              Host / Kiri
+            </span>
+          </div>
+          {/* Bottom Half: Right Speaker (Guest) */}
+          <div className="relative h-1/2 w-full overflow-hidden">
+            <video
+              ref={secondaryVideoRef}
+              src={resolvedVideoSrc}
+              preload="auto"
+              muted
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover"
+              style={{ objectPosition: "right center" }}
+            />
+            <span className="pointer-events-none absolute top-2.5 right-2.5 z-10 rounded-md bg-black/70 px-2 py-0.5 text-[9px] font-bold text-white/90 backdrop-blur-xs border border-white/10">
+              Tamu / Kanan
+            </span>
+          </div>
+        </div>
+      ) : (
+        <video
+          ref={videoRef}
+          src={resolvedVideoSrc}
+          preload="auto"
+          controls
+          playsInline
+          onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
+          onSeeked={(e) => setNow(e.currentTarget.currentTime)}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ objectPosition }}
+        />
+      )}
+
       {tracked && (
-        <div className="pointer-events-none absolute top-3.5 right-3.5 z-10 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
+        <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
           <span className="size-1.5 rounded-full bg-ember animate-ping" />
           <span>Face Track</span>
         </div>
@@ -708,27 +772,28 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
       : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-3 text-center"
+      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center z-10"
       style={{ top: `${style.position * 100}%` }}
     >
       <p
-        className="max-w-[94%] leading-tight"
+        className="max-w-[90%] leading-snug drop-shadow-md"
         style={{
           fontFamily: `"${style.fontFamily}", sans-serif`,
-          fontWeight: style.bold ? 800 : 600,
-          fontSize: `calc(${style.mode === "word" ? "clamp(22px, 8.5vw, 44px)" : "clamp(16px, 6.5vw, 32px)"} * ${style.fontScale})`,
+          fontWeight: style.bold ? 800 : 700,
+          fontSize: `calc(${style.mode === "word" ? "clamp(16px, 5.2vw, 26px)" : "clamp(12px, 3.8vw, 19px)"} * ${style.fontScale})`,
           color: style.textColor,
           textShadow:
             style.style === "outline"
-              ? "0 0 3px #000,0 0 3px #000,0 2px 4px #000"
+              ? "-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 3px 6px rgba(0,0,0,0.9)"
               : style.style === "plain"
-                ? "0 2px 6px rgba(0,0,0,0.85)"
+                ? "0 2px 8px rgba(0,0,0,0.95)"
                 : "none",
-          background: style.style === "box" ? "rgba(0,0,0,0.55)" : "transparent",
-          padding: style.style === "box" ? "0.15em 0.4em" : 0,
-          borderRadius: style.style === "box" ? "0.3em" : 0,
+          background: style.style === "box" ? "rgba(15,12,10,0.7)" : "transparent",
+          padding: style.style === "box" ? "0.2em 0.5em" : 0,
+          borderRadius: style.style === "box" ? "0.4em" : 0,
+          border: style.style === "box" ? "1px solid rgba(255,255,255,0.12)" : "none",
           opacity: style.animation === "fade" ? eased : 1,
-          transform: style.animation === "pop" ? `scale(${0.82 + eased * 0.18})` : undefined,
+          transform: style.animation === "pop" ? `scale(${0.85 + eased * 0.15})` : undefined,
         }}
       >
         {shown.map((w, i) => (
@@ -739,9 +804,9 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
               color: w.active ? style.highlightColor : undefined,
               transform: w.active && style.activeScale !== 1 ? `scale(${style.activeScale})` : undefined,
               textShadow: w.active && style.activeGlow
-                ? `0 0 0.45em ${style.highlightColor}, 0 0 0.9em ${style.highlightColor}`
+                ? `0 0 0.4em ${style.highlightColor}, 0 0 0.8em ${style.highlightColor}`
                 : undefined,
-              marginInline: "0.14em",
+              marginInline: "0.12em",
             }}
           >
             {w.text}
@@ -767,11 +832,11 @@ function LayoutPanel({
     <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3">
       <div>
         <p className="text-mini font-semibold text-ink">Bingkai video</p>
-        <p className="text-micro text-muted">Auto ikuti wajah, atau pilih fokus manual.</p>
+        <p className="text-micro text-muted">Auto ikuti wajah pembicara, atau pilih framing & split-screen.</p>
       </div>
       <button type="button" onClick={onAutoTrack} disabled={tracking} className={`relative h-11 w-full overflow-hidden rounded-lg border px-3 text-mini font-semibold ${layout.trajectory?.length ? "border-ember bg-ember/15 text-ember" : "border-hairline bg-obsidian/30 text-ink"}`}>
         {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
-        <span className="relative">{tracking ? "Lagi lacak wajah..." : layout.trajectory?.length ? "Face Track Aktif" : "Auto Face Track"}</span>
+        <span className="relative">{tracking ? "Lagi lacak wajah..." : layout.trajectory?.length ? "Face Track Aktif" : "Auto Face Track (AI Fokus Wajah)"}</span>
       </button>
       <div className="grid grid-cols-3 gap-1.5">
         {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
@@ -789,22 +854,34 @@ function LayoutPanel({
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {(["left", "center", "right"] as const).map((focus) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+        {(
+          [
+            { id: "center", label: "Tengah" },
+            { id: "left", label: "Kiri" },
+            { id: "right", label: "Kanan" },
+            { id: "podcast_split", label: "Podcast Split" },
+          ] as const
+        ).map((f) => (
           <button
-            key={focus}
+            key={f.id}
             type="button"
-            onClick={() => onChange({ ratio: layout.ratio, focus })}
+            onClick={() => onChange({ ratio: layout.ratio, focus: f.id })}
             className={`min-h-11 rounded-lg border px-2 text-micro font-semibold transition-colors ${
-              !layout.trajectory?.length && layout.focus === focus
+              !layout.trajectory?.length && layout.focus === f.id
                 ? "border-ember bg-ember/15 text-ember"
                 : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
             }`}
           >
-            {focus === "left" ? "Kiri" : focus === "right" ? "Kanan" : "Tengah"}
+            {f.label}
           </button>
         ))}
       </div>
+      {layout.focus === "podcast_split" && layout.ratio === "9:16" && (
+        <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 leading-relaxed">
+          🎙️ <strong>Mode Podcast Split Aktif:</strong> Menumpuk Pembicara Kiri di atas & Pembicara Kanan di bawah dalam format 9:16 vertikal.
+        </div>
+      )}
     </div>
   );
 }
@@ -995,18 +1072,41 @@ function StylePanel({
             Extra tebal
           </label>
 
-          <label className="block">
-            <span className="text-micro text-muted">Posisi (naik-turun)</span>
+          <div>
+            <div className="flex justify-between items-center text-micro text-muted">
+              <span>Posisi Vertikal Subtitle</span>
+              <span className="font-mono text-ember font-bold">{Math.round(style.position * 100)}%</span>
+            </div>
+            <div className="mt-1.5 grid grid-cols-3 gap-1.5">
+              {[
+                { label: "Atas", val: 0.30 },
+                { label: "Tengah", val: 0.50 },
+                { label: "Bawah", val: 0.65 },
+              ].map((pos) => (
+                <button
+                  key={pos.label}
+                  type="button"
+                  onClick={() => set({ position: pos.val })}
+                  className={`h-8 rounded-lg border px-2 text-micro font-semibold transition-colors ${
+                    Math.abs(style.position - pos.val) < 0.05
+                      ? "border-ember bg-ember/15 text-ember"
+                      : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
+                  }`}
+                >
+                  {pos.label} ({Math.round(pos.val * 100)}%)
+                </button>
+              ))}
+            </div>
             <input
               type="range"
-              min={0.4}
-              max={0.9}
+              min={0.2}
+              max={0.85}
               step={0.02}
               value={style.position}
               onChange={(e) => set({ position: Number(e.target.value) })}
-              className="mt-1 w-full accent-ember"
+              className="mt-2 w-full accent-ember"
             />
-          </label>
+          </div>
 
           <label className="block">
             <span className="text-micro text-muted">Ukuran teks ({Math.round(style.fontScale * 100)}%)</span>

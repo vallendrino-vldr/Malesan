@@ -52,15 +52,37 @@ export function drawFrame(
   };
   const sw = source.videoWidth || source.displayWidth || source.width || W;
   const sh = source.videoHeight || source.displayHeight || source.height || H;
-  const crop = layout.trajectory?.length
-    ? trackedCoverCrop(sw, sh, W, H, cropFocusAt(layout.trajectory, t))
-    : coverCrop(sw, sh, W, H, layout.focus);
 
   ctx.save();
   try {
     ctx.filter = "contrast(1.04) brightness(1.02) saturate(1.03)";
   } catch {}
-  ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
+
+  if (layout.ratio === "9:16" && layout.focus === "podcast_split") {
+    // 1. Top half: Left speaker (Host)
+    const topCrop = coverCrop(sw, sh, W, H / 2, "left");
+    ctx.drawImage(video, topCrop.sx, topCrop.sy, topCrop.sw, topCrop.sh, 0, 0, W, H / 2);
+
+    // 2. Bottom half: Right speaker (Guest)
+    const bottomCrop = coverCrop(sw, sh, W, H / 2, "right");
+    ctx.drawImage(video, bottomCrop.sx, bottomCrop.sy, bottomCrop.sw, bottomCrop.sh, 0, H / 2, W, H / 2);
+
+    // 3. Separator hairline with subtle ambient shadow
+    ctx.beginPath();
+    ctx.moveTo(0, H / 2);
+    ctx.lineTo(W, H / 2);
+    ctx.lineWidth = Math.max(3, Math.round(H * 0.002));
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+    ctx.shadowBlur = 8;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  } else {
+    const crop = layout.trajectory?.length
+      ? trackedCoverCrop(sw, sh, W, H, cropFocusAt(layout.trajectory, t))
+      : coverCrop(sw, sh, W, H, layout.focus);
+    ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
+  }
   ctx.restore();
 
   const a = activeAt(lines, t);
@@ -108,13 +130,13 @@ export function drawCaption(
       ? [{ text: line.words[currentIdx].word, active: true }]
       : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
 
-  const fontPx = Math.round(H * (style.mode === "word" ? 0.075 : 0.058) * style.fontScale);
+  const fontPx = Math.round(H * (style.mode === "word" ? 0.048 : 0.038) * style.fontScale);
   ctx.font = `${style.bold ? 800 : 600} ${fontPx}px "${style.fontFamily}", sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
   const space = Math.max(fontPx * 0.28, ctx.measureText(" ").width);
-  const maxW = W * 0.9;
+  const maxW = W * 0.86;
 
   const rows: { words: { text: string; idx: number; w: number; scale: number }[]; width: number }[] = [];
   let row: { text: string; idx: number; w: number; scale: number }[] = [];

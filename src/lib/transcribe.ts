@@ -71,9 +71,11 @@ async function postWithRotation(
     form.append("timestamp_granularities[]", "word");
     form.append("temperature", "0");
     const defaultPrompt =
-      "Transkrip video konten kreator Indonesia. Percakapan santai, bahasa gaul Jaksel / campur Inggris seperti unboxing, mystery box, review, worth it, guys, content creator, subscribe, shock, aesthetic, relate, honestly, literally, gokil, beneran.";
+      "Transkrip video percakapan santai, podcast, dan konten kreator. Pertahankan ejaan kata asli dan istilah Inggris/Indonesia secara akurat.";
     form.append("prompt", opts?.prompt || defaultPrompt);
-    form.append("language", opts?.language || "id");
+    if (opts?.language && opts.language !== "auto") {
+      form.append("language", opts.language);
+    }
 
     let res: Response;
     try {
@@ -115,7 +117,7 @@ export async function transcribeAudio(
   audio: Blob,
   filename: string,
   opts?: { language?: string; prompt?: string; signal?: AbortSignal },
-): Promise<Transcript> {
+): Promise<Transcript & { language: string }> {
   if (!hasGroq()) {
     throw new TranscribeError(
       "Transkripsi belum aktif — belum ada GROQ_API_KEY di server.",
@@ -129,11 +131,13 @@ export async function transcribeAudio(
   const json = (await res.json()) as {
     text?: string;
     duration?: number;
+    language?: string;
     words?: { word?: string; start?: number; end?: number }[];
     segments?: { start?: number; end?: number; text?: string; words?: { word?: string; start?: number; end?: number }[] }[];
   };
 
   const rawText = (json.text ?? "").trim();
+  const detectedLanguage = (json.language || (opts?.language && opts.language !== "auto" ? opts.language : "id")).toLowerCase();
 
   const rawWords =
     json.words && json.words.length > 0
@@ -196,5 +200,5 @@ export async function transcribeAudio(
     : 0;
   const duration = json.duration ?? Math.max(lastWordEnd, lastSegEnd);
 
-  return { text: rawText, duration, words };
+  return { text: rawText, duration, words, language: detectedLanguage };
 }

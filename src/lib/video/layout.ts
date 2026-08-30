@@ -1,7 +1,7 @@
 import type { CropKeyframe } from "./face-track";
 
 export type VideoRatio = "9:16" | "1:1" | "16:9";
-export type VideoFocus = "left" | "center" | "right";
+export type VideoFocus = "left" | "center" | "right" | "podcast_split";
 export type VideoLayout = { ratio: VideoRatio; focus: VideoFocus; trajectory?: readonly CropKeyframe[] };
 
 export const ratioValue = (ratio: VideoRatio) => {

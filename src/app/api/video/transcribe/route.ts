@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   const audio = form.get("audio");
   const filename = audio instanceof File && audio.name ? audio.name : "audio.wav";
-  const language = String(form.get("language") || "id").trim().toLowerCase();
+  const language = String(form.get("language") || "auto").trim().toLowerCase();
   const clientDuration = Number(form.get("durationSec") ?? 0);
 
   if (!(audio instanceof Blob) || audio.size === 0) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       413,
     );
   }
-  if (!/^[a-z]{2}$/.test(language)) {
+  if (language !== "auto" && !/^[a-z]{2}$/.test(language)) {
     return json({ error: "Bahasa videonya gak dikenali." }, 400);
   }
   if (!Number.isFinite(clientDuration) || clientDuration <= 0) {
@@ -135,7 +135,8 @@ export async function POST(request: NextRequest) {
   // Refine misheard phonetics & colloquial speech using Indonesian contextual AI
   let finalWords = transcript.words;
   let finalText = transcript.text;
-  if (language === "id" && finalWords.length > 0) {
+  const detectedLang = transcript.language || (language !== "auto" ? language : "id");
+  if (detectedLang === "id" && finalWords.length > 0) {
     const refined = await refineTranscriptWithAI(finalWords, finalText);
     finalWords = refined.words;
     finalText = refined.text;
@@ -158,7 +159,7 @@ export async function POST(request: NextRequest) {
       email: user.email || "user@malesan",
       moduleName: "Video Auto-CC",
       creditsSpent: cost,
-      details: `Durasi: ${Math.round(transcript.duration)}s (${finalWords.length} kata)`,
+      details: `Durasi: ${Math.round(transcript.duration)}s (${finalWords.length} kata, bahasa: ${detectedLang})`,
     });
   } catch (teleErr) {
     console.warn("[transcribe] Telegram notification error:", teleErr);
@@ -169,6 +170,7 @@ export async function POST(request: NextRequest) {
       text: finalText,
       duration: transcript.duration,
       words: finalWords,
+      language: detectedLang,
       creditsSpent: cost,
     },
     200,
