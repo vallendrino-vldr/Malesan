@@ -88,7 +88,45 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.redirect(`${origin}${next}`);
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Membuka Malesan...</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0B0A09; color: #F5F5F5; font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; text-align: center; }
+    .card { background: #141210; border: 1px solid rgba(255,122,0,0.3); border-radius: 28px; padding: 36px 24px; max-width: 380px; width: 100%; box-shadow: 0 24px 48px rgba(0,0,0,0.8); }
+    .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,122,0,0.2); border-top-color: #FF7A00; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { font-size: 20px; margin: 0 0 8px; color: #F5F5F5; font-weight: 800; }
+    p { font-size: 13px; color: #A0A0A0; margin: 0 0 24px; line-height: 1.5; }
+    .btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 48px; background: #FF7A00; color: #0B0A09; font-weight: 800; font-size: 14px; border-radius: 14px; text-decoration: none; box-shadow: 0 4px 14px rgba(255,122,0,0.4); transition: transform 0.1s; }
+    .btn:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h2>Berhasil Masuk!</h2>
+    <p>Membuka ruang kerja Malesan di HP kamu...</p>
+    <a href="malesan://app" class="btn">Buka Aplikasi Malesan</a>
+  </div>
+  <script>
+    try { window.location.href = "malesan://app"; } catch(e) {}
+    setTimeout(function() {
+      window.location.href = "${origin}${next}";
+    }, 1200);
+  </script>
+</body>
+</html>`;
+
+  const response = new NextResponse(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+  });
+
   if (hasPendingBonus) {
     response.cookies.delete("malesan_pending_demo_bonus");
   }

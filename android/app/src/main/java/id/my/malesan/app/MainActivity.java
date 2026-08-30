@@ -97,6 +97,21 @@ public class MainActivity extends Activity {
 
         Uri data = intent.getData();
         if (data != null) {
+            String scheme = data.getScheme();
+            if ("malesan".equalsIgnoreCase(scheme)) {
+                String host = data.getHost() != null ? data.getHost() : "";
+                String path = data.getPath() != null ? data.getPath() : "";
+                String query = data.getQuery() != null ? "?" + data.getQuery() : "";
+                String targetPath = "/" + host + path;
+                if ("/auth/callback".equalsIgnoreCase(targetPath)) {
+                    webView.loadUrl(BASE_URL + "/auth/callback" + query);
+                } else if ("/app".equalsIgnoreCase(targetPath) || targetPath.startsWith("/app")) {
+                    webView.loadUrl(BASE_URL + targetPath + query);
+                } else {
+                    webView.loadUrl(BASE_URL + "/app");
+                }
+                return;
+            }
             webView.loadUrl(data.toString());
         } else {
             webView.loadUrl(BASE_URL + "/app");

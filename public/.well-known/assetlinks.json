@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "id.my.malesan.app",
+      "sha256_cert_fingerprints": [
+        "3E:D9:7E:77:4B:E0:29:21:F5:67:DA:F8:8D:EE:DB:F2:6E:D2:91:07:90:82:2A:AD:90:7E:07:B8:D4:3A:0C:67"
+      ]
+    }
+  }
+]
