@@ -670,6 +670,52 @@ export function VideoEditor({
               {busy && (
                 <div className="w-full max-w-[320px]"><ProgressBar phase={phase} progress={progress} status={status} /></div>
               )}
+
+              {/* Mobile Action Bar: Inline in layout, NEVER overlapping video */}
+              <div className="lg:hidden w-full max-w-[320px] pt-1">
+                <div className="flex items-center justify-around gap-1 p-1.5 rounded-2xl bg-surface-raised border border-white/10 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawer(activeDrawer === "frame" ? null : "frame")}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                      activeDrawer === "frame" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+                    <span>Bingkai</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawer(activeDrawer === "subtitles" ? null : "subtitles")}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                      activeDrawer === "subtitles" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+                    <span>Teks</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawer(activeDrawer === "style" ? null : "style")}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                      activeDrawer === "style" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
+                    <span>Gaya</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDrawer(activeDrawer === "export" ? null : "export")}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                      activeDrawer === "export" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    <span>Export</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Desktop Control Panel (Visible on lg+) */}
@@ -799,50 +845,6 @@ export function VideoEditor({
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Mobile Floating Action Dock (Permanently Pinned Glassmorphic Bar) */}
-          <div className="lg:hidden fixed bottom-16 left-3 right-3 z-30 flex items-center justify-around gap-1 p-1.5 rounded-2xl bg-obsidian/95 border border-white/20 backdrop-blur-2xl shadow-2xl">
-            <button
-              type="button"
-              onClick={() => setActiveDrawer(activeDrawer === "frame" ? null : "frame")}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
-                activeDrawer === "frame" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-              <span>Bingkai</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDrawer(activeDrawer === "subtitles" ? null : "subtitles")}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
-                activeDrawer === "subtitles" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-              <span>Teks</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDrawer(activeDrawer === "style" ? null : "style")}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
-                activeDrawer === "style" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
-              <span>Gaya</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDrawer(activeDrawer === "export" ? null : "export")}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
-                activeDrawer === "export" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
-              }`}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              <span>Export</span>
-            </button>
           </div>
 
           {/* Mobile Semi-Transparent Frosted Glass Bottom Drawer with Backdrop */}
@@ -1133,10 +1135,10 @@ function VideoPreviewPlayer({
 
   const containerRatioClass =
     layout.ratio === "9:16"
-      ? "aspect-[9/16] h-[40vh] sm:h-[48vh] max-h-[380px] w-auto max-w-[240px]"
+      ? "aspect-[9/16] h-[48vh] sm:h-[56vh] max-h-[500px] w-auto max-w-[320px]"
       : layout.ratio === "16:9"
-      ? "aspect-video h-[26vh] sm:h-[34vh] max-h-[300px] w-auto max-w-[420px]"
-      : "aspect-square h-[32vh] sm:h-[40vh] max-h-[340px] w-auto max-w-[280px]";
+      ? "aspect-video h-[30vh] sm:h-[38vh] max-h-[360px] w-auto max-w-[480px]"
+      : "aspect-square h-[36vh] sm:h-[44vh] max-h-[420px] w-auto max-w-[340px]";
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();

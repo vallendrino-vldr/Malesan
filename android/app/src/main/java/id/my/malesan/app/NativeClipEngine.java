@@ -165,20 +165,21 @@ final class NativeClipEngine {
                 request.addOption("--format", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]/bv*[height<=1080]+ba/b[height<=1080]")
                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
-            case 2: // Tier 2: iOS Client (Bypasses Web Botguard while requesting 1080p/720p HD streams)
+            case 2: // Tier 2: iOS Client (Bypasses Web Botguard while downloading true 1080p/720p HD streams)
                 request.addOption("--extractor-args", "youtube:player_client=ios")
-                       .addOption("--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bv*+ba/b")
-                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,res,size");
+                       .addOption("--format", "bv*[height<=1080]+ba/bestvideo[height<=1080]+bestaudio/b[height<=1080]/best")
+                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
             case 3: // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music restrictions with HD priority)
                 request.addOption("--extractor-args", "youtube:player_client=tv_embedded,mweb")
                        .addOption("--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bv*+ba/b")
-                       .addOption("--format-sort", "res:1080,res:720,res,size");
+                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,res,size");
                 break;
             case 4: // Tier 4: Android Client Fallback
             default:
                 request.addOption("--extractor-args", "youtube:player_client=android")
-                       .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best");
+                       .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
+                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,res,size");
                 break;
         }
         return request;
