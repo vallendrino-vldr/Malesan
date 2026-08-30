@@ -135,6 +135,7 @@ export function VideoEditor({
   const [translating, setTranslating] = useState(false);
   const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center" });
   const [editorTab, setEditorTab] = useState<"frame" | "subtitles" | "style" | "export">("frame");
+  const [activeDrawer, setActiveDrawer] = useState<"frame" | "subtitles" | "style" | "export" | null>(null);
   const [exportPct, setExportPct] = useState(0);
   const [exportStage, setExportStage] = useState("");
   const [trackingFace, setTrackingFace] = useState(false);
@@ -563,9 +564,10 @@ export function VideoEditor({
           )}
         </div>
       ) : (
-        <div className="space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-hairline bg-surface/90 backdrop-blur-md p-3 sm:px-4 shadow-sm">
-            <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0">
+        <div className="space-y-2">
+          {/* Ultra-Compact Single-Row Studio Header */}
+          <div className="flex items-center justify-between gap-2 rounded-xl border border-hairline bg-surface/90 backdrop-blur-md p-1.5 px-2.5 shadow-xs">
+            <div className="flex items-center gap-1.5 min-w-0">
               <button
                 type="button"
                 onClick={() => {
@@ -576,32 +578,33 @@ export function VideoEditor({
                   setError(null);
                   setDoneMsg(null);
                 }}
-                className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink shrink-0"
+                className="flex h-7.5 cursor-pointer items-center gap-1 rounded-lg border border-hairline bg-surface-raised px-2 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="m15 18-6-6 6-6"/></svg>
-                <span>Ganti Video</span>
+                <span>Ganti</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setShowHistoryModal(true)}
-                className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-bold text-ink transition-all hover:border-ember/50 hover:bg-white/10 shrink-0"
+                className="flex h-7.5 cursor-pointer items-center gap-1 rounded-lg border border-hairline bg-surface-raised px-2 text-xs font-bold text-ink transition-all hover:border-ember/50 hover:bg-white/10 shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                 <span>Draf</span>
               </button>
 
-              <div className="min-w-0"><span className="block max-w-[120px] sm:max-w-[280px] truncate text-xs font-bold text-ink" title={file.name}>{file.name}</span></div>
+              <span className="truncate text-xs font-bold text-ink max-w-[110px] sm:max-w-[240px]" title={file.name}>{file.name}</span>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+
+            <div className="flex items-center gap-1.5 shrink-0">
               {words.length > 0 ? (
-                <button type="button" onClick={doExport} disabled={busy} className="btn-ember flex h-8.5 w-full sm:w-auto justify-center cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
+                <button type="button" onClick={doExport} disabled={busy} className="btn-ember flex h-7.5 cursor-pointer items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                  <span>Export Mateng</span>
+                  <span>Export</span>
                 </button>
               ) : phase === "idle" ? (
-                <button type="button" onClick={generate} className="btn-ember flex h-8.5 w-full sm:w-auto justify-center cursor-pointer items-center gap-1.5 rounded-lg px-3 text-xs font-bold text-obsidian shadow-xs">
-                  <span>Bikinin Subtitle</span>
+                <button type="button" onClick={generate} className="btn-ember flex h-7.5 cursor-pointer items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-obsidian shadow-xs">
+                  <span>Subtitle AI</span>
                 </button>
               ) : null}
             </div>
@@ -609,11 +612,11 @@ export function VideoEditor({
 
           {/* APK Pro Performance Badge / Web Notice */}
           {!isNativeAPK ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-ember/30 bg-ember/10 text-xs text-white">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl border border-ember/30 bg-ember/10 text-xs text-white">
               <div className="flex items-center gap-2">
                 <span className="size-2 rounded-full bg-ember animate-pulse shrink-0" />
                 <span className="text-[11px] text-mist">
-                  <strong className="text-white">Performa Terbaik di APK Pro:</strong> Akselerasi hardware 60fps & simpan langsung ke Galeri HP (DCIM).
+                  <strong className="text-white">Akselerasi APK Pro:</strong> Hardware 60fps & simpan otomatis ke Galeri HP (DCIM).
                 </span>
               </div>
               <a
@@ -622,19 +625,15 @@ export function VideoEditor({
                 className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ember text-obsidian font-extrabold text-[10px] hover:bg-ember/90 shadow-xs"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                <span>Unduh APK Pro</span>
+                <span>Unduh APK</span>
               </a>
             </div>
-          ) : (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-semibold text-emerald-400">
-              <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Akselerasi Native APK Aktif (Hardware 60fps & Simpan Otomatis DCIM)</span>
-            </div>
-          )}
+          ) : null}
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-start">
-            {/* Left/Top Video Player (Sticky on mobile for live single-screen editing) */}
-            <div className="lg:col-span-5 sticky top-0 lg:top-4 z-20 -mx-3 -mt-1 px-3 py-1.5 lg:mx-0 lg:mt-0 lg:p-0 bg-obsidian/95 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-b lg:border-b-0 border-white/10 space-y-1 flex flex-col items-center shadow-lg lg:shadow-none">
+          {/* Desktop Dual-Pane & Mobile Centered Pro Canvas */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+            {/* Center Video Player Showcase */}
+            <div className="lg:col-span-6 flex flex-col items-center space-y-2">
               <div className="w-full flex justify-center">
                 <VideoPreviewPlayer
                   videoRef={videoRef}
@@ -646,47 +645,55 @@ export function VideoEditor({
                   watermark={!noWatermark}
                   onTimeChange={setCurrentTimeNow}
                   onDurationChange={setVideoDuration}
+                  onManualPanChange={(panX) => handlePanChange(panX)}
                 />
               </div>
+
+              {/* Quick Info & Safe Zone Pill */}
               <div className="flex w-full max-w-[320px] items-center justify-between gap-2 px-1 text-[11px] text-muted">
                 <label className="flex cursor-pointer items-center gap-1.5 hover:text-ink">
                   <input type="checkbox" checked={safeZones} onChange={(e) => setSafeZones(e.target.checked)} className="size-3.5 accent-ember rounded" />
                   <span>Safe Zone</span>
                 </label>
-                <span className="font-mono text-[10px] text-ember/80 font-bold bg-surface-raised px-1.5 py-0.5 rounded border border-hairline uppercase">{layout.ratio} · {presetId}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] text-ember font-bold bg-surface-raised px-2 py-0.5 rounded border border-hairline uppercase">{layout.ratio}</span>
+                  <span className="text-micro text-mist/80">{presetId}</span>
+                </div>
               </div>
+
               {busy && (
                 <div className="w-full max-w-[320px]"><ProgressBar phase={phase} progress={progress} status={status} /></div>
               )}
             </div>
 
-            <div className="lg:col-span-7 flex flex-col rounded-2xl border border-hairline bg-surface overflow-hidden shadow-xs">
-              <div className="grid grid-cols-4 sticky top-[245px] lg:static z-10 bg-surface-raised border-b border-hairline p-1 gap-1">
-                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+            {/* Desktop Control Panel (Visible on lg+) */}
+            <div className="hidden lg:flex lg:col-span-6 flex-col rounded-2xl border border-hairline bg-surface overflow-hidden shadow-xs">
+              <div className="grid grid-cols-4 border-b border-hairline bg-surface-raised p-1 gap-1">
+                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-                  <span className="truncate">Bingkai</span>
+                  <span>Bingkai</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                  <span className="truncate">Teks</span>
+                  <span>Teks</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
-                  <span className="truncate">Gaya</span>
+                  <span>Gaya</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-8.5 sm:h-9 items-center justify-center gap-1 rounded-lg px-1.5 text-[11px] sm:text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                  <span className="truncate">Export</span>
+                  <span>Export</span>
                 </button>
               </div>
 
               <div className="p-4 space-y-4 max-h-[calc(100vh-16rem)] overflow-y-auto custom-scrollbar">
                 {editorTab === "frame" && (
                   <div className="space-y-4">
-                    {/* Ratio Selector */}
-                    <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-3.5 space-y-2">
+                    {/* Clean Ratio Selector */}
+                    <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-ink">Rasio Layar Video</span>
+                        <span className="text-xs font-bold text-ink">Rasio Video</span>
                         <span className="text-[11px] font-mono text-ember font-bold">{layout.ratio}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-1.5">
@@ -695,13 +702,13 @@ export function VideoEditor({
                             key={ratio}
                             type="button"
                             onClick={() => setLayout((curr) => ({ ...curr, ratio }))}
-                            className={`min-h-9 rounded-xl border px-2 font-mono text-xs font-bold transition-all ${
+                            className={`h-8.5 rounded-lg border font-mono text-xs font-bold transition-all ${
                               layout.ratio === ratio
                                 ? "border-ember bg-ember/20 text-ember shadow-xs"
                                 : "border-hairline bg-black/40 text-muted hover:text-ink"
                             }`}
                           >
-                            {ratio === "9:16" ? "9:16 (TikTok/Reels)" : ratio === "1:1" ? "1:1 (Feed)" : "16:9 (YouTube)"}
+                            {ratio}
                           </button>
                         ))}
                       </div>
@@ -787,7 +794,190 @@ export function VideoEditor({
               </div>
             </div>
           </div>
-        </div>
+
+          {/* Mobile Floating Action Dock (Permanently Pinned Glassmorphic Bar) */}
+          <div className="lg:hidden fixed bottom-16 left-3 right-3 z-30 flex items-center justify-around gap-1 p-1.5 rounded-2xl bg-obsidian/95 border border-white/20 backdrop-blur-2xl shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setActiveDrawer(activeDrawer === "frame" ? null : "frame")}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                activeDrawer === "frame" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+              <span>Bingkai</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDrawer(activeDrawer === "subtitles" ? null : "subtitles")}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                activeDrawer === "subtitles" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+              <span>Teks</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDrawer(activeDrawer === "style" ? null : "style")}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                activeDrawer === "style" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
+              <span>Gaya</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveDrawer(activeDrawer === "export" ? null : "export")}
+              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                activeDrawer === "export" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              <span>Export</span>
+            </button>
+          </div>
+
+          {/* Mobile Semi-Transparent Frosted Glass Bottom Drawer with Backdrop */}
+          {activeDrawer && (
+            <>
+              <div
+                onClick={() => setActiveDrawer(null)}
+                className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+              />
+              <div className="lg:hidden fixed inset-x-0 bottom-0 z-50 max-h-[55vh] rounded-t-3xl border-t border-white/20 bg-obsidian/95 p-4 pb-20 shadow-2xl backdrop-blur-2xl animate-in slide-in-from-bottom duration-200 overflow-y-auto custom-scrollbar">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-ember animate-pulse" />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      {activeDrawer === "frame"
+                        ? "Pengaturan Bingkai & Sudut"
+                        : activeDrawer === "subtitles"
+                        ? "Pengaturan Teks & Subtitle"
+                        : activeDrawer === "style"
+                        ? "Gaya Tampilan Subtitle"
+                        : "Export Video Mateng"}
+                    </h4>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Tutup Pengaturan"
+                    onClick={() => setActiveDrawer(null)}
+                    className="flex size-7 items-center justify-center rounded-full bg-white/10 text-mist hover:text-white"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+
+              {activeDrawer === "frame" && (
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-ink">Rasio Video</span>
+                      <span className="text-[11px] font-mono text-ember font-bold">{layout.ratio}</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
+                        <button
+                          key={ratio}
+                          type="button"
+                          onClick={() => setLayout((curr) => ({ ...curr, ratio }))}
+                          className={`h-8.5 rounded-lg border font-mono text-xs font-bold transition-all ${
+                            layout.ratio === ratio
+                              ? "border-ember bg-ember/20 text-ember shadow-xs"
+                              : "border-hairline bg-black/40 text-muted hover:text-ink"
+                          }`}
+                        >
+                          {ratio}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <VideoKeyframeControls
+                    currentTime={currentTimeNow}
+                    duration={videoDuration}
+                    keyframes={manualKeyframes}
+                    currentPanX={currentPanX}
+                    currentZoom={currentZoom}
+                    onPanChange={handlePanChange}
+                    onZoomChange={handleZoomChange}
+                    onAddKeyframe={handleAddKeyframe}
+                    onRemoveKeyframe={handleRemoveKeyframe}
+                    onSeek={(t) => {
+                      const v = videoRef.current;
+                      if (v) {
+                        v.currentTime = t;
+                        setCurrentTimeNow(t);
+                      }
+                    }}
+                    framingMode={framingMode}
+                    onFramingModeChange={handleFramingModeChange}
+                    onRunAITrack={() => runFaceTrack("podcast_dynamic")}
+                    isAITracking={trackingFace}
+                  />
+                </div>
+              )}
+
+              {activeDrawer === "subtitles" && (
+                <div className="space-y-3.5">
+                  <div className="rounded-xl border border-hairline bg-surface-raised/50 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-mini font-semibold text-ink">Bahasa Subtitle</p>
+                        <p className="text-micro text-muted">Timing suara tetap dikunci.</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 rounded-lg bg-obsidian/60 p-1">
+                        {(["id", "en"] as const).map((language) => (
+                          <button key={language} type="button" disabled={translating} onClick={() => translateCaptions(language)} className={`h-8 rounded-md px-3 text-micro font-bold transition-colors disabled:opacity-60 ${captionLanguage === language ? "bg-ember text-obsidian" : "text-muted hover:text-ink"}`}>
+                            {translating && language !== captionLanguage ? "..." : language.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {words.length > 0 ? (
+                    <TranscriptEditor words={words} onChange={setWords} />
+                  ) : (
+                    <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
+                      <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
+                      <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">Buat Subtitle AI Sekarang</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeDrawer === "style" && (
+                <StylePanel style={style} onChange={setStyle} bitrate={bitrate} presetId={presetId} onPreset={(id) => { const next = SOCIAL_PRESETS.find((item) => item.id === id); if (!next) return; setPresetId(id); setBitrate(next.mbps); setStyle((current) => ({ ...current, ...next.style })); }} />
+              )}
+
+              {activeDrawer === "export" && (
+                <div className="space-y-4">
+                  <label className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-raised/40 p-3.5 text-mini text-ink cursor-pointer hover:border-ember/40 transition-colors">
+                    <input type="checkbox" checked={noWatermark} onChange={(e) => setNoWatermark(e.target.checked)} className="mt-0.5 size-4 accent-ember rounded" />
+                    <div>
+                      <span className="font-semibold">Hapus watermark malesan.my.id</span>{" "}
+                      <span className="text-ember font-bold">(+{noWatermarkCost} kredit)</span>
+                      <span className="block mt-0.5 text-micro text-muted">Kalau gak dicentang, watermark tetap nempel halus (gratis).</span>
+                    </div>
+                  </label>
+                  <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 text-micro text-muted space-y-1">
+                    <div className="flex justify-between font-mono"><span>Kualitas Render:</span><span className="text-ink font-semibold">1080p HD (1080x1920)</span></div>
+                    <div className="flex justify-between font-mono"><span>Bitrate Video:</span><span className="text-ink font-semibold">{bitrate} Mbps (Ukuran Ringan)</span></div>
+                  </div>
+                  <button onClick={doExport} disabled={busy || words.length === 0} className="btn-ember flex items-center justify-center gap-2 w-full cursor-pointer rounded-xl py-3.5 text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                    </svg>
+                    <span>{phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
       )}
 
       {error && <p className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
@@ -855,6 +1045,7 @@ function VideoPreviewPlayer({
   watermark = true,
   onTimeChange,
   onDurationChange,
+  onManualPanChange,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -865,11 +1056,14 @@ function VideoPreviewPlayer({
   watermark?: boolean;
   onTimeChange?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
+  onManualPanChange?: (panX: number) => void;
 }) {
   const [now, setNow] = useState(0);
   const rafRef = useRef<number | null>(null);
   const isPodcastSplit = layout.ratio === "9:16" && layout.focus === "podcast_split";
   const secondaryVideoRef = useRef<HTMLVideoElement | null>(null);
+  const isDraggingRef = useRef(false);
+  const startPosRef = useRef({ x: 0, panX: 0 });
 
   useEffect(() => {
     let active = true;
@@ -934,14 +1128,43 @@ function VideoPreviewPlayer({
 
   const containerRatioClass =
     layout.ratio === "9:16"
-      ? "aspect-[9/16] h-[210px] sm:h-[260px] lg:h-auto w-auto max-w-[280px] lg:max-w-[340px]"
+      ? "aspect-[9/16] max-h-[44vh] sm:max-h-[54vh] w-auto max-w-[300px]"
       : layout.ratio === "16:9"
-      ? "aspect-video h-[170px] sm:h-[220px] lg:h-auto w-auto max-w-[340px] lg:max-w-[480px]"
-      : "aspect-square h-[190px] sm:h-[240px] lg:h-auto w-auto max-w-[280px] lg:max-w-[340px]";
+      ? "aspect-video max-h-[34vh] w-auto max-w-[420px]"
+      : "aspect-square max-h-[38vh] w-auto max-w-[300px]";
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.clientY - rect.top > rect.height * 0.8) return; // Allow native video controls interaction
+    isDraggingRef.current = true;
+    startPosRef.current = {
+      x: e.clientX,
+      panX: currentPanX,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const dx = (startPosRef.current.x - e.clientX) / (rect.width * 0.8);
+    const nextPanX = Math.max(0, Math.min(1, startPosRef.current.panX + dx));
+    onManualPanChange?.(nextPanX);
+  };
+
+  const handlePointerUp = () => {
+    isDraggingRef.current = false;
+  };
 
   return (
     <div
-      className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5 transition-all duration-300 ${containerRatioClass}`}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5 transition-all duration-300 touch-none cursor-grab active:cursor-grabbing ${containerRatioClass}`}
     >
       {/* Ultra-Luxury Watermark Preview */}
       {watermark && (
@@ -952,6 +1175,12 @@ function VideoPreviewPlayer({
           <span className="font-display text-[11px] font-extrabold tracking-wide text-white">malesan<span className="text-ember font-bold">.my.id</span></span>
         </div>
       )}
+
+      {/* Interactive Drag Hint */}
+      <div className="pointer-events-none absolute bottom-12 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-2.5 py-0.5 text-[10px] font-semibold text-white/90 backdrop-blur-md shadow-md">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+        <span>Geser layar untuk sudut kamera</span>
+      </div>
 
       {isPodcastSplit ? (
         <div className="absolute inset-0 flex flex-col">

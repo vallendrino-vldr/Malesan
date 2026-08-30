@@ -96,36 +96,36 @@ export function VideoKeyframeControls({
         </div>
       </div>
 
-      {/* Mode Selector Tabs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 rounded-xl bg-black/50 border border-white/10">
+      {/* Compact Mode Selector Bar */}
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-black/60 border border-white/10">
         <button
           type="button"
           onClick={() => {
             onFramingModeChange("auto_ai");
             onRunAITrack();
           }}
-          className={`flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+          className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
             framingMode === "auto_ai"
-              ? "bg-ember text-obsidian shadow-md font-extrabold"
+              ? "bg-ember text-obsidian shadow-sm font-extrabold"
               : "text-mist hover:text-white hover:bg-white/5"
           }`}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z" />
           </svg>
-          <span>Auto AI Track</span>
+          <span>Auto AI</span>
         </button>
 
         <button
           type="button"
           onClick={() => onFramingModeChange("podcast_split")}
-          className={`flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+          className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
             framingMode === "podcast_split"
-              ? "bg-ember text-obsidian shadow-md font-extrabold"
+              ? "bg-ember text-obsidian shadow-sm font-extrabold"
               : "text-mist hover:text-white hover:bg-white/5"
           }`}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
             <rect x="3" y="3" width="18" height="8" rx="2" strokeLinecap="round" strokeLinejoin="round" />
             <rect x="3" y="13" width="18" height="8" rx="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -135,31 +135,16 @@ export function VideoKeyframeControls({
         <button
           type="button"
           onClick={() => onFramingModeChange("manual_keyframe")}
-          className={`flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
-            framingMode === "manual_keyframe"
-              ? "bg-ember text-obsidian shadow-md font-extrabold"
+          className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
+            framingMode === "manual_keyframe" || framingMode.startsWith("preset")
+              ? "bg-ember text-obsidian shadow-sm font-extrabold"
               : "text-mist hover:text-white hover:bg-white/5"
           }`}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 13.5V3.75m0 9.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m12-.75V3.75m0 12a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 3.75V16.5m-6-9V3.75m0 3.75a1.5 1.5 0 0 1 0 3m0-3a1.5 1.5 0 0 0 0 3m0 9.75V10.5" />
           </svg>
-          <span>Manual Keyframe</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onFramingModeChange("preset_center")}
-          className={`flex flex-col items-center justify-center gap-1 py-2 px-2 rounded-lg text-xs font-bold transition-all ${
-            framingMode.startsWith("preset")
-              ? "bg-ember text-obsidian shadow-md font-extrabold"
-              : "text-mist hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-          </svg>
-          <span>Preset Cepat</span>
+          <span>Manual Angle</span>
         </button>
       </div>
 
