@@ -137,15 +137,29 @@ export function VideoEditor({
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const autoEnhanceRef = useRef(false);
-  const runFaceTrack = useCallback(async () => {
+  const runFaceTrack = useCallback(async (mode: "face_track" | "podcast_dynamic" = "face_track") => {
     const video = videoRef.current;
     if (!video || trackingFace) return;
-    setTrackingFace(true); setError(null); setStatus("AI lagi ngikutin wajah...");
+    setTrackingFace(true); setError(null);
+    setStatus(mode === "podcast_dynamic" ? "AI lagi menganalisis giliran bicara pembicara..." : "AI lagi ngikutin wajah...");
     try {
       const { detectFaceTrajectory } = await import("@/lib/video/detect-faces");
-      const trajectory = await detectFaceTrajectory(video, { onProgress: (value) => setProgress(Math.round(value * 100)) });
-      setLayout((current) => ({ ...current, trajectory }));
-      setStatus(trajectory.some((keyframe) => keyframe.confidence > 0) ? "Face track aktif." : "Wajah fokus tengah aktif.");
+      const trajectory = await detectFaceTrajectory(video, {
+        mode,
+        onProgress: (value) => setProgress(Math.round(value * 100)),
+      });
+      setLayout((current) => ({
+        ...current,
+        focus: mode === "podcast_dynamic" ? "podcast_dynamic" : "center",
+        trajectory,
+      }));
+      setStatus(
+        mode === "podcast_dynamic"
+          ? "Auto Speaker Switch (Host ↔ Tamu) aktif."
+          : trajectory.some((keyframe) => keyframe.confidence > 0)
+          ? "Face track aktif."
+          : "Wajah fokus tengah aktif."
+      );
     } catch {
       setStatus("Wajah fokus tengah aktif.");
     } finally {
@@ -712,9 +726,6 @@ function VideoPreviewPlayer({
               className="absolute inset-0 h-full w-full object-cover"
               style={{ objectPosition: "left center" }}
             />
-            <span className="pointer-events-none absolute top-2.5 right-2.5 z-10 rounded-md bg-black/70 px-2 py-0.5 text-[9px] font-bold text-white/90 backdrop-blur-xs border border-white/10">
-              Host / Kiri
-            </span>
           </div>
           {/* Bottom Half: Right Speaker (Guest) */}
           <div className="relative h-1/2 w-full overflow-hidden">
@@ -727,9 +738,6 @@ function VideoPreviewPlayer({
               className="absolute inset-0 h-full w-full object-cover"
               style={{ objectPosition: "right center" }}
             />
-            <span className="pointer-events-none absolute top-2.5 right-2.5 z-10 rounded-md bg-black/70 px-2 py-0.5 text-[9px] font-bold text-white/90 backdrop-blur-xs border border-white/10">
-              Tamu / Kanan
-            </span>
           </div>
         </div>
       ) : (
@@ -824,19 +832,62 @@ function LayoutPanel({
 }: {
   layout: VideoLayout;
   onChange: (layout: VideoLayout) => void;
-  onAutoTrack: () => void;
+  onAutoTrack: (mode?: "face_track" | "podcast_dynamic") => void;
   tracking: boolean;
 }) {
   return (
-    <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3">
+    <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3.5">
       <div>
-        <p className="text-mini font-semibold text-ink">Bingkai video</p>
-        <p className="text-micro text-muted">Auto ikuti wajah pembicara, atau pilih framing & split-screen.</p>
+        <p className="text-mini font-semibold text-ink">Bingkai & Kamera AI</p>
+        <p className="text-micro text-muted">Auto ikuti wajah pembicara, otomatis ganti sorotan podcast, atau split-screen.</p>
       </div>
-      <button type="button" onClick={onAutoTrack} disabled={tracking} className={`relative h-11 w-full overflow-hidden rounded-lg border px-3 text-mini font-semibold ${layout.trajectory?.length ? "border-ember bg-ember/15 text-ember" : "border-hairline bg-obsidian/30 text-ink"}`}>
-        {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
-        <span className="relative">{tracking ? "Lagi lacak wajah..." : layout.trajectory?.length ? "Face Track Aktif" : "Auto Face Track (AI Fokus Wajah)"}</span>
-      </button>
+
+      {/* AI Camera Tracking Actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => onAutoTrack("face_track")}
+          disabled={tracking}
+          className={`relative min-h-11 overflow-hidden rounded-xl border px-3 text-mini font-semibold transition-all ${
+            layout.trajectory?.length && layout.focus !== "podcast_dynamic"
+              ? "border-ember bg-ember/15 text-ember shadow-xs shadow-ember/10"
+              : "border-hairline bg-obsidian/40 text-ink hover:border-ember/40"
+          }`}
+        >
+          {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
+          <div className="flex items-center justify-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
+              <path d="M15 8h.01M9 8h.01M9.5 15a3.5 3.5 0 0 0 5 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+            <span className="truncate">
+              {tracking ? "Lacak wajah..." : layout.trajectory?.length && layout.focus !== "podcast_dynamic" ? "Face Track Aktif" : "Auto Face Track"}
+            </span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onAutoTrack("podcast_dynamic")}
+          disabled={tracking}
+          className={`relative min-h-11 overflow-hidden rounded-xl border px-3 text-mini font-semibold transition-all ${
+            layout.focus === "podcast_dynamic"
+              ? "border-ember bg-ember/15 text-ember shadow-xs shadow-ember/10"
+              : "border-hairline bg-obsidian/40 text-ink hover:border-ember/40"
+          }`}
+        >
+          {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
+          <div className="flex items-center justify-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" />
+            </svg>
+            <span className="truncate">
+              {tracking ? "Analisis giliran..." : layout.focus === "podcast_dynamic" ? "Auto Speaker Aktif" : "Auto Speaker (Podcast Switch)"}
+            </span>
+          </div>
+        </button>
+      </div>
+
       <div className="grid grid-cols-3 gap-1.5">
         {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
           <button
@@ -853,12 +904,13 @@ function LayoutPanel({
           </button>
         ))}
       </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
         {(
           [
             { id: "center", label: "Tengah" },
-            { id: "left", label: "Kiri" },
-            { id: "right", label: "Kanan" },
+            { id: "left", label: "Kiri (Host)" },
+            { id: "right", label: "Kanan (Tamu)" },
             { id: "podcast_split", label: "Podcast Split" },
           ] as const
         ).map((f) => (
@@ -876,9 +928,16 @@ function LayoutPanel({
           </button>
         ))}
       </div>
+
+      {layout.focus === "podcast_dynamic" && (
+        <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 leading-relaxed">
+          🎙️ <strong>Auto Speaker Aktif:</strong> Kamera otomatis bergantian menyorot Host (Kiri) dan Tamu (Kanan) saat giliran bicara tanpa split-screen.
+        </div>
+      )}
+
       {layout.focus === "podcast_split" && layout.ratio === "9:16" && (
         <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 leading-relaxed">
-          🎙️ <strong>Mode Podcast Split Aktif:</strong> Menumpuk Pembicara Kiri di atas & Pembicara Kanan di bawah dalam format 9:16 vertikal.
+          🎞️ <strong>Mode Podcast Split Aktif:</strong> Menumpuk Pembicara Kiri di atas & Pembicara Kanan di bawah dalam 1 layar 9:16 vertikal.
         </div>
       )}
     </div>

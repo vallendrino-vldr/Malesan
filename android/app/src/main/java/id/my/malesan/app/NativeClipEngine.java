@@ -35,6 +35,8 @@ final class NativeClipEngine {
                         .addOption("--no-playlist")
                         .addOption("--no-part")
                         .addOption("--no-warnings")
+                        .addOption("--downloader", "ffmpeg")
+                        .addOption("--concurrent-fragments", "4")
                         .addOption("--format", "bv*[height<=1080]+ba/bv*[height<=720]+ba/bv*+ba/bestvideo+bestaudio/best")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))

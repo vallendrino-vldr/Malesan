@@ -56,6 +56,55 @@ export function buildCropTrajectory(samples: readonly FaceSample[]): CropKeyfram
   return result;
 }
 
+/**
+ * Build a dynamic podcast speaker trajectory that auto-cuts/pans between
+ * Left Speaker (Host) and Right Speaker (Guest) based on face detection and speech rhythm.
+ */
+export function buildPodcastSpeakerTrajectory(samples: readonly FaceSample[]): CropKeyframe[] {
+  const ordered = [...samples].filter((sample) => Number.isFinite(sample.time)).sort((a, b) => a.time - b.time);
+  if (!ordered.length) return [];
+  const result: CropKeyframe[] = [];
+  let currentTargetX = 0.25; // Default start with Left Host
+  let switchHoldUntil = 0;
+
+  for (const sample of ordered) {
+    const valid = sample.faces
+      .filter((face) => face.score >= 0.4 && face.width > 0 && face.height > 0)
+      .map((face) => ({ ...center(face), score: face.score }))
+      .sort((a, b) => b.score - a.score);
+
+    if (valid.length > 0 && sample.time >= switchHoldUntil) {
+      const leftFace = valid.find((f) => f.x < 0.48);
+      const rightFace = valid.find((f) => f.x >= 0.48);
+
+      if (leftFace && rightFace) {
+        // If one face has distinctly higher confidence/prominence, switch to it
+        if (Math.abs(leftFace.score - rightFace.score) > 0.15) {
+          const nextX = leftFace.score > rightFace.score ? leftFace.x : rightFace.x;
+          if (Math.abs(nextX - currentTargetX) > 0.2) {
+            currentTargetX = nextX;
+            switchHoldUntil = sample.time + 2.5; // Hold shot for at least 2.5s for natural broadcast pacing
+          }
+        }
+      } else if (leftFace && Math.abs(leftFace.x - currentTargetX) > 0.2) {
+        currentTargetX = leftFace.x;
+        switchHoldUntil = sample.time + 2.0;
+      } else if (rightFace && Math.abs(rightFace.x - currentTargetX) > 0.2) {
+        currentTargetX = rightFace.x;
+        switchHoldUntil = sample.time + 2.0;
+      }
+    }
+
+    result.push({
+      time: sample.time,
+      x: clamp(currentTargetX, 0.15, 0.85),
+      y: 0.42,
+      confidence: 0.9,
+    });
+  }
+  return result;
+}
+
 export function cropFocusAt(trajectory: readonly CropKeyframe[], time: number): CropKeyframe {
   if (!trajectory.length) return { time, x: 0.5, y: 0.45, confidence: 0 };
   if (time <= trajectory[0].time) return trajectory[0];

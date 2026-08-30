@@ -655,20 +655,61 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
               ) : null}
 
               {bridgeError ? (
-                <div className="rounded-xl border border-danger/40 bg-danger/10 p-3.5 text-mini text-danger space-y-2.5" role="alert">
-                  <div className="flex items-start gap-2">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 shrink-0 text-danger mt-0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div className="rounded-2xl border border-ember/30 bg-surface-raised/90 p-4 text-mini space-y-3.5 shadow-lg" role="alert">
+                  <div className="flex items-start gap-3">
+                    <div className="size-9 rounded-xl bg-ember/15 flex items-center justify-center text-ember shrink-0">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
                     <div>
-                      <span className="font-bold block">{bridgeError}</span>
-                      <span className="text-micro text-muted block mt-0.5">Malesan Bridge menghubungkan browser kamu dengan alat pemotong video lokal (Chrome, Brave, Edge).</span>
+                      <h4 className="font-bold text-ink text-mini">Auto Clip Butuh Mesin Pemotong Video</h4>
+                      <p className="text-micro text-muted leading-relaxed mt-0.5">
+                        Pemotongan klip YouTube diproses langsung di perangkat kamu (privat & tanpa kuota server). Pilih cara paling praktis di bawah:
+                      </p>
                     </div>
                   </div>
-                  <div className="rounded-lg border border-hairline bg-obsidian/60 p-2.5 space-y-1">
-                    <p className="text-[11px] font-bold text-ink flex items-center gap-1.5">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                      Pengguna PC / Laptop
-                    </p>
-                    <p className="text-[10px] text-muted leading-relaxed">Jalankan file <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali di folder project, lalu restart browser.</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                    {/* Option 1: Android APK */}
+                    <div className="rounded-xl border border-hairline/80 bg-obsidian/60 p-3 flex flex-col justify-between gap-2.5">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-ink text-[11px]">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                          <span>📱 Pengguna Android (Paling Praktis)</span>
+                        </div>
+                        <p className="text-[10px] text-muted leading-relaxed">
+                          Gunakan aplikasi Android Malesan. Sudah ada mesin pemotong bawaan, tinggal paste link langsung jadi tanpa install tool lain.
+                        </p>
+                      </div>
+                      <a
+                        href="/malesan.apk"
+                        download="malesan.apk"
+                        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-ember px-3 text-[11px] font-bold text-obsidian transition-opacity hover:opacity-90 active:scale-[0.98]"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Unduh APK Android (.apk)</span>
+                      </a>
+                    </div>
+
+                    {/* Option 2: Desktop PC / Laptop */}
+                    <div className="rounded-xl border border-hairline/80 bg-obsidian/60 p-3 flex flex-col justify-between gap-2.5">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold text-ink text-[11px]">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                          <span>💻 Pengguna PC / Laptop (Windows)</span>
+                        </div>
+                        <p className="text-[10px] text-muted leading-relaxed">
+                          Download Malesan Bridge (1-Click Installer). Ekstrak lalu jalankan <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali saja.
+                        </p>
+                      </div>
+                      <a
+                        href="/malesan-bridge.zip"
+                        download="malesan-bridge.zip"
+                        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-3 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 active:scale-[0.98]"
+                      >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Unduh Bridge Installer (.zip)</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               ) : null}

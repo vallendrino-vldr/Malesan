@@ -23,8 +23,9 @@ const seek = (video: HTMLVideoElement, time: number) => new Promise<void>((resol
 
 export async function detectFaceTrajectory(
   video: HTMLVideoElement,
-  options: { start?: number; end?: number; signal?: AbortSignal; onProgress?: (progress: number) => void } = {},
+  options: { mode?: "face_track" | "podcast_dynamic"; start?: number; end?: number; signal?: AbortSignal; onProgress?: (progress: number) => void } = {},
 ): Promise<CropKeyframe[]> {
+  const { buildPodcastSpeakerTrajectory } = await import("./face-track");
   const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
   const vision = await FilesetResolver.forVisionTasks(WASM);
   const create = (delegate: "GPU" | "CPU") => FaceDetector.createFromOptions(vision, {
@@ -74,7 +75,9 @@ export async function detectFaceTrajectory(
       });
       options.onProgress?.(Math.min(1, (index + 1) / total));
     }
-    return buildCropTrajectory(samples);
+    return options.mode === "podcast_dynamic"
+      ? buildPodcastSpeakerTrajectory(samples)
+      : buildCropTrajectory(samples);
   } finally {
     detector.close();
     if (duration > 0) {
