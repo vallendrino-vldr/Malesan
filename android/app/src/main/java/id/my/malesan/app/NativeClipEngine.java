@@ -133,12 +133,9 @@ final class NativeClipEngine {
                 .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
         if (!isFallback) {
-            request.addOption("--extractor-args", "youtube:player_client=android_vr,ios,web")
-                   .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bestvideo+bestaudio/best")
-                   .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
-                   .addOption("--force-keyframes-at-cuts");
+            request.addOption("--format", "22/bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080][ext=mp4]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best");
         } else {
-            request.addOption("-f", "best/bestvideo+bestaudio");
+            request.addOption("--format", "bestvideo+bestaudio/best");
         }
         return request;
     }
