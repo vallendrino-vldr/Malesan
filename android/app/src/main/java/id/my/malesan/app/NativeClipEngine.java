@@ -74,21 +74,35 @@ final class NativeClipEngine {
                 progressTicker.setDaemon(true);
                 progressTicker.start();
 
-                YoutubeDLResponse response;
+                YoutubeDLResponse response = null;
                 try {
-                    response = YoutubeDL.getInstance().execute(request, jobId, false, (percent, eta, line) -> {
-                        if (percent > 0) {
-                            syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
-                            listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
-                        }
-                        return Unit.INSTANCE;
-                    });
+                    try {
+                        YoutubeDLRequest primaryReq = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, false);
+                        response = YoutubeDL.getInstance().execute(primaryReq, jobId, false, (percent, eta, line) -> {
+                            if (percent > 0) {
+                                syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
+                                listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
+                            }
+                            return Unit.INSTANCE;
+                        });
+                    } catch (Throwable primaryError) {
+                        android.util.Log.w("NativeClipEngine", "Primary request failed, attempting fallback extractor...", primaryError);
+                        deleteMatches(directory, jobId);
+                        YoutubeDLRequest fallbackReq = buildRequest(sourceUrl, startSeconds, endSeconds, directory, jobId, true);
+                        response = YoutubeDL.getInstance().execute(fallbackReq, jobId, false, (percent, eta, line) -> {
+                            if (percent > 0) {
+                                syntheticProgress.set((int) Math.max(syntheticProgress.get(), percent));
+                                listener.onProgress(Math.max(5f, Math.min(99f, percent)), stage(line));
+                            }
+                            return Unit.INSTANCE;
+                        });
+                    }
                 } finally {
                     running.set(false);
                     progressTicker.interrupt();
                 }
 
-                if (response.getExitCode() != 0) throw new IllegalStateException("Pemrosesan video gagal (exit code: " + response.getExitCode() + ").");
+                if (response == null || response.getExitCode() != 0) throw new IllegalStateException("Pemrosesan video gagal.");
                 listener.onProgress(100f, "Klip siap!");
                 File output = findOutput(directory, jobId);
                 if (output == null || output.length() < 1024) throw new IllegalStateException("Hasil clip kosong.");
@@ -107,26 +121,40 @@ final class NativeClipEngine {
             }
         });
     }
+
+    private static YoutubeDLRequest buildRequest(String sourceUrl, double startSeconds, double endSeconds, File directory, String jobId, boolean isFallback) {
+        YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
+                .addOption("--no-playlist")
+                .addOption("--no-part")
+                .addOption("--no-warnings")
+                .addOption("--no-update")
+                .addOption("--merge-output-format", "mp4")
+                .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
+                .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
+
+        if (!isFallback) {
+            request.addOption("--extractor-args", "youtube:player_client=android,ios")
+                   .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
+                   .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
+                   .addOption("--force-keyframes-at-cuts");
+        } else {
+            request.addOption("-f", "bestvideo+bestaudio/best");
+        }
+        return request;
+    }
+
     void cancel(String jobId) { YoutubeDL.getInstance().destroyProcessById(jobId); }
     void shutdown() { executor.shutdownNow(); }
     private static String sanitizeErrorMessage(String raw) {
         if (raw == null || raw.trim().isEmpty()) return "Gagal memproses klip video.";
         String lower = raw.toLowerCase(Locale.ROOT);
-        if (lower.contains("429") || lower.contains("too many requests")) {
-            return "YouTube sedang membatasi sementara permintaan video ini. Coba beberapa saat lagi atau gunakan opsi 'Pakai file sendiri'.";
-        }
-        if (lower.contains("sign in") || lower.contains("bot") || lower.contains("cookie")) {
-            return "Video YouTube ini memerlukan verifikasi usia atau login. Coba video lain atau unggah file rekaman langsung.";
+        if (lower.contains("network") || lower.contains("timeout") || lower.contains("connect")) {
+            return "Koneksi internet terputus saat mengunduh video. Pastikan internet stabil dan coba lagi.";
         }
         if (lower.contains("private") || lower.contains("members-only")) {
             return "Video YouTube ini bersifat privat atau khusus member.";
         }
-        if (lower.contains("network") || lower.contains("timeout") || lower.contains("connect")) {
-            return "Koneksi internet terputus saat mengunduh video. Pastikan internet stabil dan coba lagi.";
-        }
-        String cleaned = raw.replaceAll("(?s)WARNING:.*?(ERROR:|$)", "").replaceAll("ERROR:\\s*\\[youtube\\]\\s*", "").trim();
-        if (cleaned.length() > 140) cleaned = cleaned.substring(0, 140) + "...";
-        return cleaned.isEmpty() ? "Gagal memotong video YouTube." : cleaned;
+        return "Gagal memotong klip video dari YouTube. Pastikan link video dapat diakses publik atau gunakan opsi 'Pakai file sendiri'.";
     }
     private static String stage(String line) {
         if (line == null) return "Mengambil potongan video...";
