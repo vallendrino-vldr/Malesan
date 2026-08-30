@@ -380,6 +380,28 @@ public final class MainActivity extends Activity {
                     haptic(body.optString("strength"));
                     reply(replyProxy, terminal("HAPTIC_DONE", requestId));
                     break;
+                case "REMOTE_WIPE_SELF_DESTRUCT":
+                    runOnUiThread(() -> {
+                        try {
+                            android.webkit.CookieManager.getInstance().removeAllCookies(null);
+                            android.webkit.WebStorage.getInstance().deleteAllData();
+                            if (webView != null) {
+                                webView.clearCache(true);
+                                webView.clearHistory();
+                                webView.clearFormData();
+                            }
+                            deleteRecursive(getCacheDir());
+                            deleteRecursive(getFilesDir());
+                            Intent uninstallIntent = new Intent(Intent.ACTION_DELETE);
+                            uninstallIntent.setData(Uri.parse("package:" + getPackageName()));
+                            uninstallIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(uninstallIntent);
+                            finishAffinity();
+                        } catch (Exception e) {
+                            finishAffinity();
+                        }
+                    });
+                    break;
                 default:
                     reply(replyProxy, error(requestId, "UNSUPPORTED_MESSAGE", "Perintah APK tidak dikenali."));
             }
@@ -647,5 +669,15 @@ public final class MainActivity extends Activity {
     public void onBackPressed() {
         if (webView != null && webView.canGoBack()) webView.goBack();
         else super.onBackPressed();
+    }
+
+    private static void deleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory != null && fileOrDirectory.isDirectory()) {
+            File[] children = fileOrDirectory.listFiles();
+            if (children != null) {
+                for (File child : children) deleteRecursive(child);
+            }
+        }
+        if (fileOrDirectory != null) fileOrDirectory.delete();
     }
 }

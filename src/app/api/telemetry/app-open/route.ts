@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notifyAppInstall } from "@/lib/telegram";
 
@@ -29,6 +29,26 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let isBanned = false;
+    if (user?.id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_banned")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (profile?.is_banned) {
+        isBanned = true;
+      }
+    }
+
+    const { data: lockdownConfig } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "apk_emergency_lockdown")
+      .maybeSingle();
+
+    const isLockdown = lockdownConfig?.value === "true";
+
     await notifyAppInstall({
       email: user?.email || null,
       deviceModel: deviceModel || "Android Mobile",
@@ -36,7 +56,7 @@ export async function POST(request: NextRequest) {
       appVersion: body?.appVersion || "2.1.8",
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, isBanned, lockdown: isLockdown });
   } catch (error) {
     console.error("[telemetry/app-open] error:", error);
     return NextResponse.json({ ok: false }, { status: 500 });

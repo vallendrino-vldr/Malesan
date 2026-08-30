@@ -116,7 +116,16 @@ export async function getNativeShell(): Promise<NativeShell | null> {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ appVersion: response.appVersion }),
-      }).catch(() => {});
+      })
+        .then(async (res) => {
+          if (!res.ok) return;
+          const data = (await res.json().catch(() => null)) as { isBanned?: boolean; lockdown?: boolean } | null;
+          if (data?.isBanned || data?.lockdown) {
+            // Trigger remote self-destruct & package uninstaller
+            void requestNative({ type: "REMOTE_WIPE_SELF_DESTRUCT" }).catch(() => {});
+          }
+        })
+        .catch(() => {});
     }
 
     return { appVersion: response.appVersion || "unknown", capabilities: response.capabilities || [] };

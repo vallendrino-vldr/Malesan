@@ -103,6 +103,8 @@ interface AIIntentResult {
     | "roast_hook"
     | "save_otak_kedua"
     | "apk_status"
+    | "lockdown_apk"
+    | "unlock_apk"
     | "none";
   payload?: {
     message?: string;
@@ -200,6 +202,38 @@ export function matchFastPathIntent(text: string, lastInspectedEmail?: string): 
   if (/^(?:status\s*apk|cek\s*apk|info\s*apk|apk)$/i.test(clean)) {
     return {
       actionType: "apk_status",
+      payload: {},
+    };
+  }
+
+  // 6. Ban / Unban User: "banned user@email.com", "ban user@email.com", "blokir user@email.com"
+  const banMatch = clean.match(/^(?:ban|banned|blokir|bekukan)\s+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/i);
+  if (banMatch && banMatch[1]) {
+    return {
+      actionType: "ban_user",
+      payload: { email: banMatch[1].toLowerCase(), reason: "Moderasi instan via Telegram Bot" },
+    };
+  }
+
+  const unbanMatch = clean.match(/^(?:unban|unbanned|buka blokir|aktifkan)\s+([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})$/i);
+  if (unbanMatch && unbanMatch[1]) {
+    return {
+      actionType: "unban_user",
+      payload: { email: unbanMatch[1].toLowerCase() },
+    };
+  }
+
+  // 7. APK Lockdown / Remote Wipe: "lockdown apk", "self destruct apk", "killswitch apk"
+  if (/^(?:lockdown\s*apk|self\s*destruct\s*apk|killswitch\s*apk|hancurkan\s*apk)$/i.test(clean)) {
+    return {
+      actionType: "lockdown_apk",
+      payload: {},
+    };
+  }
+
+  if (/^(?:unlock\s*apk|pulihkan\s*apk|buka\s*apk)$/i.test(clean)) {
+    return {
+      actionType: "unlock_apk",
       payload: {},
     };
   }
@@ -984,15 +1018,89 @@ DILARANG MENGGUNAKAN EMOJI.`;
         return;
       }
 
+      case "ban_user": {
+        const email = String(parsed.payload?.email || "").trim().toLowerCase();
+        if (!email) {
+          await sendTelegramMessage("Mohon sebutkan email user yang ingin dibanned, Bos.", { chatId, messageThreadId });
+          return;
+        }
+
+        const { data: targetUser } = await supabase
+          .from("profiles")
+          .select("id, email, display_name")
+          .ilike("email", `%${email}%`)
+          .maybeSingle();
+
+        if (!targetUser) {
+          await sendTelegramMessage(`User <code>${escapeHtml(email)}</code> tidak ditemukan di database.`, { chatId, messageThreadId });
+          return;
+        }
+
+        await supabase
+          .from("profiles")
+          .update({
+            is_banned: true,
+            ban_reason: String(parsed.payload?.reason || "Diblokir oleh Admin via Telegram"),
+          })
+          .eq("id", targetUser.id);
+
+        const banText = `<b>[AKUN TELAH DIBLOKIR / BANNED]</b>
+
+• <b>Email:</b> <code>${escapeHtml(targetUser.email)}</code>
+• <b>Nama:</b> ${escapeHtml(targetUser.display_name || "Tanpa Nama")}
+• <b>Status:</b> BANNED PERMANEN
+• <b>Proteksi APK:</b> Sesi langsung terkunci & jika APK dibuka, data lokal akan di-wipe otomatis.
+
+<i>Ketik "unban ${escapeHtml(targetUser.email)}" untuk membuka blokir kapan saja.</i>`;
+
+        await sendTelegramMessage(banText, { chatId, messageThreadId });
+        return;
+      }
+
       case "unban_user": {
         const email = String(parsed.payload?.email || "").trim().toLowerCase();
         if (email) {
           await supabase.from("profiles").update({ is_banned: false, ban_reason: null }).ilike("email", `%${email}%`);
         }
-        await sendTelegramMessage(`<b>[AKUN DIAKTIFKAN KEMBALI]</b> ${parsed.replyText}`, {
+        await sendTelegramMessage(`<b>[AKUN DIAKTIFKAN KEMBALI]</b> ${parsed.replyText || `Akun ${escapeHtml(email)} telah dipulihkan.`}`, {
           chatId,
           messageThreadId,
         });
+        return;
+      }
+
+      case "lockdown_apk": {
+        await supabase.from("app_config").upsert({
+          key: "apk_emergency_lockdown",
+          value: "true",
+          updated_at: new Date().toISOString(),
+        });
+
+        const alertText = `<b>[EMERGENCY LOCKDOWN APK DIAKTIFKAN]</b>
+
+• <b>Status:</b> LOCKDOWN GLOBAL AKTIF
+• <b>Dampak:</b> Semua perangkat yang membuka APK Malesan akan otomatis:
+  1. Menghapus seluruh cookies, cache, dan data lokal (Remote Wipe).
+  2. Memunculkan dialog pencopotan aplikasi Android (Uninstall Dialog).
+  3. Menutup akses aplikasi seketika.
+
+<i>Ketik "unlock apk" untuk menonaktifkan mode darurat ini.</i>`;
+
+        await sendTelegramMessage(alertText, { chatId, messageThreadId });
+        return;
+      }
+
+      case "unlock_apk": {
+        await supabase.from("app_config").upsert({
+          key: "apk_emergency_lockdown",
+          value: "false",
+          updated_at: new Date().toISOString(),
+        });
+
+        await sendTelegramMessage(
+          `<b>[LOCKDOWN APK DINONAKTIFKAN]</b>\n\nAplikasi APK Malesan telah dibuka kembali dan beroperasi secara normal.`,
+          { chatId, messageThreadId },
+        );
         return;
       }
 

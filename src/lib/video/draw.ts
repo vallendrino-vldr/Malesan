@@ -24,8 +24,8 @@ export function bitrateFor(mbps: number, _W?: number, _H?: number, _fps?: number
   void _W;
   void _H;
   void _fps;
-  const base = mbps && mbps >= 8 ? mbps : 14.0;
-  const targetMbps = Math.max(8.0, Math.min(25.0, base));
+  const base = mbps && mbps >= 14 ? mbps : 20.0;
+  const targetMbps = Math.max(14.0, Math.min(35.0, base));
   return Math.round(targetMbps * 1_000_000);
 }
 
