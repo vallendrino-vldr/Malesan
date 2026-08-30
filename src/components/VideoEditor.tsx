@@ -277,7 +277,7 @@ export function VideoEditor({
 
   useEffect(() => {
     void getNativeShell().then((shell) => {
-      setIsNativeAPK(Boolean(shell?.capabilities.includes("native-auto-clip") || shell?.name === "android"));
+      setIsNativeAPK(Boolean(shell?.capabilities.includes("native-auto-clip") || shell));
     });
   }, []);
 
