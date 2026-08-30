@@ -175,12 +175,12 @@ export function drawCaption(
 
 /**
  * Ultra-luxury watermark badge — frosted obsidian glass pill with glowing amber sparkle
- * and crisp two-tone brand typography (malesan.ai).
+ * and crisp two-tone brand typography (malesan.my.id).
  */
 export function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const px = Math.max(14, Math.round(H * 0.017));
+  const px = Math.max(13, Math.round(H * 0.016));
   const brandName = "malesan";
-  const brandExt = ".ai";
+  const brandExt = ".my.id";
   
   ctx.save();
   ctx.font = `800 ${px}px "Poppins", "Plus Jakarta Sans", system-ui, sans-serif`;

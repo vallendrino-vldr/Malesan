@@ -536,7 +536,7 @@ export function VideoEditor({
                     <label className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-raised/40 p-3.5 text-mini text-ink cursor-pointer hover:border-ember/40 transition-colors">
                       <input type="checkbox" checked={noWatermark} onChange={(e) => setNoWatermark(e.target.checked)} className="mt-0.5 size-4 accent-ember rounded" />
                       <div>
-                        <span className="font-semibold">Hapus watermark malesan.ai</span>{" "}
+                        <span className="font-semibold">Hapus watermark malesan.my.id</span>{" "}
                         <span className="text-ember font-bold">(+{noWatermarkCost} kredit)</span>
                         <span className="block mt-0.5 text-micro text-muted">Kalau gak dicentang, watermark tetap nempel halus (gratis).</span>
                       </div>
@@ -659,24 +659,15 @@ function VideoPreviewPlayer({
 
   return (
     <div
-      className={`relative mx-auto w-full overflow-hidden rounded-3xl border-2 border-white/10 bg-black shadow-2xl ring-1 ring-white/5 transition-all duration-300 ${containerRatioClass}`}
+      className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5 transition-all duration-300 ${containerRatioClass}`}
     >
-      {/* Smartphone Top Notch Accent for 9:16 */}
-      {layout.ratio === "9:16" && (
-        <div className="pointer-events-none absolute top-0 inset-x-0 z-20 flex justify-center">
-          <div className="h-3 w-16 rounded-b-lg bg-obsidian/80 border-b border-x border-white/10 backdrop-blur-xs flex items-center justify-center">
-            <div className="size-1.5 rounded-full bg-white/20" />
-          </div>
-        </div>
-      )}
-
       {/* Ultra-Luxury Watermark Preview */}
       {watermark && (
-        <div className="pointer-events-none absolute top-3.5 left-3.5 z-10 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
+        <div className="pointer-events-none absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
           <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-ember drop-shadow-[0_0_4px_rgba(255,138,61,0.6)]">
             <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
           </svg>
-          <span className="font-display text-[11px] font-extrabold tracking-wide text-white">malesan<span className="text-ember font-black">.ai</span></span>
+          <span className="font-display text-[11px] font-extrabold tracking-wide text-white">malesan<span className="text-ember font-bold">.my.id</span></span>
         </div>
       )}
 
