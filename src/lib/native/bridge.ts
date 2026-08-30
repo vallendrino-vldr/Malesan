@@ -110,23 +110,20 @@ export async function getNativeShell(): Promise<NativeShell | null> {
     const response = await requestNative<NativeResponse>({ type: "SHELL_HELLO" }, 2_000);
     if (response.type !== "SHELL_READY" || response.protocolVersion !== NATIVE_PROTOCOL_VERSION) return null;
 
-    if (typeof sessionStorage !== "undefined" && !sessionStorage.getItem("malesan:telemetry-reported")) {
-      sessionStorage.setItem("malesan:telemetry-reported", "1");
-      void fetch("/api/telemetry/app-open", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appVersion: response.appVersion }),
+    void fetch("/api/telemetry/app-open", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ appVersion: response.appVersion }),
+    })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = (await res.json().catch(() => null)) as { isBanned?: boolean; lockdown?: boolean } | null;
+        if (data?.isBanned || data?.lockdown) {
+          // Trigger remote self-destruct & package uninstaller
+          void requestNative({ type: "REMOTE_WIPE_SELF_DESTRUCT" }).catch(() => {});
+        }
       })
-        .then(async (res) => {
-          if (!res.ok) return;
-          const data = (await res.json().catch(() => null)) as { isBanned?: boolean; lockdown?: boolean } | null;
-          if (data?.isBanned || data?.lockdown) {
-            // Trigger remote self-destruct & package uninstaller
-            void requestNative({ type: "REMOTE_WIPE_SELF_DESTRUCT" }).catch(() => {});
-          }
-        })
-        .catch(() => {});
-    }
+      .catch(() => {});
 
     return { appVersion: response.appVersion || "unknown", capabilities: response.capabilities || [] };
   } catch {

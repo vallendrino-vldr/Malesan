@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { CopyField } from "@/components/CopyField";
 import { PersonaManager, CtaSettings } from "@/components/PersonaManager";
+import { BannedGuard } from "@/components/BannedGuard";
 
 async function requestOrigin(): Promise<string> {
   const h = await headers();
@@ -26,6 +27,7 @@ export default async function ProfilePage() {
     .single();
 
   if (!profile) redirect("/login");
+  if (profile.is_banned) return <BannedGuard reason={profile.ban_reason} />;
 
   const [{ data: personas }, { data: dna }] = await Promise.all([
     supabase

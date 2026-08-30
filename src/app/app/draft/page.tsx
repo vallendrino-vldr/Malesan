@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/Logo";
 import { DraftWorkspace } from "@/components/DraftEditor";
+import { BannedGuard } from "@/components/BannedGuard";
 
 /**
  * The drafts screen.
@@ -27,6 +28,16 @@ export default async function DraftPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/masuk?next=%2Fapp%2Fdraft");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_banned, ban_reason")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.is_banned) {
+    return <BannedGuard reason={profile.ban_reason} />;
+  }
 
   // Scoped by user_id on top of RLS, and the error is inspected: a discarded
   // error here would render "Belum ada draf" over a failed read, and the user

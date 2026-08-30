@@ -16,6 +16,7 @@ import { RecycleBanner } from "@/components/RecycleBanner";
 import { CopyField } from "@/components/CopyField";
 import { jakartaDayKey } from "@/lib/time";
 import { isStudioModule } from "@/lib/studio-modules";
+import { BannedGuard } from "@/components/BannedGuard";
 
 const PipelineBoard = dynamic(() => import("@/components/PipelineBoard").then((m) => m.PipelineBoard), {
   loading: () => (
@@ -102,6 +103,10 @@ export default async function AppPage({
         </div>
       </main>
     );
+  }
+
+  if (profile.is_banned) {
+    return <BannedGuard reason={profile.ban_reason} />;
   }
 
   // Profil konten is guidance, not a gate. The old count-based redirect fired
