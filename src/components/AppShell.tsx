@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { getNativeShell } from "@/lib/native/bridge";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
@@ -15,14 +16,9 @@ const emptySubscribe = () => () => {};
 const getIsStandaloneSnapshot = () => {
   if (typeof window === "undefined") return false;
   return (
-    Boolean((window as unknown as { MalesanNative?: { isNativeApp?: () => boolean } }).MalesanNative?.isNativeApp?.()) ||
     window.matchMedia("(display-mode: standalone)").matches ||
     (window.navigator as unknown as { standalone?: boolean }).standalone === true
   );
-};
-const getIsNativeApkSnapshot = () => {
-  if (typeof window === "undefined") return false;
-  return Boolean((window as unknown as { MalesanNative?: { isNativeApp?: () => boolean } }).MalesanNative?.isNativeApp?.());
 };
 
 export type TabKey = "studio" | "vibe" | "pipeline" | "profil";
@@ -85,9 +81,20 @@ export function AppShell({
   const [current, setCurrent] = useState<TabKey>(active);
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isNativeApk, setIsNativeApk] = useState(false);
 
-  const isStandalone = useSyncExternalStore(emptySubscribe, getIsStandaloneSnapshot, () => false);
-  const isNativeApk = useSyncExternalStore(emptySubscribe, getIsNativeApkSnapshot, () => false);
+  const browserStandalone = useSyncExternalStore(emptySubscribe, getIsStandaloneSnapshot, () => false);
+  const isStandalone = browserStandalone || isNativeApk;
+
+  useEffect(() => {
+    let active = true;
+    void getNativeShell().then((shell) => {
+      if (active) setIsNativeApk(Boolean(shell));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // A module sub-view (?m=hook) owns the whole content area, so tab state does
   // not apply — fall back to server-driven navigation for those.

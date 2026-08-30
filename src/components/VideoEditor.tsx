@@ -17,6 +17,7 @@ import {
 } from "@/lib/video/captions";
 import { exportBurnedVideo } from "@/lib/video/export";
 import type { VideoLayout } from "@/lib/video/draw";
+import { getNativeShell, requestNative } from "@/lib/native/bridge";
 import { ExportOverlay } from "./ExportOverlay";
 import { ClipRadar } from "./ClipRadar";
 /**
@@ -320,38 +321,33 @@ export function VideoEditor({
         },
         onStage: setExportStage,
       });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
       const base = file.name.replace(/\.[^.]+$/, "").slice(0, 40) || "video";
-      a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      // On Native Android APK: save directly to Gallery DCIM/Malesan & trigger haptic
-      const native = (window as unknown as {
-        MalesanNative?: {
-          saveVideoToGallery?: (b64: string, name: string) => boolean;
-          haptic?: (t: string) => void;
-        };
-      }).MalesanNative;
-
-      if (native?.saveVideoToGallery) {
-        try {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            const b64 = (reader.result as string)?.split(",")?.[1];
-            if (b64) {
-              native.saveVideoToGallery?.(b64, `Malesan_${base}.${ext}`);
-              native.haptic?.("heavy");
-            }
-          };
-          reader.readAsDataURL(blob);
-        } catch (nativeErr) {
-          console.warn("native gallery save fallback to standard download", nativeErr);
+      const nativeShell = await getNativeShell();
+      if (nativeShell?.capabilities.includes("gallery-stream")) {
+        setExportStage("Menyiapkan Galeri Android...");
+        const prepared = await requestNative({ type: "GALLERY_PREPARE", name: `Malesan_${base}.${ext}`, mimeType: blob.type || "video/mp4", bytes: blob.size });
+        if (prepared.type !== "GALLERY_UPLOAD_READY" || !prepared.downloadToken) throw new Error(prepared.message ?? "Galeri Android gak siap.");
+        const chunkSize = 512 * 1024;
+        for (let offset = 0; offset < blob.size; offset += chunkSize) {
+          const bytes = new Uint8Array(await blob.slice(offset, offset + chunkSize).arrayBuffer());
+          let binary = "";
+          for (let cursor = 0; cursor < bytes.length; cursor += 0x8000) binary += String.fromCharCode(...bytes.subarray(cursor, cursor + 0x8000));
+          const accepted = await requestNative({ type: "GALLERY_CHUNK", downloadToken: prepared.downloadToken, chunk: btoa(binary) }, 60_000);
+          if (accepted.type !== "GALLERY_CHUNK_ACCEPTED") throw new Error(accepted.message ?? "Potongan video gagal ditulis.");
+          setExportPct(90 + Math.round(Math.min(1, (offset + bytes.length) / blob.size) * 10));
         }
+        const committed = await requestNative({ type: "GALLERY_COMMIT", downloadToken: prepared.downloadToken });
+        if (committed.type !== "GALLERY_SAVED") throw new Error(committed.message ?? "Video gagal disimpan ke Galeri Android.");
+        void requestNative({ type: "HAPTIC", strength: "heavy" }).catch(() => {});
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
       }
 
       setPhase("ready");

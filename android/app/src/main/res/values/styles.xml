@@ -1,4 +1,4 @@
-﻿<resources>
+<resources>
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/obsidian</item>
         <item name="android:statusBarColor">@color/obsidian</item>

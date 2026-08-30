@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getNativeShell, requestNative } from "@/lib/native/bridge";
 
 interface GoogleSignInButtonProps {
   next?: string;
@@ -16,14 +17,6 @@ export function GoogleSignInButton({
 }: GoogleSignInButtonProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    function handleFocus() {
-      setPending(false);
-    }
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, []);
 
   async function signIn() {
     setPending(true);
@@ -61,8 +54,36 @@ export function GoogleSignInButton({
       }
     }
 
-    // Standard Google OAuth for real users
     const supabase = createClient();
+    const nativeShell = await getNativeShell();
+    if (nativeShell?.capabilities.includes("google-id-token")) {
+      try {
+        const credential = await requestNative<{
+          type: "AUTH_GOOGLE_CREDENTIAL";
+          requestId: string;
+          idToken: string;
+          rawNonce: string;
+        }>({ type: "AUTH_GOOGLE_START" }, 60_000);
+        const { error: nativeAuthError } = await supabase.auth.signInWithIdToken({
+          provider: "google",
+          token: credential.idToken,
+          nonce: credential.rawNonce,
+        });
+        if (nativeAuthError) throw nativeAuthError;
+        const targetUrl = next?.startsWith("/") && !next.startsWith("//") ? next : "/app";
+        window.location.replace(targetUrl === "/" ? "/app" : targetUrl);
+        return;
+      } catch (nativeError) {
+        setError(
+          nativeError instanceof Error
+            ? nativeError.message
+            : "Login Google di APK gagal. Coba pilih akun lagi.",
+        );
+        setPending(false);
+        return;
+      }
+    }
+
     const origin =
       typeof window !== "undefined" && window.location.origin.startsWith("http")
         ? window.location.origin
@@ -76,7 +97,7 @@ export function GoogleSignInButton({
       redirectUrl.searchParams.set("ref", referralCode);
     }
 
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: redirectUrl.toString(),
@@ -87,8 +108,8 @@ export function GoogleSignInButton({
       },
     });
 
-    if (error) {
-      setError(`Gagal menghubungkan ke Google: ${error.message}. Silakan coba lagi.`);
+    if (oauthError) {
+      setError(`Gagal menghubungkan ke Google: ${oauthError.message}. Silakan coba lagi.`);
       setPending(false);
     }
   }

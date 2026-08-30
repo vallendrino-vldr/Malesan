@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { getNativeShell, startNativeRequest, subscribeNative } from "@/lib/native/bridge";
 import {
   YouTubeClipPlayer,
   type YouTubeClipController,
@@ -123,18 +124,25 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
 
   // Auto-trigger scan when shared from YouTube mobile app (via yt_share param)
   useEffect(() => {
-    if (autoTriggeredRef.current || !url.trim()) return;
+    const params = new URLSearchParams(window.location.search);
+    const shared = params.get("yt_share") || params.get("url");
+    if (!shared || loading || scan) return;
+
+    const shareId = params.get("share_id") || `legacy:${shared}`;
+    const storageKey = `malesan:consumed-share:${shareId}`;
+    if (autoTriggeredRef.current || sessionStorage.getItem(storageKey)) return;
     autoTriggeredRef.current = true;
+    sessionStorage.setItem(storageKey, "1");
+
     const cleanUrl = new URL(window.location.href);
-    if (cleanUrl.searchParams.has("yt_share")) {
-      cleanUrl.searchParams.delete("yt_share");
-      window.history.replaceState(null, "", cleanUrl.toString());
-    }
-    const timer = setTimeout(() => {
-      void run(url);
-    }, 50);
+    cleanUrl.searchParams.delete("yt_share");
+    cleanUrl.searchParams.delete("url");
+    cleanUrl.searchParams.delete("share_id");
+    window.history.replaceState(null, "", cleanUrl.toString());
+
+    const timer = setTimeout(() => void run(shared), 50);
     return () => clearTimeout(timer);
-  }, [url, run]);
+  }, [loading, scan, run]);
 
   const clip = scan?.clips[active];
 
@@ -142,6 +150,8 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
     if (!scan || !clip || bridgeBusy) return;
     setBridgeBusy(true);
     setBridgeError(null);
+    let claimedJobId: string | null = null;
+    let claimedWorkerToken: string | null = null;
     try {
       const response = await fetch("/api/video/auto-clip", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -151,25 +161,65 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       if (!response.ok || !created?.job || !created.claimToken) throw new Error(created?.error ?? "Job Auto Clip gagal dibuat.");
       setBridgeJob(created.job);
 
-      const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
-      const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
-
-      if (window.innerWidth < 768 || !chromeRuntime) {
-        throw new Error(
-          window.innerWidth < 768
-            ? "Pemotongan video lokal otomatis memerlukan Chrome di PC/Laptop dengan Malesan Bridge. Di HP Android, kamu bisa buka video langsung di YouTube atau unggah file di Video Studio."
-            : "Malesan Bridge belum terdeteksi di browser ini. Jalankan INSTALL_MALESAN_BRIDGE.cmd sekali, lalu coba lagi."
-        );
+      let downloadUrl: string;
+      const nativeShell = await getNativeShell();
+      if (nativeShell?.capabilities.includes("native-auto-clip")) {
+        const claimed = await fetch("/api/bridge/auto-clip/claim", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: created.job.id, claimToken: created.claimToken }),
+        }).then(async (res) => ({ ok: res.ok, data: await res.json().catch(() => null) as { workerToken?: string; error?: string } | null }));
+        if (!claimed.ok || !claimed.data?.workerToken) throw new Error(claimed.data?.error ?? "Gagal mengunci job Auto Clip.");
+        const workerToken = claimed.data.workerToken;
+        claimedJobId = created.job.id;
+        claimedWorkerToken = workerToken;
+        const requestId = startNativeRequest({
+          type: "CLIP_START", jobId: created.job.id, sourceUrl: url,
+          startTime: clip.startTime, endTime: clip.endTime,
+        });
+        const nativeResult = await new Promise<{ downloadUrl: string; outputBytes: number }>((resolve, reject) => {
+          const timer = window.setTimeout(() => { unsubscribe(); reject(new Error("Auto Clip native melewati batas waktu.")); }, 10 * 60_000);
+          const unsubscribe = subscribeNative((message) => {
+            if (message.requestId !== requestId) return;
+            if (message.type === "CLIP_PROGRESS") {
+              setBridgeJob({ ...created.job!, status: "processing", progress: Math.round(message.progress ?? 0), stage: message.stage ?? "Memproses clip di HP..." });
+              return;
+            }
+            window.clearTimeout(timer); unsubscribe();
+            if (message.type === "NATIVE_ERROR") reject(new Error(message.message ?? "Auto Clip native gagal."));
+            else if (message.type === "CLIP_READY" && message.downloadUrl && message.outputBytes) resolve({ downloadUrl: message.downloadUrl, outputBytes: message.outputBytes });
+            else reject(new Error("Respons Auto Clip native tidak valid."));
+          });
+        });
+        const settled = await fetch("/api/bridge/auto-clip/acquired", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: created.job.id, workerToken, outputBytes: nativeResult.outputBytes }),
+        });
+        if (!settled.ok) throw new Error((await settled.json().catch(() => null) as { error?: string } | null)?.error ?? "Gagal mengunci biaya Auto Clip.");
+        const outputName = `${clip.hookTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "malesan-clip"}.mp4`;
+        const markedReady = await fetch("/api/bridge/auto-clip/progress", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: created.job.id, workerToken, status: "ready", progress: 100, stage: "Klip siap", outputName, outputBytes: nativeResult.outputBytes }),
+        });
+        if (!markedReady.ok) throw new Error((await markedReady.json().catch(() => null) as { error?: string } | null)?.error ?? "Status hasil Auto Clip gagal disimpan.");
+        // Job is terminal now; a later failure must not try to overwrite it as failed.
+        claimedJobId = null;
+        claimedWorkerToken = null;
+        downloadUrl = nativeResult.downloadUrl;
+      } else {
+        const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
+        const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
+        if (window.innerWidth < 768 || !chromeRuntime) throw new Error(window.innerWidth < 768 ? "APK ini belum punya engine Auto Clip native. Perbarui APK Malesan." : "Malesan Bridge belum terdeteksi di browser ini. Jalankan INSTALL_MALESAN_BRIDGE.cmd sekali, lalu coba lagi.");
+        const result = await new Promise<{ ok?: boolean; error?: string; downloadUrl?: string }>((resolve, reject) => {
+          chromeRuntime.sendMessage(extensionId, { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }, (value) => {
+            if (chromeRuntime.lastError) reject(new Error(chromeRuntime.lastError.message ?? "Bridge gak merespons.")); else resolve(value ?? {});
+          });
+        });
+        if (!result.ok || !result.downloadUrl) throw new Error(result.error ?? "Bridge gagal memproses klip.");
+        downloadUrl = result.downloadUrl;
       }
 
-      const result = await new Promise<{ ok?: boolean; error?: string; downloadUrl?: string }>((resolve, reject) => {
-        chromeRuntime.sendMessage(extensionId, { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }, (value) => {
-          if (chromeRuntime.lastError) reject(new Error(chromeRuntime.lastError.message ?? "Bridge gak merespons.")); else resolve(value ?? {});
-        });
-      });
-      if (!result.ok || !result.downloadUrl) throw new Error(result.error ?? "Bridge gagal memproses klip.");
-      const fileResponse = await fetch(result.downloadUrl);
-      if (!fileResponse.ok) throw new Error("Hasil Bridge gak bisa dibuka.");
+      const fileResponse = await fetch(downloadUrl);
+      if (!fileResponse.ok) throw new Error("Hasil Auto Clip gak bisa dibuka.");
       const blob = await fileResponse.blob();
       const filename = `${clip.hookTitle.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "malesan-clip"}.mp4`;
       const localFile = new File([blob], filename, { type: blob.type || "video/mp4" });
@@ -182,7 +232,16 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       setBridgeJob({ ...created.job, status: "ready", progress: 100, stage: "Klip siap" });
       router.refresh();
     } catch (reason) {
-      setBridgeError(reason instanceof Error ? reason.message : "Auto Clip gagal. Coba lagi.");
+      const message = reason instanceof Error ? reason.message : "Auto Clip gagal. Coba lagi.";
+      // A claimed job must always reach a terminal state, otherwise it stays locked
+      // behind a live worker token and the user cannot retry the same clip.
+      if (claimedJobId && claimedWorkerToken) {
+        await fetch("/api/bridge/auto-clip/progress", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jobId: claimedJobId, workerToken: claimedWorkerToken, status: "failed", progress: 0, stage: "Gagal", errorCode: "native_clip_failed", errorMessage: message.slice(0, 300) }),
+        }).catch(() => undefined);
+      }
+      setBridgeError(message);
     } finally { setBridgeBusy(false); }
   };
 
@@ -388,7 +447,10 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 bg-ember/15 px-2.5 py-0.5 text-[10px] font-bold text-ember uppercase">
-                  ⚡ Momen Terpilih
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+                    <path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z" />
+                  </svg>
+                  Momen Terpilih
                 </span>
                 <span className="font-mono text-xs font-bold text-ember">{clock(clip.startTime)}–{clock(clip.endTime)}</span>
               </div>
@@ -405,27 +467,18 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
 
               <button
                 type="button"
-                onClick={() => {
-                  if (!rightsConfirmed) {
-                    setRightsConfirmed(true);
-                  }
-                  // If on native Android APK, trigger native stream downloader into DCIM/Malesan
-                  const native = (window as unknown as { MalesanNative?: { downloadYouTubeClip?: (u: string, s: number, e: number, t: string) => void } }).MalesanNative;
-                  if (native?.downloadYouTubeClip) {
-                    native.downloadYouTubeClip(url, clip.startTime, clip.endTime, clip.hookTitle);
-                  }
-                  // Transition to studio video editor for auto-caption & 9:16 vertical crop
-                  const studioTab = document.querySelector('button[data-tab="studio"]') as HTMLButtonElement | null;
-                  if (studioTab) studioTab.click();
-                  else router.push("/app?tab=studio");
-                }}
-                className="btn-ember flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-all active:scale-[0.99]"
+                onClick={startAutoClip}
+                disabled={bridgeBusy || !rightsConfirmed}
+                className="btn-ember relative flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl px-5 font-display text-sm font-bold text-obsidian shadow-md transition-all active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 sm:text-base"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                {bridgeBusy ? <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/30 to-transparent" /> : null}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="relative size-4 shrink-0" aria-hidden="true">
                   <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
                 </svg>
-                <span>Bikin Auto Clip ({clock(clip.startTime)}–{clock(clip.endTime)})</span>
+                <span className="relative truncate">{bridgeBusy ? (bridgeJob?.stage || "Menyiapkan Auto Clip...") : `Bikin Auto Clip (${clock(clip.startTime)}–${clock(clip.endTime)})`}</span>
               </button>
+              {bridgeBusy && bridgeJob ? <div className="h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-ember transition-[width] duration-500" style={{ width: `${bridgeJob.progress}%` }} /></div> : null}
+              {bridgeError ? <p className="text-mini leading-relaxed text-red-300" role="alert">{bridgeError}</p> : null}
 
               <div className="flex items-center justify-between gap-2 pt-1">
                 <a

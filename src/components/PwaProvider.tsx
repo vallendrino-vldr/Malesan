@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getNativeShell } from "@/lib/native/bridge";
 
 /**
  * Registers the service worker and surfaces two things the browser will not do
  * on its own:
  *
  *  1. An install button. Chrome fires `beforeinstallprompt` and then does
- *     nothing visible unless you catch it — which is why most PWAs are never
+ *     nothing visible unless you catch it â€” which is why most PWAs are never
  *     actually installed.
  *  2. An update prompt. A service worker that finds a new build sits in
  *     "waiting" until every tab closes, so an installed app can show yesterday's
@@ -24,9 +25,7 @@ export function PwaProvider() {
   const [updateReady, setUpdateReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-
+  const registerBrowserPwa = () => {
     let reg: ServiceWorkerRegistration | undefined;
 
     navigator.serviceWorker
@@ -121,6 +120,28 @@ export function PwaProvider() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("beforeinstallprompt", onInstall);
       clearInterval(versionInterval);
+    };
+  };
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+    void (async () => {
+      const nativeShell = await getNativeShell();
+      if (cancelled) return;
+      if (nativeShell) {
+        const registrations = await navigator.serviceWorker.getRegistrations().catch(() => []);
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+        return;
+      }
+      cleanup = registerBrowserPwa();
+    })();
+
+    return () => {
+      cancelled = true;
+      cleanup?.();
     };
   }, []);
 

@@ -1,0 +1,5 @@
+﻿# Copy to android/signing.properties (gitignored) or set these environment variables.
+MALESAN_ANDROID_KEYSTORE=keystore/malesan-release.keystore
+MALESAN_ANDROID_STORE_PASSWORD=
+MALESAN_ANDROID_KEY_ALIAS=malesan
+MALESAN_ANDROID_KEY_PASSWORD=

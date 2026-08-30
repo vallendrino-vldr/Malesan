@@ -2,65 +2,112 @@ package id.my.malesan.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.os.Environment;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.MediaStore;
-import android.util.Base64;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
-import android.webkit.JavascriptInterface;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialException;
+import androidx.credentials.exceptions.NoCredentialException;
+import androidx.webkit.JavaScriptReplyProxy;
+import androidx.webkit.WebMessageCompat;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
+import androidx.webkit.WebViewFeature;
+
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class MainActivity extends Activity {
-
+public final class MainActivity extends Activity {
     private static final String BASE_URL = "https://malesan.my.id";
+    private static final String APP_HOST = "malesan.my.id";
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
+    private static final int PROTOCOL_VERSION = 2;
+    private static final Pattern YOUTUBE_URL = Pattern.compile(
+            "https?://(?:www\\.|m\\.)?(?:youtube\\.com/(?:watch\\?[^\\s]*v=|shorts/)|youtu\\.be/)[A-Za-z0-9_-]{6,}[^\\s]*",
+            Pattern.CASE_INSENSITIVE
+    );
 
+    private static final class GalleryUpload {
+        final Uri uri;
+        final OutputStream stream;
+        final long expectedBytes;
+        long writtenBytes;
+        GalleryUpload(Uri uri, OutputStream stream, long expectedBytes) {
+            this.uri = uri; this.stream = stream; this.expectedBytes = expectedBytes;
+        }
+    }
+
+    private final SecureRandom secureRandom = new SecureRandom();
+    private final Map<String, File> clipOutputs = new ConcurrentHashMap<>();
+    private final Map<String, GalleryUpload> galleryUploads = new ConcurrentHashMap<>();
     private WebView webView;
     private ValueCallback<Uri[]> fileUploadCallback;
+    private CancellationSignal authCancellation;
+    private NativeClipEngine clipEngine;
+    private String activeClipJobId;
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Immersive obsidian theme matching Malesan dark aesthetic
         Window window = getWindow();
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         window.setStatusBarColor(0xFF0B0A09);
         window.setNavigationBarColor(0xFF0B0A09);
 
         webView = new WebView(this);
+        clipEngine = new NativeClipEngine(this);
         setContentView(webView);
-
-        initWebViewSettings();
-        initWebClients();
-        injectNativeBridge();
-
+        configureWebView();
+        configureOriginSafeBridge();
         handleIncomingIntent(getIntent());
     }
 
@@ -72,187 +119,151 @@ public class MainActivity extends Activity {
     }
 
     private void handleIncomingIntent(Intent intent) {
-        if (intent == null) {
-            webView.loadUrl(BASE_URL + "/app");
-            return;
-        }
-
-        String action = intent.getAction();
-        String type = intent.getType();
-
-        // YouTube Share Intent Handler
-        if (Intent.ACTION_SEND.equals(action) && "text/plain".equals(type)) {
+        if (intent != null && Intent.ACTION_SEND.equals(intent.getAction())) {
             String sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
-            if (sharedText != null) {
-                String ytUrl = extractYouTubeUrl(sharedText);
-                if (ytUrl != null) {
-                    try {
-                        String targetUrl = BASE_URL + "/app?tab=studio&m=auto_clip&yt_share=" + URLEncoder.encode(ytUrl, "UTF-8");
-                        webView.loadUrl(targetUrl);
-                        return;
-                    } catch (Exception ignored) {}
-                }
-            }
-        }
-
-        Uri data = intent.getData();
-        if (data != null) {
-            String scheme = data.getScheme();
-            if ("malesan".equalsIgnoreCase(scheme)) {
-                String host = data.getHost() != null ? data.getHost() : "";
-                
-                if ("auth-session".equalsIgnoreCase(host) || "auth-session".equalsIgnoreCase(data.getPath())) {
-                    String accessToken = data.getQueryParameter("access_token");
-                    String refreshToken = data.getQueryParameter("refresh_token");
-                    String next = data.getQueryParameter("next");
-                    if (next == null || next.isEmpty()) {
-                        next = "/app";
-                    }
-                    
-                    if (accessToken != null && !accessToken.isEmpty() && refreshToken != null && !refreshToken.isEmpty()) {
-                        try {
-                            String syncUrl = BASE_URL + "/auth/session-sync?access_token=" + 
-                                URLEncoder.encode(accessToken, "UTF-8") + 
-                                "&refresh_token=" + URLEncoder.encode(refreshToken, "UTF-8") + 
-                                "&next=" + URLEncoder.encode(next, "UTF-8");
-                            webView.loadUrl(syncUrl);
-                            return;
-                        } catch (Exception ignored) {}
-                    }
-                }
-                
-                String path = data.getPath() != null ? data.getPath() : "";
-                String query = data.getQuery() != null ? "?" + data.getQuery() : "";
-                String targetPath = "/" + host + path;
-                if ("/auth/callback".equalsIgnoreCase(targetPath)) {
-                    webView.loadUrl(BASE_URL + "/auth/callback" + query);
-                } else if ("/app".equalsIgnoreCase(targetPath) || targetPath.startsWith("/app")) {
-                    webView.loadUrl(BASE_URL + targetPath + query);
-                } else {
-                    webView.loadUrl(BASE_URL + "/app");
-                }
+            String youtubeUrl = extractYouTubeUrl(sharedText);
+            if (youtubeUrl != null) {
+                String shareId = java.util.UUID.randomUUID().toString();
+                String target = Uri.parse(BASE_URL + "/app").buildUpon()
+                        .appendQueryParameter("tab", "studio")
+                        .appendQueryParameter("m", "auto_clip")
+                        .appendQueryParameter("yt_share", youtubeUrl)
+                        .appendQueryParameter("share_id", shareId)
+                        .build().toString();
+                webView.loadUrl(target);
                 return;
             }
+        }
+
+        Uri data = intent == null ? null : intent.getData();
+        if (data != null && isTrustedAppUri(data.toString())) {
             webView.loadUrl(data.toString());
         } else {
             webView.loadUrl(BASE_URL + "/app");
         }
     }
 
-    private String extractYouTubeUrl(String text) {
-        Pattern pattern = Pattern.compile("(https?://(?:www\\.)?(?:youtube\\.com/watch\\?v=[\\w-]+|youtu\\.be/[\\w-]+)[^\\s]*)");
-        Matcher matcher = pattern.matcher(text);
-        if (matcher.find()) {
-            return matcher.group(1);
+    static boolean isTrustedAppUri(String value) {
+        try {
+            java.net.URI uri = new java.net.URI(value);
+            String path = uri.getPath();
+            return "https".equalsIgnoreCase(uri.getScheme())
+                    && APP_HOST.equalsIgnoreCase(uri.getHost())
+                    && path != null
+                    && (path.equals("/app") || path.startsWith("/app/"));
+        } catch (Exception ignored) {
+            return false;
         }
-        return null;
+    }
+
+    static String extractYouTubeUrl(String text) {
+        if (text == null) return null;
+        Matcher matcher = YOUTUBE_URL.matcher(text);
+        if (!matcher.find()) return null;
+        try {
+            java.net.URI uri = new java.net.URI(matcher.group());
+            String host = uri.getHost();
+            if (host == null) return null;
+            host = host.toLowerCase(Locale.ROOT);
+            if (!(host.equals("youtu.be") || host.equals("youtube.com") || host.endsWith(".youtube.com"))) return null;
+            return uri.toString();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    static boolean isNativeClipUri(String value) {
+        try {
+            java.net.URI uri = new java.net.URI(value);
+            String path = uri.getPath();
+            return "https".equalsIgnoreCase(uri.getScheme())
+                    && "appassets.androidplatform.net".equalsIgnoreCase(uri.getHost())
+                    && path != null
+                    && path.startsWith("/native-clip/");
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private void initWebViewSettings() {
+    private void configureWebView() {
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        settings.setDatabaseEnabled(false);
+        settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setUseWideViewPort(false);
+        settings.setLoadWithOverviewMode(false);
+        settings.setTextZoom(100);
+        settings.setSupportMultipleWindows(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
 
-        // Hardware Acceleration & High-FPS Smooth Rendering
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setBackgroundColor(0xFF0B0A09);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
-        // Eliminate "Gepeng" distorted viewport scaling
-        settings.setUseWideViewPort(false);
-        settings.setLoadWithOverviewMode(false);
-        settings.setTextZoom(100);
-        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NORMAL);
+        CookieManager cookies = CookieManager.getInstance();
+        cookies.setAcceptCookie(true);
+        cookies.setAcceptThirdPartyCookies(webView, false);
 
-        // Support popups & multiple windows for Google OAuth login
-        settings.setSupportMultipleWindows(false);
-        settings.setJavaScriptCanOpenWindowsAutomatically(true);
-
-        // Enable Cookies & Third-Party Cookies for Supabase + Google OAuth
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.setAcceptCookie(true);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            cookieManager.setAcceptThirdPartyCookies(webView, true);
-        }
-
-        // Clean User Agent without '; wv' to allow Google Sign-In (avoid 403 disallowed_useragent)
-        String defaultUa = settings.getUserAgentString();
-        if (defaultUa != null) {
-            String cleanUa = defaultUa.replace("; wv", "").replaceAll("Version/[0-9.]+\\s*", "");
-            settings.setUserAgentString(cleanUa);
-        }
-    }
-
-    private void initWebClients() {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
-                String host = uri.getHost();
-                if (host == null) return false;
+                if (isNativeClipUri(uri.toString())) return false;
+                if ("https".equalsIgnoreCase(uri.getScheme()) && APP_HOST.equalsIgnoreCase(uri.getHost())) return false;
+                if (request.isForMainFrame()) openExternal(uri);
+                return true;
+            }
 
-                // Keep Malesan app and Supabase API callback inside WebView
-                if (host.contains("malesan.my.id")) {
-                    return false;
-                }
-
-                // Open Google OAuth in System Browser so Android presents the 1-Tap Google Account Chooser
-                if (host.contains("accounts.google.com") || host.contains("accounts.youtube.com")) {
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                        startActivity(intent);
-                        return true;
-                    } catch (Exception ignored) {}
-                }
-
-                if (host.contains("supabase.co") ||
-                    host.contains("ssl.gstatic.com") ||
-                    host.contains("googleusercontent.com") ||
-                    host.contains("googleapis.com")) {
-                    return false;
-                }
-
-                // External links open in default browser
+            @Override
+            public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                if (!isNativeClipUri(uri.toString())) return super.shouldInterceptRequest(view, request);
+                String token = uri.getLastPathSegment();
+                File file = token == null ? null : clipOutputs.remove(token);
+                if (file == null || !file.isFile()) return new android.webkit.WebResourceResponse("text/plain", "UTF-8", 404, "Not Found", Collections.emptyMap(), null);
                 try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                    startActivity(intent);
-                    return true;
-                } catch (Exception e) {
-                    return false;
+                    FileInputStream input = new FileInputStream(file);
+                    FilterInputStream deleting = new FilterInputStream(input) {
+                        @Override public void close() throws IOException {
+                            try { super.close(); }
+                            finally { if (!file.delete()) file.deleteOnExit(); }
+                        }
+                    };
+                    return new android.webkit.WebResourceResponse("video/mp4", null, 200, "OK", Map.of("Cache-Control", "no-store", "Access-Control-Allow-Origin", BASE_URL), deleting);
+                } catch (Exception failure) {
+                    return new android.webkit.WebResourceResponse("text/plain", "UTF-8", 500, "Read Failed", Collections.emptyMap(), null);
                 }
             }
 
             @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                super.onReceivedError(view, request, error);
+            public boolean onRenderProcessGone(WebView view, android.webkit.RenderProcessGoneDetail detail) {
+                view.destroy();
+                webView = null;
+                recreate();
+                return true;
             }
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public void onPermissionRequest(final PermissionRequest request) {
-                runOnUiThread(() -> request.grant(request.getResources()));
+            public void onPermissionRequest(PermissionRequest request) {
+                runOnUiThread(request::deny);
             }
 
             @Override
-            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                if (fileUploadCallback != null) {
-                    fileUploadCallback.onReceiveValue(null);
-                }
-                fileUploadCallback = filePathCallback;
-
-                Intent intent = fileChooserParams.createIntent();
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (fileUploadCallback != null) fileUploadCallback.onReceiveValue(null);
+                fileUploadCallback = callback;
                 try {
-                    startActivityForResult(intent, FILE_CHOOSER_REQUEST_CODE);
+                    startActivityForResult(params.createIntent(), FILE_CHOOSER_REQUEST_CODE);
                     return true;
-                } catch (Exception e) {
+                } catch (RuntimeException error) {
                     fileUploadCallback = null;
                     return false;
                 }
@@ -260,153 +271,324 @@ public class MainActivity extends Activity {
         });
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
-            if (fileUploadCallback == null) return;
-            Uri[] results = null;
-            if (resultCode == Activity.RESULT_OK && data != null) {
-                String dataString = data.getDataString();
-                if (dataString != null) {
-                    results = new Uri[]{Uri.parse(dataString)};
-                } else if (data.getClipData() != null) {
-                    int count = data.getClipData().getItemCount();
-                    results = new Uri[count];
-                    for (int i = 0; i < count; i++) {
-                        results[i] = data.getClipData().getItemAt(i).getUri();
-                    }
-                }
+    @SuppressLint("RequiresFeature")
+    private void configureOriginSafeBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            Toast.makeText(this, "Android System WebView perlu diperbarui.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        Set<String> allowedOrigins = Collections.singleton(BASE_URL);
+        WebViewCompat.addWebMessageListener(webView, "MalesanNative", allowedOrigins, this::onNativeMessage);
+    }
+
+    private void onNativeMessage(@NonNull WebView view, @NonNull WebMessageCompat message,
+                                 @NonNull Uri sourceOrigin, boolean isMainFrame,
+                                 @NonNull JavaScriptReplyProxy replyProxy) {
+        if (!isMainFrame || !BASE_URL.equals(sourceOrigin.toString()) || message.getData() == null) return;
+        try {
+            JSONObject body = new JSONObject(message.getData());
+            String type = body.optString("type");
+            String requestId = body.optString("requestId");
+            switch (type) {
+                case "SHELL_HELLO":
+                    reply(replyProxy, new JSONObject()
+                            .put("type", "SHELL_READY")
+                            .put("requestId", requestId)
+                            .put("protocolVersion", PROTOCOL_VERSION)
+                            .put("appVersion", BuildConfig.VERSION_NAME)
+                            .put("capabilities", new org.json.JSONArray()
+                                    .put("google-id-token")
+                                    .put("share-youtube")
+                                    .put("haptics")
+                                    .put("native-auto-clip")
+                                    .put("gallery-stream")));
+                    break;
+                case "AUTH_GOOGLE_START":
+                    startGoogleSignIn(requestId, replyProxy);
+                    break;
+                case "CLIP_START":
+                    startNativeClip(body, requestId, replyProxy);
+                    break;
+                case "CLIP_CANCEL":
+                    String cancelJobId = body.optString("jobId");
+                    clipEngine.cancel(cancelJobId);
+                    if (cancelJobId.equals(activeClipJobId)) activeClipJobId = null;
+                    reply(replyProxy, terminal("CLIP_CANCELLED", requestId));
+                    break;
+                case "GALLERY_PREPARE":
+                    prepareGallery(body, requestId, replyProxy);
+                    break;
+                case "GALLERY_CHUNK":
+                    appendGalleryChunk(body, requestId, replyProxy);
+                    break;
+                case "GALLERY_COMMIT":
+                    commitGallery(body, requestId, replyProxy);
+                    break;
+                case "HAPTIC":
+                    haptic(body.optString("strength"));
+                    reply(replyProxy, terminal("HAPTIC_DONE", requestId));
+                    break;
+                default:
+                    reply(replyProxy, error(requestId, "UNSUPPORTED_MESSAGE", "Perintah APK tidak dikenali."));
             }
-            fileUploadCallback.onReceiveValue(results);
-            fileUploadCallback = null;
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
+        } catch (JSONException parseError) {
+            reply(replyProxy, error("", "INVALID_MESSAGE", "Pesan APK tidak valid."));
         }
     }
 
-    private void injectNativeBridge() {
-        webView.addJavascriptInterface(new MalesanNativeBridge(this), "MalesanNative");
+    private void prepareGallery(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
+        String name = body.optString("name").replaceAll("[^A-Za-z0-9._ -]", "_");
+        String mime = body.optString("mimeType");
+        long bytes = body.optLong("bytes", 0);
+        if (name.isBlank() || name.length() > 100 || !mime.startsWith("video/") || bytes < 1024 || bytes > 2_147_483_648L) {
+            reply(replyProxy, error(requestId, "INVALID_GALLERY_FILE", "Data video galeri tidak valid.")); return;
+        }
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Video.Media.DISPLAY_NAME, name);
+        values.put(MediaStore.Video.Media.MIME_TYPE, mime);
+        values.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + "/Malesan");
+        values.put(MediaStore.Video.Media.IS_PENDING, 1);
+        Uri uri = null;
+        try {
+            uri = getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
+            if (uri == null) throw new IOException("MediaStore menolak file.");
+            OutputStream stream = getContentResolver().openOutputStream(uri, "w");
+            if (stream == null) throw new IOException("Galeri tidak bisa ditulis.");
+            String token = randomToken();
+            galleryUploads.put(token, new GalleryUpload(uri, stream, bytes));
+            reply(replyProxy, new JSONObject().put("type", "GALLERY_UPLOAD_READY").put("requestId", requestId).put("downloadToken", token));
+        } catch (Exception failure) {
+            if (uri != null) getContentResolver().delete(uri, null, null);
+            reply(replyProxy, error(requestId, "GALLERY_PREPARE_FAILED", "Galeri Android gak bisa disiapkan."));
+        }
+    }
+
+    private void appendGalleryChunk(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
+        String token = body.optString("downloadToken");
+        GalleryUpload upload = galleryUploads.get(token);
+        try {
+            byte[] chunk = Base64.getDecoder().decode(body.optString("chunk"));
+            if (upload == null || chunk.length == 0 || chunk.length > 512 * 1024 || upload.writtenBytes + chunk.length > upload.expectedBytes) throw new IOException("Chunk tidak valid.");
+            upload.stream.write(chunk);
+            upload.writtenBytes += chunk.length;
+            reply(replyProxy, terminal("GALLERY_CHUNK_ACCEPTED", requestId));
+        } catch (Exception failure) {
+            if (upload != null) abortGallery(token, upload);
+            reply(replyProxy, error(requestId, "GALLERY_WRITE_FAILED", "Potongan video gagal ditulis."));
+        }
+    }
+
+    private void commitGallery(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
+        String token = body.optString("downloadToken");
+        GalleryUpload upload = galleryUploads.remove(token);
+        if (upload == null || upload.writtenBytes != upload.expectedBytes) {
+            if (upload != null) abortGallery(token, upload);
+            reply(replyProxy, error(requestId, "GALLERY_SIZE_MISMATCH", "Ukuran video galeri tidak cocok.")); return;
+        }
+        try {
+            upload.stream.flush(); upload.stream.close();
+            ContentValues ready = new ContentValues(); ready.put(MediaStore.Video.Media.IS_PENDING, 0);
+            if (getContentResolver().update(upload.uri, ready, null, null) != 1) throw new IOException("Publish gagal.");
+            reply(replyProxy, terminal("GALLERY_SAVED", requestId));
+        } catch (Exception failure) {
+            getContentResolver().delete(upload.uri, null, null);
+            reply(replyProxy, error(requestId, "GALLERY_COMMIT_FAILED", "Video gagal diterbitkan ke Galeri."));
+        }
+    }
+
+    private void abortGallery(String token, GalleryUpload upload) {
+        galleryUploads.remove(token);
+        try { upload.stream.close(); } catch (IOException ignored) { }
+        getContentResolver().delete(upload.uri, null, null);
+    }
+
+    private void startNativeClip(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
+        String jobId = body.optString("jobId");
+        String sourceUrl = body.optString("sourceUrl");
+        double start = body.optDouble("startTime", -1);
+        double end = body.optDouble("endTime", -1);
+        String parsedUrl = extractYouTubeUrl(sourceUrl);
+        try { UUID.fromString(jobId); }
+        catch (Exception invalid) { reply(replyProxy, error(requestId, "INVALID_JOB", "Job Auto Clip tidak valid.")); return; }
+        if (parsedUrl == null || !parsedUrl.equals(sourceUrl) || start < 0 || end <= start || end - start < 20 || end - start > 180) {
+            reply(replyProxy, error(requestId, "INVALID_CLIP", "Rentang Auto Clip tidak valid."));
+            return;
+        }
+        if (activeClipJobId != null) {
+            reply(replyProxy, error(requestId, "CLIP_BUSY", "Satu Auto Clip masih diproses."));
+            return;
+        }
+        activeClipJobId = jobId;
+        clipEngine.start(jobId, sourceUrl, start, end, new NativeClipEngine.Listener() {
+            @Override public void onProgress(float percent, String stage) {
+                runOnUiThread(() -> {
+                    try { reply(replyProxy, new JSONObject().put("type", "CLIP_PROGRESS").put("requestId", requestId).put("progress", percent).put("stage", stage)); }
+                    catch (JSONException ignored) { }
+                });
+            }
+            @Override public void onReady(File file) {
+                runOnUiThread(() -> {
+                    activeClipJobId = null;
+                    String token = randomToken();
+                    clipOutputs.put(token, file);
+                    try {
+                        reply(replyProxy, new JSONObject().put("type", "CLIP_READY").put("requestId", requestId)
+                                .put("downloadUrl", "https://appassets.androidplatform.net/native-clip/" + token)
+                                .put("downloadToken", token).put("outputBytes", file.length()));
+                    } catch (JSONException ignored) { }
+                });
+            }
+            @Override public void onError(String message) {
+                runOnUiThread(() -> { activeClipJobId = null; reply(replyProxy, error(requestId, "CLIP_FAILED", message)); });
+            }
+        });
+    }
+
+    private String randomToken() {
+        byte[] value = new byte[32];
+        secureRandom.nextBytes(value);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(value);
+    }
+
+    private void startGoogleSignIn(String requestId, JavaScriptReplyProxy replyProxy) {
+        if (requestId.isEmpty()) {
+            reply(replyProxy, error(requestId, "INVALID_REQUEST", "Request ID kosong."));
+            return;
+        }
+        if (BuildConfig.GOOGLE_WEB_CLIENT_ID.isEmpty()) {
+            reply(replyProxy, error(requestId, "OAUTH_NOT_CONFIGURED", "Google Login belum dikonfigurasi."));
+            return;
+        }
+
+        byte[] nonceBytes = new byte[32];
+        secureRandom.nextBytes(nonceBytes);
+        String rawNonce = Base64.getUrlEncoder().withoutPadding().encodeToString(nonceBytes);
+        String hashedNonce;
+        try {
+            hashedNonce = hex(MessageDigest.getInstance("SHA-256").digest(rawNonce.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception impossible) {
+            reply(replyProxy, error(requestId, "NONCE_FAILED", "Login tidak bisa dimulai."));
+            return;
+        }
+
+        GetGoogleIdOption googleOption = new GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+                .setNonce(hashedNonce)
+                .build();
+        GetCredentialRequest request = new GetCredentialRequest.Builder()
+                .addCredentialOption(googleOption)
+                .build();
+        authCancellation = new CancellationSignal();
+        Executor mainExecutor = command -> runOnUiThread(command);
+        CredentialManager.create(this).getCredentialAsync(
+                this,
+                request,
+                authCancellation,
+                mainExecutor,
+                new androidx.credentials.CredentialManagerCallback<>() {
+                    @Override
+                    public void onResult(GetCredentialResponse result) {
+                        try {
+                            Credential credential = result.getCredential();
+                            if (!(credential instanceof CustomCredential)
+                                    || !GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType())) {
+                                reply(replyProxy, error(requestId, "UNEXPECTED_CREDENTIAL", "Akun Google tidak valid."));
+                                return;
+                            }
+                            GoogleIdTokenCredential google = GoogleIdTokenCredential.createFrom(credential.getData());
+                            reply(replyProxy, new JSONObject()
+                                    .put("type", "AUTH_GOOGLE_CREDENTIAL")
+                                    .put("requestId", requestId)
+                                    .put("idToken", google.getIdToken())
+                                    .put("rawNonce", rawNonce));
+                        } catch (Exception credentialError) {
+                            reply(replyProxy, error(requestId, "CREDENTIAL_PARSE_FAILED", "Akun Google gagal dibaca."));
+                        }
+                    }
+
+                    @Override
+                    public void onError(@NonNull GetCredentialException errorValue) {
+                        String code = errorValue instanceof NoCredentialException ? "NO_GOOGLE_ACCOUNT" : "CREDENTIAL_CANCELLED";
+                        String message = errorValue instanceof NoCredentialException ? "Akun Google tidak tersedia di perangkat." : "Pemilihan akun dibatalkan.";
+                        reply(replyProxy, error(requestId, code, message));
+                    }
+                }
+        );
+    }
+
+    private static JSONObject terminal(String type, String requestId) {
+        try { return new JSONObject().put("type", type).put("requestId", requestId); }
+        catch (JSONException impossible) { return new JSONObject(); }
+    }
+
+    private static JSONObject error(String requestId, String code, String message) {
+        try {
+            return new JSONObject().put("type", "NATIVE_ERROR").put("requestId", requestId).put("code", code).put("message", message);
+        } catch (JSONException impossible) {
+            return new JSONObject();
+        }
+    }
+
+    @SuppressLint("RequiresFeature")
+    private static void reply(JavaScriptReplyProxy proxy, JSONObject body) {
+        proxy.postMessage(body.toString());
+    }
+
+    private static String hex(byte[] value) {
+        StringBuilder output = new StringBuilder(value.length * 2);
+        for (byte item : value) output.append(String.format(Locale.ROOT, "%02x", item));
+        return output.toString();
+    }
+
+    private void haptic(String strength) {
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vibrator == null || !vibrator.hasVibrator()) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            int effect = "heavy".equalsIgnoreCase(strength) ? VibrationEffect.EFFECT_HEAVY_CLICK : VibrationEffect.EFFECT_TICK;
+            vibrator.vibrate(VibrationEffect.createPredefined(effect));
+        } else {
+            vibrator.vibrate(VibrationEffect.createOneShot("heavy".equalsIgnoreCase(strength) ? 32 : 12, VibrationEffect.DEFAULT_AMPLITUDE));
+        }
+    }
+
+    private void openExternal(Uri uri) {
+        try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); }
+        catch (RuntimeException ignored) { Toast.makeText(this, "Tautan tidak bisa dibuka.", Toast.LENGTH_SHORT).show(); }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode != FILE_CHOOSER_REQUEST_CODE) {
+            super.onActivityResult(requestCode, resultCode, data);
+            return;
+        }
+        if (fileUploadCallback == null) return;
+        Uri[] result = null;
+        if (resultCode == RESULT_OK) result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+        fileUploadCallback.onReceiveValue(result);
+        fileUploadCallback = null;
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (authCancellation != null) authCancellation.cancel();
+        if (activeClipJobId != null && clipEngine != null) clipEngine.cancel(activeClipJobId);
+        if (clipEngine != null) clipEngine.shutdown();
+        for (File file : clipOutputs.values()) if (!file.delete()) file.deleteOnExit();
+        clipOutputs.clear();
+        for (Map.Entry<String, GalleryUpload> entry : galleryUploads.entrySet()) abortGallery(entry.getKey(), entry.getValue());
+        galleryUploads.clear();
+        if (webView != null) {
+            webView.stopLoading();
+            webView.destroy();
+        }
+        super.onDestroy();
     }
 
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    public static class MalesanNativeBridge {
-        private final Context context;
-
-        public MalesanNativeBridge(Context context) {
-            this.context = context;
-        }
-
-        @JavascriptInterface
-        public boolean isNativeApp() {
-            return true;
-        }
-
-        @JavascriptInterface
-        public String getAppVersion() {
-            return "1.0.1";
-        }
-
-        @JavascriptInterface
-        public void haptic(String type) {
-            try {
-                Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-                if (vibrator != null && vibrator.hasVibrator()) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        int effectType = "heavy".equalsIgnoreCase(type)
-                                ? VibrationEffect.EFFECT_HEAVY_CLICK
-                                : VibrationEffect.EFFECT_TICK;
-                        vibrator.vibrate(VibrationEffect.createPredefined(effectType));
-                    } else {
-                        vibrator.vibrate(20);
-                    }
-                }
-            } catch (Exception ignored) {}
-        }
-
-        @JavascriptInterface
-        public boolean saveVideoToGallery(String base64Data, String filename) {
-            try {
-                byte[] videoBytes = Base64.decode(base64Data, Base64.DEFAULT);
-                ContentResolver resolver = context.getContentResolver();
-                ContentValues contentValues = new ContentValues();
-                contentValues.put(MediaStore.Video.Media.DISPLAY_NAME, filename != null && !filename.isEmpty() ? filename : "Malesan_Video_" + System.currentTimeMillis() + ".mp4");
-                contentValues.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
-                contentValues.put(MediaStore.Video.Media.RELATIVE_PATH, Environment.DIRECTORY_DCIM + "/Malesan");
-
-                Uri videoUri = resolver.insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, contentValues);
-                if (videoUri != null) {
-                    try (OutputStream outputStream = resolver.openOutputStream(videoUri)) {
-                        if (outputStream != null) {
-                            outputStream.write(videoBytes);
-                            outputStream.flush();
-                            Toast.makeText(context, "Video berhasil disimpan ke Galeri HP!", Toast.LENGTH_SHORT).show();
-                            return true;
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                Toast.makeText(context, "Gagal menyimpan ke galeri: " + e.getMessage(), Toast.LENGTH_LONG).show();
-            }
-            return false;
-        }
-
-        @JavascriptInterface
-        public String getNativeEngineCapabilities() {
-            return "Native Java Stream Extractor + Scoped MediaStore DCIM/Malesan + Hardware MediaCodec";
-        }
-
-        @JavascriptInterface
-        public void downloadYouTubeClip(final String url, final int startSec, final int endSec, final String title) {
-            haptic("heavy");
-            Toast.makeText(context, "Mengekstrak klip video YouTube...", Toast.LENGTH_SHORT).show();
-            YouTubeStreamExtractor.downloadClipAsync(context, url, startSec, endSec, title, new YouTubeStreamExtractor.StreamCallback() {
-                @Override
-                public void onProgress(int percent, String message) {
-                    final String js = "if (window.onNativeClipProgress) { window.onNativeClipProgress(" + percent + ", '" + message.replace("'", "\\'") + "'); }";
-                    if (context instanceof MainActivity) {
-                        ((MainActivity) context).runOnUiThread(new Runnable() {
-                            @Override public void run() {
-                                ((MainActivity) context).webView.evaluateJavascript(js, null);
-                            }
-                        });
-                    }
-                }
-
-                @Override
-                public void onSuccess(final String localPath, final String filename) {
-                    haptic("heavy");
-                    Toast.makeText(context, "Klip berhasil disimpan ke Galeri HP: " + filename, Toast.LENGTH_LONG).show();
-                    final String js = "if (window.onNativeClipSuccess) { window.onNativeClipSuccess('" + localPath.replace("'", "\\'") + "', '" + filename.replace("'", "\\'") + "'); }";
-                    if (context instanceof MainActivity) {
-                        ((MainActivity) context).runOnUiThread(new Runnable() {
-                            @Override public void run() {
-                                ((MainActivity) context).webView.evaluateJavascript(js, null);
-                            }
-                        });
-                    }
-                }
-
-                @Override
-                public void onError(final String errorMessage) {
-                    Toast.makeText(context, "Error: " + errorMessage, Toast.LENGTH_LONG).show();
-                    final String js = "if (window.onNativeClipError) { window.onNativeClipError('" + errorMessage.replace("'", "\\'") + "'); }";
-                    if (context instanceof MainActivity) {
-                        ((MainActivity) context).runOnUiThread(new Runnable() {
-                            @Override public void run() {
-                                ((MainActivity) context).webView.evaluateJavascript(js, null);
-                            }
-                        });
-                    }
-                }
-            });
-        }
+        if (webView != null && webView.canGoBack()) webView.goBack();
+        else super.onBackPressed();
     }
 }

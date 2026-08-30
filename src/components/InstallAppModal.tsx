@@ -101,7 +101,10 @@ export function InstallAppModal({
           <div className="rounded-2xl border border-ember/40 bg-gradient-to-br from-ember/10 via-surface/80 to-surface p-4 space-y-3 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 bg-ember/20 px-2.5 py-0.5 text-[10px] font-bold text-ember uppercase">
-                ⭐ Direkomendasikan
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+                Direkomendasikan
               </span>
               <span className="text-[11px] font-semibold text-emerald-400">120Hz Ultra Smooth</span>
             </div>
@@ -131,7 +134,10 @@ export function InstallAppModal({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-ink">Mode APK Pro (Native Engine)</span>
               <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/10 px-2 py-0.5 text-[10px] font-mono font-bold text-ember">
-                ⚡ Native Android
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Native Android
               </span>
             </div>
 
@@ -145,12 +151,22 @@ export function InstallAppModal({
               onClick={onClose}
               className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-display text-xs font-semibold text-ink transition-all hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.99]"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>Download APK Pro (Native Engine)</span>
+              <span>Download APK Pro (52 MB)</span>
+            </a>
+
+            {/* ponytail: static ABI links, no UA sniffing. Upgrade to auto-detect only if arm32 users actually report the wrong build. */}
+            <a
+              href="/malesan-arm32.apk"
+              download="malesan-arm32.apk"
+              onClick={onClose}
+              className="flex h-10 w-full cursor-pointer items-center justify-center rounded-xl border border-white/5 bg-transparent font-display text-[11px] font-semibold text-muted transition-all hover:border-ember/30 hover:text-ember active:scale-[0.99]"
+            >
+              HP lawas (32-bit)? Unduh versi ARM32
             </a>
           </div>
         </div>

@@ -88,55 +88,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const accessToken = sessionData.session?.access_token ?? "";
-  const refreshToken = sessionData.session?.refresh_token ?? "";
-  const appSchemeUrl = `malesan://auth-session?access_token=${encodeURIComponent(accessToken)}&refresh_token=${encodeURIComponent(refreshToken)}&next=${encodeURIComponent(next)}`;
-
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Login Berhasil — Malesan</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0B0A09; color: #F5F5F5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; text-align: center; }
-    .card { background: #141210; border: 1px solid rgba(255,122,0,0.35); border-radius: 28px; padding: 36px 24px; max-width: 380px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-    .icon { width: 56px; height: 56px; background: rgba(255,122,0,0.15); border: 1px solid rgba(255,122,0,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; color: #FF7A00; font-size: 24px; font-weight: bold; }
-    h2 { font-size: 20px; font-weight: 800; color: #F5F5F5; margin-bottom: 8px; }
-    p { font-size: 13px; color: #A0A0A0; margin-bottom: 24px; line-height: 1.5; }
-    .btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; background: #FF7A00; color: #0B0A09; font-weight: 800; font-size: 15px; border-radius: 14px; text-decoration: none; box-shadow: 0 4px 20px rgba(255,122,0,0.4); transition: transform 0.1s; }
-    .btn:active { transform: scale(0.97); }
-    .hint { font-size: 11px; color: #666; margin-top: 14px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="icon">✓</div>
-    <h2>Login Berhasil!</h2>
-    <p>Ketuk tombol di bawah untuk langsung membuka ruang kerja di aplikasi Malesan.</p>
-    <a href="${appSchemeUrl}" id="openAppBtn" class="btn">🚀 Buka di Aplikasi Malesan</a>
-    <div class="hint">Jika tidak otomatis terbuka, klik tombol di atas.</div>
-  </div>
-  <script>
-    try {
-      window.location.href = "${appSchemeUrl}";
-    } catch(e) {}
-    setTimeout(function() {
-      var btn = document.getElementById("openAppBtn");
-      if (btn) {
-        btn.click();
-      }
-    }, 300);
-  </script>
-</body>
-</html>`;
-
-  const response = new NextResponse(html, {
-    status: 200,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
-
+  const response = NextResponse.redirect(`${origin}${next}`);
   if (hasPendingBonus) {
     response.cookies.delete("malesan_pending_demo_bonus");
   }

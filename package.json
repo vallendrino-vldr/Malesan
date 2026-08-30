@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node scripts/ai-invariant-test.mjs && node --experimental-strip-types --no-warnings scripts/video-core-test.mjs && node scripts/telegram-stress-test.mjs",
+    "test": "node scripts/ai-invariant-test.mjs && node --experimental-strip-types --no-warnings scripts/video-core-test.mjs && node scripts/telegram-stress-test.mjs && node --test tests/android-security-invariants.test.mjs",
     "test:live-ai": "node scripts/live-ai-qa.mjs",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"
