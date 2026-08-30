@@ -55,10 +55,8 @@ async function handle(raw) {
     await run(ytDlp, [
       "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
       "--js-runtimes", "node",
-      "-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/bestvideo+bestaudio/22/best[height>=720]/best",
-      "--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,br,size",
-      "--format-sort-force",
-      "--force-keyframes-at-cuts",
+      "-f", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
+      "--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size",
       "--merge-output-format", "mp4",
       "--download-sections", `*${job.startTime}-${job.endTime}`,
       "--ffmpeg-location", ffmpeg,

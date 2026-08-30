@@ -31,18 +31,12 @@ final class NativeClipEngine {
                 YoutubeDL.getInstance().init(context);
                 FFmpeg.getInstance().init(context);
 
-                YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
-                        .addOption("--no-playlist")
-                        .addOption("--no-part")
-                        .addOption("--no-warnings")
-                        .addOption("--no-update")
-                        .addOption("--extractor-args", "youtube:player_client=android,ios;player_skip=webpage,configs,js")
-                        .addOption("-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/best[height>=720]/bestvideo+bestaudio/best")
-                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
-                        .addOption("--force-keyframes-at-cuts")
-                        .addOption("--merge-output-format", "mp4")
-                        .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
-                        .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
+                // Ensure yt-dlp binary is updated with latest YouTube decryptor algorithms
+                try {
+                    YoutubeDL.getInstance().updateYoutubeDL(context, YoutubeDL.UpdateChannel._STABLE);
+                } catch (Throwable updateErr) {
+                    android.util.Log.w("NativeClipEngine", "yt-dlp auto-update check skipped/offline", updateErr);
+                }
 
                 // Run a smooth continuous progress animator while yt-dlp/ffmpeg executes
                 final java.util.concurrent.atomic.AtomicBoolean running = new java.util.concurrent.atomic.AtomicBoolean(true);
@@ -127,17 +121,15 @@ final class NativeClipEngine {
                 .addOption("--no-playlist")
                 .addOption("--no-part")
                 .addOption("--no-warnings")
-                .addOption("--no-update")
                 .addOption("--merge-output-format", "mp4")
                 .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                 .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());
 
         if (!isFallback) {
-            request.addOption("-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/bestvideo+bestaudio/22/best[height>=720]/best")
-                   .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,br,size")
-                   .addOption("--format-sort-force");
+            request.addOption("--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b")
+                   .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
         } else {
-            request.addOption("-f", "bestvideo+bestaudio/22/best");
+            request.addOption("-f", "bestvideo+bestaudio/best");
         }
         return request;
     }
@@ -153,7 +145,10 @@ final class NativeClipEngine {
         if (lower.contains("private") || lower.contains("members-only")) {
             return "Video YouTube ini bersifat privat atau khusus member.";
         }
-        return "Gagal memotong klip video dari YouTube. Pastikan link video dapat diakses publik atau gunakan opsi 'Pakai file sendiri'.";
+        if (lower.contains("sign in") || lower.contains("bot") || lower.contains("429")) {
+            return "YouTube membatasi akses sementara. Sedang memperbarui mesin pemotong...";
+        }
+        return "Gagal memotong klip video dari YouTube: " + (raw.length() > 100 ? raw.substring(0, 100) + "..." : raw);
     }
     private static String stage(String line) {
         if (line == null) return "Mengambil potongan video...";
