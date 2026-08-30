@@ -56,8 +56,6 @@ async function handle(raw) {
       "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
       "--js-runtimes", "node",
       "--extractor-args", "youtube:player_client=web,android",
-      "--downloader", "ffmpeg",
-      "--concurrent-fragments", "4",
       "-f", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=720][ext=mp4]+ba[ext=m4a]/bv*+ba/bestvideo+bestaudio/best",
       "--merge-output-format", "mp4",
       "--download-sections", `*${job.startTime}-${job.endTime}`,

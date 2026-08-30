@@ -9,7 +9,7 @@ echo.
 echo [1/2] Mendaftarkan Native Host ke Chrome, Brave, Edge, Chromium...
 echo.
 
-set "EXT_ID=ckpiijmjnnekfolkhhnoiifjgnbgbpjl"
+set "EXT_ID=momojnfkjflahebbaegiabcedokpibfn"
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0bridge\native-host\install.ps1" -ExtensionId "%EXT_ID%"
 
 if %ERRORLEVEL% NEQ 0 goto :FAILED

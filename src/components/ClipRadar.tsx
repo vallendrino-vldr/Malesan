@@ -77,6 +77,18 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const elapsedSec = bridgeStartedAt && bridgeBusy ? Math.max(0, Math.floor((nowTs - bridgeStartedAt) / 1000)) : 0;
 
   const isMobile = useSyncExternalStore(emptySubscribe, getIsMobileSnapshot, () => false);
+  const [isNativeApk, setIsNativeApk] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void getNativeShell().then((shell) => {
+      if (active) setIsNativeApk(Boolean(shell?.capabilities.includes("native-auto-clip")));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const playerRef = useRef<YouTubeClipController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
   const autoTriggeredRef = useRef(false);
@@ -195,23 +207,33 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
         setBridgeError("Mode Web HP / PWA tidak memiliki mesin pemotong YouTube lokal. Buka via aplikasi APK Android Malesan (Gratis) atau pilih 'Pakai file sendiri' di bawah.");
         return;
       }
-      const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
+      const extensionIds = [
+        "momojnfkjflahebbaegiabcedokpibfn",
+        process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl",
+      ];
       const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
-      let bridgeAlive = false;
-      if (chromeRuntime?.sendMessage) {
-        bridgeAlive = await new Promise<boolean>((resolve) => {
-          const t = setTimeout(() => resolve(false), 800);
-          try {
-            chromeRuntime.sendMessage(extensionId, { type: "PING" }, (res) => {
+      let bridgeAlive = typeof document !== "undefined" && document.documentElement.getAttribute("data-malesan-bridge") === "ready";
+
+      if (!bridgeAlive && chromeRuntime?.sendMessage) {
+        for (const extId of extensionIds) {
+          const ok = await new Promise<boolean>((resolve) => {
+            const t = setTimeout(() => resolve(false), 500);
+            try {
+              chromeRuntime.sendMessage(extId, { type: "PING" }, (res) => {
+                clearTimeout(t);
+                if (chromeRuntime.lastError) resolve(false);
+                else resolve(res?.ok !== false);
+              });
+            } catch {
               clearTimeout(t);
-              if (chromeRuntime.lastError) resolve(false);
-              else resolve(res?.ok !== false);
-            });
-          } catch {
-            clearTimeout(t);
-            resolve(false);
+              resolve(false);
+            }
+          });
+          if (ok) {
+            bridgeAlive = true;
+            break;
           }
-        });
+        }
       }
       if (!bridgeAlive) {
         setBridgeError("Malesan Bridge belum terpasang di browser PC kamu. Silakan unduh installer 1-klik di bawah.");
@@ -276,13 +298,50 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
         claimedWorkerToken = null;
         downloadUrl = nativeResult.downloadUrl;
       } else {
-        const extensionId = process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl";
+        const extensionIds = [
+          "momojnfkjflahebbaegiabcedokpibfn",
+          process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl",
+        ];
         const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
         if (window.innerWidth < 768 || !chromeRuntime) throw new Error(window.innerWidth < 768 ? "APK ini belum punya engine Auto Clip native. Perbarui APK Malesan." : "Malesan Bridge belum terdeteksi di browser ini. Jalankan INSTALL_MALESAN_BRIDGE.cmd sekali, lalu coba lagi.");
+        
         const result = await new Promise<{ ok?: boolean; error?: string; downloadUrl?: string }>((resolve, reject) => {
-          chromeRuntime.sendMessage(extensionId, { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }, (value) => {
-            if (chromeRuntime.lastError) reject(new Error(chromeRuntime.lastError.message ?? "Bridge gak merespons.")); else resolve(value ?? {});
+          let resolved = false;
+          const reqId = "req-" + Math.random().toString(36).slice(2);
+          const onMsg = (ev: MessageEvent) => {
+            if (ev.data?.type === "MALESAN_AUTO_CLIP_RESPONSE" && ev.data.requestId === reqId) {
+              window.removeEventListener("message", onMsg);
+              resolved = true;
+              if (ev.data.response?.ok && ev.data.response.downloadUrl) resolve(ev.data.response);
+              else reject(new Error(ev.data.response?.error ?? "Bridge gagal memproses klip."));
+            }
+          };
+          window.addEventListener("message", onMsg);
+          window.postMessage({
+            type: "MALESAN_AUTO_CLIP_REQUEST",
+            requestId: reqId,
+            payload: { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }
+          }, "*");
+
+          // Also try direct extension messaging for all known IDs
+          extensionIds.forEach((extId) => {
+            chromeRuntime.sendMessage(extId, { type: "MALESAN_AUTO_CLIP", jobId: created.job!.id, claimToken: created.claimToken, apiOrigin: location.origin }, (value) => {
+              if (resolved) return;
+              if (value?.ok && value.downloadUrl) {
+                resolved = true;
+                window.removeEventListener("message", onMsg);
+                resolve(value);
+              }
+            });
           });
+
+          // Timeout fallback
+          setTimeout(() => {
+            if (!resolved) {
+              window.removeEventListener("message", onMsg);
+              reject(new Error("Bridge tidak merespons dalam 60 detik. Pastikan INSTALL_MALESAN_BRIDGE.cmd sudah dijalankan."));
+            }
+          }, 60_000);
         });
         if (!result.ok || !result.downloadUrl) throw new Error(result.error ?? "Bridge gagal memproses klip.");
         downloadUrl = result.downloadUrl;
@@ -366,50 +425,80 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       </header>
 
       {/* Platform Awareness Engine Banner */}
-      <div className="mt-3 rounded-xl border border-hairline/80 bg-obsidian/70 p-3 text-mini">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-start gap-2">
-            <span className="text-ember shrink-0 mt-0.5">
-              {isMobile ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              )}
-            </span>
-            <div className="space-y-0.5">
-              <p className="font-bold text-ink text-[11px]">
-                {isMobile ? "📱 Potong Otomatis di HP Butuh APK Android" : "💻 Potong di Komputer Butuh Malesan Bridge"}
-              </p>
-              <p className="text-[10px] text-muted leading-relaxed">
-                {isMobile
-                  ? "Di HP browser/PWA, pasang APK Android Malesan (ada mesin pemotong bawaan). Atau pakai opsi 'Pakai file sendiri' di bawah."
-                  : "Di browser PC, pasang Malesan Bridge (.zip) sekali saja. Atau gunakan opsi 'Pakai file sendiri'."}
-              </p>
-            </div>
+      {isNativeApk ? (
+        <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-mini">
+          <div className="flex items-center gap-2 text-emerald-400 font-bold text-[11px]">
+            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>🟢 Mesin Pemotong Native APK Aktif — Pemotongan 1080p Instan Tanpa Server</span>
           </div>
-          <a
-            href={isMobile ? "/malesan.apk" : "/malesan-bridge.zip"}
-            download={isMobile ? "malesan.apk" : "malesan-bridge.zip"}
-            className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-3 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 active:scale-[0.98]"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>{isMobile ? "Unduh APK Android (.apk)" : "Unduh Bridge (.zip)"}</span>
-          </a>
         </div>
-      </div>
+      ) : (
+        <div className="mt-3 rounded-xl border border-hairline/80 bg-obsidian/70 p-3 text-mini">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-start gap-2">
+              <span className="text-ember shrink-0 mt-0.5">
+                {isMobile ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                )}
+              </span>
+              <div className="space-y-0.5">
+                <p className="font-bold text-ink text-[11px]">
+                  {isMobile ? "📱 Potong Otomatis di HP Butuh APK Android" : "💻 Potong di Komputer Butuh Malesan Bridge"}
+                </p>
+                <p className="text-[10px] text-muted leading-relaxed">
+                  {isMobile
+                    ? "Di HP browser/PWA, pasang APK Android Malesan (ada mesin pemotong bawaan). Atau pakai opsi 'Pakai file sendiri' di bawah."
+                    : "Di browser PC, pasang Malesan Bridge (.zip) sekali saja. Atau gunakan opsi 'Pakai file sendiri'."}
+                </p>
+              </div>
+            </div>
+            <a
+              href={isMobile ? "/malesan.apk" : "/malesan-bridge.zip"}
+              download={isMobile ? "malesan.apk" : "malesan-bridge.zip"}
+              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-3 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 active:scale-[0.98]"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>{isMobile ? "Unduh APK Android (.apk)" : "Unduh Bridge (.zip)"}</span>
+            </a>
+          </div>
+        </div>
+      )}
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <input
-          type="url"
-          name="youtube-url"
-          inputMode="url"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && run()}
-          placeholder="https://youtu.be/..."
-          aria-label="Link video YouTube"
-          className="h-11 w-full min-w-0 rounded-xl border border-hairline bg-obsidian px-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ember/60"
-        />
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="url"
+            name="youtube-url"
+            inputMode="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && run()}
+            placeholder="https://youtu.be/..."
+            aria-label="Link video YouTube"
+            className="h-11 w-full min-w-0 rounded-xl border border-hairline bg-obsidian pl-3 pr-24 text-sm text-ink outline-none placeholder:text-muted focus:border-ember/60"
+          />
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const text = await navigator.clipboard.readText();
+                if (text) setUrl(text.trim());
+              } catch {
+                // Ignore if clipboard access is denied
+              }
+            }}
+            title="Tempel link otomatis dari clipboard"
+            className="absolute right-1.5 top-1.5 bottom-1.5 flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] px-2.5 text-micro font-bold text-muted hover:border-ember/40 hover:bg-ember/15 hover:text-ember transition-all cursor-pointer shadow-xs"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+              <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+            </svg>
+            <span>Tempel</span>
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => void run()}
@@ -720,7 +809,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 </div>
               ) : null}
 
-              {bridgeError ? (
+              {bridgeError && !isNativeApk ? (
                 <div className="rounded-2xl border border-ember/30 bg-surface-raised/90 p-4 text-mini space-y-3.5 shadow-lg" role="alert">
                   <div className="flex items-start gap-3">
                     <div className="size-9 rounded-xl bg-ember/15 flex items-center justify-center text-ember shrink-0">
@@ -729,7 +818,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                     <div>
                       <h4 className="font-bold text-ink text-mini">Auto Clip Butuh Mesin Pemotong Video</h4>
                       <p className="text-micro text-muted leading-relaxed mt-0.5">
-                        Pemotongan klip YouTube diproses langsung di perangkat kamu (privat & tanpa kuota server). Pilih cara paling praktis di bawah:
+                        {isMobile
+                          ? "Di browser HP / PWA, pasang APK Android Malesan (ada mesin pemotong bawaan) atau gunakan tab 'Pakai file sendiri'."
+                          : "Di komputer, pasang Malesan Bridge (.zip) sekali saja, atau gunakan tab 'Pakai file sendiri'."}
                       </p>
                     </div>
                   </div>
@@ -770,9 +861,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <a
                         href="/malesan-bridge.zip"
                         download="malesan-bridge.zip"
-                        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-3 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 active:scale-[0.98]"
+                        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-bold text-ink transition-colors hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"
                       >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         <span>Unduh Bridge Installer (.zip)</span>
                       </a>
                     </div>
