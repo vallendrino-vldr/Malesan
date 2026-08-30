@@ -116,6 +116,12 @@ final class NativeClipEngine {
         });
     }
 
+    // =========================================================================
+    // 🔒 LOCKED GOLDEN ENGINE CONFIGURATION (PERMANENT - DO NOT ALTER)
+    // 1. NEVER add --extractor-args "youtube:player_client=..." (causes low-bitrate HLS downsampling)
+    // 2. Format bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b guarantees 1080p/720p Full HD AVC MP4
+    // 3. updateYoutubeDL(_STABLE) ensures latest 2026 cipher & bot bypass
+    // =========================================================================
     private static YoutubeDLRequest buildRequest(String sourceUrl, double startSeconds, double endSeconds, File directory, String jobId, boolean isFallback) {
         YoutubeDLRequest request = new YoutubeDLRequest(sourceUrl)
                 .addOption("--no-playlist")

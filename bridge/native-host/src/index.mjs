@@ -52,6 +52,7 @@ async function handle(raw) {
     const ytDlp = findTool("yt-dlp", process.env.MALESAN_YTDLP_PATH);
     const ffmpeg = findTool("ffmpeg", process.env.MALESAN_FFMPEG_PATH);
     const output = join(work, "clip.mp4");
+    // 🔒 LOCKED GOLDEN ENGINE CONFIGURATION (PERMANENT - DO NOT ALTER)
     await run(ytDlp, [
       "--no-update", "--no-playlist", "--no-warnings", "--max-filesize", "2G",
       "--js-runtimes", "node",
