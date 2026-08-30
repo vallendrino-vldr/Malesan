@@ -6,7 +6,11 @@ import static org.junit.Assert.*;
 public final class MainActivityTest {
     @Test public void acceptsOnlyExactMalesanAppLinks() {
         assertTrue(MainActivity.isTrustedAppUri("https://malesan.my.id/app?tab=studio"));
+        assertTrue(MainActivity.isTrustedAppUri("https://www.malesan.my.id/app?tab=studio"));
         assertFalse(MainActivity.isTrustedAppUri("https://malesan.my.id.evil.test/app"));
+        assertFalse(MainActivity.isTrustedAppUri("https://www.malesan.my.id.evil.test/app"));
+        assertFalse(MainActivity.isTrustedAppUri("https://wwwmalesan.my.id/app"));
+        assertFalse(MainActivity.isTrustedAppUri("https://evil.malesan.my.id/app"));
         assertFalse(MainActivity.isTrustedAppUri("http://malesan.my.id/app"));
         assertFalse(MainActivity.isTrustedAppUri("https://malesan.my.id/auth/callback"));
     }

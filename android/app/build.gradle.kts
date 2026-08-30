@@ -15,8 +15,8 @@ android {
         applicationId = "id.my.malesan.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.0.0"
+        versionCode = 4
+        versionName = "2.0.1"
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"909116303474-s6ou3gifvfplgoam600926jlf46ofb9j.apps.googleusercontent.com\"")
     }
     signingConfigs {

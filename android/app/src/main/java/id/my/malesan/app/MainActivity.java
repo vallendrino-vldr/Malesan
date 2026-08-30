@@ -66,8 +66,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class MainActivity extends Activity {
-    private static final String BASE_URL = "https://malesan.my.id";
-    private static final String APP_HOST = "malesan.my.id";
+    // The site redirects the apex domain to www, so both hosts are ours. Trusting only one of
+    // them made the shell treat its own redirect target as a foreign site and kick it out to
+    // the browser, which also killed the native login bridge.
+    private static final String BASE_URL = "https://www.malesan.my.id";
+    private static final String APEX_ORIGIN = "https://malesan.my.id";
+    private static final String APP_HOST = "www.malesan.my.id";
+    private static final String APEX_HOST = "malesan.my.id";
+
+    static boolean isAppHost(String host) {
+        return APP_HOST.equalsIgnoreCase(host) || APEX_HOST.equalsIgnoreCase(host);
+    }
     private static final int FILE_CHOOSER_REQUEST_CODE = 1001;
     private static final int PROTOCOL_VERSION = 2;
     private static final Pattern YOUTUBE_URL = Pattern.compile(
@@ -148,7 +157,7 @@ public final class MainActivity extends Activity {
             java.net.URI uri = new java.net.URI(value);
             String path = uri.getPath();
             return "https".equalsIgnoreCase(uri.getScheme())
-                    && APP_HOST.equalsIgnoreCase(uri.getHost())
+                    && isAppHost(uri.getHost())
                     && path != null
                     && (path.equals("/app") || path.startsWith("/app/"));
         } catch (Exception ignored) {
@@ -215,7 +224,7 @@ public final class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if (isNativeClipUri(uri.toString())) return false;
-                if ("https".equalsIgnoreCase(uri.getScheme()) && APP_HOST.equalsIgnoreCase(uri.getHost())) return false;
+                if ("https".equalsIgnoreCase(uri.getScheme()) && isAppHost(uri.getHost())) return false;
                 if (request.isForMainFrame()) openExternal(uri);
                 return true;
             }
@@ -235,7 +244,11 @@ public final class MainActivity extends Activity {
                             finally { if (!file.delete()) file.deleteOnExit(); }
                         }
                     };
-                    return new android.webkit.WebResourceResponse("video/mp4", null, 200, "OK", Map.of("Cache-Control", "no-store", "Access-Control-Allow-Origin", BASE_URL), deleting);
+                    // Echo the requesting origin: a fixed value fails the fetch whenever the page
+                    // happens to be served from the other host.
+                    String requestOrigin = request.getRequestHeaders() == null ? null : request.getRequestHeaders().get("Origin");
+                    String allowOrigin = APEX_ORIGIN.equals(requestOrigin) ? APEX_ORIGIN : BASE_URL;
+                    return new android.webkit.WebResourceResponse("video/mp4", null, 200, "OK", Map.of("Cache-Control", "no-store", "Access-Control-Allow-Origin", allowOrigin), deleting);
                 } catch (Exception failure) {
                     return new android.webkit.WebResourceResponse("text/plain", "UTF-8", 500, "Read Failed", Collections.emptyMap(), null);
                 }
@@ -277,14 +290,15 @@ public final class MainActivity extends Activity {
             Toast.makeText(this, "Android System WebView perlu diperbarui.", Toast.LENGTH_LONG).show();
             return;
         }
-        Set<String> allowedOrigins = Collections.singleton(BASE_URL);
+        Set<String> allowedOrigins = Set.of(BASE_URL, APEX_ORIGIN);
         WebViewCompat.addWebMessageListener(webView, "MalesanNative", allowedOrigins, this::onNativeMessage);
     }
 
     private void onNativeMessage(@NonNull WebView view, @NonNull WebMessageCompat message,
                                  @NonNull Uri sourceOrigin, boolean isMainFrame,
                                  @NonNull JavaScriptReplyProxy replyProxy) {
-        if (!isMainFrame || !BASE_URL.equals(sourceOrigin.toString()) || message.getData() == null) return;
+        String origin = sourceOrigin.toString();
+        if (!isMainFrame || !(BASE_URL.equals(origin) || APEX_ORIGIN.equals(origin)) || message.getData() == null) return;
         try {
             JSONObject body = new JSONObject(message.getData());
             String type = body.optString("type");
