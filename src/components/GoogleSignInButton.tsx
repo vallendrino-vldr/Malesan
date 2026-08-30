@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface GoogleSignInButtonProps {
@@ -16,6 +16,14 @@ export function GoogleSignInButton({
 }: GoogleSignInButtonProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleFocus() {
+      setPending(false);
+    }
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, []);
 
   async function signIn() {
     setPending(true);

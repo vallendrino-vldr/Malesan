@@ -100,6 +100,27 @@ public class MainActivity extends Activity {
             String scheme = data.getScheme();
             if ("malesan".equalsIgnoreCase(scheme)) {
                 String host = data.getHost() != null ? data.getHost() : "";
+                
+                if ("auth-session".equalsIgnoreCase(host) || "auth-session".equalsIgnoreCase(data.getPath())) {
+                    String accessToken = data.getQueryParameter("access_token");
+                    String refreshToken = data.getQueryParameter("refresh_token");
+                    String next = data.getQueryParameter("next");
+                    if (next == null || next.isEmpty()) {
+                        next = "/app";
+                    }
+                    
+                    if (accessToken != null && !accessToken.isEmpty() && refreshToken != null && !refreshToken.isEmpty()) {
+                        try {
+                            String syncUrl = BASE_URL + "/auth/session-sync?access_token=" + 
+                                URLEncoder.encode(accessToken, "UTF-8") + 
+                                "&refresh_token=" + URLEncoder.encode(refreshToken, "UTF-8") + 
+                                "&next=" + URLEncoder.encode(next, "UTF-8");
+                            webView.loadUrl(syncUrl);
+                            return;
+                        } catch (Exception ignored) {}
+                    }
+                }
+                
                 String path = data.getPath() != null ? data.getPath() : "";
                 String query = data.getQuery() != null ? "?" + data.getQuery() : "";
                 String targetPath = "/" + host + path;
