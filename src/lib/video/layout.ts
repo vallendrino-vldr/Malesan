@@ -1,8 +1,16 @@
 import type { CropKeyframe } from "./face-track";
+import type { ManualKeyframe } from "./keyframe-engine";
 
 export type VideoRatio = "9:16" | "1:1" | "16:9";
-export type VideoFocus = "left" | "center" | "right" | "podcast_split" | "podcast_dynamic";
-export type VideoLayout = { ratio: VideoRatio; focus: VideoFocus; trajectory?: readonly CropKeyframe[] };
+export type VideoFocus = "left" | "center" | "right" | "podcast_split" | "podcast_dynamic" | "manual_keyframe";
+export type VideoLayout = {
+  ratio: VideoRatio;
+  focus: VideoFocus;
+  trajectory?: readonly CropKeyframe[];
+  manualKeyframes?: readonly ManualKeyframe[];
+  zoom?: number;
+  panX?: number;
+};
 
 export const ratioValue = (ratio: VideoRatio) => {
   if (ratio === "9:16") return 9 / 16;

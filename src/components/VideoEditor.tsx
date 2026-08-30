@@ -20,6 +20,11 @@ import type { VideoLayout } from "@/lib/video/draw";
 import { getNativeShell, requestNative } from "@/lib/native/bridge";
 import { ExportOverlay } from "./ExportOverlay";
 import { ClipRadar } from "./ClipRadar";
+import { VideoKeyframeControls } from "./VideoKeyframeControls";
+import { VideoCompletionModal } from "./VideoCompletionModal";
+import { VideoProjectHistoryModal } from "./VideoProjectHistoryModal";
+import { saveVideoProject, type VideoProject } from "@/lib/video/project-history";
+import { interpolateKeyframes, manualKeyframesToTrajectory, type ManualKeyframe } from "@/lib/video/keyframe-engine";
 /**
  * Video Auto-CC editor.
  *
@@ -135,8 +140,94 @@ export function VideoEditor({
   const [trackingFace, setTrackingFace] = useState(false);
   const [autoProcess, setAutoProcess] = useState(false);
 
+  // Advanced Framing, Keyframe & Project History States
+  const [manualKeyframes, setManualKeyframes] = useState<ManualKeyframe[]>([]);
+  const [currentPanX, setCurrentPanX] = useState(0.5);
+  const [currentZoom, setCurrentZoom] = useState(1.0);
+  const [framingMode, setFramingMode] = useState<
+    "auto_ai" | "podcast_split" | "manual_keyframe" | "preset_left" | "preset_center" | "preset_right"
+  >("auto_ai");
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [renderedVideoUrl, setRenderedVideoUrl] = useState<string | undefined>(undefined);
+  const [isNativeAPK, setIsNativeAPK] = useState(false);
+  const [currentTimeNow, setCurrentTimeNow] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(60);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const autoEnhanceRef = useRef(false);
+
+  const handleAddKeyframe = (newKf: Omit<ManualKeyframe, "id">) => {
+    const kfWithId: ManualKeyframe = { ...newKf, id: `kf_${Date.now()}` };
+    setManualKeyframes((prev) => {
+      const filtered = prev.filter((k) => Math.abs(k.time - newKf.time) > 0.3);
+      const updated = [...filtered, kfWithId].sort((a, b) => a.time - b.time);
+      const trajectory = manualKeyframesToTrajectory(updated, videoDuration || 60);
+      setLayout((curr) => ({
+        ...curr,
+        focus: "manual_keyframe",
+        trajectory,
+        manualKeyframes: updated,
+      }));
+      return updated;
+    });
+  };
+
+  const handleRemoveKeyframe = (id: string) => {
+    setManualKeyframes((prev) => {
+      const updated = prev.filter((k) => k.id !== id);
+      const trajectory = manualKeyframesToTrajectory(updated, videoDuration || 60);
+      setLayout((curr) => ({
+        ...curr,
+        focus: updated.length > 0 ? "manual_keyframe" : "center",
+        trajectory: updated.length > 0 ? trajectory : undefined,
+        manualKeyframes: updated,
+      }));
+      return updated;
+    });
+  };
+
+  const handlePanChange = (panX: number) => {
+    setCurrentPanX(panX);
+    setLayout((curr) => ({
+      ...curr,
+      panX,
+      focus: "center",
+    }));
+  };
+
+  const handleZoomChange = (zoom: number) => {
+    setCurrentZoom(zoom);
+    setLayout((curr) => ({
+      ...curr,
+      zoom,
+    }));
+  };
+
+  const handleFramingModeChange = (mode: "auto_ai" | "podcast_split" | "manual_keyframe" | "preset_left" | "preset_center" | "preset_right") => {
+    setFramingMode(mode);
+    if (mode === "podcast_split") {
+      setLayout((curr) => ({ ...curr, focus: "podcast_split", trajectory: undefined, panX: undefined }));
+    } else if (mode === "preset_left") {
+      handlePanChange(0.2);
+    } else if (mode === "preset_center") {
+      handlePanChange(0.5);
+    } else if (mode === "preset_right") {
+      handlePanChange(0.8);
+    }
+  };
+
+  const handleSelectProject = (project: VideoProject) => {
+    setWords(project.words);
+    setSourceWords(project.words);
+    setStyle(project.style);
+    setPresetId(project.presetId as (typeof SOCIAL_PRESETS)[number]["id"]);
+    setLayout(project.layout);
+    if (project.manualKeyframes) setManualKeyframes(project.manualKeyframes);
+    if (project.framingMode) setFramingMode(project.framingMode);
+    setPhase("ready");
+    setError(null);
+  };
   const runFaceTrack = useCallback(async (mode: "face_track" | "podcast_dynamic" = "face_track") => {
     const video = videoRef.current;
     if (!video || trackingFace) return;
@@ -201,6 +292,26 @@ export function VideoEditor({
     setFile(f);
     setVideoUrl(URL.createObjectURL(f));
   };
+
+  // Auto-save draft progress to IndexedDB
+  useEffect(() => {
+    if (!file || words.length === 0) return;
+    const timer = setTimeout(() => {
+      void saveVideoProject({
+        id: file.name.replace(/\.[^.]+$/, "") || "project_default",
+        title: file.name,
+        durationSec: videoRef.current?.duration || 0,
+        words,
+        style,
+        presetId,
+        layout,
+        manualKeyframes,
+        framingMode,
+        createdAt: Date.now(),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [file, words, style, presetId, layout, manualKeyframes, framingMode]);
 
   const generate = useCallback(async () => {
     if (!file) return;
@@ -340,7 +451,10 @@ export function VideoEditor({
       });
       const base = file.name.replace(/\.[^.]+$/, "").slice(0, 40) || "video";
       const nativeShell = await getNativeShell();
-      if (nativeShell?.capabilities.includes("gallery-stream")) {
+      const isAPK = !!nativeShell?.capabilities.includes("gallery-stream");
+      setIsNativeAPK(isAPK);
+
+      if (isAPK) {
         setExportStage("Menyiapkan Galeri Android...");
         const prepared = await requestNative({ type: "GALLERY_PREPARE", name: `Malesan_${base}.${ext}`, mimeType: blob.type || "video/mp4", bytes: blob.size });
         if (prepared.type !== "GALLERY_UPLOAD_READY" || !prepared.downloadToken) throw new Error(prepared.message ?? "Galeri Android gak siap.");
@@ -356,19 +470,21 @@ export function VideoEditor({
         const committed = await requestNative({ type: "GALLERY_COMMIT", downloadToken: prepared.downloadToken });
         if (committed.type !== "GALLERY_SAVED") throw new Error(committed.message ?? "Video gagal disimpan ke Galeri Android.");
         void requestNative({ type: "HAPTIC", strength: "heavy" }).catch(() => {});
+        setRenderedVideoUrl(undefined);
       } else {
         const url = URL.createObjectURL(blob);
+        setRenderedVideoUrl(url);
         const a = document.createElement("a");
         a.href = url;
         a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
       }
 
       setPhase("ready");
       setStatus("");
+      setShowCompletionModal(true);
       setDoneMsg(
         noWatermark
           ? `Video kesimpen. ${noWatermarkCost} kredit kepotong buat hapus watermark.`
@@ -386,23 +502,34 @@ export function VideoEditor({
 
       {!file ? (
         <div className="space-y-4">
-          <header>
-            <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
-              {mode === "auto_clip" ? "Auto Clip Video" : "Subtitle Video (Auto Caption)"}
-            </h2>
-            <p className="mt-1 text-sm leading-relaxed text-muted">
-              {mode === "auto_clip" ? (
-                <>
-                  Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
-                  <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
-                </>
-              ) : (
-                <>
-                  Upload rekaman video kamu, AI otomatis transkrip &amp; pasang subtitle animasi siap tayang.
-                  <span className="text-ember"> Mulai dari {cost} kredit / menit.</span>
-                </>
-              )}
-            </p>
+          <header className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
+                {mode === "auto_clip" ? "Auto Clip Video" : "Subtitle Video (Auto Caption)"}
+              </h2>
+              <p className="mt-1 text-sm leading-relaxed text-muted">
+                {mode === "auto_clip" ? (
+                  <>
+                    Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
+                    <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
+                  </>
+                ) : (
+                  <>
+                    Upload rekaman video kamu, AI otomatis transkrip &amp; pasang subtitle animasi siap tayang.
+                    <span className="text-ember"> Mulai dari {cost} kredit / menit.</span>
+                  </>
+                )}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowHistoryModal(true)}
+              className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-3 text-xs font-bold text-ink transition-all hover:border-ember/50 hover:bg-white/10 shrink-0 shadow-xs"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-ember"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+              <span>Draf &amp; Riwayat</span>
+            </button>
           </header>
 
           {mode === "auto_clip" ? (
@@ -438,7 +565,7 @@ export function VideoEditor({
       ) : (
         <div className="space-y-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-2xl border border-hairline bg-surface/90 backdrop-blur-md p-3 sm:px-4 shadow-sm">
-            <div className="flex items-center justify-between sm:justify-start gap-2.5 min-w-0">
+            <div className="flex items-center justify-between sm:justify-start gap-2 min-w-0">
               <button
                 type="button"
                 onClick={() => {
@@ -449,12 +576,22 @@ export function VideoEditor({
                   setError(null);
                   setDoneMsg(null);
                 }}
-                className="flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink shrink-0"
+                className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="m15 18-6-6 6-6"/></svg>
                 <span>Ganti Video</span>
               </button>
-              <div className="min-w-0"><span className="block max-w-[150px] sm:max-w-[320px] truncate text-xs font-bold text-ink" title={file.name}>{file.name}</span></div>
+
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                className="flex h-8.5 cursor-pointer items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised px-2.5 text-xs font-bold text-ink transition-all hover:border-ember/50 hover:bg-white/10 shrink-0"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                <span>Draf</span>
+              </button>
+
+              <div className="min-w-0"><span className="block max-w-[120px] sm:max-w-[280px] truncate text-xs font-bold text-ink" title={file.name}>{file.name}</span></div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {words.length > 0 ? (
@@ -472,7 +609,17 @@ export function VideoEditor({
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
             <div className="lg:col-span-5 lg:sticky lg:top-4 space-y-2.5 flex flex-col items-center">
-              <VideoPreviewPlayer videoRef={videoRef} videoUrl={videoUrl} lines={lines} style={style} safeZones={safeZones} layout={layout} watermark={!noWatermark} />
+              <VideoPreviewPlayer
+                videoRef={videoRef}
+                videoUrl={videoUrl}
+                lines={lines}
+                style={style}
+                safeZones={safeZones}
+                layout={layout}
+                watermark={!noWatermark}
+                onTimeChange={setCurrentTimeNow}
+                onDurationChange={setVideoDuration}
+              />
               <div className="flex w-full max-w-[340px] items-center justify-between gap-2 px-1 text-micro text-muted">
                 <label className="flex cursor-pointer items-center gap-1.5 hover:text-ink">
                   <input type="checkbox" checked={safeZones} onChange={(e) => setSafeZones(e.target.checked)} className="size-3.5 accent-ember rounded" />
@@ -511,11 +658,52 @@ export function VideoEditor({
               <div className="p-4 space-y-4 max-h-[calc(100vh-16rem)] overflow-y-auto custom-scrollbar">
                 {editorTab === "frame" && (
                   <div className="space-y-4">
-                    <LayoutPanel layout={layout} onChange={setLayout} onAutoTrack={runFaceTrack} tracking={trackingFace} />
-                    <div className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3 text-micro text-muted leading-relaxed flex items-start gap-2">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                      <span><strong className="text-ink font-semibold">Tips Face Track:</strong> AI otomatis mengunci posisi wajah ke tengah pada format 9:16 vertikal, jadi kamu gak perlu potong manual.</span>
+                    {/* Ratio Selector */}
+                    <div className="rounded-2xl border border-hairline bg-surface-raised/40 p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-ink">Rasio Layar Video</span>
+                        <span className="text-[11px] font-mono text-ember font-bold">{layout.ratio}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
+                          <button
+                            key={ratio}
+                            type="button"
+                            onClick={() => setLayout((curr) => ({ ...curr, ratio }))}
+                            className={`min-h-9 rounded-xl border px-2 font-mono text-xs font-bold transition-all ${
+                              layout.ratio === ratio
+                                ? "border-ember bg-ember/20 text-ember shadow-xs"
+                                : "border-hairline bg-black/40 text-muted hover:text-ink"
+                            }`}
+                          >
+                            {ratio === "9:16" ? "9:16 (TikTok/Reels)" : ratio === "1:1" ? "1:1 (Feed)" : "16:9 (YouTube)"}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+
+                    <VideoKeyframeControls
+                      currentTime={currentTimeNow}
+                      duration={videoDuration}
+                      keyframes={manualKeyframes}
+                      currentPanX={currentPanX}
+                      currentZoom={currentZoom}
+                      onPanChange={handlePanChange}
+                      onZoomChange={handleZoomChange}
+                      onAddKeyframe={handleAddKeyframe}
+                      onRemoveKeyframe={handleRemoveKeyframe}
+                      onSeek={(t) => {
+                        const v = videoRef.current;
+                        if (v) {
+                          v.currentTime = t;
+                          setCurrentTimeNow(t);
+                        }
+                      }}
+                      framingMode={framingMode}
+                      onFramingModeChange={handleFramingModeChange}
+                      onRunAITrack={() => runFaceTrack("podcast_dynamic")}
+                      isAITracking={trackingFace}
+                    />
                   </div>
                 )}
                 {editorTab === "subtitles" && (
@@ -579,6 +767,20 @@ export function VideoEditor({
 
       {error && <p className="rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
       {doneMsg && <p className="rounded-xl border border-success/40 bg-success/10 px-4 py-3 text-sm text-success">{doneMsg}</p>}
+
+      {/* Completion & Project History Modals */}
+      <VideoCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        videoUrl={renderedVideoUrl}
+        videoTitle={file?.name.replace(/\.[^.]+$/, "") || "video"}
+        isAPK={isNativeAPK}
+      />
+      <VideoProjectHistoryModal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        onSelectProject={handleSelectProject}
+      />
     </div>
   );
 }
@@ -626,6 +828,8 @@ function VideoPreviewPlayer({
   safeZones,
   layout,
   watermark = true,
+  onTimeChange,
+  onDurationChange,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -634,6 +838,8 @@ function VideoPreviewPlayer({
   safeZones: boolean;
   layout: VideoLayout;
   watermark?: boolean;
+  onTimeChange?: (time: number) => void;
+  onDurationChange?: (duration: number) => void;
 }) {
   const [now, setNow] = useState(0);
   const rafRef = useRef<number | null>(null);
@@ -647,6 +853,10 @@ function VideoPreviewPlayer({
       const v = videoRef.current;
       if (v && !v.paused) {
         setNow(v.currentTime);
+        onTimeChange?.(v.currentTime);
+        if (Number.isFinite(v.duration) && v.duration > 0) {
+          onDurationChange?.(v.duration);
+        }
       }
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -655,7 +865,7 @@ function VideoPreviewPlayer({
       active = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [videoRef]);
+  }, [videoRef, onTimeChange, onDurationChange]);
 
   // Sync secondary video with primary video during playback/seek for split view
   useEffect(() => {
@@ -680,9 +890,16 @@ function VideoPreviewPlayer({
 
   const active = activeAt(lines, now);
   const tracked = layout.trajectory?.length ? cropFocusAt(layout.trajectory, now) : null;
-  const objectPosition = tracked
-    ? `${(tracked.x * 100).toFixed(2)}% ${(tracked.y * 100).toFixed(2)}%`
-    : layout.focus === "left" ? "left center" : layout.focus === "right" ? "right center" : "center";
+  const currentKeyframe = layout.manualKeyframes?.length
+    ? interpolateKeyframes(layout.manualKeyframes, now, layout.panX ?? 0.5, 0.45, layout.zoom ?? 1.0)
+    : null;
+
+  const currentPanX = currentKeyframe?.panX ?? (tracked ? tracked.x : layout.panX ?? (layout.focus === "left" ? 0.2 : layout.focus === "right" ? 0.8 : 0.5));
+  const currentPanY = currentKeyframe?.panY ?? (tracked ? tracked.y : 0.45);
+  const currentZoom = currentKeyframe?.zoom ?? layout.zoom ?? 1.0;
+
+  const objectPosition = `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`;
+  const videoTransform = currentZoom > 1.01 ? `scale(${currentZoom.toFixed(2)})` : undefined;
 
   const resolvedVideoSrc = videoUrl
     ? videoUrl.includes("#t=")
@@ -721,8 +938,14 @@ function VideoPreviewPlayer({
               preload="auto"
               playsInline
               controls
-              onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
-              onSeeked={(e) => setNow(e.currentTarget.currentTime)}
+              onTimeUpdate={(e) => {
+                setNow(e.currentTarget.currentTime);
+                onTimeChange?.(e.currentTarget.currentTime);
+              }}
+              onSeeked={(e) => {
+                setNow(e.currentTarget.currentTime);
+                onTimeChange?.(e.currentTarget.currentTime);
+              }}
               className="absolute inset-0 h-full w-full object-cover"
               style={{ objectPosition: "left center" }}
             />
@@ -747,10 +970,20 @@ function VideoPreviewPlayer({
           preload="auto"
           controls
           playsInline
-          onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)}
-          onSeeked={(e) => setNow(e.currentTarget.currentTime)}
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ objectPosition }}
+          onTimeUpdate={(e) => {
+            setNow(e.currentTarget.currentTime);
+            onTimeChange?.(e.currentTarget.currentTime);
+          }}
+          onSeeked={(e) => {
+            setNow(e.currentTarget.currentTime);
+            onTimeChange?.(e.currentTarget.currentTime);
+          }}
+          className="absolute inset-0 h-full w-full object-cover transition-[object-position] duration-75"
+          style={{
+            objectPosition,
+            transform: videoTransform,
+            transformOrigin: `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`,
+          }}
         />
       )}
 
@@ -824,125 +1057,6 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
   );
 }
 
-function LayoutPanel({
-  layout,
-  onChange,
-  onAutoTrack,
-  tracking,
-}: {
-  layout: VideoLayout;
-  onChange: (layout: VideoLayout) => void;
-  onAutoTrack: (mode?: "face_track" | "podcast_dynamic") => void;
-  tracking: boolean;
-}) {
-  return (
-    <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3.5">
-      <div>
-        <p className="text-mini font-semibold text-ink">Bingkai & Kamera AI</p>
-        <p className="text-micro text-muted">Auto ikuti wajah pembicara, otomatis ganti sorotan podcast, atau split-screen.</p>
-      </div>
-
-      {/* AI Camera Tracking Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => onAutoTrack("face_track")}
-          disabled={tracking}
-          className={`relative min-h-11 overflow-hidden rounded-xl border px-3 text-mini font-semibold transition-all ${
-            layout.trajectory?.length && layout.focus !== "podcast_dynamic"
-              ? "border-ember bg-ember/15 text-ember shadow-xs shadow-ember/10"
-              : "border-hairline bg-obsidian/40 text-ink hover:border-ember/40"
-          }`}
-        >
-          {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
-          <div className="flex items-center justify-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
-              <path d="M15 8h.01M9 8h.01M9.5 15a3.5 3.5 0 0 0 5 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
-            <span className="truncate">
-              {tracking ? "Lacak wajah..." : layout.trajectory?.length && layout.focus !== "podcast_dynamic" ? "Face Track Aktif" : "Auto Face Track"}
-            </span>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAutoTrack("podcast_dynamic")}
-          disabled={tracking}
-          className={`relative min-h-11 overflow-hidden rounded-xl border px-3 text-mini font-semibold transition-all ${
-            layout.focus === "podcast_dynamic"
-              ? "border-ember bg-ember/15 text-ember shadow-xs shadow-ember/10"
-              : "border-hairline bg-obsidian/40 text-ink hover:border-ember/40"
-          }`}
-        >
-          {tracking ? <span className="animate-shimmer-sweep absolute inset-0" aria-hidden="true" /> : null}
-          <div className="flex items-center justify-center gap-2">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
-              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" />
-            </svg>
-            <span className="truncate">
-              {tracking ? "Analisis giliran..." : layout.focus === "podcast_dynamic" ? "Auto Speaker Aktif" : "Auto Speaker (Podcast Switch)"}
-            </span>
-          </div>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-1.5">
-        {(["9:16", "1:1", "16:9"] as const).map((ratio) => (
-          <button
-            key={ratio}
-            type="button"
-            onClick={() => onChange({ ...layout, ratio })}
-            className={`min-h-11 rounded-lg border px-2 font-mono text-micro font-bold transition-colors ${
-              layout.ratio === ratio
-                ? "border-ember bg-ember/15 text-ember"
-                : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-            }`}
-          >
-            {ratio}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-        {(
-          [
-            { id: "center", label: "Tengah" },
-            { id: "left", label: "Kiri (Host)" },
-            { id: "right", label: "Kanan (Tamu)" },
-            { id: "podcast_split", label: "Podcast Split" },
-          ] as const
-        ).map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => onChange({ ratio: layout.ratio, focus: f.id })}
-            className={`min-h-11 rounded-lg border px-2 text-micro font-semibold transition-colors ${
-              !layout.trajectory?.length && layout.focus === f.id
-                ? "border-ember bg-ember/15 text-ember"
-                : "border-hairline bg-obsidian/30 text-muted hover:text-ink"
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-
-      {layout.focus === "podcast_dynamic" && (
-        <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 leading-relaxed">
-          🎙️ <strong>Auto Speaker Aktif:</strong> Kamera otomatis bergantian menyorot Host (Kiri) dan Tamu (Kanan) saat giliran bicara tanpa split-screen.
-        </div>
-      )}
-
-      {layout.focus === "podcast_split" && layout.ratio === "9:16" && (
-        <div className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2.5 leading-relaxed">
-          🎞️ <strong>Mode Podcast Split Aktif:</strong> Menumpuk Pembicara Kiri di atas & Pembicara Kanan di bawah dalam 1 layar 9:16 vertikal.
-        </div>
-      )}
-    </div>
-  );
-}
 
 function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Word[]) => void }) {
   const text = useMemo(() => words.map((w) => w.word).join(" "), [words]);

@@ -182,11 +182,24 @@ export function cropFocusAt(trajectory: readonly CropKeyframe[], time: number): 
   };
 }
 
-export function trackedCoverCrop(sourceWidth: number, sourceHeight: number, targetWidth: number, targetHeight: number, focus: CropKeyframe): TrackedCrop {
+export function trackedCoverCrop(
+  sourceWidth: number,
+  sourceHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+  focus: CropKeyframe,
+  zoom: number = 1.0,
+): TrackedCrop {
   const sourceRatio = sourceWidth / sourceHeight;
   const targetRatio = targetWidth / targetHeight;
+  const safeZoom = Math.max(1.0, Math.min(2.0, zoom));
   const base = sourceRatio > targetRatio
-    ? { sx: 0, sy: 0, sw: sourceHeight * targetRatio, sh: sourceHeight }
-    : { sx: 0, sy: 0, sw: sourceWidth, sh: sourceWidth / targetRatio };
-  return { ...base, sx: clamp(focus.x * sourceWidth - base.sw / 2, 0, sourceWidth - base.sw), sy: clamp(focus.y * sourceHeight - base.sh / 2, 0, sourceHeight - base.sh) };
+    ? { sx: 0, sy: 0, sw: (sourceHeight * targetRatio) / safeZoom, sh: sourceHeight / safeZoom }
+    : { sx: 0, sy: 0, sw: sourceWidth / safeZoom, sh: (sourceWidth / targetRatio) / safeZoom };
+  return {
+    sx: clamp(focus.x * sourceWidth - base.sw / 2, 0, sourceWidth - base.sw),
+    sy: clamp(focus.y * sourceHeight - base.sh / 2, 0, sourceHeight - base.sh),
+    sw: base.sw,
+    sh: base.sh,
+  };
 }

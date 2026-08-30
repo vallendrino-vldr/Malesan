@@ -80,7 +80,9 @@ export function drawFrame(
     ctx.shadowBlur = 0;
   } else {
     const crop = layout.trajectory?.length
-      ? trackedCoverCrop(sw, sh, W, H, cropFocusAt(layout.trajectory, t))
+      ? trackedCoverCrop(sw, sh, W, H, cropFocusAt(layout.trajectory, t), layout.zoom ?? 1.0)
+      : layout.panX !== undefined
+      ? trackedCoverCrop(sw, sh, W, H, { time: t, x: layout.panX, y: 0.45, confidence: 1.0 }, layout.zoom ?? 1.0)
       : coverCrop(sw, sh, W, H, layout.focus);
     ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
   }
