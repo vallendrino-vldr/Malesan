@@ -83,6 +83,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
 
   const isMobile = useSyncExternalStore(emptySubscribe, getIsMobileSnapshot, () => false);
   const [isNativeApk, setIsNativeApk] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -717,10 +718,23 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 className="btn-ember relative flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-xl px-5 font-display text-sm font-bold text-obsidian shadow-md transition-all active:scale-[0.99] disabled:cursor-wait disabled:opacity-60 sm:text-base"
               >
                 {bridgeBusy ? <span className="absolute inset-0 animate-shimmer-sweep bg-gradient-to-r from-transparent via-white/30 to-transparent" /> : null}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="relative size-4 shrink-0" aria-hidden="true">
-                  <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
-                </svg>
-                <span className="relative truncate">{bridgeBusy ? (bridgeJob?.stage || "Menyiapkan Auto Clip...") : `Bikin Auto Clip (${clock(clip.startTime)}–${clock(clip.endTime)})`}</span>
+                {isNativeApk ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="relative size-4 shrink-0" aria-hidden="true">
+                    <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" /><line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="relative size-4 shrink-0" aria-hidden="true">
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                )}
+                <span className="relative truncate">
+                  {bridgeBusy
+                    ? (bridgeJob?.stage || "Menyiapkan Auto Clip...")
+                    : isNativeApk
+                    ? `Bikin Auto Clip (${clock(clip.startTime)}–${clock(clip.endTime)})`
+                    : `Bikin Auto Clip (Butuh APK Android)`}
+                </span>
               </button>
               {bridgeBusy && bridgeJob ? (
                 <div className="space-y-2 pt-1.5">
@@ -954,6 +968,96 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 <div className="rounded-2xl border border-hairline/60 bg-obsidian/40 p-3 text-micro leading-relaxed text-muted text-left flex items-start gap-2.5">
                   <span className="text-ember text-sm shrink-0">💡</span>
                   <span>Proses berjalan di perangkat lo. Layar terkunci sementara agar proses tidak terganggu.</span>
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
+
+      {/* Pop-up Locked Feature Explainer Modal when opening on Web/PWA */}
+      {showLockModal && mounted && typeof document !== "undefined"
+        ? createPortal(
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in" role="dialog" aria-modal="true">
+              <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-ember/40 bg-surface-raised/95 p-5 sm:p-6 shadow-2xl space-y-4 text-left">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid size-9 place-items-center rounded-xl bg-ember/15 border border-ember/30 text-ember">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4.5">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                    </span>
+                    <div>
+                      <h3 className="font-display text-sm sm:text-base font-bold text-ink">Fitur Auto Clip Terkunci di Web</h3>
+                      <p className="text-[10px] sm:text-micro text-muted">Butuh Mesin Native untuk memotong 1080p tanpa batas.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowLockModal(false)}
+                    className="grid size-8 place-items-center rounded-lg border border-hairline bg-surface text-muted hover:text-ink cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <p className="text-micro sm:text-xs text-muted leading-relaxed">
+                  Browser web (Chrome/Safari) tidak dapat memotong stream video YouTube Full HD secara instan. Untuk memproses 1080p tanpa server &amp; tanpa batas:
+                </p>
+
+                <div className="space-y-2.5">
+                  {/* Android Option */}
+                  <div className="rounded-xl border border-hairline/80 bg-obsidian/70 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-ink text-mini flex items-center gap-1.5">
+                        📱 Pengguna HP Android
+                      </span>
+                      <span className="rounded bg-emerald-500/15 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-400">Paling Praktis</span>
+                    </div>
+                    <p className="text-[10px] text-muted leading-relaxed">
+                      Download aplikasi Android Malesan. Mesin pemotong sudah terpasang bawaan di aplikasi.
+                    </p>
+                    <a
+                      href="/malesan.apk"
+                      download="malesan.apk"
+                      className="btn-ember flex h-9 w-full items-center justify-center gap-1.5 rounded-lg text-xs font-bold text-obsidian"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <span>Unduh APK Android (.apk)</span>
+                    </a>
+                  </div>
+
+                  {/* Desktop Option */}
+                  <div className="rounded-xl border border-hairline/80 bg-obsidian/70 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-ink text-mini flex items-center gap-1.5">
+                        💻 Pengguna PC / Laptop
+                      </span>
+                      <span className="rounded bg-ember/15 px-2 py-0.5 font-mono text-[9px] font-bold text-ember">1-Click</span>
+                    </div>
+                    <p className="text-[10px] text-muted leading-relaxed">
+                      Ekstrak <code>malesan-bridge.zip</code> dan jalankan <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali.
+                    </p>
+                    <a
+                      href="/malesan-bridge.zip"
+                      download="malesan-bridge.zip"
+                      className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.05] text-xs font-bold text-ink hover:border-ember/40 hover:bg-ember/10 hover:text-ember"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <span>Unduh Bridge Installer (.zip)</span>
+                    </a>
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowLockModal(false)}
+                    className="w-full text-center text-[11px] font-semibold text-muted hover:text-ink cursor-pointer"
+                  >
+                    Tutup &amp; Pakai File Video Sendiri
+                  </button>
                 </div>
               </div>
             </div>,

@@ -35,8 +35,9 @@ final class NativeClipEngine {
                         .addOption("--no-playlist")
                         .addOption("--no-part")
                         .addOption("--extractor-args", "youtube:player_client=android,web")
-                        .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
+                        .addOption("-f", "bestvideo[height>=1080]+bestaudio/bestvideo[height>=720]+bestaudio/best[height>=720]/bestvideo+bestaudio/best")
                         .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size")
+                        .addOption("--force-keyframes-at-cuts")
                         .addOption("--merge-output-format", "mp4")
                         .addOption("--download-sections", String.format(Locale.US, "*%.3f-%.3f", startSeconds, endSeconds))
                         .addOption("--output", new File(directory, jobId + ".%(ext)s").getAbsolutePath());

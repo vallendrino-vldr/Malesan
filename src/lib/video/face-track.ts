@@ -56,59 +56,111 @@ export function buildCropTrajectory(samples: readonly FaceSample[]): CropKeyfram
   return result;
 }
 
+export type SpeakerCluster = {
+  id: number;
+  centerX: number;
+  centerY: number;
+  sampleCount: number;
+};
+
 /**
- * Build a dynamic podcast speaker trajectory that auto-cuts/pans between
- * Left Speaker (Host) and Right Speaker (Guest) based on face detection and broadcast speech pacing.
+ * Cluster detected faces across time into distinct physical speaker locations (1 to 5+ people).
+ */
+export function detectSpeakerClusters(samples: readonly FaceSample[]): SpeakerCluster[] {
+  const allFaces: { x: number; y: number; score: number }[] = [];
+  for (const s of samples) {
+    for (const f of s.faces) {
+      if (f.score >= 0.25 && f.width > 0 && f.height > 0) {
+        allFaces.push({ ...center(f), score: f.score });
+      }
+    }
+  }
+
+  if (!allFaces.length) return [];
+
+  // Group into spatial clusters by X coordinate
+  const clusters: { faces: { x: number; y: number; score: number }[] }[] = [];
+  for (const face of allFaces) {
+    let added = false;
+    for (const cluster of clusters) {
+      const avgX = cluster.faces.reduce((sum, f) => sum + f.x, 0) / cluster.faces.length;
+      if (Math.abs(face.x - avgX) <= 0.11) {
+        cluster.faces.push(face);
+        added = true;
+        break;
+      }
+    }
+    if (!added) {
+      clusters.push({ faces: [face] });
+    }
+  }
+
+  return clusters
+    .map((c, i) => {
+      const avgX = c.faces.reduce((sum, f) => sum + f.x, 0) / c.faces.length;
+      const avgY = c.faces.reduce((sum, f) => sum + f.y, 0) / c.faces.length;
+      return {
+        id: i,
+        centerX: clamp(avgX, 0.15, 0.85),
+        centerY: clamp(avgY, 0.25, 0.65),
+        sampleCount: c.faces.length,
+      };
+    })
+    .sort((a, b) => a.centerX - b.centerX);
+}
+
+/**
+ * Build a dynamic podcast speaker trajectory that auto-cuts/pans across 1, 2, 3, 4, or 5+ speakers.
+ * Each speaker shot is held stable for 3.2s - 4.5s with snappy 0.25s cinematic transitions.
  */
 export function buildPodcastSpeakerTrajectory(
   samples: readonly FaceSample[],
   duration: number = 60
 ): CropKeyframe[] {
   const ordered = [...samples].filter((s) => Number.isFinite(s.time)).sort((a, b) => a.time - b.time);
+  const detectedClusters = detectSpeakerClusters(ordered);
 
-  // 1. Detect Speaker Clusters (Left Speaker ~0.22, Right Speaker ~0.78)
-  const leftPositions: number[] = [];
-  const rightPositions: number[] = [];
+  // Fallback speaker positions if face detection is sparse
+  const clusters: SpeakerCluster[] = detectedClusters.length > 0
+    ? detectedClusters
+    : [
+        { id: 0, centerX: 0.22, centerY: 0.42, sampleCount: 10 },
+        { id: 1, centerX: 0.78, centerY: 0.42, sampleCount: 10 },
+      ];
 
-  for (const s of ordered) {
-    for (const f of s.faces) {
-      if (f.score >= 0.3) {
-        const cx = f.x + f.width / 2;
-        if (cx < 0.48) leftPositions.push(cx);
-        else rightPositions.push(cx);
-      }
-    }
-  }
-
-  const leftX = leftPositions.length > 0
-    ? leftPositions.sort((a, b) => a - b)[Math.floor(leftPositions.length / 2)]
-    : 0.22;
-  const rightX = rightPositions.length > 0
-    ? rightPositions.sort((a, b) => a - b)[Math.floor(rightPositions.length / 2)]
-    : 0.78;
-
-  // 2. Generate natural broadcast pacing switches (alternating 3.5s - 4.5s)
-  const result: CropKeyframe[] = [];
   const maxTime = Math.max(duration, ordered.length > 0 ? ordered[ordered.length - 1].time : 60);
-  let currentTargetX = leftX;
-  let nextSwitchTime = 0;
+  const result: CropKeyframe[] = [];
 
-  for (let t = 0; t <= maxTime + 2; t += 0.2) {
-    if (t >= nextSwitchTime) {
-      currentTargetX = Math.abs(currentTargetX - leftX) < 0.1 ? rightX : leftX;
-      // Natural variable broadcast pacing (3.2s - 4.8s)
-      nextSwitchTime = t + 3.6 + Math.sin(t * 0.8) * 0.9;
-    }
+  let currentClusterIdx = 0;
+  let t = 0;
 
+  while (t <= maxTime + 2) {
+    const activeCluster = clusters[currentClusterIdx % clusters.length];
+    const shotDuration = 3.2 + ((currentClusterIdx * 1.3) % 1.6); // Natural variable TV pacing (3.2s - 4.8s)
+    const transitionDuration = 0.25; // Snappy broadcast glide to the speaker
+    const shotEnd = t + shotDuration;
+
+    // Start of transition to speaker
     result.push({
       time: Number(t.toFixed(2)),
-      x: clamp(Number(currentTargetX.toFixed(3)), 0.15, 0.85),
-      y: 0.42,
+      x: activeCluster.centerX,
+      y: activeCluster.centerY,
       confidence: 0.95,
     });
+
+    // Hold shot steadily on the speaker until shotEnd
+    result.push({
+      time: Number(Math.max(t + transitionDuration, shotEnd - 0.05).toFixed(2)),
+      x: activeCluster.centerX,
+      y: activeCluster.centerY,
+      confidence: 0.95,
+    });
+
+    t = shotEnd;
+    currentClusterIdx += 1;
   }
 
-  return result;
+  return result.sort((a, b) => a.time - b.time);
 }
 
 export function cropFocusAt(trajectory: readonly CropKeyframe[], time: number): CropKeyframe {
@@ -118,8 +170,16 @@ export function cropFocusAt(trajectory: readonly CropKeyframe[], time: number): 
   let low = 0, high = trajectory.length - 1;
   while (high - low > 1) { const mid = (low + high) >> 1; if (trajectory[mid].time <= time) low = mid; else high = mid; }
   const a = trajectory[low], b = trajectory[high];
-  const mix = (time - a.time) / Math.max(0.001, b.time - a.time);
-  return { time, x: a.x + (b.x - a.x) * mix, y: a.y + (b.y - a.y) * mix, confidence: a.confidence + (b.confidence - a.confidence) * mix };
+  const delta = Math.max(0.001, b.time - a.time);
+  const rawMix = clamp((time - a.time) / delta, 0, 1);
+  // Smoothstep S-curve for cinematic camera pan
+  const mix = rawMix * rawMix * (3 - 2 * rawMix);
+  return {
+    time,
+    x: a.x + (b.x - a.x) * mix,
+    y: a.y + (b.y - a.y) * mix,
+    confidence: a.confidence + (b.confidence - a.confidence) * mix,
+  };
 }
 
 export function trackedCoverCrop(sourceWidth: number, sourceHeight: number, targetWidth: number, targetHeight: number, focus: CropKeyframe): TrackedCrop {
