@@ -395,6 +395,21 @@ export async function notifyNewUser(data: { email: string; name?: string | null;
   });
 }
 
+export async function notifyAppInstall(data: {
+  email?: string | null;
+  deviceModel?: string | null;
+  osVersion?: string | null;
+  appVersion?: string | null;
+}) {
+  const config = await getTelegramConfig();
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+  const text = `<b>[MALESAN APK DIBUKA / TERPASANG]</b>\n\n• <b>Akun:</b> <code>${escapeHtml(data.email || "Tamu / Belum Login")}</code>\n• <b>Perangkat:</b> ${escapeHtml(data.deviceModel || "Android Device")}\n• <b>Sistem:</b> ${escapeHtml(data.osVersion || "Android")}\n• <b>Versi APK:</b> v${escapeHtml(data.appVersion || "2.1.8")}\n• <b>Waktu:</b> ${now} WIB`;
+
+  return sendTelegramMessage(text, {
+    messageThreadId: config.topics?.users,
+  });
+}
+
 export async function notifyGeneration(data: {
   email: string;
   moduleName: string;

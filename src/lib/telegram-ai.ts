@@ -102,6 +102,7 @@ interface AIIntentResult {
     | "generate_hooks"
     | "roast_hook"
     | "save_otak_kedua"
+    | "apk_status"
     | "none";
   payload?: {
     message?: string;
@@ -192,6 +193,14 @@ export function matchFastPathIntent(text: string, lastInspectedEmail?: string): 
         email: targetEmail,
         amount: Number(grantCreditsMatch[1]),
       },
+    };
+  }
+
+  // 5. APK status: "status apk", "cek apk", "info apk", "apk"
+  if (/^(?:status\s*apk|cek\s*apk|info\s*apk|apk)$/i.test(clean)) {
+    return {
+      actionType: "apk_status",
+      payload: {},
     };
   }
 
@@ -304,7 +313,8 @@ Konfigurasi Sistem:
 20. set_module_cost: ubah harga kredit modul (payload: { moduleKey: "hook", cost: 2 }). (needsConfirmation: true). PERINGATAN: HANYA gunakan jika Boss menyebutkan modul tertentu (seperti hook, script, video, ide).
 21. toggle_module: matikan / nyalakan modul tertentu (payload: { moduleKey: "video", enabled: false }). (needsConfirmation: true)
 22. set_ai_provider: ganti AI provider utama (payload: { provider: "gemini" | "groq" }). (needsConfirmation: true)
-23. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
+23. apk_status: cek status build dan konfigurasi aplikasi Android APK Malesan (needsConfirmation: false)
+24. none: obrolan bebas, konsultasi ide konten, copy marketing, analisis bisnis, dll. (needsConfirmation: false)
 
 PANDUAN RESOLUSI KONTEKS & PRONOUN KETAT:
 - Jika Boss mengatakan "rubah kreditnya jadi X", "tambah 20 kredit", "banned dia", "jadikan admin" tanpa menyebut email, MAKA OTOMATIS gunakan email dari "Konteks User Aktif" di atas!
@@ -348,6 +358,7 @@ ATURAN GAYA & FORMATTING KETAT:
           "generate_hooks",
           "roast_hook",
           "save_otak_kedua",
+          "apk_status",
           "none",
         ],
       },
@@ -982,6 +993,32 @@ DILARANG MENGGUNAKAN EMOJI.`;
           chatId,
           messageThreadId,
         });
+        return;
+      }
+
+      case "apk_status": {
+        const { data: configRows } = await supabase
+          .from("app_config")
+          .select("key, value")
+          .in("key", ["video_enabled", "video_cost_per_min", "app_broadcast_message"]);
+
+        const videoEnabled = configRows?.find((r) => r.key === "video_enabled")?.value !== "false";
+        const videoCost = configRows?.find((r) => r.key === "video_cost_per_min")?.value || "2";
+
+        const text = `<b>[STATUS MALESAN ANDROID APK]</b>
+
+• <b>Versi Rilis Terkini:</b> v2.1.8 (Build Code 21)
+• <b>Tautan Unduhan Langsung:</b> https://malesan.my.id/malesan.apk
+• <b>Fitur Native Auto Clip:</b> ${videoEnabled ? "AKTIF (Normal)" : "NONAKTIF (Kill-Switch)"}
+• <b>Tarif Clip YouTube:</b> ${videoCost} Kredit / Scan
+• <b>Mesin Pemotong Native:</b> yt-dlp Innertube Mobile + FFmpeg 1080p 60fps
+
+<i>Bos bisa mengatur fitur ini dengan perintah:
+- "Matikan modul video" (Kill-switch)
+- "Set biaya video 2"
+- "Broadcast info: APK baru sudah rilis"</i>`;
+
+        await sendTelegramMessage(text, { chatId, messageThreadId });
         return;
       }
 
