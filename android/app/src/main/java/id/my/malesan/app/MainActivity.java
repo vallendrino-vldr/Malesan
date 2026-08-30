@@ -441,7 +441,7 @@ public final class MainActivity extends Activity {
         String parsedUrl = extractYouTubeUrl(sourceUrl);
         try { UUID.fromString(jobId); }
         catch (Exception invalid) { reply(replyProxy, error(requestId, "INVALID_JOB", "Job Auto Clip tidak valid.")); return; }
-        if (parsedUrl == null || !parsedUrl.equals(sourceUrl) || start < 0 || end <= start || end - start < 20 || end - start > 180) {
+        if (parsedUrl == null || start < 0 || end <= start || end - start < 5 || end - start > 300) {
             reply(replyProxy, error(requestId, "INVALID_CLIP", "Rentang Auto Clip tidak valid."));
             return;
         }
@@ -451,7 +451,7 @@ public final class MainActivity extends Activity {
         }
         activeClipJobId = jobId;
         try {
-            clipEngine.start(jobId, sourceUrl, start, end, new NativeClipEngine.Listener() {
+            clipEngine.start(jobId, parsedUrl, start, end, new NativeClipEngine.Listener() {
                 @Override public void onProgress(float percent, String stage) {
                     runOnUiThread(() -> {
                         try { reply(replyProxy, new JSONObject().put("type", "CLIP_PROGRESS").put("requestId", requestId).put("progress", percent).put("stage", stage)); }

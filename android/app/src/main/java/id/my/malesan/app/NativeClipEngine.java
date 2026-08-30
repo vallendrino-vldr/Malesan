@@ -56,9 +56,16 @@ final class NativeClipEngine {
                 if (output == null || output.length() < 1024) throw new IllegalStateException("Hasil clip kosong.");
                 listener.onReady(output);
             } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt(); deleteMatches(directory, jobId); listener.onError("Pemrosesan clip dibatalkan.");
+                Thread.currentThread().interrupt();
+                deleteMatches(directory, jobId);
+                android.util.Log.w("NativeClipEngine", "Clip job interrupted: " + jobId);
+                listener.onError("Pemrosesan clip dibatalkan.");
             } catch (Throwable failure) {
-                deleteMatches(directory, jobId); listener.onError(failure.getMessage() == null ? "Auto Clip native gagal." : failure.getMessage());
+                android.util.Log.e("NativeClipEngine", "Clip execution failed for job: " + jobId, failure);
+                deleteMatches(directory, jobId);
+                String msg = failure.getMessage();
+                if (msg == null || msg.trim().isEmpty()) msg = failure.toString();
+                listener.onError(msg);
             }
         });
     }

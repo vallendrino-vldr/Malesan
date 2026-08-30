@@ -454,10 +454,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
               <li key={`${c.startTime}-${i}`}>
                 <button
                   onClick={() => playClip(i)}
-                  disabled={playerState === "loading"}
                   aria-current={i === active ? "true" : undefined}
                   aria-label={`Putar ${c.hookTitle}, ${clock(c.startTime)} sampai ${clock(c.endTime)}`}
-                  className={`flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-wait disabled:opacity-60 ${
+                  className={`flex min-h-11 w-full cursor-pointer items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
                     i === active
                       ? "border-ember/60 bg-ember/10"
                       : "border-hairline bg-obsidian hover:border-ember/40"
@@ -496,8 +495,19 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 <p className="text-micro text-muted leading-relaxed">{clip.reason}</p>
               </div>
 
-              <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted">
-                <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="mt-1 size-4 shrink-0 accent-ember rounded" />
+              <label
+                onClick={(e) => {
+                  e.preventDefault();
+                  setRightsConfirmed((prev) => !prev);
+                }}
+                className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={rightsConfirmed}
+                  readOnly
+                  className="mt-1 size-4 shrink-0 accent-ember rounded pointer-events-none"
+                />
                 <span>Gue punya hak atau izin buat mengolah video ini. Pemotongan &amp; subtitle ditagih per menit sesuai durasi.</span>
               </label>
 
@@ -532,8 +542,19 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             </div>
           ) : (
             <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
-              <label className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted">
-                <input type="checkbox" checked={rightsConfirmed} onChange={(event) => setRightsConfirmed(event.target.checked)} className="mt-1 size-4 shrink-0 accent-ember rounded" />
+              <label
+                onClick={(e) => {
+                  e.preventDefault();
+                  setRightsConfirmed((prev) => !prev);
+                }}
+                className="flex min-h-11 cursor-pointer items-start gap-2.5 text-mini leading-relaxed text-muted select-none"
+              >
+                <input
+                  type="checkbox"
+                  checked={rightsConfirmed}
+                  readOnly
+                  className="mt-1 size-4 shrink-0 accent-ember rounded pointer-events-none"
+                />
                 <span>Gue punya hak atau izin buat mengolah video ini. Pemotongan ditagih per menit sesuai durasi; subtitle ditagih terpisah.</span>
               </label>
               <button
