@@ -55,30 +55,67 @@ type Props = {
 let iframeApiPromise: Promise<YouTubeNamespace> | null = null;
 
 function loadIframeApi(): Promise<YouTubeNamespace> {
+  if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
   if (window.YT?.Player) return Promise.resolve(window.YT);
   if (iframeApiPromise) return iframeApiPromise;
 
   iframeApiPromise = new Promise((resolve, reject) => {
+    let resolved = false;
+    const checkExisting = () => {
+      if (window.YT?.Player) {
+        resolved = true;
+        resolve(window.YT);
+        return true;
+      }
+      return false;
+    };
+
+    if (checkExisting()) return;
+
     const previousReady = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => {
       previousReady?.();
-      if (window.YT?.Player) resolve(window.YT);
-      else reject(new Error("YouTube Player API gak kebaca."));
+      if (checkExisting()) return;
+      setTimeout(() => {
+        if (!checkExisting() && !resolved) {
+          iframeApiPromise = null;
+          reject(new Error("YouTube Player API gagal terhubung."));
+        }
+      }, 100);
     };
 
     const existing = document.querySelector<HTMLScriptElement>(
       'script[src="https://www.youtube.com/iframe_api"]',
     );
-    if (existing) return;
+    if (!existing) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.async = true;
+      script.onerror = () => {
+        iframeApiPromise = null;
+        reject(new Error("Player YouTube gagal dimuat. Cek koneksi lalu coba lagi."));
+      };
+      document.head.appendChild(script);
+    }
 
-    const script = document.createElement("script");
-    script.src = "https://www.youtube.com/iframe_api";
-    script.async = true;
-    script.onerror = () => {
-      iframeApiPromise = null;
-      reject(new Error("Player YouTube gagal dimuat. Cek koneksi lalu coba lagi."));
-    };
-    document.head.appendChild(script);
+    // Polling fallback in case onYouTubeIframeAPIReady already triggered
+    const poll = setInterval(() => {
+      if (checkExisting()) {
+        clearInterval(poll);
+      }
+    }, 100);
+
+    setTimeout(() => {
+      clearInterval(poll);
+      if (!resolved && !checkExisting()) {
+        // Resolve with window.YT if available, else reject gracefully
+        if (window.YT?.Player) resolve(window.YT);
+        else {
+          iframeApiPromise = null;
+          reject(new Error("Timeout memuat YouTube Player API."));
+        }
+      }
+    }, 4000);
   });
 
   return iframeApiPromise;
@@ -103,6 +140,10 @@ export function YouTubeClipPlayer({
   onState,
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [activeRange, setActiveRange] = useState<{ start: number; end: number }>({
+    start: initialStart,
+    end: initialEnd,
+  });
   const initialRangeRef = useRef({ start: initialStart, end: initialEnd });
   const callbacksRef = useRef({ onController, onError, onPlaybackProof, onDuration, onState });
 
@@ -113,14 +154,6 @@ export function YouTubeClipPlayer({
   useEffect(() => {
     callbacksRef.current = { onController, onError, onPlaybackProof, onDuration, onState };
   }, [onController, onError, onPlaybackProof, onDuration, onState]);
-
-  // Crucial: keep mount URL static. Modifying the iframe's src attribute in React
-  // forces the browser to reload the entire iframe, destroying the YT.Player bridge,
-  // blocking mobile autoplay, and resetting the player back to 0:01.
-  const [mountSrc] = useState(() => {
-    const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
-    return `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&start=${Math.floor(initialStart)}&end=${Math.floor(initialEnd)}${origin}`;
-  });
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -146,17 +179,21 @@ export function YouTubeClipPlayer({
         targetEnd = nextEndSeconds;
         callbacksRef.current.onError(null);
 
+        let didCallPlayer = false;
+
         // 1. Native IFrame API method invocation
         if (player) {
           try {
             player.loadVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
             player.seekTo(startSeconds, true);
             player.playVideo();
+            didCallPlayer = true;
           } catch {
             try {
               player.cueVideoById({ videoId, startSeconds, endSeconds: nextEndSeconds });
               player.seekTo(startSeconds, true);
               player.playVideo();
+              didCallPlayer = true;
             } catch {}
           }
         }
@@ -168,7 +205,7 @@ export function YouTubeClipPlayer({
             contentWin.postMessage(JSON.stringify({
               event: "command",
               func: "loadVideoById",
-              args: [{ videoId, startSeconds, endSeconds: nextEndSeconds }],
+              args: [videoId, startSeconds, nextEndSeconds],
             }), "*");
             contentWin.postMessage(JSON.stringify({
               event: "command",
@@ -182,6 +219,11 @@ export function YouTubeClipPlayer({
             }), "*");
           }
         } catch {}
+
+        // 3. Fallback range update if native player was not ready
+        if (!didCallPlayer) {
+          setActiveRange({ start: startSeconds, end: nextEndSeconds });
+        }
 
         proofTimer = setTimeout(() => {
           if (player) {
@@ -263,10 +305,13 @@ export function YouTubeClipPlayer({
     };
   }, [videoId]);
 
+  const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
+
   return (
     <iframe
+      id={`yt-clip-player-${videoId}`}
       ref={iframeRef}
-      src={mountSrc}
+      src={`https://www.youtube.com/embed/${videoId}?enablejsapi=1&playsinline=1&rel=0&autoplay=1&start=${Math.floor(activeRange.start)}&end=${Math.floor(activeRange.end)}${origin}`}
       title={`Preview: ${title}`}
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
       allowFullScreen
