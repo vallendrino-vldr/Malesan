@@ -533,7 +533,7 @@ export function VideoEditor({
                 {mode === "auto_clip" ? (
                   <>
                     Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
-                    <span className="text-ember"> {cost * 2} kredit sekali scan.</span>
+                    <span className="text-ember font-bold"> {Math.max(10, cost * 2)} kredit sekali scan.</span>
                   </>
                 ) : (
                   <>

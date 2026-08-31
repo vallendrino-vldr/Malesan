@@ -348,7 +348,7 @@ export function StudioWideTile({
 }
 
 export function StudioAutoClipWideTile({
-  cost = 4,
+  cost = 10,
 }: {
   cost?: number;
 }) {

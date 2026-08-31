@@ -541,7 +541,7 @@ export default async function AppPage({
               <StudioWideTile mod="lancar_bahasa" cost={costLancarBahasa} />
 
               {/* WIDE FLAGSHIP CARD: AUTO CLIP YOUTUBE (Flagship Feature directly under Lancar Inggris) */}
-              <StudioAutoClipWideTile cost={costClip} />
+              <StudioAutoClipWideTile cost={Math.max(10, costVideo * 2)} />
             </div>
           </section>
 
