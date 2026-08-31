@@ -193,8 +193,11 @@ export function VideoEditor({
     setLayout((curr) => ({
       ...curr,
       panX,
-      focus: "center",
+      focus: "manual_keyframe",
+      trajectory: undefined,
+      zoom: curr.ratio === "16:9" && (curr.zoom ?? 1.0) <= 1.05 ? 1.25 : curr.zoom,
     }));
+    setFramingMode("manual_keyframe");
   };
 
   const handleSplitPanChange = (speaker: "top" | "bottom", panX: number) => {
@@ -1504,9 +1507,14 @@ function VideoPreviewPlayer({
         )}
 
         {tracked && (
-          <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
-            <span className="size-1.5 rounded-full bg-ember animate-ping" />
-            <span>Face Track</span>
+          <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 rounded-full border border-ember/50 bg-black/80 px-2.5 py-1 text-[10px] font-bold text-white shadow-xl backdrop-blur-md">
+            <span className="size-2 rounded-full bg-ember animate-pulse" />
+            <span className="text-ember font-extrabold tracking-wide">
+              {currentPanX < 0.38 ? "Host (Kiri)" : currentPanX > 0.62 ? "Tamu (Kanan)" : "Fokus Utama"}
+            </span>
+            <span className="text-[9px] text-white/70 font-mono">
+              ({Math.round(currentPanX * 100)}%)
+            </span>
           </div>
         )}
         {safeZones && <SafeZones />}
@@ -1779,57 +1787,61 @@ function CaptionOverlay({
 
   return (
     <div
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      className={`absolute inset-x-0 flex -translate-y-1/2 justify-center px-3 text-center z-30 select-none touch-none cursor-ns-resize group ${
-        isDragging ? "ring-2 ring-ember/60 rounded-xl bg-black/40 py-1" : ""
-      }`}
+      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-3 text-center z-30 select-none"
       style={{ top: `${effectivePos * 100}%` }}
     >
-      {isDragging && (
-        <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 rounded-md bg-ember px-1.5 py-0.5 text-[9px] font-bold text-obsidian shadow-md whitespace-nowrap">
-          Posisi Teks: {Math.round(effectivePos * 100)}%
-        </span>
-      )}
-      <p
-        className="max-w-[92%] leading-[1.45] drop-shadow-md transition-transform duration-75 group-hover:scale-[1.02]"
-        style={{
-          fontFamily: `"${style.fontFamily}", sans-serif`,
-          fontWeight: style.bold ? 800 : 700,
-          fontSize: `calc(${style.mode === "word" ? "clamp(16px, 5.2vw, 26px)" : "clamp(12px, 3.8vw, 19px)"} * ${style.fontScale})`,
-          color: style.textColor,
-          textShadow:
-            style.style === "outline"
-              ? "-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 3px 6px rgba(0,0,0,0.9)"
-              : style.style === "plain"
-                ? "0 2px 8px rgba(0,0,0,0.95)"
-                : "none",
-          background: style.style === "box" ? "rgba(12,10,8,0.72)" : "transparent",
-          padding: style.style === "box" ? "0.3em 0.6em" : 0,
-          borderRadius: style.style === "box" ? "0.45em" : 0,
-          border: style.style === "box" ? "1px solid rgba(255,255,255,0.12)" : "none",
-          opacity: style.animation === "fade" ? eased : 1,
-          transform: style.animation === "pop" && style.mode === "word" ? `scale(${0.88 + eased * 0.12})` : undefined,
-        }}
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        className={`pointer-events-auto touch-none cursor-ns-resize max-w-[92%] transition-all ${
+          isDragging ? "ring-2 ring-ember/80 rounded-xl bg-black/60 px-3 py-1 shadow-2xl scale-105" : ""
+        }`}
       >
-        {shown.map((w, i) => (
-          <span
-            key={i}
-            className="inline-block transition-colors duration-100"
-            style={{
-              color: w.active ? style.highlightColor : undefined,
-              textShadow: w.active && (style.activeGlow || style.style === "plain")
-                ? `0 0 0.5em ${style.highlightColor}, 0 0 1em ${style.highlightColor}`
-                : undefined,
-              marginInline: "0.14em",
-            }}
-          >
-            {w.text}
+        {isDragging && (
+          <span className="pointer-events-none block -mt-4 mb-1 text-[9px] font-extrabold text-ember uppercase tracking-wider">
+            Posisi Teks: {Math.round(effectivePos * 100)}%
           </span>
-        ))}
-      </p>
+        )}
+        <p
+          className="leading-[1.45] drop-shadow-md"
+          style={{
+            fontFamily: `"${style.fontFamily}", sans-serif`,
+            fontWeight: style.bold ? 800 : 700,
+            fontSize: `calc(${style.mode === "word" ? "clamp(16px, 5.2vw, 26px)" : "clamp(12px, 3.8vw, 19px)"} * ${style.fontScale})`,
+            color: style.textColor,
+            textShadow:
+              style.style === "outline"
+                ? "-1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 3px 6px rgba(0,0,0,0.9)"
+                : style.style === "plain"
+                  ? "0 2px 8px rgba(0,0,0,0.95)"
+                  : "none",
+            background: style.style === "box" ? "rgba(12,10,8,0.72)" : "transparent",
+            padding: style.style === "box" ? "0.3em 0.6em" : 0,
+            borderRadius: style.style === "box" ? "0.45em" : 0,
+            border: style.style === "box" ? "1px solid rgba(255,255,255,0.12)" : "none",
+            opacity: style.animation === "fade" ? eased : 1,
+            transform: style.animation === "pop" && style.mode === "word" ? `scale(${0.88 + eased * 0.12})` : undefined,
+          }}
+        >
+          {shown.map((w, i) => (
+            <span
+              key={i}
+              className="inline-block transition-colors duration-100"
+              style={{
+                color: w.active ? style.highlightColor : undefined,
+                textShadow: w.active && (style.activeGlow || style.style === "plain")
+                  ? `0 0 0.5em ${style.highlightColor}, 0 0 1em ${style.highlightColor}`
+                  : undefined,
+                marginInline: "0.14em",
+              }}
+            >
+              {w.text}
+            </span>
+          ))}
+        </p>
+      </div>
     </div>
   );
 }
