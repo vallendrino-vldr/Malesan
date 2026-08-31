@@ -216,8 +216,13 @@ export function VideoEditor({
 
   const handleFramingModeChange = (mode: "auto_ai" | "podcast_split" | "manual_keyframe" | "preset_left" | "preset_center" | "preset_right") => {
     setFramingMode(mode);
-    if (mode === "podcast_split") {
-      setLayout((curr) => ({ ...curr, focus: "podcast_split", trajectory: undefined, panX: undefined }));
+    if (mode === "auto_ai") {
+      setManualKeyframes([]);
+      setLayout((curr) => ({ ...curr, focus: "podcast_dynamic", manualKeyframes: undefined, panX: undefined }));
+      void runFaceTrack("podcast_dynamic");
+    } else if (mode === "podcast_split") {
+      setManualKeyframes([]);
+      setLayout((curr) => ({ ...curr, focus: "podcast_split", trajectory: undefined, manualKeyframes: undefined, panX: undefined }));
     } else if (mode === "preset_left") {
       handlePanChange(0.2);
     } else if (mode === "preset_center") {
@@ -238,11 +243,11 @@ export function VideoEditor({
     setPhase("ready");
     setError(null);
   };
-  const runFaceTrack = useCallback(async (mode: "face_track" | "podcast_dynamic" = "face_track") => {
+  const runFaceTrack = useCallback(async (mode: "face_track" | "podcast_dynamic" = "podcast_dynamic") => {
     const video = videoRef.current;
     if (!video || trackingFace) return;
     setTrackingFace(true); setError(null);
-    setStatus(mode === "podcast_dynamic" ? "AI lagi menganalisis giliran bicara pembicara..." : "AI lagi ngikutin wajah...");
+    setStatus(mode === "podcast_dynamic" ? "AI lagi menganalisis giliran bicara & posisi wajah..." : "AI lagi ngikutin wajah...");
     try {
       const { detectFaceTrajectory } = await import("@/lib/video/detect-faces");
       const trajectory = await detectFaceTrajectory(video, {
@@ -253,10 +258,11 @@ export function VideoEditor({
         ...current,
         focus: mode === "podcast_dynamic" ? "podcast_dynamic" : "center",
         trajectory,
+        manualKeyframes: undefined,
       }));
       setStatus(
         mode === "podcast_dynamic"
-          ? "Auto Speaker Switch (Host ↔ Tamu) aktif."
+          ? "Auto AI Framing & Speaker Switch aktif."
           : trajectory.some((keyframe) => keyframe.confidence > 0)
           ? "Face track aktif."
           : "Wajah fokus tengah aktif."
@@ -1113,11 +1119,30 @@ function VideoPreviewPlayer({
       if (!active) return;
       const v = videoRef.current;
       if (v && !v.paused) {
-        setNow(v.currentTime);
-        onTimeChange?.(v.currentTime);
+        const ct = v.currentTime;
+        setNow(ct);
+        onTimeChange?.(ct);
         if (Number.isFinite(v.duration) && v.duration > 0 && duration !== v.duration) {
           setDuration(v.duration);
           onDurationChange?.(v.duration);
+        }
+
+        // Frame-level locking for podcast split view: keep secondary within 25ms
+        if (isPodcastSplit) {
+          const v2 = secondaryVideoRef.current;
+          if (v2) {
+            if (Math.abs(v2.currentTime - ct) > 0.025) {
+              v2.currentTime = ct;
+            }
+            if (v2.paused) {
+              void v2.play().catch(() => {});
+            }
+          }
+        }
+      } else if (v && v.paused && isPodcastSplit) {
+        const v2 = secondaryVideoRef.current;
+        if (v2 && !v2.paused) {
+          v2.pause();
         }
       }
       rafRef.current = requestAnimationFrame(tick);
@@ -1127,7 +1152,7 @@ function VideoPreviewPlayer({
       active = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [videoRef, onTimeChange, onDurationChange, duration]);
+  }, [videoRef, onTimeChange, onDurationChange, duration, isPodcastSplit]);
 
   // Sync secondary video with primary video during playback/seek for split view
   useEffect(() => {
@@ -1136,7 +1161,10 @@ function VideoPreviewPlayer({
     const v2 = secondaryVideoRef.current;
     if (!v1 || !v2) return;
 
-    const onPlay = () => { void v2.play().catch(() => {}); };
+    const onPlay = () => {
+      v2.currentTime = v1.currentTime;
+      void v2.play().catch(() => {});
+    };
     const onPause = () => { v2.pause(); };
     const onSeeking = () => { v2.currentTime = v1.currentTime; };
 
@@ -1179,12 +1207,20 @@ function VideoPreviewPlayer({
 
   const togglePlay = () => {
     const v = videoRef.current;
+    const v2 = secondaryVideoRef.current;
     if (!v) return;
     if (v.paused) {
+      if (isPodcastSplit && v2) {
+        v2.currentTime = v.currentTime;
+        void v2.play().catch(() => {});
+      }
       void v.play().catch(() => {});
       setIsPlaying(true);
     } else {
       v.pause();
+      if (isPodcastSplit && v2) {
+        v2.pause();
+      }
       setIsPlaying(false);
     }
   };
@@ -1406,10 +1442,14 @@ function VideoPreviewPlayer({
           onChange={(e) => {
             const t = parseFloat(e.target.value);
             const v = videoRef.current;
+            const v2 = secondaryVideoRef.current;
             if (v) {
               v.currentTime = t;
               setNow(t);
               onTimeChange?.(t);
+            }
+            if (isPodcastSplit && v2) {
+              v2.currentTime = t;
             }
           }}
           className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"

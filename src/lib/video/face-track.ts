@@ -20,7 +20,7 @@ export function buildCropTrajectory(samples: readonly FaceSample[]): CropKeyfram
   let switchCandidate: { x: number; y: number; count: number } | null = null;
   for (const sample of ordered) {
     const valid = sample.faces
-      .filter((face) => face.score >= 0.45 && face.width > 0 && face.height > 0)
+      .filter((face) => face.score >= 0.25 && face.width > 0 && face.height > 0)
       .map((face) => ({ ...center(face), score: face.score, area: face.width * face.height }))
       .sort((a, b) => b.area * b.score - a.area * a.score);
     let target = valid[0] ?? null;

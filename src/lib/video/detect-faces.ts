@@ -29,7 +29,7 @@ export async function detectFaceTrajectory(
   const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
   const vision = await FilesetResolver.forVisionTasks(WASM);
   const create = (delegate: "GPU" | "CPU") => FaceDetector.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "IMAGE", minDetectionConfidence: 0.35,
+    baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "IMAGE", minDetectionConfidence: 0.25,
   });
   let detector;
   try {
@@ -39,6 +39,10 @@ export async function detectFaceTrajectory(
     return options.mode === "podcast_dynamic"
       ? buildPodcastSpeakerTrajectory([], Number.isFinite(video.duration) ? video.duration : 60)
       : [];
+  }
+  const wasPlaying = !video.paused;
+  if (wasPlaying) {
+    try { video.pause(); } catch {}
   }
   const originalTime = video.currentTime;
   const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
