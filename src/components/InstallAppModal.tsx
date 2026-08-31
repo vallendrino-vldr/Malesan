@@ -111,39 +111,32 @@ export function InstallAppModal({
           </button>
         </div>
 
-        <div className="relative z-10 space-y-3">
-          {/* Native Engine / APK Pro for Android (PRIMARY HERO CARD) */}
+        <div className="relative z-10 space-y-3.5">
+          {/* Card 1: APK Android (Native Performance) */}
           {isMobile ? (
-            <div className="rounded-2xl border-2 border-ember/60 bg-gradient-to-br from-ember/15 via-[#1a1410] to-[#12100e] p-4 space-y-3.5 shadow-xl relative overflow-hidden">
-              <div className="pointer-events-none absolute -right-6 -bottom-6 size-28 rounded-full bg-ember/10 blur-xl" />
-              <div className="flex items-center justify-between">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-ember/50 bg-ember/25 px-2.5 py-0.5 text-[10px] font-extrabold text-ember uppercase tracking-wider shadow-xs">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-3" aria-hidden="true">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
-                  Versi Pro Terbaik (Rekomendasi)
-                </span>
-                <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="rounded-2xl border border-ember/40 bg-gradient-to-b from-ember/[0.08] to-surface-raised/40 p-4 space-y-3 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-ember/15 text-ember">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                  </div>
+                  <span className="font-display text-sm font-bold text-ink">APK Android (Native)</span>
+                </div>
+                <span className="shrink-0 rounded-full border border-ember/30 bg-ember/15 px-2 py-0.5 text-[10px] font-bold text-ember">
                   60fps Hardware
                 </span>
               </div>
 
-              <div>
-                <p className="font-display text-sm font-bold text-white">Malesan APK Pro (Native Android)</p>
-                <div className="mt-2 space-y-1.5 text-xs text-white/90 leading-relaxed">
-                  <div className="flex items-start gap-2">
-                    <span className="text-ember font-bold shrink-0">⚡</span>
-                    <span><strong>Auto Clip 1-Klik dari YouTube:</strong> Tekan <em>Share</em> di aplikasi YouTube langsung terdeteksi &amp; dipotong otomatis.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-ember font-bold shrink-0">💾</span>
-                    <span><strong>Simpan Langsung ke Galeri:</strong> Hasil ekspor otomatis tersimpan di folder <em>DCIM/Malesan</em> tanpa download manual.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-ember font-bold shrink-0">🚀</span>
-                    <span><strong>Potong Podcast 1-2 Jam:</strong> Akselerasi hardware native tanpa batasan kuota memori browser / crash.</span>
-                  </div>
+              <div className="space-y-1.5 text-xs text-muted leading-relaxed">
+                <div className="flex items-center gap-2">
+                  <span className="size-1 rounded-full bg-ember shrink-0" />
+                  <span>Akselerasi hardware 60fps &amp; olah video panjang tanpa lag</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="size-1 rounded-full bg-ember shrink-0" />
+                  <span>Deteksi via tombol Share YouTube &amp; simpan langsung ke Galeri</span>
                 </div>
               </div>
 
@@ -151,27 +144,29 @@ export function InstallAppModal({
                 href="/malesan.apk"
                 download="malesan.apk"
                 onClick={onClose}
-                className="btn-ember flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-display text-xs font-extrabold text-obsidian shadow-lg transition-all active:scale-[0.99] hover:brightness-110"
+                className="btn-ember flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-display text-xs font-bold text-obsidian shadow-md transition-all active:scale-[0.99] hover:brightness-105"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-4.5" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4" aria-hidden="true">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Download APK Pro (52 MB)</span>
+                <span>Unduh APK Pro (52 MB)</span>
               </a>
 
-              <a
-                href="/malesan-arm32.apk"
-                download="malesan-arm32.apk"
-                onClick={onClose}
-                className="flex h-7 w-full cursor-pointer items-center justify-center rounded-lg text-[11px] font-semibold text-mist hover:text-white transition-colors"
-              >
-                HP lawas (32-bit)? Unduh versi ARM32
-              </a>
+              <div className="text-center">
+                <a
+                  href="/malesan-arm32.apk"
+                  download="malesan-arm32.apk"
+                  onClick={onClose}
+                  className="inline-block text-[10px] font-semibold text-mist hover:text-ember transition-colors"
+                >
+                  HP lawas (32-bit)? Unduh versi ARM32
+                </a>
+              </div>
             </div>
           ) : (
-            <div className="rounded-2xl border border-hairline/80 bg-surface/50 p-4 space-y-3">
+            <div className="rounded-2xl border border-hairline/80 bg-surface-raised/40 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-ink">Malesan Bridge (PC / Laptop)</span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/10 px-2 py-0.5 text-[10px] font-mono font-bold text-ember">
@@ -180,7 +175,7 @@ export function InstallAppModal({
               </div>
 
               <p className="text-xs text-muted leading-relaxed">
-                Diperlukan jika kamu ingin <strong>memotong video YouTube langsung di browser PC</strong> tanpa kuota server. Ekstrak zip lalu jalankan <code>INSTALL_MALESAN_BRIDGE.cmd</code>.
+                Diperlukan jika kamu ingin memotong video YouTube langsung di browser PC tanpa kuota server. Ekstrak zip lalu jalankan <code>INSTALL_MALESAN_BRIDGE.cmd</code>.
               </p>
 
               <a
@@ -199,28 +194,47 @@ export function InstallAppModal({
             </div>
           )}
 
-          {/* PWA App Card (LIGHTWEIGHT SECONDARY OPTION) */}
-          <div className="rounded-2xl border border-hairline bg-surface/40 p-3.5 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-ink">Mode PWA ({isMobile ? "Web Ringan" : "Aplikasi Desktop"})</span>
-              <span className="text-[10px] font-semibold text-muted">Alternatif Tanpa Download</span>
+          {/* Card 2: PWA Web App (Instant Home Screen Shortcut) */}
+          <div className="rounded-2xl border border-hairline bg-surface-raised/30 p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mist">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+                    <line x1="12" y1="18" x2="12.01" y2="18" />
+                  </svg>
+                </div>
+                <span className="font-display text-sm font-bold text-ink">
+                  {isMobile ? "PWA (Layar Utama)" : "Aplikasi Desktop"}
+                </span>
+              </div>
+              <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-mist">
+                Instan &amp; Ringan
+              </span>
             </div>
 
-            <p className="text-micro text-muted leading-relaxed">
-              Langsung pasang shortcut ke layar utama HP tanpa file APK. Pembaruan otomatis setiap buka aplikasi.
-            </p>
+            <div className="space-y-1.5 text-xs text-muted leading-relaxed">
+              <div className="flex items-center gap-2">
+                <span className="size-1 rounded-full bg-mist shrink-0" />
+                <span>Pasang shortcut langsung ke layar HP tanpa download file</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="size-1 rounded-full bg-mist shrink-0" />
+                <span>Pembaruan sistem otomatis setiap membuka aplikasi</span>
+              </div>
+            </div>
 
             <button
               type="button"
               onClick={triggerPwaInstall}
-              className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] font-display text-xs font-semibold text-mist hover:text-white hover:border-white/20 transition-all active:scale-[0.99]"
+              className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-display text-xs font-semibold text-ink transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99]"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>{isInstalled ? "Buka Mode PWA" : isMobile ? "Pasang Shortcut ke Layar Utama" : "Pasang Aplikasi Desktop"}</span>
+              <span>{isInstalled ? "Buka di Mode PWA" : isMobile ? "Pasang ke Layar Utama" : "Pasang Aplikasi Desktop"}</span>
             </button>
           </div>
         </div>
