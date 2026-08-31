@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     return json({ error: "Link YouTube-nya gak valid. Paste link share-nya ya." }, 400);
   }
 
-  const cost = SCAN_MINUTES * (await getVideoCostPerMin());
+  const cost = Math.max(10, SCAN_MINUTES * (await getVideoCostPerMin()));
   if (profile.credits_free + profile.credits_paid < cost) {
     return json(
       { error: `Perlu ${cost} kredit buat scan video ini. Top up dulu ya.`, needed: cost },

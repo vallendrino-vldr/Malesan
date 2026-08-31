@@ -123,8 +123,8 @@ export function StudioPanel({
 
   const clipCost = costs.clip ?? 4;
   const threadCost = costs.thread ?? 3;
-  const videoCost = costs.video ?? 2;
-  const videoNoWmCost = costs.videoNoWm ?? 5;
+  const videoCost = costs.video ?? 5;
+  const videoNoWmCost = costs.videoNoWm ?? 10;
   const affiliateCost = costs.affiliate ?? 3;
 
   if (!mod) {

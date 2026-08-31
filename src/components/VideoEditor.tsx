@@ -1127,12 +1127,23 @@ function VideoPreviewPlayer({
           onDurationChange?.(v.duration);
         }
 
-        // Frame-level locking for podcast split view: keep secondary within 25ms
+        // Frame-level locking for podcast split view without freezing the decoder
         if (isPodcastSplit) {
           const v2 = secondaryVideoRef.current;
           if (v2) {
-            if (Math.abs(v2.currentTime - ct) > 0.025) {
+            const drift = ct - v2.currentTime;
+            if (Math.abs(drift) > 0.4) {
+              // Desync is large (>400ms): one single seek
               v2.currentTime = ct;
+            } else if (drift > 0.03) {
+              // Secondary is lagging behind slightly: speed it up to catch up smoothly
+              v2.playbackRate = 1.08;
+            } else if (drift < -0.03) {
+              // Secondary is slightly ahead: slow it down to let primary catch up
+              v2.playbackRate = 0.92;
+            } else if (v2.playbackRate !== 1.0) {
+              // In perfect sync: standard playback speed
+              v2.playbackRate = 1.0;
             }
             if (v2.paused) {
               void v2.play().catch(() => {});
@@ -1141,8 +1152,12 @@ function VideoPreviewPlayer({
         }
       } else if (v && v.paused && isPodcastSplit) {
         const v2 = secondaryVideoRef.current;
-        if (v2 && !v2.paused) {
-          v2.pause();
+        if (v2) {
+          if (!v2.paused) v2.pause();
+          v2.playbackRate = 1.0;
+          if (Math.abs(v2.currentTime - v.currentTime) > 0.02) {
+            v2.currentTime = v.currentTime;
+          }
         }
       }
       rafRef.current = requestAnimationFrame(tick);
@@ -1163,18 +1178,32 @@ function VideoPreviewPlayer({
 
     const onPlay = () => {
       v2.currentTime = v1.currentTime;
+      v2.playbackRate = 1.0;
       void v2.play().catch(() => {});
     };
-    const onPause = () => { v2.pause(); };
-    const onSeeking = () => { v2.currentTime = v1.currentTime; };
+    const onPause = () => {
+      v2.pause();
+      v2.playbackRate = 1.0;
+      v2.currentTime = v1.currentTime;
+    };
+    const onSeeking = () => {
+      v2.currentTime = v1.currentTime;
+      v2.playbackRate = 1.0;
+    };
+    const onSeeked = () => {
+      v2.currentTime = v1.currentTime;
+      v2.playbackRate = 1.0;
+    };
 
     v1.addEventListener("play", onPlay);
     v1.addEventListener("pause", onPause);
     v1.addEventListener("seeking", onSeeking);
+    v1.addEventListener("seeked", onSeeked);
     return () => {
       v1.removeEventListener("play", onPlay);
       v1.removeEventListener("pause", onPause);
       v1.removeEventListener("seeking", onSeeking);
+      v1.removeEventListener("seeked", onSeeked);
     };
   }, [isPodcastSplit, videoRef]);
 

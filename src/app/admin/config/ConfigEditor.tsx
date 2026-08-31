@@ -191,14 +191,14 @@ export function ConfigEditor({ rows }: { rows: ConfigRow[] }) {
         <div className="grid grid-cols-2 gap-2">
           <NumberRow
             label="Per menit"
-            initial={Number(byKey["cost_video_per_min"]?.value ?? 2)}
+            initial={Number(byKey["cost_video_per_min"]?.value ?? 5)}
             busy={busy === "cost_video_per_min"}
             saved={ok === "cost_video_per_min"}
             onSave={(v) => save("cost_video_per_min", v)}
           />
           <NumberRow
             label="Hapus watermark"
-            initial={Number(byKey["cost_no_watermark"]?.value ?? 5)}
+            initial={Number(byKey["cost_no_watermark"]?.value ?? 10)}
             busy={busy === "cost_no_watermark"}
             saved={ok === "cost_no_watermark"}
             onSave={(v) => save("cost_no_watermark", v)}
