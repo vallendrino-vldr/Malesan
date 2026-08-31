@@ -668,6 +668,7 @@ export function VideoEditor({
                   onDurationChange={setVideoDuration}
                   onManualPanChange={(panX) => handlePanChange(panX)}
                   onSplitPanChange={handleSplitPanChange}
+                  onSubtitleYChange={(y) => setLayout((curr) => ({ ...curr, subtitleY: y }))}
                 />
               </div>
 
@@ -827,7 +828,19 @@ export function VideoEditor({
                       </div>
                     </div>
                     {words.length > 0 ? (
-                      <TranscriptEditor words={words} onChange={setWords} />
+                      <SentenceTimelineEditor
+                        words={words}
+                        lines={lines}
+                        currentTime={currentTimeNow}
+                        onSeek={(t) => {
+                          const v = videoRef.current;
+                          if (v) {
+                            v.currentTime = t;
+                            setCurrentTimeNow(t);
+                          }
+                        }}
+                        onChange={setWords}
+                      />
                     ) : (
                       <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
                         <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
@@ -968,7 +981,19 @@ export function VideoEditor({
                     </div>
                   </div>
                   {words.length > 0 ? (
-                    <TranscriptEditor words={words} onChange={setWords} />
+                    <SentenceTimelineEditor
+                      words={words}
+                      lines={lines}
+                      currentTime={currentTimeNow}
+                      onSeek={(t) => {
+                        const v = videoRef.current;
+                        if (v) {
+                          v.currentTime = t;
+                          setCurrentTimeNow(t);
+                        }
+                      }}
+                      onChange={setWords}
+                    />
                   ) : (
                     <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
                       <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
@@ -1077,6 +1102,7 @@ function VideoPreviewPlayer({
   onDurationChange,
   onManualPanChange,
   onSplitPanChange,
+  onSubtitleYChange,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -1089,11 +1115,19 @@ function VideoPreviewPlayer({
   onDurationChange?: (duration: number) => void;
   onManualPanChange?: (panX: number) => void;
   onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
+  onSubtitleYChange?: (y: number) => void;
 }) {
   const [now, setNow] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [subtitleDragging, setSubtitleDragging] = useState(false);
+  const subDragInfoRef = useRef<{ isDragging: boolean; startY: number; startPos: number; moved: boolean }>({
+    isDragging: false,
+    startY: 0,
+    startPos: 0.8,
+    moved: false,
+  });
   const rafRef = useRef<number | null>(null);
   const isPodcastSplit = layout.ratio === "9:16" && layout.focus === "podcast_split";
   const secondaryVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -1112,6 +1146,37 @@ function VideoPreviewPlayer({
     target: "single",
     moved: false,
   });
+
+  const handleSubtitlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const startPos = layout.subtitleY ?? style.position ?? 0.8;
+    subDragInfoRef.current = {
+      isDragging: true,
+      startY: e.clientY,
+      startPos,
+      moved: false,
+    };
+    setSubtitleDragging(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handleSubtitlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!subDragInfoRef.current.isDragging) return;
+    const deltaY = e.clientY - subDragInfoRef.current.startY;
+    if (Math.abs(deltaY) > 3) subDragInfoRef.current.moved = true;
+    const nextY = Math.max(0.12, Math.min(0.88, subDragInfoRef.current.startPos + deltaY / 380));
+    onSubtitleYChange?.(Number(nextY.toFixed(3)));
+  };
+
+  const handleSubtitlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    subDragInfoRef.current.isDragging = false;
+    setSubtitleDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {}
+  };
 
   useEffect(() => {
     let active = true;
@@ -1331,15 +1396,20 @@ function VideoPreviewPlayer({
           <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
         </div>
 
-        {/* Custom Frosted Play Icon Overlay when Paused */}
+        {/* Custom Frosted Play Icon Overlay when Paused (Non-blocking backdrop) */}
         {!isPlaying && (
-          <div
-            onClick={togglePlay}
-            className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 backdrop-blur-[1px] cursor-pointer transition-all"
-          >
-            <div className="flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/30 transition-transform hover:scale-105 active:scale-95">
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-[1px] transition-all">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              className="pointer-events-auto flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/30 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              aria-label="Play Video"
+            >
               <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
-            </div>
+            </button>
           </div>
         )}
 
@@ -1440,7 +1510,18 @@ function VideoPreviewPlayer({
           </div>
         )}
         {safeZones && <SafeZones />}
-        {active && <CaptionOverlay line={active.line} now={now} style={style} />}
+        {active && (
+          <CaptionOverlay
+            line={active.line}
+            now={now}
+            style={style}
+            subtitleY={layout.subtitleY}
+            isDragging={subtitleDragging}
+            onPointerDown={handleSubtitlePointerDown}
+            onPointerMove={handleSubtitlePointerMove}
+            onPointerUp={handleSubtitlePointerUp}
+          />
+        )}
       </div>
 
       {/* Sleek Mini Timeline Scrubber */}
@@ -1493,9 +1574,197 @@ function VideoPreviewPlayer({
   );
 }
 
+
+
+
+function SentenceTimelineEditor({
+  words,
+  lines,
+  currentTime,
+  onSeek,
+  onChange,
+}: {
+  words: Word[];
+  lines: Line[];
+  currentTime: number;
+  onSeek: (t: number) => void;
+  onChange: (w: Word[]) => void;
+}) {
+  const [viewMode, setViewMode] = useState<"timeline" | "paragraph">("timeline");
+  const text = useMemo(() => words.map((w) => w.word).join(" "), [words]);
+
+  const commitBulk = (newVal: string) => {
+    const tokens = newVal.trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return;
+    if (tokens.length <= words.length) {
+      onChange(
+        words
+          .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
+          .filter((_, i) => i < tokens.length),
+      );
+    } else {
+      const totalDur = words.length ? words[words.length - 1].end : 5;
+      const durPerTok = totalDur / tokens.length;
+      onChange(
+        tokens.map((tok, i) => ({
+          word: tok,
+          start: i < words.length ? words[i].start : i * durPerTok,
+          end: i < words.length ? words[i].end : (i + 1) * durPerTok,
+        })),
+      );
+    }
+  };
+
+  const updateLineText = (lineIdx: number, newText: string) => {
+    const targetLine = lines[lineIdx];
+    if (!targetLine) return;
+    const tokens = newText.trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) return;
+
+    const start = targetLine.start;
+    const end = targetLine.end;
+    const dur = Math.max(0.2, end - start);
+    const durPerToken = dur / tokens.length;
+
+    const newWordsForLine: Word[] = tokens.map((tok, i) => ({
+      word: tok,
+      start: Number((start + i * durPerToken).toFixed(2)),
+      end: Number((start + (i + 1) * durPerToken).toFixed(2)),
+    }));
+
+    const lineStartIndex = words.findIndex(
+      (w) => w.start === targetLine.words[0]?.start && w.word === targetLine.words[0]?.word
+    );
+    if (lineStartIndex === -1) {
+      const before = words.filter((w) => w.end <= start);
+      const after = words.filter((w) => w.start >= end);
+      onChange([...before, ...newWordsForLine, ...after]);
+      return;
+    }
+
+    const before = words.slice(0, lineStartIndex);
+    const after = words.slice(lineStartIndex + targetLine.words.length);
+    onChange([...before, ...newWordsForLine, ...after]);
+  };
+
+  const formatTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(1);
+    return `${m.toString().padStart(2, "0")}:${s.padStart(4, "0")}`;
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-mini font-bold text-ink">Edit Teks Subtitle ({lines.length} Kalimat)</p>
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-surface-raised p-0.5 border border-hairline text-micro font-bold">
+          <button
+            type="button"
+            onClick={() => setViewMode("timeline")}
+            className={`px-2 py-1 rounded-md transition-colors ${viewMode === "timeline" ? "bg-ember text-obsidian" : "text-muted hover:text-ink"}`}
+          >
+            Per Kalimat
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("paragraph")}
+            className={`px-2 py-1 rounded-md transition-colors ${viewMode === "paragraph" ? "bg-ember text-obsidian" : "text-muted hover:text-ink"}`}
+          >
+            Paragraf
+          </button>
+        </div>
+      </div>
+
+      {viewMode === "paragraph" ? (
+        <div className="rounded-xl border border-hairline bg-surface p-3 space-y-2">
+          <textarea
+            key={text}
+            defaultValue={text}
+            onBlur={(e) => commitBulk(e.target.value)}
+            rows={5}
+            placeholder="Teks subtitle..."
+            className="w-full resize-none rounded-lg border border-hairline bg-obsidian/40 p-2.5 text-sm text-ink outline-none focus:border-ember/50"
+          />
+          <p className="text-micro text-muted">
+            Ketuk di luar kotak untuk menerapkan perubahan teks secara massal.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
+          {lines.map((line, idx) => {
+            const isSpeaking = currentTime >= line.start && currentTime <= line.end + 0.3;
+            const lineStr = line.words.map((w) => w.word).join(" ");
+            return (
+              <div
+                key={`${idx}-${line.start}`}
+                className={`rounded-xl border p-2.5 transition-all ${
+                  isSpeaking
+                    ? "border-ember bg-ember/10 ring-1 ring-ember/30"
+                    : "border-hairline bg-surface-raised/40 hover:border-white/20"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onSeek(line.start)}
+                    className="flex items-center gap-1 rounded-md bg-obsidian/70 px-2 py-0.5 text-micro font-mono font-bold text-ember border border-hairline hover:bg-ember hover:text-obsidian transition-colors cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5"><path d="M8 5v14l11-7z"/></svg>
+                    <span>{formatTime(line.start)} - {formatTime(line.end)}</span>
+                  </button>
+                  {isSpeaking && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-ember/20 px-2 py-0.5 text-[9px] font-bold text-ember">
+                      <span className="size-1.5 rounded-full bg-ember animate-pulse" />
+                      Sedang Bicara
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  defaultValue={lineStr}
+                  onBlur={(e) => {
+                    if (e.target.value !== lineStr) {
+                      updateLineText(idx, e.target.value);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  className="w-full rounded-lg border border-hairline/80 bg-obsidian/60 px-2.5 py-1.5 text-xs text-ink outline-none focus:border-ember/60 transition-colors"
+                  placeholder="Ketik kalimat ini..."
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Preview overlay: same per-word reveal the export burns in — only spoken
- *  words show, the latest one lit. */
-function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: CaptionStyle }) {
+ *  words show, the latest one lit, with touch-drag positioning. */
+function CaptionOverlay({
+  line,
+  now,
+  style,
+  subtitleY,
+  isDragging,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+}: {
+  line: Line;
+  now: number;
+  style: CaptionStyle;
+  subtitleY?: number;
+  isDragging?: boolean;
+  onPointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void;
+  onPointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void;
+}) {
   const spoken = line.words.filter((w) => w.start <= now + 0.01).length;
   if (!spoken) return null;
   const currentIdx = spoken - 1;
@@ -1505,13 +1774,27 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
     style.mode === "word"
       ? [{ text: line.words[currentIdx].word, active: true }]
       : line.words.map((w, i) => ({ text: w.word, active: i === currentIdx }));
+
+  const effectivePos = subtitleY ?? style.position;
+
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 flex -translate-y-1/2 justify-center px-4 text-center z-10 select-none"
-      style={{ top: `${style.position * 100}%` }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      className={`absolute inset-x-0 flex -translate-y-1/2 justify-center px-3 text-center z-30 select-none touch-none cursor-ns-resize group ${
+        isDragging ? "ring-2 ring-ember/60 rounded-xl bg-black/40 py-1" : ""
+      }`}
+      style={{ top: `${effectivePos * 100}%` }}
     >
+      {isDragging && (
+        <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 rounded-md bg-ember px-1.5 py-0.5 text-[9px] font-bold text-obsidian shadow-md whitespace-nowrap">
+          Posisi Teks: {Math.round(effectivePos * 100)}%
+        </span>
+      )}
       <p
-        className="max-w-[92%] leading-[1.45] drop-shadow-md"
+        className="max-w-[92%] leading-[1.45] drop-shadow-md transition-transform duration-75 group-hover:scale-[1.02]"
         style={{
           fontFamily: `"${style.fontFamily}", sans-serif`,
           fontWeight: style.bold ? 800 : 700,
@@ -1546,50 +1829,6 @@ function CaptionOverlay({ line, now, style }: { line: Line; now: number; style: 
             {w.text}
           </span>
         ))}
-      </p>
-    </div>
-  );
-}
-
-
-function TranscriptEditor({ words, onChange }: { words: Word[]; onChange: (w: Word[]) => void }) {
-  const text = useMemo(() => words.map((w) => w.word).join(" "), [words]);
-
-  const commit = (newVal: string) => {
-    const tokens = newVal.trim().split(/\s+/).filter(Boolean);
-    if (!tokens.length) return;
-    if (tokens.length <= words.length) {
-      onChange(
-        words
-          .map((w, i) => (i < tokens.length ? { ...w, word: tokens[i] } : w))
-          .filter((_, i) => i < tokens.length),
-      );
-    } else {
-      const totalDur = words.length ? words[words.length - 1].end : 5;
-      const durPerTok = totalDur / tokens.length;
-      onChange(
-        tokens.map((tok, i) => ({
-          word: tok,
-          start: i < words.length ? words[i].start : i * durPerTok,
-          end: i < words.length ? words[i].end : (i + 1) * durPerTok,
-        })),
-      );
-    }
-  };
-
-  return (
-    <div className="rounded-xl border border-hairline bg-surface p-3">
-      <p className="mb-2 text-mini font-semibold text-ink">Betulin teks (kalau ada typo)</p>
-      <textarea
-        key={text}
-        defaultValue={text}
-        onBlur={(e) => commit(e.target.value)}
-        rows={5}
-        placeholder="Teks subtitle..."
-        className="w-full resize-none rounded-lg border border-hairline bg-obsidian/40 p-2.5 text-sm text-ink outline-none focus:border-ember/50"
-      />
-      <p className="mt-1.5 text-micro text-muted">
-        Betulin ejaan atau lirik — ketuk di luar kotak untuk menerapkan perubahan.
       </p>
     </div>
   );

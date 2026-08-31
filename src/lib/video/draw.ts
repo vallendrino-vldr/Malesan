@@ -91,7 +91,10 @@ export function drawFrame(
   ctx.restore();
 
   const a = activeAt(lines, t);
-  if (a) drawCaption(ctx, a.line, t, style, W, H);
+  if (a) {
+    const effectiveStyle = layout.subtitleY != null ? { ...style, position: layout.subtitleY } : style;
+    drawCaption(ctx, a.line, t, effectiveStyle, W, H);
+  }
   if (watermark) drawWatermark(ctx, W, H);
 }
 

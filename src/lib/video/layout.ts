@@ -12,6 +12,8 @@ export type VideoLayout = {
   panX?: number;
   splitTopPanX?: number;
   splitBottomPanX?: number;
+  subtitleY?: number;
+  subtitleX?: number;
 };
 
 export const ratioValue = (ratio: VideoRatio) => {
