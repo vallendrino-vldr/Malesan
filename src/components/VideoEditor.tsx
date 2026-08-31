@@ -197,6 +197,15 @@ export function VideoEditor({
     }));
   };
 
+  const handleSplitPanChange = (speaker: "top" | "bottom", panX: number) => {
+    setLayout((curr) => ({
+      ...curr,
+      focus: "podcast_split",
+      splitTopPanX: speaker === "top" ? panX : (curr.splitTopPanX ?? 0.25),
+      splitBottomPanX: speaker === "bottom" ? panX : (curr.splitBottomPanX ?? 0.75),
+    }));
+  };
+
   const handleZoomChange = (zoom: number) => {
     setCurrentZoom(zoom);
     setLayout((curr) => ({
@@ -652,6 +661,7 @@ export function VideoEditor({
                   onTimeChange={setCurrentTimeNow}
                   onDurationChange={setVideoDuration}
                   onManualPanChange={(panX) => handlePanChange(panX)}
+                  onSplitPanChange={handleSplitPanChange}
                 />
               </div>
 
@@ -772,8 +782,11 @@ export function VideoEditor({
                       keyframes={manualKeyframes}
                       currentPanX={currentPanX}
                       currentZoom={currentZoom}
+                      splitTopPanX={layout.splitTopPanX}
+                      splitBottomPanX={layout.splitBottomPanX}
                       onPanChange={handlePanChange}
                       onZoomChange={handleZoomChange}
+                      onSplitPanChange={handleSplitPanChange}
                       onAddKeyframe={handleAddKeyframe}
                       onRemoveKeyframe={handleRemoveKeyframe}
                       onSeek={(t) => {
@@ -909,8 +922,11 @@ export function VideoEditor({
                     keyframes={manualKeyframes}
                     currentPanX={currentPanX}
                     currentZoom={currentZoom}
+                    splitTopPanX={layout.splitTopPanX}
+                    splitBottomPanX={layout.splitBottomPanX}
                     onPanChange={handlePanChange}
                     onZoomChange={handleZoomChange}
+                    onSplitPanChange={handleSplitPanChange}
                     onAddKeyframe={handleAddKeyframe}
                     onRemoveKeyframe={handleRemoveKeyframe}
                     onSeek={(t) => {
@@ -1054,6 +1070,7 @@ function VideoPreviewPlayer({
   onTimeChange,
   onDurationChange,
   onManualPanChange,
+  onSplitPanChange,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -1065,13 +1082,30 @@ function VideoPreviewPlayer({
   onTimeChange?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
   onManualPanChange?: (panX: number) => void;
+  onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
 }) {
   const [now, setNow] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const rafRef = useRef<number | null>(null);
   const isPodcastSplit = layout.ratio === "9:16" && layout.focus === "podcast_split";
   const secondaryVideoRef = useRef<HTMLVideoElement | null>(null);
-  const isDraggingRef = useRef(false);
-  const startPosRef = useRef({ x: 0, panX: 0 });
+  const dragInfoRef = useRef<{
+    isDragging: boolean;
+    startX: number;
+    startY: number;
+    startPanX: number;
+    target: "single" | "top" | "bottom";
+    moved: boolean;
+  }>({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    target: "single",
+    moved: false,
+  });
 
   useEffect(() => {
     let active = true;
@@ -1081,7 +1115,8 @@ function VideoPreviewPlayer({
       if (v && !v.paused) {
         setNow(v.currentTime);
         onTimeChange?.(v.currentTime);
-        if (Number.isFinite(v.duration) && v.duration > 0) {
+        if (Number.isFinite(v.duration) && v.duration > 0 && duration !== v.duration) {
+          setDuration(v.duration);
           onDurationChange?.(v.duration);
         }
       }
@@ -1092,7 +1127,7 @@ function VideoPreviewPlayer({
       active = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [videoRef, onTimeChange, onDurationChange]);
+  }, [videoRef, onTimeChange, onDurationChange, duration]);
 
   // Sync secondary video with primary video during playback/seek for split view
   useEffect(() => {
@@ -1126,6 +1161,8 @@ function VideoPreviewPlayer({
   const currentZoom = currentKeyframe?.zoom ?? layout.zoom ?? 1.0;
 
   const objectPosition = `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`;
+  const topObjectPosition = `${((layout.splitTopPanX ?? 0.25) * 100).toFixed(2)}% 45%`;
+  const bottomObjectPosition = `${((layout.splitBottomPanX ?? 0.75) * 100).toFixed(2)}% 45%`;
   const videoTransform = currentZoom > 1.01 ? `scale(${currentZoom.toFixed(2)})` : undefined;
   const resolvedVideoSrc = videoUrl
     ? videoUrl.includes("#t=")
@@ -1135,71 +1172,184 @@ function VideoPreviewPlayer({
 
   const containerRatioClass =
     layout.ratio === "9:16"
-      ? "aspect-[9/16] h-[48vh] sm:h-[56vh] max-h-[500px] w-auto max-w-[320px]"
+      ? "aspect-[9/16] w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] mx-auto"
       : layout.ratio === "16:9"
-      ? "aspect-video h-[30vh] sm:h-[38vh] max-h-[360px] w-auto max-w-[480px]"
-      : "aspect-square h-[36vh] sm:h-[44vh] max-h-[420px] w-auto max-w-[340px]";
+      ? "aspect-video w-full max-w-[480px] mx-auto"
+      : "aspect-square w-full max-w-[330px] mx-auto";
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    if (e.clientY - rect.top > rect.height * 0.8) return; // Allow native video controls interaction
-    isDraggingRef.current = true;
-    startPosRef.current = {
-      x: e.clientX,
-      panX: currentPanX,
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (v.paused) {
+      void v.play().catch(() => {});
+      setIsPlaying(true);
+    } else {
+      v.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const handlePointerDownTarget = (e: React.PointerEvent<HTMLDivElement>, target: "single" | "top" | "bottom") => {
+    const startPan = target === "top"
+      ? (layout.splitTopPanX ?? 0.25)
+      : target === "bottom"
+      ? (layout.splitBottomPanX ?? 0.75)
+      : currentPanX;
+
+    dragInfoRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      startPanX: startPan,
+      target,
+      moved: false,
     };
+    setIsDragging(true);
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDraggingRef.current) return;
-    const deltaX = e.clientX - startPosRef.current.x;
-    // Map drag pixels to pan ratio: dragging left reveals right, dragging right reveals left
-    const panSensitivity = 0.003;
-    const nextPanX = Math.max(0, Math.min(1, startPosRef.current.panX - deltaX * panSensitivity));
-    onManualPanChange?.(nextPanX);
+  const handlePointerMoveTarget = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragInfoRef.current.isDragging) return;
+    const deltaX = e.clientX - dragInfoRef.current.startX;
+    const deltaY = e.clientY - dragInfoRef.current.startY;
+    if (Math.hypot(deltaX, deltaY) > 4) {
+      dragInfoRef.current.moved = true;
+    }
+
+    const panSensitivity = 0.0025;
+    const nextPanX = Math.max(0, Math.min(1, dragInfoRef.current.startPanX - deltaX * panSensitivity));
+
+    if (dragInfoRef.current.target === "top") {
+      onSplitPanChange?.("top", nextPanX);
+    } else if (dragInfoRef.current.target === "bottom") {
+      onSplitPanChange?.("bottom", nextPanX);
+    } else {
+      onManualPanChange?.(nextPanX);
+    }
   };
 
-  const handlePointerUp = () => {
-    isDraggingRef.current = false;
+  const handlePointerUpTarget = () => {
+    if (dragInfoRef.current.isDragging && !dragInfoRef.current.moved) {
+      togglePlay();
+    }
+    dragInfoRef.current.isDragging = false;
+    setIsDragging(false);
+  };
+
+  const formatMinSec = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      className={`relative mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5 transition-all duration-300 touch-none cursor-grab active:cursor-grabbing ${containerRatioClass}`}
-    >
-      {/* Ultra-Luxury Watermark Preview */}
-      {watermark && (
-        <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-ember drop-shadow-[0_0_4px_rgba(255,138,61,0.6)]">
-            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
-          </svg>
-          <span className="font-display text-[11px] font-extrabold tracking-wide text-white">malesan<span className="text-ember font-bold">.my.id</span></span>
+    <div className="flex flex-col items-center w-full space-y-2">
+      {/* 9:16 True Phone Canvas */}
+      <div
+        className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl ring-1 ring-white/5 touch-none select-none cursor-grab active:cursor-grabbing ${containerRatioClass}`}
+      >
+        {/* Ultra-Luxury Watermark Preview */}
+        {watermark && (
+          <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-1.5 rounded-full border border-ember/30 bg-black/60 px-2.5 py-1 backdrop-blur-md shadow-md">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-ember drop-shadow-[0_0_4px_rgba(255,138,61,0.6)]">
+              <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+            </svg>
+            <span className="font-display text-[11px] font-extrabold tracking-wide text-white">malesan<span className="text-ember font-bold">.my.id</span></span>
+          </div>
+        )}
+
+        {/* Interactive Drag Hint */}
+        <div className="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2.5 py-0.5 text-[9px] font-semibold text-white/90 backdrop-blur-md shadow-md">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+          <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
         </div>
-      )}
 
-      {/* Interactive Drag Hint */}
-      <div className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2 py-0.5 text-[9px] font-semibold text-white/90 backdrop-blur-md shadow-md">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-        <span>Geser sudut kamera</span>
-      </div>
+        {/* Custom Frosted Play Icon Overlay when Paused */}
+        {!isPlaying && (
+          <div
+            onClick={togglePlay}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/25 backdrop-blur-[1px] cursor-pointer transition-all"
+          >
+            <div className="flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/30 transition-transform hover:scale-105 active:scale-95">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+        )}
 
-      {isPodcastSplit ? (
-        <div className="absolute inset-0 flex flex-col">
-          {/* Top Half: Left Speaker (Host) */}
-          <div className="relative h-1/2 w-full overflow-hidden border-b border-white/30">
+        {isPodcastSplit ? (
+          <div className="absolute inset-0 flex flex-col">
+            {/* Top Half: Left Speaker (Host) */}
+            <div
+              onPointerDown={(e) => handlePointerDownTarget(e, "top")}
+              onPointerMove={handlePointerMoveTarget}
+              onPointerUp={handlePointerUpTarget}
+              onPointerCancel={handlePointerUpTarget}
+              className="relative h-1/2 w-full overflow-hidden border-b border-white/30 cursor-grab active:cursor-grabbing"
+            >
+              <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[8px] font-bold text-blue-300 border border-blue-400/30">
+                <span className="size-1.5 rounded-full bg-blue-400" />
+                <span>Host (Atas)</span>
+              </div>
+              <video
+                ref={videoRef}
+                src={resolvedVideoSrc}
+                preload="auto"
+                playsInline
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onTimeUpdate={(e) => {
+                  setNow(e.currentTarget.currentTime);
+                  onTimeChange?.(e.currentTarget.currentTime);
+                }}
+                onSeeked={(e) => {
+                  setNow(e.currentTarget.currentTime);
+                  onTimeChange?.(e.currentTarget.currentTime);
+                }}
+                className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
+                style={{ objectPosition: topObjectPosition }}
+              />
+            </div>
+
+            {/* Bottom Half: Right Speaker (Guest) */}
+            <div
+              onPointerDown={(e) => handlePointerDownTarget(e, "bottom")}
+              onPointerMove={handlePointerMoveTarget}
+              onPointerUp={handlePointerUpTarget}
+              onPointerCancel={handlePointerUpTarget}
+              className="relative h-1/2 w-full overflow-hidden cursor-grab active:cursor-grabbing"
+            >
+              <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[8px] font-bold text-emerald-300 border border-emerald-400/30">
+                <span className="size-1.5 rounded-full bg-emerald-400" />
+                <span>Tamu (Bawah)</span>
+              </div>
+              <video
+                ref={secondaryVideoRef}
+                src={resolvedVideoSrc}
+                preload="auto"
+                muted
+                playsInline
+                className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
+                style={{ objectPosition: bottomObjectPosition }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div
+            onPointerDown={(e) => handlePointerDownTarget(e, "single")}
+            onPointerMove={handlePointerMoveTarget}
+            onPointerUp={handlePointerUpTarget}
+            onPointerCancel={handlePointerUpTarget}
+            className="absolute inset-0 cursor-grab active:cursor-grabbing"
+          >
             <video
               ref={videoRef}
               src={resolvedVideoSrc}
               preload="auto"
               playsInline
-              controls
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
               onTimeUpdate={(e) => {
                 setNow(e.currentTarget.currentTime);
                 onTimeChange?.(e.currentTarget.currentTime);
@@ -1208,55 +1358,68 @@ function VideoPreviewPlayer({
                 setNow(e.currentTarget.currentTime);
                 onTimeChange?.(e.currentTarget.currentTime);
               }}
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ objectPosition: "left center" }}
+              className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
+              style={{
+                objectPosition,
+                transform: videoTransform,
+                transformOrigin: `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`,
+              }}
             />
           </div>
-          {/* Bottom Half: Right Speaker (Guest) */}
-          <div className="relative h-1/2 w-full overflow-hidden">
-            <video
-              ref={secondaryVideoRef}
-              src={resolvedVideoSrc}
-              preload="auto"
-              muted
-              playsInline
-              className="absolute inset-0 h-full w-full object-cover"
-              style={{ objectPosition: "right center" }}
-            />
-          </div>
-        </div>
-      ) : (
-        <video
-          ref={videoRef}
-          src={resolvedVideoSrc}
-          preload="auto"
-          controls
-          playsInline
-          onTimeUpdate={(e) => {
-            setNow(e.currentTarget.currentTime);
-            onTimeChange?.(e.currentTarget.currentTime);
-          }}
-          onSeeked={(e) => {
-            setNow(e.currentTarget.currentTime);
-            onTimeChange?.(e.currentTarget.currentTime);
-          }}
-          className="absolute inset-0 h-full w-full object-cover transition-[object-position] duration-75"
-          style={{
-            objectPosition,
-            transform: videoTransform,
-            transformOrigin: `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`,
-          }}
-        />
-      )}
+        )}
 
-      {tracked && (
-        <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
-          <span className="size-1.5 rounded-full bg-ember animate-ping" />
-          <span>Face Track</span>
-        </div>
-      )}
-      {safeZones && <SafeZones />}
-      {active && <CaptionOverlay line={active.line} now={now} style={style} />}
+        {tracked && (
+          <div className="pointer-events-none absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 rounded-full border border-ember/40 bg-obsidian/80 px-2.5 py-0.5 text-[10px] font-bold text-ember backdrop-blur-xs shadow-xs">
+            <span className="size-1.5 rounded-full bg-ember animate-ping" />
+            <span>Face Track</span>
+          </div>
+        )}
+        {safeZones && <SafeZones />}
+        {active && <CaptionOverlay line={active.line} now={now} style={style} />}
+      </div>
+
+      {/* Sleek Mini Timeline Scrubber */}
+      <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] flex items-center gap-2 px-1 py-1 rounded-xl bg-surface-raised border border-hairline shadow-xs">
+        <button
+          type="button"
+          onClick={togglePlay}
+          className="flex size-7 items-center justify-center rounded-lg bg-ember text-obsidian font-bold shadow-xs hover:bg-ember/90 shrink-0 transition-transform active:scale-95"
+          aria-label={isPlaying ? "Pause Video" : "Play Video"}
+        >
+          {isPlaying ? (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+          )}
+        </button>
+
+        <span className="font-mono text-[10px] font-bold text-ink shrink-0">
+          {formatMinSec(now)}
+        </span>
+
+        <input
+          type="range"
+          min="0"
+          max={duration || 1}
+          step="0.05"
+          value={now}
+          onChange={(e) => {
+            const t = parseFloat(e.target.value);
+            const v = videoRef.current;
+            if (v) {
+              v.currentTime = t;
+              setNow(t);
+              onTimeChange?.(t);
+            }
+          }}
+          className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
+          aria-label="Timeline Video"
+        />
+
+        <span className="font-mono text-[10px] font-semibold text-mist shrink-0">
+          {formatMinSec(duration)}
+        </span>
+      </div>
     </div>
   );
 }

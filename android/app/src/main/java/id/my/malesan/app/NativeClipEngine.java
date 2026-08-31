@@ -165,19 +165,19 @@ final class NativeClipEngine {
                 request.addOption("--format", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]/bv*[height<=1080]+ba/b[height<=1080]")
                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
-            case 2: // Tier 2: iOS Client (Bypasses Web Botguard while downloading true 1080p/720p HD streams)
-                request.addOption("--extractor-args", "youtube:player_client=ios")
+            case 2: // Tier 2: Web Safari & MWeb (Bypasses bot checks with full Desktop 1080p AVC stream)
+                request.addOption("--extractor-args", "youtube:player_client=web_safari,mweb")
                        .addOption("--format", "bv*[height<=1080]+ba/bestvideo[height<=1080]+bestaudio/b[height<=1080]/best")
                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
-            case 3: // Tier 3: TV Embedded & MWeb Client (Bypasses VEVO music restrictions with HD priority)
-                request.addOption("--extractor-args", "youtube:player_client=tv_embedded,mweb")
-                       .addOption("--format", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/bv*+ba/b")
-                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,res,size");
+            case 3: // Tier 3: TV Embedded & Web Creator Client (Bypasses music restrictions with 1080p stream)
+                request.addOption("--extractor-args", "youtube:player_client=tv_embedded,web_creator")
+                       .addOption("--format", "bv*[height<=1080]+ba/bestvideo[height<=1080]+bestaudio/b[height<=1080]/best")
+                       .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size");
                 break;
-            case 4: // Tier 4: Android Client Fallback
+            case 4: // Tier 4: iOS & Android Universal Fallback
             default:
-                request.addOption("--extractor-args", "youtube:player_client=android")
+                request.addOption("--extractor-args", "youtube:player_client=ios,android")
                        .addOption("-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best")
                        .addOption("--format-sort", "res:1080,res:720,fps:60,vcodec:h264,res,size");
                 break;

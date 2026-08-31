@@ -60,12 +60,14 @@ export function drawFrame(
   } catch {}
 
   if (layout.ratio === "9:16" && layout.focus === "podcast_split") {
-    // 1. Top half: Left speaker (Host)
-    const topCrop = coverCrop(sw, sh, W, H / 2, "left");
+    // 1. Top half: Left speaker / Host (Custom or Auto-Detected Pan)
+    const topPanX = layout.splitTopPanX ?? 0.25;
+    const topCrop = trackedCoverCrop(sw, sh, W, H / 2, { time: t, x: topPanX, y: 0.45, confidence: 1.0 });
     ctx.drawImage(video, topCrop.sx, topCrop.sy, topCrop.sw, topCrop.sh, 0, 0, W, H / 2);
 
-    // 2. Bottom half: Right speaker (Guest)
-    const bottomCrop = coverCrop(sw, sh, W, H / 2, "right");
+    // 2. Bottom half: Right speaker / Guest (Custom or Auto-Detected Pan)
+    const bottomPanX = layout.splitBottomPanX ?? 0.75;
+    const bottomCrop = trackedCoverCrop(sw, sh, W, H / 2, { time: t, x: bottomPanX, y: 0.45, confidence: 1.0 });
     ctx.drawImage(video, bottomCrop.sx, bottomCrop.sy, bottomCrop.sw, bottomCrop.sh, 0, H / 2, W, H / 2);
 
     // 3. Separator hairline with subtle ambient shadow

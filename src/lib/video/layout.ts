@@ -10,6 +10,8 @@ export type VideoLayout = {
   manualKeyframes?: readonly ManualKeyframe[];
   zoom?: number;
   panX?: number;
+  splitTopPanX?: number;
+  splitBottomPanX?: number;
 };
 
 export const ratioValue = (ratio: VideoRatio) => {

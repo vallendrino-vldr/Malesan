@@ -29,7 +29,7 @@ export async function detectFaceTrajectory(
   const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
   const vision = await FilesetResolver.forVisionTasks(WASM);
   const create = (delegate: "GPU" | "CPU") => FaceDetector.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "VIDEO", minDetectionConfidence: 0.45,
+    baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "IMAGE", minDetectionConfidence: 0.35,
   });
   let detector;
   try {
@@ -45,10 +45,9 @@ export async function detectFaceTrajectory(
   const start = Math.max(0, Math.min(duration, options.start ?? 0));
   const end = Math.min(duration, Math.max(start, options.end ?? duration));
   const weak = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 4;
-  const step = weak ? 0.5 : 0.2;
+  const step = weak ? 0.4 : 0.2;
   const total = Math.max(1, Math.ceil((end - start) / step));
   const samples: FaceSample[] = [];
-  let lastTimestampMs = -1;
   const vw = video.videoWidth || 1;
   const vh = video.videoHeight || 1;
 
@@ -57,11 +56,8 @@ export async function detectFaceTrajectory(
       if (options.signal?.aborted) throw new DOMException("Dibatalkan", "AbortError");
       const targetTime = Math.min(time, end);
       await seek(video, targetTime);
-      const rawTimestampMs = Math.round(targetTime * 1000);
-      const timestampMs = Math.max(lastTimestampMs + 1, rawTimestampMs);
-      lastTimestampMs = timestampMs;
 
-      const result = detector.detectForVideo(video, timestampMs);
+      const result = detector.detect(video);
       samples.push({
         time: targetTime,
         faces: result.detections.map((detection) => {

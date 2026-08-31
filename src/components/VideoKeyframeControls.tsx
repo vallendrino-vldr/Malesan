@@ -9,8 +9,11 @@ interface VideoKeyframeControlsProps {
   keyframes: ManualKeyframe[];
   currentPanX: number;
   currentZoom: number;
+  splitTopPanX?: number;
+  splitBottomPanX?: number;
   onPanChange: (panX: number) => void;
   onZoomChange: (zoom: number) => void;
+  onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
   onAddKeyframe: (keyframe: Omit<ManualKeyframe, "id">) => void;
   onRemoveKeyframe: (id: string) => void;
   onSeek: (time: number) => void;
@@ -33,8 +36,11 @@ export function VideoKeyframeControls({
   keyframes,
   currentPanX,
   currentZoom,
+  splitTopPanX,
+  splitBottomPanX,
   onPanChange,
   onZoomChange,
+  onSplitPanChange,
   onAddKeyframe,
   onRemoveKeyframe,
   onSeek,
@@ -312,6 +318,72 @@ export function VideoKeyframeControls({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Split Podcast Dual-Camera Angle Controls */}
+      {framingMode === "podcast_split" && (
+        <div className="space-y-4 pt-1">
+          <div className="p-2.5 rounded-xl bg-ember/10 border border-ember/20 text-xs text-mist flex items-center gap-2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <span>Kamu bisa geser langsung frame video atas &amp; bawah di layar preview untuk sudut presisi.</span>
+          </div>
+
+          {/* Top Speaker (Host) Pan */}
+          <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-white flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-blue-400" />
+                <span>Kamera Atas (Host / Pembicara 1)</span>
+              </span>
+              <span className="font-mono text-ember font-bold">
+                {Math.round((splitTopPanX ?? 0.25) * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={splitTopPanX ?? 0.25}
+              onChange={(e) => onSplitPanChange?.("top", parseFloat(e.target.value))}
+              className="w-full accent-ember cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-mist">
+              <span>Kiri (0%)</span>
+              <span>Tengah (50%)</span>
+              <span>Kanan (100%)</span>
+            </div>
+          </div>
+
+          {/* Bottom Speaker (Guest) Pan */}
+          <div className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-white flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-emerald-400" />
+                <span>Kamera Bawah (Tamu / Pembicara 2)</span>
+              </span>
+              <span className="font-mono text-ember font-bold">
+                {Math.round((splitBottomPanX ?? 0.75) * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={splitBottomPanX ?? 0.75}
+              onChange={(e) => onSplitPanChange?.("bottom", parseFloat(e.target.value))}
+              className="w-full accent-ember cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-mist">
+              <span>Kiri (0%)</span>
+              <span>Tengah (50%)</span>
+              <span>Kanan (100%)</span>
+            </div>
+          </div>
         </div>
       )}
 
