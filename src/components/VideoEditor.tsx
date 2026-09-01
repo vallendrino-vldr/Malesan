@@ -521,7 +521,10 @@ export function VideoEditor({
   }, [captionLanguage, preset.maxGap, preset.maxWords, sourceLanguage, sourceWords, translating, words]);
 
   const doExport = useCallback(async () => {
-    if (!file || !words.length) return;
+    if (!file || file.size === 0 || !videoUrl || !words.length) {
+      setError("Hubungkan file video aslinya terlebih dahulu sebelum mengekspor.");
+      return;
+    }
     const v = videoRef.current;
     if (v && !v.paused) v.pause();
     setError(null);
@@ -703,7 +706,7 @@ export function VideoEditor({
 
             <div className="flex items-center gap-1.5 shrink-0">
               {words.length > 0 ? (
-                <button type="button" onClick={doExport} disabled={busy} className="btn-ember flex h-7.5 cursor-pointer items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
+                <button type="button" onClick={doExport} disabled={busy || !videoUrl} className="btn-ember flex h-7.5 cursor-pointer items-center gap-1 rounded-lg px-2.5 text-xs font-bold text-obsidian shadow-xs transition-transform active:scale-95 disabled:opacity-50">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <span>Export</span>
                 </button>
@@ -715,38 +718,7 @@ export function VideoEditor({
             </div>
           </div>
 
-          {/* Standby Video Banner when opening draft without cached video blob */}
-          {!videoUrl && (
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-ember/40 bg-ember/10 p-3 text-xs text-ink shadow-sm animate-in fade-in duration-200">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="size-8 rounded-xl bg-ember/20 text-ember border border-ember/30 flex items-center justify-center shrink-0">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-white truncate">Draf "{file?.name}" Terbuka ({words.length} Kata)</p>
-                  <p className="text-mist text-[11px] truncate">Pilih file videonya dari HP untuk memutar preview &amp; ekspor.</p>
-                </div>
-              </div>
-              <label className="btn-ember flex h-8 px-3 items-center justify-center gap-1.5 rounded-xl font-bold text-obsidian text-xs shrink-0 cursor-pointer shadow-sm active:scale-95 transition-all">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z"/></svg>
-                <span>Pilih Video</span>
-                <input
-                  type="file"
-                  accept="video/mp4,video/quicktime,video/webm"
-                  onChange={(e) => {
-                    const picked = e.target.files?.[0];
-                    if (picked) {
-                      if (videoUrl) URL.revokeObjectURL(videoUrl);
-                      setFile(picked);
-                      setVideoUrl(URL.createObjectURL(picked));
-                      setDoneMsg(`Video "${picked.name}" terhubung ke draf.`);
-                    }
-                  }}
-                  className="hidden"
-                />
-              </label>
-            </div>
-          )}
+
 
           {/* Desktop Dual-Pane & Mobile Centered Pro Canvas */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start pb-24 sm:pb-4">
@@ -766,6 +738,12 @@ export function VideoEditor({
                   onManualPanChange={(panX) => handlePanChange(panX)}
                   onSplitPanChange={handleSplitPanChange}
                   onSubtitleYChange={(y) => setLayout((curr) => ({ ...curr, subtitleY: y }))}
+                  onAttachVideo={(picked) => {
+                    if (videoUrl) URL.revokeObjectURL(videoUrl);
+                    setFile(picked);
+                    setVideoUrl(URL.createObjectURL(picked));
+                    setDoneMsg(`Video "${picked.name}" berhasil terhubung ke draf.`);
+                  }}
                 />
               </div>
 
@@ -1201,6 +1179,7 @@ function VideoPreviewPlayer({
   onManualPanChange,
   onSplitPanChange,
   onSubtitleYChange,
+  onAttachVideo,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -1214,6 +1193,7 @@ function VideoPreviewPlayer({
   onManualPanChange?: (panX: number) => void;
   onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
   onSubtitleYChange?: (y: number) => void;
+  onAttachVideo?: (file: File) => void;
 }) {
   const [now, setNow] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -1497,111 +1477,161 @@ function VideoPreviewPlayer({
           <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
         </div>
 
-        {/* Custom Frosted Play Icon Overlay when Paused (Non-blocking backdrop) */}
-        {!isPlaying && (
-          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-[1px] transition-all">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                togglePlay();
-              }}
-              className="pointer-events-auto flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/30 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
-              aria-label="Play Video"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-          </div>
-        )}
-
-        {isPodcastSplit ? (
-          <div className="absolute inset-0 flex flex-col">
-            {/* Top Half: Left Speaker (Host) */}
-            <div
-              onPointerDown={(e) => handlePointerDownTarget(e, "top")}
-              onPointerMove={handlePointerMoveTarget}
-              onPointerUp={handlePointerUpTarget}
-              onPointerCancel={handlePointerUpTarget}
-              className="relative h-1/2 w-full overflow-hidden border-b border-white/30 cursor-grab active:cursor-grabbing"
-            >
-              <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[8px] font-bold text-blue-300 border border-blue-400/30">
-                <span className="size-1.5 rounded-full bg-blue-400" />
-                <span>Host (Atas)</span>
-              </div>
-              <video
-                ref={videoRef}
-                src={resolvedVideoSrc}
-                preload="auto"
-                playsInline
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => setIsPlaying(false)}
-                onTimeUpdate={(e) => {
-                  setNow(e.currentTarget.currentTime);
-                  onTimeChange?.(e.currentTarget.currentTime);
-                }}
-                onSeeked={(e) => {
-                  setNow(e.currentTarget.currentTime);
-                  onTimeChange?.(e.currentTarget.currentTime);
-                }}
-                className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
-                style={{ objectPosition: topObjectPosition }}
-              />
+        {/* If videoUrl is missing (standby draft), show clean dedicated obsidian reconnect canvas */}
+        {!videoUrl ? (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-5 text-center bg-gradient-to-b from-surface via-obsidian to-black space-y-3.5 select-none">
+            <div className="relative size-14 rounded-2xl bg-ember/15 border border-ember/30 flex items-center justify-center text-ember shadow-xl shadow-ember/20">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-7">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+              <span className="absolute -top-1 -right-1 flex size-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ember opacity-75" />
+                <span className="relative inline-flex rounded-full size-3 bg-ember" />
+              </span>
             </div>
 
-            {/* Bottom Half: Right Speaker (Guest) */}
-            <div
-              onPointerDown={(e) => handlePointerDownTarget(e, "bottom")}
-              onPointerMove={handlePointerMoveTarget}
-              onPointerUp={handlePointerUpTarget}
-              onPointerCancel={handlePointerUpTarget}
-              className="relative h-1/2 w-full overflow-hidden cursor-grab active:cursor-grabbing"
-            >
-              <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[8px] font-bold text-emerald-300 border border-emerald-400/30">
-                <span className="size-1.5 rounded-full bg-emerald-400" />
-                <span>Tamu (Bawah)</span>
-              </div>
-              <video
-                ref={secondaryVideoRef}
-                src={resolvedVideoSrc}
-                preload="auto"
-                muted
-                playsInline
-                className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
-                style={{ objectPosition: bottomObjectPosition }}
-              />
+            <div className="space-y-1 max-w-[240px]">
+              <h3 className="font-display text-xs font-bold text-white tracking-wide">
+                Hubungkan File Video
+              </h3>
+              <p className="text-mist text-[11px] leading-relaxed">
+                Subtitle draf ({lines.length} baris) sudah termuat. Hubungkan file videonya dari HP kamu untuk memutar preview &amp; ekspor.
+              </p>
             </div>
+
+            <label className="btn-ember flex h-9.5 px-4 items-center justify-center gap-1.5 rounded-xl font-bold text-obsidian text-xs cursor-pointer shadow-lg shadow-ember/25 hover:brightness-110 active:scale-95 transition-all">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z"/></svg>
+              <span>Pilih Video dari HP</span>
+              <input
+                type="file"
+                accept="video/mp4,video/quicktime,video/webm"
+                onChange={(e) => {
+                  const picked = e.target.files?.[0];
+                  if (picked) onAttachVideo?.(picked);
+                }}
+                className="hidden"
+              />
+            </label>
+
+            <p className="text-[10px] text-muted max-w-[210px] leading-tight">
+              📁 Tersimpan di album Galeri atau folder Download / DCIM Malesan.
+            </p>
           </div>
         ) : (
-          <div
-            onPointerDown={(e) => handlePointerDownTarget(e, "single")}
-            onPointerMove={handlePointerMoveTarget}
-            onPointerUp={handlePointerUpTarget}
-            onPointerCancel={handlePointerUpTarget}
-            className="absolute inset-0 cursor-grab active:cursor-grabbing"
-          >
-            <video
-              ref={videoRef}
-              src={resolvedVideoSrc}
-              preload="auto"
-              playsInline
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              onTimeUpdate={(e) => {
-                setNow(e.currentTarget.currentTime);
-                onTimeChange?.(e.currentTarget.currentTime);
-              }}
-              onSeeked={(e) => {
-                setNow(e.currentTarget.currentTime);
-                onTimeChange?.(e.currentTarget.currentTime);
-              }}
-              className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
-              style={{
-                objectPosition,
-                transform: videoTransform,
-                transformOrigin: `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`,
-              }}
-            />
-          </div>
+          <>
+            {/* Interactive Drag Hint */}
+            <div className="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2.5 py-0.5 text-[9px] font-semibold text-white/90 backdrop-blur-md shadow-md">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
+              <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
+            </div>
+
+            {/* Custom Frosted Play Icon Overlay when Paused (Non-blocking backdrop) */}
+            {!isPlaying && (
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-black/20 backdrop-blur-[1px] transition-all">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    togglePlay();
+                  }}
+                  className="pointer-events-auto flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/30 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                  aria-label="Play Video"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+              </div>
+            )}
+
+            {isPodcastSplit ? (
+              <div className="absolute inset-0 flex flex-col">
+                {/* Top Half: Left Speaker (Host) */}
+                <div
+                  onPointerDown={(e) => handlePointerDownTarget(e, "top")}
+                  onPointerMove={handlePointerMoveTarget}
+                  onPointerUp={handlePointerUpTarget}
+                  onPointerCancel={handlePointerUpTarget}
+                  className="relative h-1/2 w-full overflow-hidden border-b border-white/30 cursor-grab active:cursor-grabbing"
+                >
+                  <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[8px] font-bold text-blue-300 border border-blue-400/30">
+                    <span className="size-1.5 rounded-full bg-blue-400" />
+                    <span>Host (Atas)</span>
+                  </div>
+                  <video
+                    ref={videoRef}
+                    src={resolvedVideoSrc}
+                    preload="auto"
+                    playsInline
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => setIsPlaying(false)}
+                    onTimeUpdate={(e) => {
+                      setNow(e.currentTarget.currentTime);
+                      onTimeChange?.(e.currentTarget.currentTime);
+                    }}
+                    onSeeked={(e) => {
+                      setNow(e.currentTarget.currentTime);
+                      onTimeChange?.(e.currentTarget.currentTime);
+                    }}
+                    className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
+                    style={{ objectPosition: topObjectPosition }}
+                  />
+                </div>
+
+                {/* Bottom Half: Right Speaker (Guest) */}
+                <div
+                  onPointerDown={(e) => handlePointerDownTarget(e, "bottom")}
+                  onPointerMove={handlePointerMoveTarget}
+                  onPointerUp={handlePointerUpTarget}
+                  onPointerCancel={handlePointerUpTarget}
+                  className="relative h-1/2 w-full overflow-hidden cursor-grab active:cursor-grabbing"
+                >
+                  <div className="pointer-events-none absolute top-2 right-2 z-10 flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[8px] font-bold text-emerald-300 border border-emerald-400/30">
+                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                    <span>Tamu (Bawah)</span>
+                  </div>
+                  <video
+                    ref={secondaryVideoRef}
+                    src={resolvedVideoSrc}
+                    preload="auto"
+                    muted
+                    playsInline
+                    className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
+                    style={{ objectPosition: bottomObjectPosition }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div
+                onPointerDown={(e) => handlePointerDownTarget(e, "single")}
+                onPointerMove={handlePointerMoveTarget}
+                onPointerUp={handlePointerUpTarget}
+                onPointerCancel={handlePointerUpTarget}
+                className="absolute inset-0 cursor-grab active:cursor-grabbing"
+              >
+                <video
+                  ref={videoRef}
+                  src={resolvedVideoSrc}
+                  preload="auto"
+                  playsInline
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onTimeUpdate={(e) => {
+                    setNow(e.currentTarget.currentTime);
+                    onTimeChange?.(e.currentTarget.currentTime);
+                  }}
+                  onSeeked={(e) => {
+                    setNow(e.currentTarget.currentTime);
+                    onTimeChange?.(e.currentTarget.currentTime);
+                  }}
+                  className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
+                  style={{
+                    objectPosition,
+                    transform: videoTransform,
+                    transformOrigin: `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`,
+                  }}
+                />
+              </div>
+            )}
+          </>
         )}
 
         {tracked && (
@@ -1631,51 +1661,62 @@ function VideoPreviewPlayer({
       </div>
 
       {/* Sleek Mini Timeline Scrubber */}
-      <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] flex items-center gap-2 px-1 py-1 rounded-xl bg-surface-raised border border-hairline shadow-xs">
-        <button
-          type="button"
-          onClick={togglePlay}
-          className="flex size-7 items-center justify-center rounded-lg bg-ember text-obsidian font-bold shadow-xs hover:bg-ember/90 shrink-0 transition-transform active:scale-95"
-          aria-label={isPlaying ? "Pause Video" : "Play Video"}
-        >
-          {isPlaying ? (
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-          ) : (
-            <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
-          )}
-        </button>
+      {videoUrl ? (
+        <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] flex items-center gap-2 px-1 py-1 rounded-xl bg-surface-raised border border-hairline shadow-xs">
+          <button
+            type="button"
+            onClick={togglePlay}
+            className="flex size-7 items-center justify-center rounded-lg bg-ember text-obsidian font-bold shadow-xs hover:bg-ember/90 shrink-0 transition-transform active:scale-95"
+            aria-label={isPlaying ? "Pause Video" : "Play Video"}
+          >
+            {isPlaying ? (
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+            )}
+          </button>
 
-        <span className="font-mono text-[10px] font-bold text-ink shrink-0">
-          {formatMinSec(now)}
-        </span>
+          <span className="font-mono text-[10px] font-bold text-ink shrink-0">
+            {formatMinSec(now)}
+          </span>
 
-        <input
-          type="range"
-          min="0"
-          max={duration || 1}
-          step="0.05"
-          value={now}
-          onChange={(e) => {
-            const t = parseFloat(e.target.value);
-            const v = videoRef.current;
-            const v2 = secondaryVideoRef.current;
-            if (v) {
-              v.currentTime = t;
-              setNow(t);
-              onTimeChange?.(t);
-            }
-            if (isPodcastSplit && v2) {
-              v2.currentTime = t;
-            }
-          }}
-          className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
-          aria-label="Timeline Video"
-        />
+          <input
+            type="range"
+            min="0"
+            max={duration || 1}
+            step="0.05"
+            value={now}
+            onChange={(e) => {
+              const t = parseFloat(e.target.value);
+              const v = videoRef.current;
+              const v2 = secondaryVideoRef.current;
+              if (v) {
+                v.currentTime = t;
+                setNow(t);
+                onTimeChange?.(t);
+              }
+              if (isPodcastSplit && v2) {
+                v2.currentTime = t;
+              }
+            }}
+            className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
+            aria-label="Timeline Video"
+          />
 
-        <span className="font-mono text-[10px] font-semibold text-mist shrink-0">
-          {formatMinSec(duration)}
-        </span>
-      </div>
+          <span className="font-mono text-[10px] font-semibold text-mist shrink-0">
+            {formatMinSec(duration)}
+          </span>
+        </div>
+      ) : (
+        <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-surface-raised/70 border border-hairline/60 text-xs text-mist font-medium">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span className="text-[11px]">Hubungkan video untuk memutar preview</span>
+        </div>
+      )}
     </div>
   );
 }
