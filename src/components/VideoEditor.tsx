@@ -23,7 +23,7 @@ import { ClipRadar } from "./ClipRadar";
 import { VideoKeyframeControls } from "./VideoKeyframeControls";
 import { VideoCompletionModal } from "./VideoCompletionModal";
 import { VideoProjectHistoryModal } from "./VideoProjectHistoryModal";
-import { saveVideoProject, type VideoProject } from "@/lib/video/project-history";
+import { saveVideoProject, getVideoProject, type VideoProject } from "@/lib/video/project-history";
 import { interpolateKeyframes, manualKeyframesToTrajectory, type ManualKeyframe } from "@/lib/video/keyframe-engine";
 /**
  * Video Auto-CC editor.
@@ -285,16 +285,45 @@ export function VideoEditor({
     }
   };
 
-  const handleSelectProject = (project: VideoProject) => {
-    setWords(project.words);
-    setSourceWords(project.words);
-    setStyle(project.style);
-    setPresetId(project.presetId as (typeof SOCIAL_PRESETS)[number]["id"]);
-    setLayout(project.layout);
-    if (project.manualKeyframes) setManualKeyframes(project.manualKeyframes);
-    if (project.framingMode) setFramingMode(project.framingMode);
-    setPhase("ready");
-    setError(null);
+  const handleSelectProject = async (project: VideoProject) => {
+    try {
+      const fullProject = (await getVideoProject(project.id)) || project;
+
+      setWords(fullProject.words);
+      setSourceWords(fullProject.words);
+      setStyle(fullProject.style);
+      if (fullProject.presetId) setPresetId(fullProject.presetId as (typeof SOCIAL_PRESETS)[number]["id"]);
+      setLayout(fullProject.layout);
+      if (fullProject.manualKeyframes) setManualKeyframes(fullProject.manualKeyframes);
+      if (fullProject.framingMode) setFramingMode(fullProject.framingMode);
+
+      if (fullProject.videoBlob && fullProject.videoBlob.size > 0) {
+        const restoredFile = new File([fullProject.videoBlob], fullProject.title, {
+          type: fullProject.videoBlob.type || "video/mp4",
+          lastModified: fullProject.updatedAt,
+        });
+        if (videoUrl) URL.revokeObjectURL(videoUrl);
+        setFile(restoredFile);
+        setVideoUrl(URL.createObjectURL(restoredFile));
+        setPhase("ready");
+        setDoneMsg(`Draf proyek "${fullProject.title}" berhasil dimuat.`);
+      } else {
+        // For drafts without cached blob, create a standby file so the editor opens immediately
+        const standbyFile = new File([new Blob([])], fullProject.title, {
+          type: "video/mp4",
+          lastModified: fullProject.updatedAt,
+        });
+        if (videoUrl) URL.revokeObjectURL(videoUrl);
+        setFile(standbyFile);
+        setVideoUrl("");
+        setPhase("ready");
+        setDoneMsg(`Draf subtitle "${fullProject.title}" berhasil dibuka.`);
+      }
+      setError(null);
+    } catch (err) {
+      console.error("Gagal membuka proyek:", err);
+      setError("Gagal memuat draf proyek.");
+    }
   };
   const runFaceTrack = useCallback(async (mode: "face_track" | "podcast_dynamic" = "podcast_dynamic") => {
     const video = videoRef.current;
@@ -372,10 +401,12 @@ export function VideoEditor({
   useEffect(() => {
     if (!file || words.length === 0) return;
     const timer = setTimeout(() => {
+      const shouldSaveBlob = file && file.size > 0 && file.size < 150 * 1024 * 1024;
       void saveVideoProject({
         id: file.name.replace(/\.[^.]+$/, "") || "project_default",
         title: file.name,
         durationSec: videoRef.current?.duration || 0,
+        videoBlob: shouldSaveBlob ? file : undefined,
         words,
         style,
         presetId,
@@ -684,7 +715,38 @@ export function VideoEditor({
             </div>
           </div>
 
-
+          {/* Standby Video Banner when opening draft without cached video blob */}
+          {!videoUrl && (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-ember/40 bg-ember/10 p-3 text-xs text-ink shadow-sm animate-in fade-in duration-200">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="size-8 rounded-xl bg-ember/20 text-ember border border-ember/30 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-white truncate">Draf "{file?.name}" Terbuka ({words.length} Kata)</p>
+                  <p className="text-mist text-[11px] truncate">Pilih file videonya dari HP untuk memutar preview &amp; ekspor.</p>
+                </div>
+              </div>
+              <label className="btn-ember flex h-8 px-3 items-center justify-center gap-1.5 rounded-xl font-bold text-obsidian text-xs shrink-0 cursor-pointer shadow-sm active:scale-95 transition-all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z"/></svg>
+                <span>Pilih Video</span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/webm"
+                  onChange={(e) => {
+                    const picked = e.target.files?.[0];
+                    if (picked) {
+                      if (videoUrl) URL.revokeObjectURL(videoUrl);
+                      setFile(picked);
+                      setVideoUrl(URL.createObjectURL(picked));
+                      setDoneMsg(`Video "${picked.name}" terhubung ke draf.`);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          )}
 
           {/* Desktop Dual-Pane & Mobile Centered Pro Canvas */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start pb-24 sm:pb-4">

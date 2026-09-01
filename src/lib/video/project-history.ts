@@ -9,6 +9,7 @@ export type VideoProject = {
   title: string;
   durationSec: number;
   thumbnailUrl?: string;
+  videoBlob?: Blob;
   words: Word[];
   style: CaptionStyle;
   presetId: string;
@@ -64,11 +65,19 @@ export async function listVideoProjects(): Promise<VideoProject[]> {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const index = store.index("updatedAt");
-      const req = index.getAll();
-      req.onsuccess = () => {
-        const results = (req.result as VideoProject[]) || [];
-        // Sort descending (newest first)
-        resolve(results.sort((a, b) => b.updatedAt - a.updatedAt));
+      const results: VideoProject[] = [];
+      const req = index.openCursor(null, "prev");
+      req.onsuccess = (event) => {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+        if (cursor) {
+          const val = cursor.value as VideoProject;
+          // Strip heavy videoBlob from list view to keep modal snappy
+          const { videoBlob: _blob, ...summary } = val;
+          results.push(summary as VideoProject);
+          cursor.continue();
+        } else {
+          resolve(results);
+        }
       };
       req.onerror = () => reject(req.error);
     });

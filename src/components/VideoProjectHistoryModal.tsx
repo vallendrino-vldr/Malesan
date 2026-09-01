@@ -149,12 +149,20 @@ export function VideoProjectHistoryModal({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="flex h-7 items-center gap-1 px-2.5 rounded-lg bg-ember/20 text-ember font-bold text-[11px] border border-ember/30 group-hover:bg-ember group-hover:text-obsidian transition-all">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectProject(project);
+                        onClose();
+                      }}
+                      className="flex h-7 cursor-pointer items-center gap-1 px-2.5 rounded-lg bg-ember/20 text-ember font-bold text-[11px] border border-ember/30 hover:bg-ember hover:text-obsidian transition-all active:scale-95 shadow-xs"
+                    >
                       <span>Buka</span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
                       </svg>
-                    </span>
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => handleDelete(project.id, e)}
