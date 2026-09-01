@@ -582,17 +582,17 @@ export function VideoEditor({
         const committed = await requestNative({ type: "GALLERY_COMMIT", downloadToken: prepared.downloadToken });
         if (committed.type !== "GALLERY_SAVED") throw new Error(committed.message ?? "Video gagal disimpan ke Galeri Android.");
         void requestNative({ type: "HAPTIC", strength: "heavy" }).catch(() => {});
-        setRenderedVideoUrl(undefined);
       } else {
-        const url = URL.createObjectURL(blob);
-        setRenderedVideoUrl(url);
         const a = document.createElement("a");
-        a.href = url;
+        a.href = URL.createObjectURL(blob);
         a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
         document.body.appendChild(a);
         a.click();
         a.remove();
       }
+
+      const url = URL.createObjectURL(blob);
+      setRenderedVideoUrl(url);
 
       setPhase("ready");
       setStatus("");
@@ -616,12 +616,12 @@ export function VideoEditor({
           <filter id="malesan-ultra-hd" colorInterpolationFilters="sRGB">
             <feConvolveMatrix
               order="3"
-              kernelMatrix="0 -0.35 0 -0.35 2.4 -0.35 0 -0.35 0"
+              kernelMatrix="0 -0.25 0 -0.25 2.0 -0.25 0 -0.25 0"
               preserveAlpha="true"
             />
           </filter>
           <filter id="malesan-clean-denoise" colorInterpolationFilters="sRGB">
-            <feGaussianBlur stdDeviation="0.45" />
+            <feGaussianBlur stdDeviation="0.40" />
           </filter>
         </defs>
       </svg>
@@ -1329,19 +1329,22 @@ function VideoPreviewPlayer({
     moved: false,
   });
 
+  const [isHoldingOriginal, setIsHoldingOriginal] = useState(false);
+
   const cssFilter = useMemo(() => {
+    if (isHoldingOriginal) return "none";
     const f = layout.filter ?? "ultra_hd";
     if (f === "ultra_hd" || f === "wink_hd") {
-      return "url(#malesan-ultra-hd) contrast(1.15) brightness(1.03) saturate(1.14)";
+      return "url(#malesan-ultra-hd) contrast(1.12) brightness(1.02) saturate(1.12)";
     }
     if (f === "fyp_pop") {
-      return "contrast(1.22) brightness(1.04) saturate(1.26)";
+      return "contrast(1.20) brightness(1.03) saturate(1.24)";
     }
     if (f === "clean_denoise" || f === "soft_clean") {
-      return "url(#malesan-clean-denoise) contrast(1.09) brightness(1.02) saturate(1.06)";
+      return "url(#malesan-clean-denoise) contrast(1.08) brightness(1.02) saturate(1.05)";
     }
     return "none";
-  }, [layout.filter]);
+  }, [layout.filter, isHoldingOriginal]);
 
   const handleSubtitlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -1655,6 +1658,37 @@ function VideoPreviewPlayer({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
               <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
             </div>
+
+            {/* Hold to Compare (Live Raw vs Filtered Preview) */}
+            <button
+              type="button"
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                setIsHoldingOriginal(true);
+                triggerHaptic(12);
+              }}
+              onPointerUp={() => setIsHoldingOriginal(false)}
+              onPointerLeave={() => setIsHoldingOriginal(false)}
+              onPointerCancel={() => setIsHoldingOriginal(false)}
+              className={`absolute top-2.5 right-2.5 z-30 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold backdrop-blur-md transition-all select-none cursor-pointer ${
+                isHoldingOriginal
+                  ? "bg-amber-400 text-obsidian border border-amber-300 shadow-lg scale-105"
+                  : "bg-black/60 text-white/90 border border-white/20 hover:border-ember/40 hover:bg-black/80 shadow-md active:scale-95"
+              }`}
+              title="Tekan dan tahan untuk melihat video asli tanpa filter"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              </svg>
+              <span>{isHoldingOriginal ? "RAW ASLI" : "Bandingkan (Hold)"}</span>
+            </button>
+
+            {isHoldingOriginal && (
+              <div className="pointer-events-none absolute top-11 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 rounded-full bg-black/90 border border-amber-400/70 px-3 py-1 text-[10px] font-extrabold text-amber-400 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 whitespace-nowrap">
+                <span className="size-1.5 rounded-full bg-amber-400 animate-ping" />
+                <span>VIDEO ASLI (RAW ORIGINAL)</span>
+              </div>
+            )}
 
             {/* Custom Frosted Play Icon Overlay when Paused (Non-blocking backdrop) */}
             {!isPlaying && (

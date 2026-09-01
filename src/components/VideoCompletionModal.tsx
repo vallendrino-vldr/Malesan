@@ -183,9 +183,31 @@ export function VideoCompletionModal({
             Video Berhasil Di-render
           </h3>
           <p className="text-xs text-mist">
-            Hasil video Full HD 1080p siap diposting langsung ke medsos.
+            Hasil video Full HD 1080p siap diputar &amp; diposting langsung ke medsos.
           </p>
         </div>
+
+        {/* Realtime Video Playback Player (Hasil Nyata) */}
+        {videoUrl ? (
+          <div className="relative z-10 overflow-hidden rounded-2xl border border-ember/40 bg-black/90 shadow-2xl space-y-2 p-2">
+            <div className="relative aspect-[9/16] max-h-[300px] sm:max-h-[340px] mx-auto w-full flex items-center justify-center rounded-xl overflow-hidden bg-black ring-1 ring-white/10">
+              <video
+                src={videoUrl}
+                controls
+                playsInline
+                preload="auto"
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div className="flex items-center justify-between px-2 py-1 text-xs">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Hasil Video Siap Diputar</span>
+              </div>
+              <span className="text-[10px] text-ember font-mono font-bold">1080p Studio Ultra-HD</span>
+            </div>
+          </div>
+        ) : null}
 
         {/* Storage Location Card */}
         <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 p-3 space-y-1.5">
@@ -293,18 +315,6 @@ export function VideoCompletionModal({
             <span>Caption otomatis tersalin saat kamu tap tombol bagikan di bawah.</span>
           </p>
         </div>
-
-        {/* Video Preview if available */}
-        {videoUrl && (
-          <div className="relative z-10 overflow-hidden rounded-xl border border-white/10 bg-black aspect-video max-h-32 flex items-center justify-center">
-            <video
-              src={videoUrl}
-              controls
-              playsInline
-              className="h-full w-full object-contain"
-            />
-          </div>
-        )}
 
         {/* Step-by-Step Posting Guidance */}
         <div className="relative z-10 rounded-2xl border border-ember/30 bg-ember/10 p-3 space-y-1.5">

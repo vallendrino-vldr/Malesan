@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, type ReactNode } from "react";
-import { getNativeShell } from "@/lib/native/bridge";
+import { getNativeShell, requestNativeNotificationPermission } from "@/lib/native/bridge";
 import { checkApkUpdate, type ApkUpdateInfo } from "@/lib/native/version";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
@@ -86,6 +86,7 @@ export function AppShell({
       if (shell) {
         setIsNativeApk(true);
         setNativeVersion(shell.appVersion);
+        void requestNativeNotificationPermission();
         const update = checkApkUpdate(shell.versionCode, shell.appVersion);
         setUpdateInfo(update);
         if (update.hasUpdate && typeof window !== "undefined") {

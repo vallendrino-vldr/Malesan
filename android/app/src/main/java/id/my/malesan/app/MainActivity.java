@@ -441,6 +441,18 @@ public final class MainActivity extends Activity {
                     showUpdateNotification(body.optString("version", "2.2.5"), body.optString("size", "58 MB"));
                     reply(replyProxy, terminal("NOTIFY_DONE", requestId));
                     break;
+                case "REQUEST_NOTIFICATION_PERMISSION":
+                    runOnUiThread(() -> {
+                        requestNotificationPermissionIfNeeded();
+                        reply(replyProxy, terminal("PERMISSION_REQUESTED", requestId));
+                    });
+                    break;
+                case "TRIGGER_TEST_NOTIFICATION":
+                    runOnUiThread(() -> {
+                        showUpdateNotification("2.2.5", "58 MB");
+                        reply(replyProxy, terminal("NOTIFICATION_TRIGGERED", requestId));
+                    });
+                    break;
                 default:
                     reply(replyProxy, error(requestId, "UNSUPPORTED_MESSAGE", "Perintah APK tidak dikenali."));
             }

@@ -160,3 +160,18 @@ export async function triggerNativeApkUpdate(downloadUrl: string, version: strin
   }
 }
 
+export async function requestNativeNotificationPermission(): Promise<void> {
+  if (typeof window === "undefined" || !getPort()) return;
+  try {
+    await requestNative({ type: "REQUEST_NOTIFICATION_PERMISSION" }, 2_000);
+  } catch {}
+}
+
+export async function triggerNativeTestNotification(): Promise<void> {
+  if (typeof window === "undefined" || !getPort()) return;
+  try {
+    await requestNative({ type: "TRIGGER_TEST_NOTIFICATION" }, 2_000);
+  } catch {}
+}
+
+

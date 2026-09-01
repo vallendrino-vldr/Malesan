@@ -60,16 +60,16 @@ export function drawFrame(
     if (filter === "ultra_hd" || filter === "wink_hd") {
       // Studio Ultra-HD: Micro-contrast enhancement + spatial edge definitions + crisp clarity
       ctx.filter = typeof document !== "undefined" && document.getElementById("malesan-ultra-hd")
-        ? "url(#malesan-ultra-hd) contrast(1.15) brightness(1.03) saturate(1.14)"
-        : "contrast(1.20) brightness(1.03) saturate(1.16)";
+        ? "url(#malesan-ultra-hd) contrast(1.12) brightness(1.02) saturate(1.12)"
+        : "contrast(1.16) brightness(1.02) saturate(1.14)";
     } else if (filter === "fyp_pop") {
       // Viral Color Pop: Vibrant colors, punchy highlights for TikTok/Reels/Shorts
-      ctx.filter = "contrast(1.22) brightness(1.04) saturate(1.26)";
+      ctx.filter = "contrast(1.20) brightness(1.03) saturate(1.24)";
     } else if (filter === "clean_denoise" || filter === "soft_clean") {
       // Smooth De-Noise: Suppresses harsh sensor noise and provides subtle smoothing
       ctx.filter = typeof document !== "undefined" && document.getElementById("malesan-clean-denoise")
-        ? "url(#malesan-clean-denoise) contrast(1.09) brightness(1.02) saturate(1.06)"
-        : "contrast(1.09) brightness(1.02) saturate(1.06)";
+        ? "url(#malesan-clean-denoise) contrast(1.08) brightness(1.02) saturate(1.05)"
+        : "contrast(1.08) brightness(1.02) saturate(1.05)";
     } else {
       ctx.filter = "none";
     }
