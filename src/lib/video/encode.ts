@@ -226,29 +226,27 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
       /* non-fatal warmup fallback */
     }
 
-    // ---- 2. Prime Frame 0 at timestamp 0 as IDR Keyframe before playback starts
+    // ---- 2. Prime Opening Frames (0.00s to ~0.10s) Deterministically Before Playback Starts
+    // This fills the initial 100ms Chromium playback latency so Frame 0, 1, 2, 3 are already
+    // encoded with zero gap, zero drop, and zero stutter from second 0.00!
     onStage?.("Nge-render tiap frame");
-    video.currentTime = 0;
-    await new Promise<void>((resolve) => {
-      if (video.readyState >= 2 && Math.abs(video.currentTime) < 1e-3) return resolve();
-      const onSeeked = () => {
-        video.removeEventListener("seeked", onSeeked);
-        resolve();
-      };
-      video.addEventListener("seeked", onSeeked, { once: true });
-      setTimeout(resolve, 800);
-    });
-
-    drawFrame(ctx, video, lines, 0, style, W, H, watermark, layout);
-    const frame0 = new VideoFrame(canvas, {
-      timestamp: 0,
-      duration: frameDurUs,
-    });
-    videoEncoder.encode(frame0, { keyFrame: true });
-    frame0.close();
-
-    let frameIndex = 1;
+    const primeCount = Math.min(3, Math.max(1, Math.floor(fps * 0.1)));
+    let frameIndex = 0;
     let lastRenderedTime = 0;
+
+    for (let p = 0; p < primeCount; p++) {
+      const pt = p / fps;
+      await seekToFrame(video, pt);
+      drawFrame(ctx, video, lines, pt, style, W, H, watermark, layout);
+      const pFrame = new VideoFrame(canvas, {
+        timestamp: Math.round(pt * 1_000_000),
+        duration: frameDurUs,
+      });
+      videoEncoder.encode(pFrame, { keyFrame: p === 0 });
+      pFrame.close();
+      frameIndex++;
+      lastRenderedTime = pt;
+    }
 
     // ---- 3. Continuous Paced Capture (playbackRate = 0.5):
     // Playing at half speed gives mobile GPU/CPU 2x time to render Full HD 1080p frames cleanly.
@@ -509,27 +507,17 @@ async function probeFps(video: HTMLVideoElement): Promise<number> {
 /** Seek to an exact time with frame presentation verification. */
 function seekToFrame(video: HTMLVideoElement, t: number): Promise<void> {
   if (Math.abs(video.currentTime - t) < 1e-4 && video.readyState >= 2) return Promise.resolve();
-  const rvfc = video as HTMLVideoElement & {
-    requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
-  };
   return new Promise<void>((resolve) => {
     let done = false;
     const finish = () => {
       if (done) return;
       done = true;
-      video.removeEventListener("seeked", onSeeked);
+      video.removeEventListener("seeked", finish);
       clearTimeout(timer);
       resolve();
     };
-    const onSeeked = () => {
-      if (typeof rvfc.requestVideoFrameCallback === "function") {
-        rvfc.requestVideoFrameCallback(() => finish());
-      } else {
-        finish();
-      }
-    };
-    const timer = setTimeout(finish, 1000);
-    video.addEventListener("seeked", onSeeked, { once: true });
+    const timer = setTimeout(finish, 600);
+    video.addEventListener("seeked", finish, { once: true });
     video.currentTime = t;
   });
 }

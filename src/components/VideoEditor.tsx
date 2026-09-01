@@ -16,7 +16,7 @@ import {
   type Word,
 } from "@/lib/video/captions";
 import { exportBurnedVideo } from "@/lib/video/export";
-import type { VideoLayout } from "@/lib/video/draw";
+import type { VideoLayout, ClarityFilter } from "@/lib/video/draw";
 import { getNativeShell, requestNative } from "@/lib/native/bridge";
 import { ExportOverlay } from "./ExportOverlay";
 import { ClipRadar } from "./ClipRadar";
@@ -183,7 +183,7 @@ export function VideoEditor({
   const [sourceLanguage, setSourceLanguage] = useState<"id" | "en">("id");
   const [sourceWords, setSourceWords] = useState<Word[] | null>(null);
   const [translating, setTranslating] = useState(false);
-  const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center" });
+  const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center", filter: "wink_hd" });
   const [editorTab, setEditorTab] = useState<"frame" | "subtitles" | "style" | "export">("frame");
   const [activeDrawer, setActiveDrawer] = useState<"frame" | "subtitles" | "style" | "export" | null>(null);
   const [exportPct, setExportPct] = useState(0);
@@ -869,6 +869,43 @@ export function VideoEditor({
                       </div>
                     </div>
 
+                    {/* Kejernihan & Filter Visual (Ala Wink HD) */}
+                    <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                          </svg>
+                          <span className="text-xs font-bold text-ink">Kejernihan &amp; Filter Visual</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-ember/15 text-ember font-bold">Ala Wink HD</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: "wink_hd", label: "Wink HD Clarity", desc: "Super jernih & tajam" },
+                          { id: "fyp_pop", label: "FYP Pop Glow", desc: "Warna cerah & hidup" },
+                          { id: "soft_clean", label: "Soft De-noise", desc: "Halus bebas bintik" },
+                          { id: "original", label: "Original", desc: "Alami apa adanya" },
+                        ].map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setLayout((curr) => ({ ...curr, filter: opt.id as ClarityFilter }))}
+                            className={`h-11 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
+                              (layout.filter ?? "wink_hd") === opt.id
+                                ? "border-ember bg-ember/20 text-white shadow-xs"
+                                : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
+                            }`}
+                          >
+                            <span className={`text-[11px] font-bold ${(layout.filter ?? "wink_hd") === opt.id ? "text-ember" : "text-ink"}`}>
+                              {opt.label}
+                            </span>
+                            <span className="text-[9px] text-muted line-clamp-1">{opt.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <VideoKeyframeControls
                       currentTime={currentTimeNow}
                       duration={videoDuration}
@@ -1016,6 +1053,43 @@ export function VideoEditor({
                           }`}
                         >
                           {ratio}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Kejernihan & Filter Visual (Ala Wink HD) */}
+                  <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                        </svg>
+                        <span className="text-xs font-bold text-ink">Kejernihan &amp; Filter Visual</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-ember/15 text-ember font-bold">Ala Wink HD</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        { id: "wink_hd", label: "Wink HD Clarity", desc: "Super jernih & tajam" },
+                        { id: "fyp_pop", label: "FYP Pop Glow", desc: "Warna cerah & hidup" },
+                        { id: "soft_clean", label: "Soft De-noise", desc: "Halus bebas bintik" },
+                        { id: "original", label: "Original", desc: "Alami apa adanya" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setLayout((curr) => ({ ...curr, filter: opt.id as ClarityFilter }))}
+                          className={`h-11 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
+                            (layout.filter ?? "wink_hd") === opt.id
+                              ? "border-ember bg-ember/20 text-white shadow-xs"
+                              : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
+                          }`}
+                        >
+                          <span className={`text-[11px] font-bold ${(layout.filter ?? "wink_hd") === opt.id ? "text-ember" : "text-ink"}`}>
+                            {opt.label}
+                          </span>
+                          <span className="text-[9px] text-muted line-clamp-1">{opt.desc}</span>
                         </button>
                       ))}
                     </div>
@@ -1238,6 +1312,14 @@ function VideoPreviewPlayer({
     target: "single",
     moved: false,
   });
+
+  const cssFilter = useMemo(() => {
+    const f = layout.filter ?? "wink_hd";
+    if (f === "wink_hd") return "contrast(1.16) brightness(1.03) saturate(1.12)";
+    if (f === "fyp_pop") return "contrast(1.20) brightness(1.04) saturate(1.24)";
+    if (f === "soft_clean") return "contrast(1.08) brightness(1.02) saturate(1.05)";
+    return "none";
+  }, [layout.filter]);
 
   const handleSubtitlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -1599,7 +1681,7 @@ function VideoPreviewPlayer({
                       onTimeChange?.(e.currentTarget.currentTime);
                     }}
                     className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
-                    style={{ objectPosition: topObjectPosition }}
+                    style={{ objectPosition: topObjectPosition, filter: cssFilter }}
                   />
                 </div>
 
@@ -1622,7 +1704,7 @@ function VideoPreviewPlayer({
                     muted
                     playsInline
                     className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
-                    style={{ objectPosition: bottomObjectPosition }}
+                    style={{ objectPosition: bottomObjectPosition, filter: cssFilter }}
                   />
                 </div>
               </div>
@@ -1652,6 +1734,7 @@ function VideoPreviewPlayer({
                   className={`absolute inset-0 h-full w-full object-cover ${isDragging ? "transition-none" : "transition-[object-position] duration-75"}`}
                   style={{
                     objectPosition,
+                    filter: cssFilter,
                     transform: videoTransform,
                     transformOrigin: `${(currentPanX * 100).toFixed(2)}% ${(currentPanY * 100).toFixed(2)}%`,
                   }}

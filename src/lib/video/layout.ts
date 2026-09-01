@@ -3,9 +3,12 @@ import type { ManualKeyframe } from "./keyframe-engine";
 
 export type VideoRatio = "9:16" | "1:1" | "16:9";
 export type VideoFocus = "left" | "center" | "right" | "podcast_split" | "podcast_dynamic" | "manual_keyframe";
+export type ClarityFilter = "original" | "wink_hd" | "fyp_pop" | "soft_clean";
+
 export type VideoLayout = {
   ratio: VideoRatio;
   focus: VideoFocus;
+  filter?: ClarityFilter;
   trajectory?: readonly CropKeyframe[];
   manualKeyframes?: readonly ManualKeyframe[];
   zoom?: number;

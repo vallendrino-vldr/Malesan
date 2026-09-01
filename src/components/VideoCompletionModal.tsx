@@ -54,6 +54,7 @@ export function VideoCompletionModal({
   videoUrl,
   videoFile,
   videoTitle,
+  isAPK = false,
   onShare,
 }: VideoCompletionModalProps) {
   const [selectedStyle, setSelectedStyle] = useState<CaptionStylePreset>("viral");
@@ -61,6 +62,7 @@ export function VideoCompletionModal({
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isSharing, setIsSharing] = useState(false);
   const [hasNativeShare, setHasNativeShare] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   useEffect(() => {
     void getNativeShell().then((shell) => {
@@ -140,12 +142,10 @@ export function VideoCompletionModal({
         }
       }
 
-      // 4. Fallback
-      if (onShare) {
-        onShare();
-      } else {
-        showToast("Caption tersalin! Video sudah ada di DCIM / Malesan.");
-      }
+      // 4. Guaranteed Action Sheet Fallback: Never leave user stranded without response
+      setShowShareSheet(true);
+      showToast("Caption tersalin! Pilih aplikasi di bawah untuk posting.");
+      if (onShare) onShare();
     } finally {
       setIsSharing(false);
     }
@@ -326,6 +326,91 @@ export function VideoCompletionModal({
             </li>
           </ol>
         </div>
+
+        {/* Smart Share Action Sheet for WebView / Older APKs */}
+        {showShareSheet && (
+          <div className="relative z-10 rounded-2xl border border-ember/40 bg-ember/15 p-3.5 space-y-3 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4 text-ember">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                </svg>
+                <span>Pilih Aplikasi untuk Posting:</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowShareSheet(false)}
+                className="text-muted hover:text-white p-1 rounded-md transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-mist leading-relaxed">
+              Caption <span className="text-white font-semibold">sudah tersalin</span> ke clipboard. Video kamu sudah ada di folder <span className="text-ember font-mono font-bold">DCIM / Malesan</span> pada urutan teratas galeri.
+            </p>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  showToast("Caption tersalin! Buka TikTok dan pilih video paling atas.");
+                  window.open("https://www.tiktok.com", "_blank");
+                }}
+                className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border border-white/10 bg-black/50 hover:bg-black/80 text-white font-bold text-[11px] transition-all active:scale-95 text-center cursor-pointer shadow-sm"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 text-ember">
+                  <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 2.89 3.5 2.76 1.46-.03 2.75-.98 3.18-2.38.16-.48.2-1 .19-1.51-.03-4.52-.02-9.04-.03-13.56z" />
+                </svg>
+                <span>TikTok</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  showToast("Caption tersalin! Buka Instagram dan pilih video paling atas.");
+                  window.open("https://www.instagram.com", "_blank");
+                }}
+                className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border border-white/10 bg-black/50 hover:bg-black/80 text-white font-bold text-[11px] transition-all active:scale-95 text-center cursor-pointer shadow-sm"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 text-ember">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+                <span>Instagram</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  showToast("Membuka WhatsApp dengan caption...");
+                  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(activeCaption)}`, "_blank");
+                }}
+                className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border border-white/10 bg-black/50 hover:bg-black/80 text-white font-bold text-[11px] transition-all active:scale-95 text-center cursor-pointer shadow-sm"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 text-emerald-400">
+                  <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.48-.4-.42-.56-.43h-.47c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.17-.48-.29z" />
+                </svg>
+                <span>WhatsApp</span>
+              </button>
+            </div>
+
+            {isAPK && !hasNativeShare && (
+              <div className="pt-1 flex items-center justify-between gap-2 rounded-xl bg-black/40 border border-white/5 p-2">
+                <span className="text-[10px] text-mist">
+                  Ingin menu share bawaan HP langsung 1-klik?
+                </span>
+                <a
+                  href="/malesan.apk"
+                  download="malesan.apk"
+                  className="shrink-0 h-6 px-2.5 rounded-lg bg-ember/20 hover:bg-ember/30 text-ember font-bold text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                  <span>Update APK</span>
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Buttons & Social Dispatch */}
         <div className="relative z-10 space-y-2 pt-1">
