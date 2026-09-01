@@ -744,6 +744,14 @@ export function VideoEditor({
                     setVideoUrl(URL.createObjectURL(picked));
                     setDoneMsg(`Video "${picked.name}" berhasil terhubung ke draf.`);
                   }}
+                  onResetStudio={() => {
+                    setFile(null);
+                    setVideoUrl("");
+                    setWords([]);
+                    setPhase("idle");
+                    setError(null);
+                    setDoneMsg(null);
+                  }}
                 />
               </div>
 
@@ -1180,6 +1188,7 @@ function VideoPreviewPlayer({
   onSplitPanChange,
   onSubtitleYChange,
   onAttachVideo,
+  onResetStudio,
 }: {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   videoUrl: string;
@@ -1194,6 +1203,7 @@ function VideoPreviewPlayer({
   onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
   onSubtitleYChange?: (y: number) => void;
   onAttachVideo?: (file: File) => void;
+  onResetStudio?: () => void;
 }) {
   const [now, setNow] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -1499,19 +1509,32 @@ function VideoPreviewPlayer({
               </p>
             </div>
 
-            <label className="btn-ember flex h-9.5 px-4 items-center justify-center gap-1.5 rounded-xl font-bold text-obsidian text-xs cursor-pointer shadow-lg shadow-ember/25 hover:brightness-110 active:scale-95 transition-all">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z"/></svg>
-              <span>Pilih Video dari HP</span>
-              <input
-                type="file"
-                accept="video/mp4,video/quicktime,video/webm"
-                onChange={(e) => {
-                  const picked = e.target.files?.[0];
-                  if (picked) onAttachVideo?.(picked);
-                }}
-                className="hidden"
-              />
-            </label>
+            <div className="flex flex-col items-center gap-2 pt-0.5">
+              <label className="btn-ember flex h-9.5 px-4 items-center justify-center gap-1.5 rounded-xl font-bold text-obsidian text-xs cursor-pointer shadow-lg shadow-ember/25 hover:brightness-110 active:scale-95 transition-all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z"/></svg>
+                <span>Pilih Video dari HP</span>
+                <input
+                  type="file"
+                  accept="video/mp4,video/quicktime,video/webm"
+                  onChange={(e) => {
+                    const picked = e.target.files?.[0];
+                    if (picked) onAttachVideo?.(picked);
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              {onResetStudio && (
+                <button
+                  type="button"
+                  onClick={onResetStudio}
+                  className="text-[11px] font-semibold text-mist hover:text-ember transition-colors py-1 cursor-pointer flex items-center gap-1 active:scale-95"
+                >
+                  <span>Atau Mulai Klip Baru</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              )}
+            </div>
 
             <p className="text-[10px] text-muted max-w-[210px] leading-tight">
               📁 Tersimpan di album Galeri atau folder Download / DCIM Malesan.
