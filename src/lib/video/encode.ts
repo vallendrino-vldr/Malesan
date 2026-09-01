@@ -94,6 +94,13 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
   document.body.appendChild(video);
 
   await once(video, "loadedmetadata");
+  if (video.readyState < 2) {
+    await new Promise<void>((resolve) => {
+      if (video.readyState >= 2) return resolve();
+      video.addEventListener("loadeddata", () => resolve(), { once: true });
+      setTimeout(resolve, 1000);
+    });
+  }
 
   const duration = Number.isFinite(video.duration) ? video.duration : 0;
   if (!duration) {
@@ -194,89 +201,35 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
       await encodeAudio(audio, muxer, () => failure);
     }
 
-    // ---- the frame walk: Continuous presentation via requestVideoFrameCallback
+    // ---- Deterministic Frame-by-Frame Render Walk:
+    // Every frame is stepped while video is paused, guaranteeing exact timestamps,
+    // perfect audio sync, zero frame starvation, and eliminating the 0-2s mobile startup stutter.
     onStage?.("Nge-render tiap frame");
     const frameDurUs = Math.round(1_000_000 / fps);
     const gop = Math.max(1, Math.round(fps * 2));
 
-    const rvfc = video as HTMLVideoElement & {
-      requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
-    };
+    video.pause();
+    await seekToFrame(video, 0);
 
-    let frameIndex = 0;
-    let lastRenderedTime = -1;
-    let firstMediaTime: number | null = null;
+    for (let i = 0; i < totalFrames; i++) {
+      if (failure) throw failure;
+      const t = i / fps;
+      await seekToFrame(video, Math.min(t, Math.max(0, duration - 1e-3)));
+      drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
 
-    if (typeof rvfc.requestVideoFrameCallback === "function") {
-      video.currentTime = 0;
-      try {
-        await video.play();
-      } catch {
-        /* fallback to stepping if browser rejects play */
-      }
-    }
-
-    if (!video.paused) {
-      await new Promise<void>((resolve) => {
-        let isDone = false;
-        const finish = () => {
-          if (isDone) return;
-          isDone = true;
-          resolve();
-        };
-
-        video.addEventListener("ended", finish, { once: true });
-        const maxTimer = setTimeout(finish, (duration + 5) * 1000);
-
-        const step = (_now: number, meta: { mediaTime: number }) => {
-          if (isDone || failure || video.ended) {
-            clearTimeout(maxTimer);
-            finish();
-            return;
-          }
-          const t = meta.mediaTime;
-          if (t > lastRenderedTime || lastRenderedTime < 0) {
-            firstMediaTime ??= t;
-            lastRenderedTime = t;
-            drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
-            const frame = new VideoFrame(canvas, {
-              timestamp: normalizedTimestampUs(t, firstMediaTime),
-              duration: frameDurUs,
-            });
-            videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
-            frame.close();
-            frameIndex++;
-            onProgress(Math.min(0.999, t / (duration || 1)));
-          }
-          if (!video.ended && !failure && !isDone) {
-            rvfc.requestVideoFrameCallback!(step);
-          }
-        };
-        rvfc.requestVideoFrameCallback!(step);
+      const frame = new VideoFrame(canvas, {
+        timestamp: Math.round(t * 1_000_000),
+        duration: frameDurUs,
       });
-      video.pause();
-    } else {
-      // Frame-by-frame step fallback with verified decode
-      for (let i = 0; i < totalFrames; i++) {
+      videoEncoder.encode(frame, { keyFrame: i % gop === 0 });
+      frame.close();
+
+      while (videoEncoder.encodeQueueSize > 4) {
+        await sleep(4);
         if (failure) throw failure;
-        const t = i / fps;
-        await seekToFrame(video, Math.min(t, Math.max(0, duration - 1e-3)));
-        drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
-
-        const frame = new VideoFrame(canvas, {
-          timestamp: Math.round(t * 1_000_000),
-          duration: frameDurUs,
-        });
-        videoEncoder.encode(frame, { keyFrame: i % gop === 0 });
-        frame.close();
-
-        while (videoEncoder.encodeQueueSize > 4) {
-          await sleep(4);
-          if (failure) throw failure;
-        }
-
-        onProgress(Math.min(0.999, (i + 1) / totalFrames));
       }
+
+      onProgress(Math.min(0.999, (i + 1) / totalFrames));
     }
 
     await videoEncoder.flush();
