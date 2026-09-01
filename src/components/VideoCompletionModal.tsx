@@ -401,11 +401,13 @@ export function VideoCompletionModal({
   if (typeof document === "undefined") return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto custom-scrollbar rounded-3xl border border-ember/30 bg-obsidian p-5 sm:p-6 shadow-2xl ring-1 ring-white/10 space-y-4 animate-in zoom-in-95 duration-200 text-ink">
-        {/* Glow Accent */}
-        <div className="pointer-events-none absolute -top-24 -left-24 size-48 rounded-full bg-ember/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -right-24 size-48 rounded-full bg-ember/15 blur-3xl" />
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-x-hidden overflow-y-auto select-none touch-pan-y overscroll-none animate-in fade-in duration-200">
+      <div className="relative w-full max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden custom-scrollbar rounded-3xl border border-ember/30 bg-obsidian p-4.5 sm:p-6 shadow-2xl ring-1 ring-white/10 space-y-4 animate-in zoom-in-95 duration-200 text-ink overscroll-contain">
+        {/* Constrained Glow Accents (100% Clipped within Modal Boundary) */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+          <div className="absolute -top-24 -left-24 size-48 rounded-full bg-ember/20 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 size-48 rounded-full bg-ember/15 blur-3xl" />
+        </div>
 
         {/* Dynamic Toast Feedback */}
         {toastMsg && (
