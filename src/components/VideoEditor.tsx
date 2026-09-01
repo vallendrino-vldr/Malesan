@@ -1659,7 +1659,7 @@ function VideoPreviewPlayer({
               <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
             </div>
 
-            {/* Hold to Compare (Live Raw vs Filtered Preview) */}
+            {/* Minimalist Hold to Compare (Before / After) Button */}
             <button
               type="button"
               onPointerDown={(e) => {
@@ -1670,25 +1670,21 @@ function VideoPreviewPlayer({
               onPointerUp={() => setIsHoldingOriginal(false)}
               onPointerLeave={() => setIsHoldingOriginal(false)}
               onPointerCancel={() => setIsHoldingOriginal(false)}
-              className={`absolute top-2.5 right-2.5 z-30 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold backdrop-blur-md transition-all select-none cursor-pointer ${
+              className={`absolute top-2.5 right-2.5 z-30 flex size-8 sm:size-8.5 items-center justify-center rounded-xl backdrop-blur-md transition-all select-none cursor-pointer shadow-md active:scale-95 ${
                 isHoldingOriginal
-                  ? "bg-amber-400 text-obsidian border border-amber-300 shadow-lg scale-105"
-                  : "bg-black/60 text-white/90 border border-white/20 hover:border-ember/40 hover:bg-black/80 shadow-md active:scale-95"
+                  ? "bg-amber-400 text-obsidian border border-amber-300 ring-2 ring-amber-400/30 scale-105"
+                  : "bg-black/50 text-white/90 border border-white/15 hover:border-ember/40 hover:bg-black/70 hover:text-white"
               }`}
-              title="Tekan dan tahan untuk melihat video asli tanpa filter"
+              title="Tahan untuk melihat video asli (Before / After)"
+              aria-label="Bandingkan video asli"
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+                <line x1="12" y1="2" x2="12" y2="22" strokeWidth="2.2" />
+                <path d="m7.5 8.5 3 3.5-3 3.5" strokeWidth="2.2" />
+                <path d="m16.5 8.5-3 3.5 3 3.5" strokeWidth="2.2" />
               </svg>
-              <span>{isHoldingOriginal ? "RAW ASLI" : "Bandingkan (Hold)"}</span>
             </button>
-
-            {isHoldingOriginal && (
-              <div className="pointer-events-none absolute top-11 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 rounded-full bg-black/90 border border-amber-400/70 px-3 py-1 text-[10px] font-extrabold text-amber-400 shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 whitespace-nowrap">
-                <span className="size-1.5 rounded-full bg-amber-400 animate-ping" />
-                <span>VIDEO ASLI (RAW ORIGINAL)</span>
-              </div>
-            )}
 
             {/* Custom Frosted Play Icon Overlay when Paused (Non-blocking backdrop) */}
             {!isPlaying && (
