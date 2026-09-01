@@ -21,15 +21,40 @@ const seek = (video: HTMLVideoElement, time: number) => new Promise<void>((resol
   video.currentTime = time;
 });
 
+async function getModelAsset(): Promise<{ modelAssetBuffer?: Uint8Array; modelAssetPath?: string }> {
+  if (typeof window !== "undefined" && "caches" in window) {
+    try {
+      const cache = await caches.open("malesan-ai-models-v1");
+      const matched = await cache.match(MODEL);
+      if (matched) {
+        const buf = await matched.arrayBuffer();
+        return { modelAssetBuffer: new Uint8Array(buf) };
+      }
+      const fetched = await fetch(MODEL);
+      if (fetched.ok) {
+        void cache.put(MODEL, fetched.clone()).catch(() => {});
+        const buf = await fetched.arrayBuffer();
+        return { modelAssetBuffer: new Uint8Array(buf) };
+      }
+    } catch {
+      // Fallback
+    }
+  }
+  return { modelAssetPath: MODEL };
+}
+
 export async function detectFaceTrajectory(
   video: HTMLVideoElement,
   options: { mode?: "face_track" | "podcast_dynamic"; start?: number; end?: number; signal?: AbortSignal; onProgress?: (progress: number) => void } = {},
 ): Promise<CropKeyframe[]> {
   const { buildPodcastSpeakerTrajectory } = await import("./face-track");
   const { FaceDetector, FilesetResolver } = await import("@mediapipe/tasks-vision");
-  const vision = await FilesetResolver.forVisionTasks(WASM);
+  const [vision, modelAsset] = await Promise.all([
+    FilesetResolver.forVisionTasks(WASM),
+    getModelAsset(),
+  ]);
   const create = (delegate: "GPU" | "CPU") => FaceDetector.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: MODEL, delegate }, runningMode: "IMAGE", minDetectionConfidence: 0.25,
+    baseOptions: { ...modelAsset, delegate }, runningMode: "IMAGE", minDetectionConfidence: 0.25,
   });
   let detector;
   try {

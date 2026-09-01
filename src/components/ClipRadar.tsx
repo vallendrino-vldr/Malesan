@@ -134,6 +134,23 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
     });
   }, []);
 
+  const adjustClipTrim = useCallback((clipIndex: number, deltaStart: number, deltaEnd: number) => {
+    setScan((prev) => {
+      if (!prev) return prev;
+      const updatedClips = [...prev.clips];
+      const target = updatedClips[clipIndex];
+      if (!target) return prev;
+      const maxDur = prev.duration || 7200;
+      const newStart = Math.max(0, Math.min(maxDur - 5, target.startTime + deltaStart));
+      const newEnd = Math.max(newStart + 5, Math.min(maxDur, target.endTime + deltaEnd));
+      updatedClips[clipIndex] = { ...target, startTime: newStart, endTime: newEnd };
+      return { ...prev, clips: updatedClips };
+    });
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      try { navigator.vibrate(10); } catch {}
+    }
+  }, []);
+
   // Walk the status label forward while the request is in flight. The server
   // gives us no progress events, so this is honest pacing, not a fake bar.
   useEffect(() => {
@@ -659,9 +676,23 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                         <span className="block truncate text-mini font-bold leading-snug text-ink">
                           {c.hookTitle}
                         </span>
-                        <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 font-mono text-[10px] font-bold text-ink/90">
-                          ⏱️ {durSec}s
-                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {i === 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-ember/20 px-1.5 py-0.5 text-[9px] font-extrabold text-ember">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-2.5"><path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z"/></svg>
+                              <span>Hook</span>
+                            </span>
+                          ) : c.viralScore >= 90 ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-extrabold text-amber-300">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              <span>Top</span>
+                            </span>
+                          ) : null}
+                          <span className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 font-mono text-[10px] font-bold text-ink/90">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-ember"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            <span>{durSec}s</span>
+                          </span>
+                        </div>
                       </div>
                       <span className="mt-1 block text-micro leading-relaxed text-muted">
                         {clock(c.startTime)}–{clock(c.endTime)} · {durSec} detik · {c.reason}
@@ -693,6 +724,50 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
               <div className="rounded-xl border border-hairline/80 bg-obsidian/80 p-3.5 space-y-1.5">
                 <p className="text-xs font-bold text-ink leading-snug">{clip.hookTitle}</p>
                 <p className="text-micro text-muted leading-relaxed">{clip.reason}</p>
+              </div>
+
+              {/* Fine-tune Trim Controls */}
+              <div className="rounded-xl border border-hairline/80 bg-obsidian/60 p-2.5 space-y-2">
+                <div className="flex items-center justify-between text-micro font-bold text-muted">
+                  <span>Sesuaikan Durasi Klip (+/- 3s)</span>
+                  <span className="font-mono text-ember text-[11px]">{clock(clip.startTime)} — {clock(clip.endTime)}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] p-1.5 text-micro">
+                    <span className="text-mist font-semibold pl-1">Mulai</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, -3, 0)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Mulai lebih awal 3 detik"
+                      >-3s</button>
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, +3, 0)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Mulai lebih lambat 3 detik"
+                      >+3s</button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] p-1.5 text-micro">
+                    <span className="text-mist font-semibold pl-1">Selesai</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, 0, -3)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Selesai lebih awal 3 detik"
+                      >-3s</button>
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, 0, +3)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Selesai lebih panjang 3 detik"
+                      >+3s</button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <label
@@ -752,8 +827,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       {bridgeJob.stage || "Memotong klip di HP..."}
                     </span>
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] text-muted tabular-nums">
-                        ⏳ {elapsedSec}s / est. ~{Math.max(8, Math.min(25, Math.round((clip.endTime - clip.startTime) * 0.35)))}s
+                      <span className="text-[10px] text-muted tabular-nums flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
+                        <span>{elapsedSec}s / est. ~{Math.max(8, Math.min(25, Math.round((clip.endTime - clip.startTime) * 0.35)))}s</span>
                       </span>
                       <span className="tabular-nums text-ember font-extrabold text-xs">
                         {Math.min(99, Math.max(5, Math.round(bridgeJob.progress)))}%
@@ -780,6 +856,50 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
             </div>
           ) : (
             <div className="space-y-3 rounded-2xl border border-ember/30 bg-gradient-to-br from-surface to-ember/5 p-4 shadow-xs">
+              {/* Fine-tune Trim Controls Desktop */}
+              <div className="rounded-xl border border-hairline/80 bg-obsidian/60 p-2.5 space-y-2">
+                <div className="flex items-center justify-between text-micro font-bold text-muted">
+                  <span>Sesuaikan Durasi Klip (+/- 3s)</span>
+                  <span className="font-mono text-ember text-[11px]">{clock(clip.startTime)} — {clock(clip.endTime)} ({Math.round(clip.endTime - clip.startTime)}s)</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] p-1.5 text-micro">
+                    <span className="text-mist font-semibold pl-1">Mulai</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, -3, 0)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Mulai lebih awal 3 detik"
+                      >-3s</button>
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, +3, 0)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Mulai lebih lambat 3 detik"
+                      >+3s</button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.04] p-1.5 text-micro">
+                    <span className="text-mist font-semibold pl-1">Selesai</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, 0, -3)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Selesai lebih awal 3 detik"
+                      >-3s</button>
+                      <button
+                        type="button"
+                        onClick={() => adjustClipTrim(active, 0, +3)}
+                        className="flex h-6 px-1.5 items-center justify-center rounded bg-white/10 text-white font-bold hover:bg-ember hover:text-obsidian transition-colors text-[10px] cursor-pointer"
+                        title="Selesai lebih panjang 3 detik"
+                      >+3s</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <label
                 onClick={(e) => {
                   e.preventDefault();
@@ -823,8 +943,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <span className="size-2 rounded-full bg-ember animate-ping" />
                       Proses Auto Clip Berjalan
                     </span>
-                    <span className="font-mono text-[11px] font-bold text-muted tabular-nums">
-                      ⏳ {elapsedSec}s · {Math.min(99, Math.max(5, Math.round(bridgeJob?.progress ?? 35)))}%
+                    <span className="font-mono text-[11px] font-bold text-muted tabular-nums flex items-center gap-1">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></svg>
+                      <span>{elapsedSec}s · {Math.min(99, Math.max(5, Math.round(bridgeJob?.progress ?? 35)))}%</span>
                     </span>
                   </div>
                   <div className="relative h-2 w-full overflow-hidden rounded-full bg-obsidian border border-hairline">

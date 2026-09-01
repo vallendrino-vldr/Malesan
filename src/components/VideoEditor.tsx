@@ -37,6 +37,14 @@ import { interpolateKeyframes, manualKeyframesToTrajectory, type ManualKeyframe 
 
 type Phase = "idle" | "extracting" | "transcribing" | "ready" | "exporting";
 
+function triggerHaptic(durationMs = 12) {
+  if (typeof window !== "undefined" && typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    try {
+      navigator.vibrate(durationMs);
+    } catch {}
+  }
+}
+
 const SOCIAL_PRESETS = [
   {
     id: "hormozi",
@@ -57,6 +65,27 @@ const SOCIAL_PRESETS = [
       activeGlow: true,
       mode: "line" as const,
       animation: "none" as const,
+    },
+  },
+  {
+    id: "mrbeast",
+    label: "MrBeast",
+    hint: "Kuning menyala, outline tebal hitam, pop kata punchy",
+    mbps: 6.0,
+    maxWords: 3,
+    maxGap: 0.45,
+    style: {
+      fontFamily: "Anton",
+      bold: true,
+      textColor: "#ffffff",
+      highlightColor: "#ffe600",
+      style: "outline" as const,
+      position: 0.65,
+      fontScale: 1.08,
+      activeScale: 1.12,
+      activeGlow: true,
+      mode: "word" as const,
+      animation: "pop" as const,
     },
   },
   {
@@ -99,6 +128,27 @@ const SOCIAL_PRESETS = [
       activeGlow: false,
       mode: "line" as const,
       animation: "fade" as const,
+    },
+  },
+  {
+    id: "neon",
+    label: "Neon Cyber",
+    hint: "Font modern, aksen cyan elektrik menyala di latar gelap",
+    mbps: 6.0,
+    maxWords: 4,
+    maxGap: 0.5,
+    style: {
+      fontFamily: "Montserrat",
+      bold: true,
+      textColor: "#ffffff",
+      highlightColor: "#00f0ff",
+      style: "plain" as const,
+      position: 0.65,
+      fontScale: 1.0,
+      activeScale: 1.08,
+      activeGlow: true,
+      mode: "line" as const,
+      animation: "pop" as const,
     },
   },
 ] as const;
@@ -634,25 +684,7 @@ export function VideoEditor({
             </div>
           </div>
 
-          {/* APK Pro Performance Badge / Web Notice */}
-          {!isNativeAPK ? (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl border border-ember/30 bg-ember/10 text-xs text-white">
-              <div className="flex items-center gap-2">
-                <span className="size-2 rounded-full bg-ember animate-pulse shrink-0" />
-                <span className="text-[11px] text-mist">
-                  <strong className="text-white">Akselerasi APK Pro:</strong> Hardware 60fps & simpan otomatis ke Galeri HP (DCIM).
-                </span>
-              </div>
-              <a
-                href="/malesan.apk"
-                download
-                className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-ember text-obsidian font-extrabold text-[10px] hover:bg-ember/90 shadow-xs"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                <span>Unduh APK</span>
-              </a>
-            </div>
-          ) : null}
+
 
           {/* Desktop Dual-Pane & Mobile Centered Pro Canvas */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start pb-24 sm:pb-4">
@@ -1048,6 +1080,7 @@ export function VideoEditor({
         videoUrl={renderedVideoUrl}
         videoTitle={file?.name.replace(/\.[^.]+$/, "") || "video"}
         isAPK={isNativeAPK}
+        transcriptionText={words.map((w) => w.word).join(" ")}
       />
       <VideoProjectHistoryModal
         isOpen={showHistoryModal}
@@ -1152,6 +1185,7 @@ function VideoPreviewPlayer({
 
   const handleSubtitlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
+    triggerHaptic(10);
     const startPos = layout.subtitleY ?? style.position ?? 0.8;
     subDragInfoRef.current = {
       isDragging: true,
@@ -1303,6 +1337,7 @@ function VideoPreviewPlayer({
       : "aspect-square w-full max-w-[330px] mx-auto";
 
   const togglePlay = () => {
+    triggerHaptic(14);
     const v = videoRef.current;
     const v2 = secondaryVideoRef.current;
     if (!v) return;
@@ -1323,6 +1358,7 @@ function VideoPreviewPlayer({
   };
 
   const handlePointerDownTarget = (e: React.PointerEvent<HTMLDivElement>, target: "single" | "top" | "bottom") => {
+    triggerHaptic(8);
     const startPan = target === "top"
       ? (layout.splitTopPanX ?? 0.25)
       : target === "bottom"
