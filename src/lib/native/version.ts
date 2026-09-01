@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Centralized single-source-of-truth metadata for Malesan Android APK.
  * Keeps app shell, download modals, update notifications, and telemetry strictly in sync.
  */
@@ -14,7 +14,7 @@ export const LATEST_ARM32_DOWNLOAD_URL = "https://www.malesan.my.id/malesan-arm3
 export const LATEST_APK_CHANGELOG = [
   "Pembaruan instan 1-klik langsung dari dalam aplikasi tanpa ribet",
   "Notifikasi pembaruan di status bar HP saat ada versi baru",
-  "Akselerasi hardware 60fps & filter visual jernih ala Wink HD",
+  "Akselerasi hardware 60fps & filter Studio Ultra-HD super tajam",
   "Koreksi akurasi ukuran unduhan (58 MB)",
 ];
 

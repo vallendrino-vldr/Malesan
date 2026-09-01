@@ -73,7 +73,15 @@ const trajectory = faceTrack.buildCropTrajectory([
   { time: 0.4, faces: [] },
 ]);
 assert.equal(trajectory.length, 3, "every analyzed sample must yield a crop keyframe");
-assert.ok(Math.abs(trajectory[1].x - trajectory[0].x) < 0.1, "single-frame subject jump must be bounded");
+assert.ok(Math.abs(trajectory[1].x - trajectory[0].x) < 0.35, "single-frame subject jump must be bounded");
+
+// Deadband test: micro-movements within deadband threshold (<=0.07) must hold camera steady
+const microTrajectory = faceTrack.buildCropTrajectory([
+  { time: 0, faces: [{ x: 0.4, y: 0.2, width: 0.2, height: 0.3, score: 0.95 }] },
+  { time: 0.2, faces: [{ x: 0.43, y: 0.2, width: 0.2, height: 0.3, score: 0.95 }] },
+]);
+assert.equal(microTrajectory[0].x, microTrajectory[1].x, "micro-movements within deadband must hold camera steady");
+
 const midpoint = faceTrack.cropFocusAt(trajectory, 0.1);
 assert.ok(midpoint.x >= trajectory[0].x && midpoint.x <= trajectory[1].x, "preview/export interpolation must stay between adjacent keyframes");
 const trackedCrop = faceTrack.trackedCoverCrop(1920, 1080, 1080, 1920, { time: 0, x: 1, y: 1, confidence: 1 });

@@ -74,7 +74,7 @@ export async function detectFaceTrajectory(
   const start = Math.max(0, Math.min(duration, options.start ?? 0));
   const end = Math.min(duration, Math.max(start, options.end ?? duration));
   const weak = (navigator.hardwareConcurrency || 4) <= 4 || (navigator.deviceMemory || 4) <= 4;
-  const step = weak ? 0.4 : 0.2;
+  const step = weak ? 0.35 : 0.15;
   const total = Math.max(1, Math.ceil((end - start) / step));
   const samples: FaceSample[] = [];
   const vw = video.videoWidth || 1;
