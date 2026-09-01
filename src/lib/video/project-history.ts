@@ -72,7 +72,8 @@ export async function listVideoProjects(): Promise<VideoProject[]> {
         if (cursor) {
           const val = cursor.value as VideoProject;
           // Strip heavy videoBlob from list view to keep modal snappy
-          const { videoBlob: _blob, ...summary } = val;
+          const summary = { ...val };
+          delete summary.videoBlob;
           results.push(summary as VideoProject);
           cursor.continue();
         } else {

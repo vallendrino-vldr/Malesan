@@ -2,7 +2,6 @@
 
 import { Muxer, FileSystemWritableFileStreamTarget } from "mp4-muxer";
 import { bitrateFor, drawFrame, frameSize, type VideoLayout } from "./draw";
-import { normalizedTimestampUs } from "./layout";
 import type { CaptionStyle, Line } from "./captions";
 
 /**
@@ -112,7 +111,6 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
   const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920, layout.ratio);
   const fps = await probeFps(video);
   const bitrate = bitrateFor(bitrateMbps, W, H, fps);
-  const totalFrames = Math.max(1, Math.round(duration * fps));
 
   // Fonts must be resident before the first frame is painted, or the opening
   // captions render in a fallback face while the rest render correctly.

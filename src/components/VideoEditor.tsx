@@ -606,7 +606,7 @@ export function VideoEditor({
       setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
     }
-  }, [file, words, lines, style, bitrate, noWatermark, noWatermarkCost, router, layout]);
+  }, [file, videoUrl, words, lines, style, bitrate, noWatermark, noWatermarkCost, router, layout]);
 
   return (
     <div className="space-y-3.5">
