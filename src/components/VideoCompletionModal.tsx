@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { getNativeShell, requestNative } from "@/lib/native/bridge";
 
 interface VideoCompletionModalProps {
@@ -9,7 +10,7 @@ interface VideoCompletionModalProps {
   videoUrl?: string;
   videoFile?: File | null;
   videoTitle: string;
-  isAPK: boolean;
+  isAPK?: boolean;
   transcriptionText?: string;
   onShare?: () => void;
 }
@@ -55,6 +56,238 @@ function extractHashtags(rawTitle: string): string[] {
   return Array.from(tags).slice(0, 6);
 }
 
+// -------------------------------------------------------------
+// 🎬 Full-Screen Immersive Custom Studio Video Player Modal
+// -------------------------------------------------------------
+function ResultVideoPlayerModal({
+  videoUrl,
+  onClose,
+  onShare,
+}: {
+  videoUrl: string;
+  onClose: () => void;
+  onShare: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {
+        setIsPlaying(false);
+      });
+    }
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      void videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const next = !videoRef.current.muted;
+    videoRef.current.muted = next;
+    setIsMuted(next);
+  };
+
+  const handleRestart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    videoRef.current.currentTime = 0;
+    void videoRef.current.play();
+    setIsPlaying(true);
+  };
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[999999] flex flex-col justify-between bg-black text-white select-none animate-in fade-in duration-200">
+      {/* 1. Floating Top Bar Overlay */}
+      <header className="relative z-30 flex items-center justify-between p-4 pt-safe bg-gradient-to-b from-black/90 via-black/50 to-transparent">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex items-center gap-1.5 h-8 px-3.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white font-bold text-xs hover:bg-black/80 active:scale-95 transition-all cursor-pointer shadow-lg"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+          </svg>
+          <span>Kembali</span>
+        </button>
+
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-emerald-500/30 text-[11px] font-bold text-emerald-400 shadow-lg">
+          <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-mono">1080p Studio Ultra-HD</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex size-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 hover:text-white active:scale-95 transition-all cursor-pointer shadow-lg"
+          aria-label="Tutup"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      {/* 2. Center Cinematic Video Viewport (Edge-to-Edge Fluid) */}
+      <main
+        onClick={togglePlay}
+        className="relative flex-1 w-full h-full flex items-center justify-center overflow-hidden cursor-pointer"
+      >
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          playsInline
+          loop
+          autoPlay
+          preload="auto"
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={(e) => {
+            if (!isSeeking) {
+              setCurrentTime(e.currentTarget.currentTime);
+            }
+          }}
+          onLoadedMetadata={(e) => {
+            setDuration(e.currentTarget.duration);
+          }}
+          className="h-full w-full object-contain"
+        />
+
+        {/* Custom Frosted Play Icon Overlay when Paused */}
+        {!isPlaying && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[2px] transition-all">
+            <div className="flex size-16 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/40">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-8 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* 3. Floating Bottom Control Bar Overlay */}
+      <footer className="relative z-30 p-4 pb-6 space-y-3 bg-gradient-to-t from-black via-black/90 to-transparent">
+        {/* Scrubber Slider */}
+        <div className="flex items-center gap-2.5 px-1">
+          <span className="font-mono text-xs text-mist w-9 text-right tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 100}
+            step={0.05}
+            value={currentTime}
+            onMouseDown={() => setIsSeeking(true)}
+            onTouchStart={() => setIsSeeking(true)}
+            onMouseUp={() => setIsSeeking(false)}
+            onTouchEnd={() => setIsSeeking(false)}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              setCurrentTime(val);
+              if (videoRef.current) {
+                videoRef.current.currentTime = val;
+              }
+            }}
+            className="flex-1 h-2 rounded-lg appearance-none bg-white/20 accent-ember cursor-pointer"
+          />
+          <span className="font-mono text-xs text-mist w-9 tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
+
+        {/* Action Controls Row */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              className="flex size-11 items-center justify-center rounded-full bg-ember text-obsidian shadow-lg shadow-ember/30 active:scale-90 transition-transform cursor-pointer"
+              title={isPlaying ? "Jeda" : "Putar"}
+            >
+              {isPlaying ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="flex size-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md text-white active:scale-95 transition-all cursor-pointer hover:bg-white/25"
+              title={isMuted ? "Bunyikan" : "Bisukan"}
+            >
+              {isMuted ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-red-400">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24Z" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24Z" />
+                </svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleRestart}
+              className="flex size-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md text-white active:scale-95 transition-all cursor-pointer hover:bg-white/25"
+              title="Ulangi dari Awal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 flex-1 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onShare();
+              }}
+              className="flex-1 max-w-[200px] h-11 px-4 rounded-2xl bg-ember hover:bg-ember/90 text-obsidian font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-ember/30 active:scale-95 transition-all cursor-pointer"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+              </svg>
+              <span>Bagikan Video</span>
+            </button>
+          </div>
+        </div>
+      </footer>
+    </div>,
+    document.body
+  );
+}
+
+// -------------------------------------------------------------
+// 🏆 Main Video Completion Modal (Summary & Social Dispatch)
+// -------------------------------------------------------------
 export function VideoCompletionModal({
   isOpen,
   onClose,
@@ -70,38 +303,22 @@ export function VideoCompletionModal({
   const [isSharing, setIsSharing] = useState(false);
   const [hasNativeShare, setHasNativeShare] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
-
-  // Custom Studio Video Player State
   const [showResultPlayer, setShowResultPlayer] = useState(false);
-  const [isResultPlaying, setIsResultPlaying] = useState(false);
-  const [resultCurrentTime, setResultCurrentTime] = useState(0);
-  const [resultDuration, setResultDuration] = useState(0);
-  const [isResultMuted, setIsResultMuted] = useState(false);
-  const resultVideoRef = React.useRef<HTMLVideoElement | null>(null);
-
-  const toggleResultPlay = () => {
-    if (!resultVideoRef.current) return;
-    if (resultVideoRef.current.paused) {
-      void resultVideoRef.current.play();
-      setIsResultPlaying(true);
-    } else {
-      resultVideoRef.current.pause();
-      setIsResultPlaying(false);
-    }
-  };
-
-  const toggleResultMute = () => {
-    if (!resultVideoRef.current) return;
-    const nextMute = !resultVideoRef.current.muted;
-    resultVideoRef.current.muted = nextMute;
-    setIsResultMuted(nextMute);
-  };
 
   useEffect(() => {
     void getNativeShell().then((shell) => {
       setHasNativeShare(!!shell?.capabilities?.includes("share-video"));
     });
   }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const cleanTitle = useMemo(() => formatCleanTitle(videoTitle), [videoTitle]);
   const hashtags = useMemo(() => extractHashtags(videoTitle).join(" "), [videoTitle]);
@@ -143,10 +360,8 @@ export function VideoCompletionModal({
     void targetApp;
     setIsSharing(true);
     try {
-      // 1. Always copy caption to clipboard with haptic feedback
       await copyCaption();
 
-      // 2. If running on updated APK with native share capability
       if (hasNativeShare) {
         try {
           await requestNative({
@@ -161,7 +376,6 @@ export function VideoCompletionModal({
         }
       }
 
-      // 3. Web Share API with File (if supported by the browser)
       if (videoFile && typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [videoFile] })) {
         try {
           await navigator.share({
@@ -175,7 +389,6 @@ export function VideoCompletionModal({
         }
       }
 
-      // 4. Guaranteed Action Sheet Fallback: Never leave user stranded without response
       setShowShareSheet(true);
       showToast("Caption tersalin! Pilih aplikasi di bawah untuk posting.");
       if (onShare) onShare();
@@ -185,8 +398,9 @@ export function VideoCompletionModal({
   };
 
   if (!isOpen) return null;
+  if (typeof document === "undefined") return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto custom-scrollbar rounded-3xl border border-ember/30 bg-obsidian p-5 sm:p-6 shadow-2xl ring-1 ring-white/10 space-y-4 animate-in zoom-in-95 duration-200 text-ink">
         {/* Glow Accent */}
@@ -507,159 +721,15 @@ export function VideoCompletionModal({
         </div>
       </div>
 
-      {/* Custom Studio Video Player Modal (Pop-up Pop-over Eksklusif) */}
+      {/* Pop-up Windows Full-Screen Custom Studio Video Player */}
       {showResultPlayer && videoUrl && (
-        <div className="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-3 sm:p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-200">
-          <div className="relative w-full max-w-sm flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200">
-            {/* Player Header */}
-            <div className="w-full flex items-center justify-between px-1">
-              <button
-                type="button"
-                onClick={() => setShowResultPlayer(false)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                </svg>
-                <span>Kembali</span>
-              </button>
-
-              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-ember font-mono">1080p Studio Ultra-HD</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowResultPlayer(false)}
-                className="flex size-8 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Custom Video Viewport */}
-            <div
-              onClick={toggleResultPlay}
-              className="relative w-full aspect-[9/16] max-h-[62vh] sm:max-h-[68vh] rounded-2xl overflow-hidden bg-black ring-1 ring-white/20 shadow-2xl flex items-center justify-center cursor-pointer group"
-            >
-              <video
-                ref={resultVideoRef}
-                src={videoUrl}
-                playsInline
-                loop
-                preload="auto"
-                onPlay={() => setIsResultPlaying(true)}
-                onPause={() => setIsResultPlaying(false)}
-                onTimeUpdate={(e) => {
-                  setResultCurrentTime(e.currentTarget.currentTime);
-                }}
-                onLoadedMetadata={(e) => {
-                  setResultDuration(e.currentTarget.duration);
-                }}
-                className="h-full w-full object-contain"
-              />
-
-              {/* Frosted Play Icon Overlay when Paused */}
-              {!isResultPlaying && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 backdrop-blur-[1px] transition-all">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/40">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Custom Control Bar */}
-            <div className="w-full rounded-2xl border border-white/10 bg-obsidian p-3 space-y-2.5 shadow-xl">
-              {/* Scrubber / Seek Slider */}
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] text-mist w-9 text-right">
-                  {formatTime(resultCurrentTime)}
-                </span>
-                <input
-                  type="range"
-                  min={0}
-                  max={resultDuration || 100}
-                  step={0.05}
-                  value={resultCurrentTime}
-                  onChange={(e) => {
-                    const target = parseFloat(e.target.value);
-                    setResultCurrentTime(target);
-                    if (resultVideoRef.current) {
-                      resultVideoRef.current.currentTime = target;
-                    }
-                  }}
-                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/20 accent-ember cursor-pointer"
-                />
-                <span className="font-mono text-[10px] text-mist w-9">
-                  {formatTime(resultDuration)}
-                </span>
-              </div>
-
-              {/* Controls & Quick Actions */}
-              <div className="flex items-center justify-between pt-0.5">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={toggleResultPlay}
-                    className="flex size-9 items-center justify-center rounded-full bg-ember hover:bg-ember/90 text-obsidian shadow-md active:scale-95 transition-transform cursor-pointer"
-                  >
-                    {isResultPlaying ? (
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-4.5"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-4.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={toggleResultMute}
-                    className="flex size-8 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors cursor-pointer"
-                    title={isResultMuted ? "Bunyikan" : "Bisukan"}
-                  >
-                    {isResultMuted ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-red-400">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24Z" />
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24Z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowResultPlayer(false);
-                      handleShareToApp("system");
-                    }}
-                    className="h-8 px-3 rounded-xl bg-ember hover:bg-ember/90 text-obsidian font-extrabold text-[11px] flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
-                    </svg>
-                    <span>Bagikan</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowResultPlayer(false)}
-                    className="h-8 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition-colors cursor-pointer"
-                  >
-                    Tutup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ResultVideoPlayerModal
+          videoUrl={videoUrl}
+          onClose={() => setShowResultPlayer(false)}
+          onShare={() => handleShareToApp("system")}
+        />
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
