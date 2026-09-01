@@ -1,0 +1,64 @@
+{
+  "name": "malesan-desktop",
+  "version": "2.1.0",
+  "description": "Malesan Studio Desktop - Platform AI Kreator Konten Indonesia",
+  "main": "src/main.js",
+  "author": "Malesan Team <support@malesan.my.id>",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "id.my.malesan.desktop",
+    "productName": "Malesan Studio",
+    "copyright": "Copyright © 2026 Malesan",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "bin/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "legalTrademarks": "Malesan"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Malesan Studio",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "https://malesan.my.id/api/desktop/updates"
+    }
+  }
+}

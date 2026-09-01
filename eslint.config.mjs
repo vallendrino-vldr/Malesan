@@ -18,6 +18,7 @@ const eslintConfig = defineConfig([
     ".agents/**",
     ".hermes/**",
     ".claude/**",
+    "desktop/**",
   ]),
 ]);
 

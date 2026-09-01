@@ -85,7 +85,11 @@ CLAUDE.md
 ANTIGRAVITY_PROMPT.md
 MALESAN_MASTER_PROMPT.md
 docs/superpowers/
-__pycache__/
-*.pyc
+# Desktop Electron binaries & distribution
+desktop/dist/
+desktop/bin/
+desktop/node_modules/
+public/Malesan-Setup.exe
+public/*.exe
 
 
