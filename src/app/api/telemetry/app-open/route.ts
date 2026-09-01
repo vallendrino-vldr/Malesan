@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { notifyAppInstall } from "@/lib/telegram";
+import { checkApkUpdate } from "@/lib/native/version";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json().catch(() => null)) as {
       appVersion?: string;
+      versionCode?: number;
       deviceModel?: string;
       osVersion?: string;
     } | null;
@@ -48,15 +50,21 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     const isLockdown = lockdownConfig?.value === "true";
+    const updateInfo = checkApkUpdate(body?.versionCode, body?.appVersion);
 
     await notifyAppInstall({
       email: user?.email || null,
       deviceModel: deviceModel || "Android Mobile",
       osVersion: osVersion || "Android",
-      appVersion: body?.appVersion || "2.1.8",
+      appVersion: body?.appVersion || updateInfo.latestVersion,
     });
 
-    return NextResponse.json({ ok: true, isBanned, lockdown: isLockdown });
+    return NextResponse.json({
+      ok: true,
+      isBanned,
+      lockdown: isLockdown,
+      update: updateInfo,
+    });
   } catch (error) {
     console.error("[telemetry/app-open] error:", error);
     return NextResponse.json({ ok: false }, { status: 500 });

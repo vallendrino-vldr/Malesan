@@ -101,19 +101,23 @@ export function requestNative<T extends NativeResponse>(
 
 export type NativeShell = {
   appVersion: string;
+  versionCode?: number;
   capabilities: string[];
 };
 
 export async function getNativeShell(): Promise<NativeShell | null> {
   if (typeof window === "undefined" || !getPort()) return null;
   try {
-    const response = await requestNative<NativeResponse>({ type: "SHELL_HELLO" }, 2_000);
+    const response = await requestNative<NativeResponse & { versionCode?: number }>({ type: "SHELL_HELLO" }, 2_000);
     if (response.type !== "SHELL_READY" || response.protocolVersion !== NATIVE_PROTOCOL_VERSION) return null;
 
     void fetch("/api/telemetry/app-open", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ appVersion: response.appVersion }),
+      body: JSON.stringify({
+        appVersion: response.appVersion,
+        versionCode: response.versionCode,
+      }),
     })
       .then(async (res) => {
         if (!res.ok) return;
@@ -125,7 +129,11 @@ export async function getNativeShell(): Promise<NativeShell | null> {
       })
       .catch(() => {});
 
-    return { appVersion: response.appVersion || "unknown", capabilities: response.capabilities || [] };
+    return {
+      appVersion: response.appVersion || "unknown",
+      versionCode: typeof response.versionCode === "number" ? response.versionCode : undefined,
+      capabilities: response.capabilities || [],
+    };
   } catch {
     return null;
   }
@@ -141,3 +149,14 @@ export async function pasteFromNativeClipboard(): Promise<string> {
   } catch {}
   return "";
 }
+
+export async function triggerNativeApkUpdate(downloadUrl: string, version: string): Promise<boolean> {
+  if (typeof window === "undefined" || !getPort()) return false;
+  try {
+    const res = await requestNative<NativeResponse>({ type: "TRIGGER_APK_UPDATE", url: downloadUrl, version }, 5_000);
+    return res.type === "UPDATE_STARTED";
+  } catch {
+    return false;
+  }
+}
+

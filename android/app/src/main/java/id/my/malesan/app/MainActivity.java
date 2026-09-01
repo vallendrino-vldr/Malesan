@@ -2,9 +2,14 @@ package id.my.malesan.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.DownloadManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
@@ -104,6 +109,7 @@ public final class MainActivity extends Activity {
     private CancellationSignal authCancellation;
     private NativeClipEngine clipEngine;
     private String activeClipJobId;
+    private BroadcastReceiver updateReceiver;
 
     @Override
     @SuppressLint("SetJavaScriptEnabled")
@@ -113,6 +119,9 @@ public final class MainActivity extends Activity {
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED);
         window.setStatusBarColor(0xFF0B0A09);
         window.setNavigationBarColor(0xFF0B0A09);
+
+        createNotificationChannel();
+        requestNotificationPermissionIfNeeded();
 
         webView = new WebView(this);
         clipEngine = new NativeClipEngine(this);
@@ -226,6 +235,17 @@ public final class MainActivity extends Activity {
         webView.setBackgroundColor(0xFF0B0A09);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
+        webView.setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
+            if (url != null && (url.endsWith(".apk") || url.contains("malesan.apk") || url.contains("malesan-arm32.apk"))) {
+                try {
+                    JSONObject body = new JSONObject().put("url", url);
+                    handleApkUpdate(body, "download_listener", null);
+                    return;
+                } catch (Exception ignored) {}
+            }
+            if (url != null) openExternal(Uri.parse(url));
+        });
+
         CookieManager cookies = CookieManager.getInstance();
         cookies.setAcceptCookie(true);
         cookies.setAcceptThirdPartyCookies(webView, false);
@@ -235,6 +255,10 @@ public final class MainActivity extends Activity {
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if (isNativeClipUri(uri.toString())) return false;
+                if (uri.getPath() != null && uri.getPath().endsWith(".apk")) {
+                    openExternal(uri);
+                    return true;
+                }
                 if ("https".equalsIgnoreCase(uri.getScheme()) && isAppHost(uri.getHost())) return false;
                 // YouTube embed iframes (preview player) and Google auth pages must stay
                 // inside the WebView. Block them from hijacking the main frame without
@@ -329,6 +353,7 @@ public final class MainActivity extends Activity {
                             .put("requestId", requestId)
                             .put("protocolVersion", PROTOCOL_VERSION)
                             .put("appVersion", BuildConfig.VERSION_NAME)
+                            .put("versionCode", BuildConfig.VERSION_CODE)
                             .put("capabilities", new org.json.JSONArray()
                                     .put("google-id-token")
                                     .put("share-youtube")
@@ -336,7 +361,8 @@ public final class MainActivity extends Activity {
                                     .put("native-auto-clip")
                                     .put("gallery-stream")
                                     .put("share-video")
-                                    .put("clipboard-paste")));
+                                    .put("clipboard-paste")
+                                    .put("apk-update")));
                     break;
                 case "CLIPBOARD_PASTE":
                     runOnUiThread(() -> {
@@ -407,6 +433,13 @@ public final class MainActivity extends Activity {
                             finishAffinity();
                         }
                     });
+                    break;
+                case "TRIGGER_APK_UPDATE":
+                    handleApkUpdate(body, requestId, replyProxy);
+                    break;
+                case "NOTIFY_UPDATE_AVAILABLE":
+                    showUpdateNotification(body.optString("version", "2.2.5"), body.optString("size", "58 MB"));
+                    reply(replyProxy, terminal("NOTIFY_DONE", requestId));
                     break;
                 default:
                     reply(replyProxy, error(requestId, "UNSUPPORTED_MESSAGE", "Perintah APK tidak dikenali."));
@@ -761,8 +794,136 @@ public final class MainActivity extends Activity {
         fileUploadCallback = null;
     }
 
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    "malesan_updates",
+                    "Pembaruan Malesan",
+                    NotificationManager.IMPORTANCE_DEFAULT
+            );
+            channel.setDescription("Notifikasi pembaruan aplikasi Malesan");
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1002);
+            }
+        }
+    }
+
+    private void showUpdateNotification(String version, String size) {
+        try {
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager == null) return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                return;
+            }
+            Intent launchIntent = new Intent(this, MainActivity.class);
+            launchIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            android.app.PendingIntent pendingIntent = android.app.PendingIntent.getActivity(
+                    this, 0, launchIntent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+            );
+            android.app.Notification.Builder builder;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                builder = new android.app.Notification.Builder(this, "malesan_updates");
+            } else {
+                builder = new android.app.Notification.Builder(this);
+            }
+            builder.setContentTitle("Pembaruan Malesan v" + version + " Siap!")
+                    .setContentText("Versi terbaru (" + size + ") tersedia. Ketuk untuk memperbarui.")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
+            manager.notify(2026, builder.build());
+        } catch (Exception ignored) {}
+    }
+
+    private void handleApkUpdate(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
+        String rawUrl = body.optString("url");
+        String version = body.optString("version", BuildConfig.VERSION_NAME);
+        final String downloadUrl = rawUrl.isBlank() ? BASE_URL + "/malesan.apk" : rawUrl;
+        runOnUiThread(() -> {
+            try {
+                DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                if (dm != null) {
+                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(downloadUrl));
+                    request.setTitle("Malesan v" + version);
+                    request.setDescription("Mengunduh pembaruan aplikasi...");
+                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "malesan-v" + version + ".apk");
+                    request.setMimeType("application/vnd.android.package-archive");
+                    long downloadId = dm.enqueue(request);
+
+                    registerDownloadReceiver(downloadId);
+
+                    Toast.makeText(this, "Mengunduh pembaruan di latar belakang... Cek notifikasi HP kamu.", Toast.LENGTH_LONG).show();
+                    haptic("light");
+                    if (replyProxy != null) {
+                        reply(replyProxy, terminal("UPDATE_STARTED", requestId));
+                    }
+                    return;
+                }
+            } catch (Exception ignored) {}
+
+            openExternal(Uri.parse(downloadUrl));
+            if (replyProxy != null) {
+                reply(replyProxy, terminal("UPDATE_STARTED", requestId));
+            }
+        });
+    }
+
+    private void registerDownloadReceiver(long expectedDownloadId) {
+        if (updateReceiver != null) {
+            try { unregisterReceiver(updateReceiver); } catch (Exception ignored) {}
+            updateReceiver = null;
+        }
+        try {
+            updateReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1);
+                    if (id == expectedDownloadId) {
+                        try {
+                            context.unregisterReceiver(this);
+                        } catch (Exception ignored) {}
+                        updateReceiver = null;
+                        try {
+                            DownloadManager dm = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
+                            Uri uri = dm.getUriForDownloadedFile(id);
+                            if (uri != null) {
+                                Intent installIntent = new Intent(Intent.ACTION_VIEW);
+                                installIntent.setDataAndType(uri, "application/vnd.android.package-archive");
+                                installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                context.startActivity(installIntent);
+                            }
+                        } catch (Exception e) {
+                            Toast.makeText(context, "Unduhan selesai. Buka panel notifikasi untuk memasang.", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+            };
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(updateReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
+            } else {
+                registerReceiver(updateReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+            }
+        } catch (Exception ignored) {}
+    }
+
     @Override
     protected void onDestroy() {
+        if (updateReceiver != null) {
+            try { unregisterReceiver(updateReceiver); } catch (Exception ignored) {}
+            updateReceiver = null;
+        }
         if (authCancellation != null) authCancellation.cancel();
         if (activeClipJobId != null && clipEngine != null) clipEngine.cancel(activeClipJobId);
         if (clipEngine != null) clipEngine.shutdown();

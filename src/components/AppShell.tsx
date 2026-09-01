@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, type ReactNode } from "react";
 import { getNativeShell } from "@/lib/native/bridge";
+import { checkApkUpdate, type ApkUpdateInfo } from "@/lib/native/version";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
 import { CreditDisplay } from "./CreditDisplay";
@@ -11,6 +12,7 @@ import { TutorialSheet } from "./TutorialSheet";
 import { CommandOmnibar } from "./CommandOmnibar";
 import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 import { InstallAppModal } from "./InstallAppModal";
+import { ApkUpdateModal } from "./ApkUpdateModal";
 
 export type TabKey = "studio" | "vibe" | "pipeline" | "profil";
 const VALID_TABS: TabKey[] = ["studio", "vibe", "pipeline", "profil"];
@@ -73,11 +75,27 @@ export function AppShell({
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
   const [isNativeApk, setIsNativeApk] = useState(false);
+  const [nativeVersion, setNativeVersion] = useState<string | null>(null);
+  const [updateInfo, setUpdateInfo] = useState<ApkUpdateInfo | null>(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
     void getNativeShell().then((shell) => {
-      if (active) setIsNativeApk(Boolean(shell));
+      if (!active) return;
+      if (shell) {
+        setIsNativeApk(true);
+        setNativeVersion(shell.appVersion);
+        const update = checkApkUpdate(shell.versionCode, shell.appVersion);
+        setUpdateInfo(update);
+        if (update.hasUpdate && typeof window !== "undefined") {
+          const prompted = sessionStorage.getItem("malesan_update_prompted");
+          if (!prompted) {
+            sessionStorage.setItem("malesan_update_prompted", "1");
+            setIsUpdateModalOpen(true);
+          }
+        }
+      }
     });
     return () => {
       active = false;
@@ -185,18 +203,39 @@ export function AppShell({
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
             {isNativeApk ? (
-              <div
-                title="Malesan Native APK Engine Aktif"
-                className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 sm:px-3 text-xs font-bold text-amber-400 shadow-xs"
-              >
-                <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
-                <span>APK Pro</span>
-              </div>
+              updateInfo?.hasUpdate ? (
+                <button
+                  type="button"
+                  onClick={() => setIsUpdateModalOpen(true)}
+                  title={`Pembaruan Malesan v${updateInfo.latestVersion} Siap Dipasang (${updateInfo.displaySize})`}
+                  className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/50 bg-ember/15 px-2.5 sm:px-3 text-xs font-bold text-ember shadow-xs hover:bg-ember/25 transition-all cursor-pointer animate-pulse whitespace-nowrap shrink-0"
+                >
+                  <span className="relative flex size-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-ember" />
+                  </span>
+                  <span className="hidden sm:inline">Update v{updateInfo.latestVersion}</span>
+                  <span className="sm:hidden">Update</span>
+                </button>
+              ) : (
+                <div
+                  title={`Malesan Native Engine Aktif (${nativeVersion ? `v${nativeVersion}` : "Terbaru"}) • 60fps Akselerasi Hardware`}
+                  className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 sm:px-3 text-xs font-semibold text-emerald-400 shadow-xs whitespace-nowrap shrink-0"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-emerald-400 shrink-0">
+                    <rect width="16" height="16" x="4" y="4" rx="2" />
+                    <rect width="6" height="6" x="9" y="9" rx="1" />
+                    <path d="M15 2v2M9 2v2M15 20v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2" />
+                  </svg>
+                  <span className="hidden sm:inline">Android Native</span>
+                  <span className="sm:hidden">Native</span>
+                </div>
+              )
             ) : (
               <button
                 type="button"
                 onClick={() => setIsInstallModalOpen(true)}
-                aria-label="Unduh APK Pro / Pasang Aplikasi Malesan"
+                aria-label="Pasang Aplikasi Malesan"
                 className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/35 bg-ember/10 px-2.5 sm:px-3 text-xs font-bold text-ember hover:border-ember/60 hover:bg-ember/20 transition-all cursor-pointer shadow-xs"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember shrink-0">
@@ -431,6 +470,14 @@ export function AppShell({
       <InstallAppModal
         open={isInstallModalOpen}
         onClose={() => setIsInstallModalOpen(false)}
+      />
+
+      {/* Instant In-App APK Update Modal */}
+      <ApkUpdateModal
+        open={isUpdateModalOpen}
+        onClose={() => setIsUpdateModalOpen(false)}
+        updateInfo={updateInfo}
+        isNativeApk={isNativeApk}
       />
     </div>
   );

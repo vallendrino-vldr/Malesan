@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useSyncExternalStore } from "react";
+import { LATEST_APK_DISPLAY_SIZE, LATEST_ARM32_SIZE } from "@/lib/native/version";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -151,7 +152,7 @@ export function InstallAppModal({
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Unduh APK Pro (52 MB)</span>
+                <span>Unduh Malesan APK ({LATEST_APK_DISPLAY_SIZE})</span>
               </a>
 
               <div className="text-center">
@@ -161,7 +162,7 @@ export function InstallAppModal({
                   onClick={onClose}
                   className="inline-block text-[10px] font-semibold text-mist hover:text-ember transition-colors"
                 >
-                  HP lawas (32-bit)? Unduh versi ARM32
+                  HP lawas (32-bit)? Unduh versi ARM32 ({LATEST_ARM32_SIZE})
                 </a>
               </div>
             </div>
