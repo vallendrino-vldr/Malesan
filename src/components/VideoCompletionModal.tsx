@@ -16,6 +16,13 @@ interface VideoCompletionModalProps {
 
 type CaptionStylePreset = "viral" | "discuss" | "short";
 
+function formatTime(sec: number): string {
+  if (isNaN(sec) || !isFinite(sec) || sec <= 0) return "0:00";
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 function formatCleanTitle(raw: string): string {
   const noExt = raw.replace(/\.[^.]+$/, "");
   const spaced = noExt.replace(/[-_]+/g, " ").trim();
@@ -63,6 +70,32 @@ export function VideoCompletionModal({
   const [isSharing, setIsSharing] = useState(false);
   const [hasNativeShare, setHasNativeShare] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+
+  // Custom Studio Video Player State
+  const [showResultPlayer, setShowResultPlayer] = useState(false);
+  const [isResultPlaying, setIsResultPlaying] = useState(false);
+  const [resultCurrentTime, setResultCurrentTime] = useState(0);
+  const [resultDuration, setResultDuration] = useState(0);
+  const [isResultMuted, setIsResultMuted] = useState(false);
+  const resultVideoRef = React.useRef<HTMLVideoElement | null>(null);
+
+  const toggleResultPlay = () => {
+    if (!resultVideoRef.current) return;
+    if (resultVideoRef.current.paused) {
+      void resultVideoRef.current.play();
+      setIsResultPlaying(true);
+    } else {
+      resultVideoRef.current.pause();
+      setIsResultPlaying(false);
+    }
+  };
+
+  const toggleResultMute = () => {
+    if (!resultVideoRef.current) return;
+    const nextMute = !resultVideoRef.current.muted;
+    resultVideoRef.current.muted = nextMute;
+    setIsResultMuted(nextMute);
+  };
 
   useEffect(() => {
     void getNativeShell().then((shell) => {
@@ -187,27 +220,39 @@ export function VideoCompletionModal({
           </p>
         </div>
 
-        {/* Realtime Video Playback Player (Hasil Nyata) */}
-        {videoUrl ? (
-          <div className="relative z-10 overflow-hidden rounded-2xl border border-ember/40 bg-black/90 shadow-2xl space-y-2 p-2">
-            <div className="relative aspect-[9/16] max-h-[300px] sm:max-h-[340px] mx-auto w-full flex items-center justify-center rounded-xl overflow-hidden bg-black ring-1 ring-white/10">
-              <video
-                src={videoUrl}
-                controls
-                playsInline
-                preload="auto"
-                className="h-full w-full object-contain"
-              />
-            </div>
-            <div className="flex items-center justify-between px-2 py-1 text-xs">
-              <div className="flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Hasil Video Siap Diputar</span>
+        {/* Tombol Buka Pop-up Preview Video Hasil Render (Custom Studio Player) */}
+        {videoUrl && (
+          <button
+            type="button"
+            onClick={() => setShowResultPlayer(true)}
+            className="group relative z-10 w-full overflow-hidden rounded-2xl border border-ember/40 bg-gradient-to-r from-ember/20 via-black/60 to-obsidian p-3.5 shadow-xl transition-all hover:border-ember/70 hover:shadow-ember/20 active:scale-[0.98] cursor-pointer text-left flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative flex size-11 shrink-0 items-center justify-center rounded-xl bg-ember text-obsidian shadow-lg shadow-ember/30 group-hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
               </div>
-              <span className="text-[10px] text-ember font-mono font-bold">1080p Studio Ultra-HD</span>
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-display text-sm font-extrabold text-white group-hover:text-ember transition-colors">
+                    Lihat Hasil Video
+                  </span>
+                  <span className="rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300 border border-emerald-500/30">
+                    1080p Siap
+                  </span>
+                </div>
+                <p className="text-[11px] text-mist">
+                  Tap untuk memutar video dengan custom player studio
+                </p>
+              </div>
             </div>
-          </div>
-        ) : null}
+
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/80 group-hover:bg-ember/20 group-hover:text-ember transition-colors">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+              </svg>
+            </div>
+          </button>
+        )}
 
         {/* Storage Location Card */}
         <div className="relative z-10 rounded-2xl border border-white/10 bg-white/5 p-3 space-y-1.5">
@@ -461,6 +506,160 @@ export function VideoCompletionModal({
           </div>
         </div>
       </div>
+
+      {/* Custom Studio Video Player Modal (Pop-up Pop-over Eksklusif) */}
+      {showResultPlayer && videoUrl && (
+        <div className="fixed inset-0 z-[100000] flex flex-col items-center justify-center p-3 sm:p-4 bg-black/95 backdrop-blur-xl animate-in fade-in duration-200">
+          <div className="relative w-full max-w-sm flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200">
+            {/* Player Header */}
+            <div className="w-full flex items-center justify-between px-1">
+              <button
+                type="button"
+                onClick={() => setShowResultPlayer(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                </svg>
+                <span>Kembali</span>
+              </button>
+
+              <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-ember font-mono">1080p Studio Ultra-HD</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowResultPlayer(false)}
+                className="flex size-8 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Custom Video Viewport */}
+            <div
+              onClick={toggleResultPlay}
+              className="relative w-full aspect-[9/16] max-h-[62vh] sm:max-h-[68vh] rounded-2xl overflow-hidden bg-black ring-1 ring-white/20 shadow-2xl flex items-center justify-center cursor-pointer group"
+            >
+              <video
+                ref={resultVideoRef}
+                src={videoUrl}
+                playsInline
+                loop
+                preload="auto"
+                onPlay={() => setIsResultPlaying(true)}
+                onPause={() => setIsResultPlaying(false)}
+                onTimeUpdate={(e) => {
+                  setResultCurrentTime(e.currentTarget.currentTime);
+                }}
+                onLoadedMetadata={(e) => {
+                  setResultDuration(e.currentTarget.duration);
+                }}
+                className="h-full w-full object-contain"
+              />
+
+              {/* Frosted Play Icon Overlay when Paused */}
+              {!isResultPlaying && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25 backdrop-blur-[1px] transition-all">
+                  <div className="flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/40">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Custom Control Bar */}
+            <div className="w-full rounded-2xl border border-white/10 bg-obsidian p-3 space-y-2.5 shadow-xl">
+              {/* Scrubber / Seek Slider */}
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-mist w-9 text-right">
+                  {formatTime(resultCurrentTime)}
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={resultDuration || 100}
+                  step={0.05}
+                  value={resultCurrentTime}
+                  onChange={(e) => {
+                    const target = parseFloat(e.target.value);
+                    setResultCurrentTime(target);
+                    if (resultVideoRef.current) {
+                      resultVideoRef.current.currentTime = target;
+                    }
+                  }}
+                  className="flex-1 h-1.5 rounded-lg appearance-none bg-white/20 accent-ember cursor-pointer"
+                />
+                <span className="font-mono text-[10px] text-mist w-9">
+                  {formatTime(resultDuration)}
+                </span>
+              </div>
+
+              {/* Controls & Quick Actions */}
+              <div className="flex items-center justify-between pt-0.5">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleResultPlay}
+                    className="flex size-9 items-center justify-center rounded-full bg-ember hover:bg-ember/90 text-obsidian shadow-md active:scale-95 transition-transform cursor-pointer"
+                  >
+                    {isResultPlaying ? (
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-4.5"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-4.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={toggleResultMute}
+                    className="flex size-8 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-white/90 transition-colors cursor-pointer"
+                    title={isResultMuted ? "Bunyikan" : "Bisukan"}
+                  >
+                    {isResultMuted ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-red-400">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24Z" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.414 0-.75-.336-.75-.75V10.5c0-.414.336-.75.75-.75h4.24Z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResultPlayer(false);
+                      handleShareToApp("system");
+                    }}
+                    className="h-8 px-3 rounded-xl bg-ember hover:bg-ember/90 text-obsidian font-extrabold text-[11px] flex items-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
+                    </svg>
+                    <span>Bagikan</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowResultPlayer(false)}
+                    className="h-8 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] transition-colors cursor-pointer"
+                  >
+                    Tutup
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
