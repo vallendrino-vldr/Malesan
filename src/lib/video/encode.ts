@@ -201,35 +201,146 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
       await encodeAudio(audio, muxer, () => failure);
     }
 
-    // ---- Deterministic Frame-by-Frame Render Walk:
-    // Every frame is stepped while video is paused, guaranteeing exact timestamps,
-    // perfect audio sync, zero frame starvation, and eliminating the 0-2s mobile startup stutter.
-    onStage?.("Nge-render tiap frame");
     const frameDurUs = Math.round(1_000_000 / fps);
     const gop = Math.max(1, Math.round(fps * 2));
 
-    video.pause();
-    await seekToFrame(video, 0);
-
-    for (let i = 0; i < totalFrames; i++) {
-      if (failure) throw failure;
-      const t = i / fps;
-      await seekToFrame(video, Math.min(t, Math.max(0, duration - 1e-3)));
-      drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
-
-      const frame = new VideoFrame(canvas, {
-        timestamp: Math.round(t * 1_000_000),
-        duration: frameDurUs,
+    // ---- 1. Hardware Encoder Pre-warm (Eliminates Android MediaCodec startup freeze)
+    try {
+      const warmup = new VideoEncoder({ output: () => {}, error: () => {} });
+      warmup.configure({
+        codec,
+        width: W,
+        height: H,
+        bitrate,
+        framerate: Math.max(1, Math.round(fps)),
+        avc: { format: "avc" },
+        hardwareAcceleration: "prefer-hardware",
+        latencyMode: "quality",
       });
-      videoEncoder.encode(frame, { keyFrame: i % gop === 0 });
-      frame.close();
+      const warmupFrame = new VideoFrame(canvas, { timestamp: 0, duration: frameDurUs });
+      warmup.encode(warmupFrame, { keyFrame: true });
+      warmupFrame.close();
+      await warmup.flush();
+      warmup.close();
+    } catch {
+      /* non-fatal warmup fallback */
+    }
 
-      while (videoEncoder.encodeQueueSize > 4) {
-        await sleep(4);
-        if (failure) throw failure;
-      }
+    // ---- 2. Prime Frame 0 at timestamp 0 as IDR Keyframe before playback starts
+    onStage?.("Nge-render tiap frame");
+    video.currentTime = 0;
+    await new Promise<void>((resolve) => {
+      if (video.readyState >= 2 && Math.abs(video.currentTime) < 1e-3) return resolve();
+      const onSeeked = () => {
+        video.removeEventListener("seeked", onSeeked);
+        resolve();
+      };
+      video.addEventListener("seeked", onSeeked, { once: true });
+      setTimeout(resolve, 800);
+    });
 
-      onProgress(Math.min(0.999, (i + 1) / totalFrames));
+    drawFrame(ctx, video, lines, 0, style, W, H, watermark, layout);
+    const frame0 = new VideoFrame(canvas, {
+      timestamp: 0,
+      duration: frameDurUs,
+    });
+    videoEncoder.encode(frame0, { keyFrame: true });
+    frame0.close();
+
+    let frameIndex = 1;
+    let lastRenderedTime = 0;
+
+    // ---- 3. Continuous Paced Capture (playbackRate = 0.5):
+    // Playing at half speed gives mobile GPU/CPU 2x time to render Full HD 1080p frames cleanly.
+    // Media presentation timestamps (meta.mediaTime) ensure the resulting MP4 plays back at normal 1.0x speed.
+    const rvfc = video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (cb: (now: number, meta: { mediaTime: number }) => void) => number;
+    };
+
+    video.playbackRate = 0.5;
+
+    if (typeof rvfc.requestVideoFrameCallback === "function") {
+      await new Promise<void>((resolve) => {
+        let isDone = false;
+        const finish = () => {
+          if (isDone) return;
+          isDone = true;
+          resolve();
+        };
+
+        video.addEventListener("ended", finish, { once: true });
+        const maxTimer = setTimeout(finish, (duration * 2.5 + 8) * 1000);
+
+        const step = (_now: number, meta: { mediaTime: number }) => {
+          if (isDone || failure || video.ended) {
+            clearTimeout(maxTimer);
+            finish();
+            return;
+          }
+          const t = meta.mediaTime;
+          if (t > lastRenderedTime + 0.008) {
+            lastRenderedTime = t;
+            drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
+            const frame = new VideoFrame(canvas, {
+              timestamp: Math.max(0, Math.round(t * 1_000_000)),
+              duration: frameDurUs,
+            });
+            videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
+            frame.close();
+            frameIndex++;
+            onProgress(Math.min(0.999, t / (duration || 1)));
+          }
+          if (!video.ended && !failure && !isDone) {
+            rvfc.requestVideoFrameCallback!(step);
+          }
+        };
+
+        video.play().catch(() => finish());
+        rvfc.requestVideoFrameCallback!(step);
+      });
+      video.pause();
+    } else {
+      let raf = 0;
+      await new Promise<void>((resolve) => {
+        let isDone = false;
+        const finish = () => {
+          if (isDone) return;
+          isDone = true;
+          cancelAnimationFrame(raf);
+          resolve();
+        };
+
+        video.addEventListener("ended", finish, { once: true });
+        const maxTimer = setTimeout(finish, (duration * 2.5 + 8) * 1000);
+
+        const step = () => {
+          if (isDone || failure || video.ended) {
+            clearTimeout(maxTimer);
+            finish();
+            return;
+          }
+          const t = video.currentTime;
+          if (t > lastRenderedTime + 0.015) {
+            lastRenderedTime = t;
+            drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
+            const frame = new VideoFrame(canvas, {
+              timestamp: Math.max(0, Math.round(t * 1_000_000)),
+              duration: frameDurUs,
+            });
+            videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
+            frame.close();
+            frameIndex++;
+            onProgress(Math.min(0.999, t / (duration || 1)));
+          }
+          if (!video.ended && !failure && !isDone) {
+            raf = requestAnimationFrame(step);
+          }
+        };
+
+        video.play().catch(() => finish());
+        raf = requestAnimationFrame(step);
+      });
+      video.pause();
     }
 
     await videoEncoder.flush();
