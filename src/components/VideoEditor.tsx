@@ -201,6 +201,7 @@ export function VideoEditor({
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [renderedVideoUrl, setRenderedVideoUrl] = useState<string | undefined>(undefined);
+  const [exportedVideoFile, setExportedVideoFile] = useState<File | null>(null);
   const [isNativeAPK, setIsNativeAPK] = useState(false);
   const [currentTimeNow, setCurrentTimeNow] = useState(0);
   const [videoDuration, setVideoDuration] = useState(60);
@@ -559,6 +560,8 @@ export function VideoEditor({
         onStage: setExportStage,
       });
       const base = file.name.replace(/\.[^.]+$/, "").slice(0, 40) || "video";
+      const finalFile = new File([blob], `${base}.${ext}`, { type: blob.type || "video/mp4" });
+      setExportedVideoFile(finalFile);
       const nativeShell = await getNativeShell();
       const isAPK = !!nativeShell?.capabilities.includes("gallery-stream");
       setIsNativeAPK(isAPK);
@@ -1126,6 +1129,7 @@ export function VideoEditor({
         isOpen={showCompletionModal}
         onClose={() => setShowCompletionModal(false)}
         videoUrl={renderedVideoUrl}
+        videoFile={exportedVideoFile}
         videoTitle={file?.name.replace(/\.[^.]+$/, "") || "video"}
         isAPK={isNativeAPK}
         transcriptionText={words.map((w) => w.word).join(" ")}

@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -97,6 +98,7 @@ public final class MainActivity extends Activity {
     private final SecureRandom secureRandom = new SecureRandom();
     private final Map<String, File> clipOutputs = new ConcurrentHashMap<>();
     private final Map<String, GalleryUpload> galleryUploads = new ConcurrentHashMap<>();
+    private Uri lastSavedGalleryUri = null;
     private WebView webView;
     private ValueCallback<Uri[]> fileUploadCallback;
     private CancellationSignal authCancellation;
@@ -333,6 +335,7 @@ public final class MainActivity extends Activity {
                                     .put("haptics")
                                     .put("native-auto-clip")
                                     .put("gallery-stream")
+                                    .put("share-video")
                                     .put("clipboard-paste")));
                     break;
                 case "CLIPBOARD_PASTE":
@@ -375,6 +378,9 @@ public final class MainActivity extends Activity {
                     break;
                 case "GALLERY_COMMIT":
                     commitGallery(body, requestId, replyProxy);
+                    break;
+                case "SHARE_VIDEO":
+                    shareVideoToApp(body, requestId, replyProxy);
                     break;
                 case "HAPTIC":
                     haptic(body.optString("strength"));
@@ -463,6 +469,7 @@ public final class MainActivity extends Activity {
             upload.stream.flush(); upload.stream.close();
             ContentValues ready = new ContentValues(); ready.put(MediaStore.Video.Media.IS_PENDING, 0);
             if (getContentResolver().update(upload.uri, ready, null, null) != 1) throw new IOException("Publish gagal.");
+            lastSavedGalleryUri = upload.uri;
             reply(replyProxy, terminal("GALLERY_SAVED", requestId));
         } catch (Exception failure) {
             getContentResolver().delete(upload.uri, null, null);
@@ -474,6 +481,69 @@ public final class MainActivity extends Activity {
         galleryUploads.remove(token);
         try { upload.stream.close(); } catch (IOException ignored) { }
         getContentResolver().delete(upload.uri, null, null);
+    }
+
+    private boolean isAppInstalled(String packageName) {
+        try {
+            getPackageManager().getPackageInfo(packageName, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    private void shareVideoToApp(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
+        String target = body.optString("target", "system");
+        String text = body.optString("text", "");
+        String uriStr = body.optString("uri", "");
+        Uri videoUri = (uriStr != null && !uriStr.trim().isEmpty()) ? Uri.parse(uriStr) : lastSavedGalleryUri;
+
+        if (videoUri == null) {
+            reply(replyProxy, error(requestId, "NO_VIDEO_URI", "File video belum tersimpan di Galeri."));
+            return;
+        }
+
+        runOnUiThread(() -> {
+            try {
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("video/*");
+                shareIntent.putExtra(Intent.EXTRA_STREAM, videoUri);
+                if (!text.isEmpty()) {
+                    shareIntent.putExtra(Intent.EXTRA_TEXT, text);
+                }
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                boolean targetFound = false;
+                if ("tiktok".equalsIgnoreCase(target)) {
+                    String[] tiktokPackages = new String[]{"com.zhiliaoapp.musically", "com.ss.android.ugc.trill"};
+                    for (String pkg : tiktokPackages) {
+                        if (isAppInstalled(pkg)) {
+                            shareIntent.setPackage(pkg);
+                            targetFound = true;
+                            break;
+                        }
+                    }
+                } else if ("instagram".equalsIgnoreCase(target)) {
+                    if (isAppInstalled("com.instagram.android")) {
+                        shareIntent.setPackage("com.instagram.android");
+                        targetFound = true;
+                    }
+                }
+
+                if (!targetFound && !"system".equalsIgnoreCase(target)) {
+                    Intent chooser = Intent.createChooser(shareIntent, "Kirim Video ke " + ("tiktok".equalsIgnoreCase(target) ? "TikTok" : "Instagram"));
+                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(chooser);
+                } else {
+                    shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(shareIntent);
+                }
+
+                reply(replyProxy, terminal("SHARE_DISPATCHED", requestId));
+            } catch (Exception e) {
+                reply(replyProxy, error(requestId, "SHARE_FAILED", "Gagal membagikan video: " + e.getMessage()));
+            }
+        });
     }
 
     private void startNativeClip(JSONObject body, String requestId, JavaScriptReplyProxy replyProxy) {
