@@ -733,8 +733,19 @@ public final class MainActivity extends Activity {
     }
 
     private void openExternal(Uri uri) {
-        try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); }
-        catch (RuntimeException ignored) { Toast.makeText(this, "Tautan tidak bisa dibuka.", Toast.LENGTH_SHORT).show(); }
+        try {
+            String uriString = uri.toString();
+            Intent intent;
+            if (uriString.startsWith("intent:")) {
+                intent = Intent.parseUri(uriString, Intent.URI_INTENT_SCHEME);
+            } else {
+                intent = new Intent(Intent.ACTION_VIEW, uri);
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception ignored) {
+            Toast.makeText(this, "Tautan tidak bisa dibuka.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
