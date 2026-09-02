@@ -49,53 +49,44 @@ export function InstallAppModal({
       }
     } else {
       alert(
-        "Untuk memasang Malesan:\n1. Buka menu browser (ikon titik tiga ⫶ atau tombol Bagikan di Safari)\n2. Pilih 'Tambahkan ke Layar Utama' (Add to Home Screen)"
+        "Untuk memasang shortcut Malesan:\n1. Buka menu browser (ikon titik tiga ⫶ atau tombol Bagikan di Safari)\n2. Pilih 'Tambahkan ke Layar Utama' (Add to Home Screen / Install App)"
       );
     }
   };
-
-  const isMobile = typeof window !== "undefined" && (/Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || window.innerWidth < 768);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="install-app-title"
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-x-hidden overflow-y-auto select-none touch-pan-y overscroll-none animate-in fade-in duration-200"
     >
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-hairline/80 bg-[#12100e] p-6 shadow-2xl space-y-5"
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden custom-scrollbar rounded-3xl border border-ember/30 bg-[#12100e] p-5 sm:p-6 shadow-2xl ring-1 ring-white/10 space-y-4 animate-in zoom-in-95 duration-200 text-ink overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 size-56 rounded-full bg-[radial-gradient(circle,rgba(255,122,0,0.18)_0%,transparent_70%)] blur-2xl"
-        />
+        {/* Constrained Glow Accents */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+          <div className="absolute -top-24 -left-24 size-48 rounded-full bg-ember/15 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 size-48 rounded-full bg-ember/10 blur-3xl" />
+        </div>
 
-        <div className="relative z-10 flex items-start justify-between">
+        {/* Modal Header */}
+        <div className="relative z-10 flex items-start justify-between pb-1 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-ember/30 bg-ember/10 text-ember">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
-                {isMobile ? (
-                  <>
-                    <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                    <line x1="12" y1="18" x2="12.01" y2="18" />
-                  </>
-                ) : (
-                  <>
-                    <rect width="20" height="14" x="2" y="3" rx="2" />
-                    <line x1="8" y1="21" x2="16" y2="21" />
-                    <line x1="12" y1="17" x2="12" y2="21" />
-                  </>
-                )}
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-ember/40 bg-ember/15 text-ember shadow-md shadow-ember/10">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
             </div>
             <div>
-              <h2 id="install-app-title" className="font-display text-base font-bold text-ink">
-                {isMobile ? "Pasang Malesan di HP" : "Pasang Malesan di PC / Laptop"}
+              <h2 id="install-app-title" className="font-display text-base sm:text-lg font-bold text-white">
+                Unduh &amp; Pasang Malesan
               </h2>
-              <p className="text-xs text-muted mt-0.5">
-                {isMobile ? "Pilih metode aplikasi yang kamu inginkan" : "Pilihan aplikasi & integrasi browser komputer"}
+              <p className="text-xs text-mist">
+                Pilih versi aplikasi yang sesuai dengan perangkat kamu
               </p>
             </div>
           </div>
@@ -104,199 +95,152 @@ export function InstallAppModal({
             type="button"
             onClick={onClose}
             aria-label="Tutup modal"
-            className="flex size-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/5 hover:text-ink cursor-pointer"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full text-mist transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="relative z-10 space-y-3.5">
-          {/* Card 1: APK Android (for Mobile) or Malesan Desktop (.EXE) (for PC/Laptop) */}
-          {isMobile ? (
-            <div className="rounded-2xl border border-ember/40 bg-gradient-to-b from-ember/[0.08] to-surface-raised/40 p-4 space-y-3 shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-ember/15 text-ember">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
-                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                    </svg>
-                  </div>
-                  <span className="font-display text-sm font-bold text-ink">APK Android (Native)</span>
+        {/* 3 Platform Cards */}
+        <div className="relative z-10 space-y-3">
+          {/* Card 1: Versi Android (Official Android SVG Logo) */}
+          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-b from-emerald-500/[0.08] to-surface-raised/40 p-3.5 sm:p-4 space-y-2.5 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#3ddc84]/15 border border-[#3ddc84]/30 text-[#3ddc84]">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-5">
+                    <path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.411 13.8561 8 12 8s-3.5902.411-5.1367.9507L4.841 5.4477a.416.416 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396" />
+                  </svg>
                 </div>
-                <span className="shrink-0 rounded-full border border-ember/30 bg-ember/15 px-2 py-0.5 text-[10px] font-bold text-ember">
-                  60fps Hardware
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-muted leading-relaxed">
-                <div className="flex items-center gap-2">
-                  <span className="size-1 rounded-full bg-ember shrink-0" />
-                  <span>Akselerasi hardware 60fps &amp; olah video panjang tanpa lag</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="size-1 rounded-full bg-ember shrink-0" />
-                  <span>Deteksi via tombol Share YouTube &amp; simpan langsung ke Galeri</span>
+                <div>
+                  <span className="font-display text-sm font-bold text-white block">Versi Android (APK)</span>
+                  <span className="text-[10px] text-emerald-400 font-semibold">Android 8.0 ke atas • 60fps Native</span>
                 </div>
               </div>
+              <span className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                HP Android
+              </span>
+            </div>
 
+            <p className="text-[11px] text-mist leading-relaxed">
+              Akselerasi hardware 60fps, olah video panjang tanpa lag, dan simpan otomatis ke Galeri (DCIM/Malesan).
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
               <a
                 href="/malesan.apk"
                 download="malesan.apk"
                 onClick={onClose}
-                className="btn-ember flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-display text-xs font-bold text-obsidian shadow-md transition-all active:scale-[0.99] hover:brightness-105"
+                className="flex h-9.5 w-full flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 font-display text-xs font-bold text-emerald-200 shadow-sm transition-all active:scale-[0.99]"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Unduh Malesan APK ({LATEST_APK_DISPLAY_SIZE})</span>
+                <span>Unduh APK ({LATEST_APK_DISPLAY_SIZE})</span>
               </a>
-
-              <div className="text-center">
-                <a
-                  href="/malesan-arm32.apk"
-                  download="malesan-arm32.apk"
-                  onClick={onClose}
-                  className="inline-block text-[10px] font-semibold text-mist hover:text-ember transition-colors"
-                >
-                  HP lawas (32-bit)? Unduh versi ARM32 ({LATEST_ARM32_SIZE})
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-ember/50 bg-gradient-to-b from-ember/[0.12] to-surface-raised/60 p-4 space-y-3 shadow-lg shadow-ember/10">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-xl bg-ember/20 text-ember border border-ember/40">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
-                      <rect width="20" height="14" x="2" y="3" rx="2" />
-                      <line x1="8" y1="21" x2="16" y2="21" />
-                      <line x1="12" y1="17" x2="12" y2="21" />
-                    </svg>
-                  </div>
-                  <div>
-                    <span className="font-display text-sm font-bold text-white block">Malesan Desktop (.EXE)</span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">Windows 10 &amp; 11 (64-bit)</span>
-                  </div>
-                </div>
-                <span className="shrink-0 rounded-full border border-ember/40 bg-ember/20 px-2.5 py-0.5 text-[10px] font-bold text-ember shadow-sm">
-                  ★ Rekomendasi
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-muted leading-relaxed">
-                <div className="flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-ember shrink-0" />
-                  <span><strong>Zero Bridge</strong>: yt-dlp &amp; FFmpeg sudah tertanam, tanpa install Node.js/CMD</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-ember shrink-0" />
-                  <span>Akselerasi GPU otomatis (AMD AMF, Intel QSV, NVIDIA NVENC)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-ember shrink-0" />
-                  <span>Auto-Update 1-klik &amp; simpan otomatis ke folder Videos/Malesan</span>
-                </div>
-              </div>
 
               <a
-                href="/Malesan-Setup.exe"
-                download="Malesan-Setup.exe"
+                href="/malesan-arm32.apk"
+                download="malesan-arm32.apk"
                 onClick={onClose}
-                className="btn-ember flex h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-display text-xs font-bold text-obsidian shadow-md shadow-ember/20 transition-all active:scale-[0.99] hover:brightness-105"
+                className="flex h-9.5 w-full sm:w-auto px-3 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 font-display text-[11px] font-medium text-mist hover:text-white transition-all whitespace-nowrap"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-                <span>Unduh Malesan-Setup.exe (~226 MB)</span>
+                <span>ARM32 ({LATEST_ARM32_SIZE})</span>
               </a>
-
-              <div className="text-center pt-0.5">
-                <a
-                  href="/desktop"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] font-medium text-mist hover:text-ember transition-colors"
-                >
-                  Lihat halaman resmi &amp; panduan desktop →
-                </a>
-              </div>
             </div>
-          )}
+          </div>
 
-          {/* Card 2: PWA Web App Shortcut (for Mobile) or Web Browser Bridge (for PC) */}
-          {isMobile ? (
-            <div className="rounded-2xl border border-hairline bg-surface-raised/30 p-4 space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-white/10 text-mist">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
-                      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                      <line x1="12" y1="18" x2="12.01" y2="18" />
-                    </svg>
-                  </div>
-                  <span className="font-display text-sm font-bold text-ink">
-                    PWA (Layar Utama)
-                  </span>
+          {/* Card 2: Versi Windows (Official Windows SVG Logo) */}
+          <div className="rounded-2xl border border-ember/50 bg-gradient-to-b from-ember/[0.12] to-surface-raised/60 p-3.5 sm:p-4 space-y-2.5 shadow-lg shadow-ember/10">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#00adef]/15 border border-[#00adef]/30 text-[#00adef]">
+                  <svg viewBox="0 0 88 88" fill="currentColor" className="size-4.5">
+                    <path d="M0 12.402l35.687-4.86.016 34.423-35.67.203zm35.67 33.529l.028 34.453L.028 75.48.016 45.728zm4.326-39.027L87.914 0v41.527l-47.918.378zm47.918 43.684L40.024 88l-.028-41.728 47.918.291z" />
+                  </svg>
                 </div>
-                <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-mist">
-                  Instan &amp; Ringan
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-muted leading-relaxed">
-                <div className="flex items-center gap-2">
-                  <span className="size-1 rounded-full bg-mist shrink-0" />
-                  <span>Pasang shortcut langsung ke layar HP tanpa download file</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="size-1 rounded-full bg-mist shrink-0" />
-                  <span>Pembaruan sistem otomatis setiap membuka aplikasi</span>
+                <div>
+                  <span className="font-display text-sm font-bold text-white block">Versi Windows (.EXE)</span>
+                  <span className="text-[10px] text-amber-400 font-semibold">Windows 10 &amp; 11 (64-bit)</span>
                 </div>
               </div>
+              <span className="shrink-0 rounded-full border border-ember/40 bg-ember/20 px-2 py-0.5 text-[10px] font-bold text-ember">
+                ★ Rekomendasi PC
+              </span>
+            </div>
 
+            <p className="text-[11px] text-mist leading-relaxed">
+              <strong>Zero Bridge</strong>: yt-dlp &amp; FFmpeg sudah tertanam. Akselerasi GPU (AMD Vega/Radeon, Intel, NVIDIA) &amp; simpan ke Videos/Malesan.
+            </p>
+
+            <a
+              href="/Malesan-Setup.exe"
+              download="Malesan-Setup.exe"
+              onClick={onClose}
+              className="btn-ember flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl font-display text-xs font-bold text-obsidian shadow-md shadow-ember/20 transition-all active:scale-[0.99] hover:brightness-105"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>Unduh Malesan-Setup.exe (~226 MB)</span>
+            </a>
+          </div>
+
+          {/* Card 3: Versi Web PWA (Screen/Browser Icon) */}
+          <div className="rounded-2xl border border-white/10 bg-surface-raised/30 p-3.5 sm:p-4 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-mist">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4.5">
+                    <rect width="20" height="14" x="2" y="3" rx="2" />
+                    <line x1="8" y1="21" x2="16" y2="21" />
+                    <line x1="12" y1="17" x2="12" y2="21" />
+                  </svg>
+                </div>
+                <div>
+                  <span className="font-display text-sm font-bold text-white block">Versi Web App (PWA)</span>
+                  <span className="text-[10px] text-mist">Chrome, Edge, Safari, Brave</span>
+                </div>
+              </div>
+              <span className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-mist">
+                Instan &amp; Ringan
+              </span>
+            </div>
+
+            <p className="text-[11px] text-mist leading-relaxed">
+              Jalankan langsung di browser atau pasang shortcut ke layar utama tanpa download file besar.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
               <button
                 type="button"
                 onClick={triggerPwaInstall}
-                className="flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] font-display text-xs font-semibold text-ink transition-all hover:border-white/20 hover:bg-white/[0.08] active:scale-[0.99]"
+                className="flex h-9 w-full flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 font-display text-xs font-bold text-white hover:bg-white/10 transition-all active:scale-[0.99]"
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>{isInstalled ? "Buka di Mode PWA" : "Pasang ke Layar Utama"}</span>
+                <span>{isInstalled ? "Buka di Mode PWA" : "Pasang Shortcut PWA"}</span>
               </button>
+
+              <a
+                href="/malesan-bridge.zip"
+                download="malesan-bridge.zip"
+                onClick={onClose}
+                className="flex h-9 w-full sm:w-auto px-3 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/40 hover:bg-white/5 font-display text-[11px] font-medium text-mist hover:text-white transition-all whitespace-nowrap"
+              >
+                <span>Bridge Browser (.zip)</span>
+              </a>
             </div>
-          ) : (
-            <div className="rounded-2xl border border-hairline/80 bg-surface-raised/20 p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="size-2 rounded-full bg-mist" />
-                  <span className="text-xs font-semibold text-mist">Alternatif: Jalankan di Web Browser</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={triggerPwaInstall}
-                  className="text-[11px] font-bold text-ember hover:underline cursor-pointer"
-                >
-                  Pasang Shortcut PWA
-                </button>
-              </div>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Jika ingin tetap memakai browser biasa, unduh{" "}
-                <a href="/malesan-bridge.zip" download className="text-ember underline font-medium">
-                  Malesan Bridge (.zip)
-                </a>{" "}
-                untuk mengaktifkan pemotong YouTube di Chrome/Edge.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

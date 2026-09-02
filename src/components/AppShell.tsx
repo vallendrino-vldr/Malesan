@@ -73,7 +73,11 @@ export function AppShell({
 }) {
   const [current, setCurrent] = useState<TabKey>(active);
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
-  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const url = new URL(window.location.href);
+    return url.searchParams.get("download") === "1" || url.searchParams.get("install") === "1";
+  });
   const [isNativeApk, setIsNativeApk] = useState(false);
   const [nativeVersion, setNativeVersion] = useState<string | null>(null);
   const [updateInfo, setUpdateInfo] = useState<ApkUpdateInfo | null>(null);
