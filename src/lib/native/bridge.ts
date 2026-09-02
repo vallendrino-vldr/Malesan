@@ -167,16 +167,19 @@ export async function getNativeShell(): Promise<NativeShell | null> {
 
   // Guaranteed fallback when running inside official Malesan Studio desktop shell
   if (isDesktopUa || isAppUa) {
+    const hasPort = Boolean(getPort());
     cachedNativeShell = {
       appVersion: "2.1.0",
-      capabilities: [
-        "native-auto-clip",
-        "gallery-stream",
-        "hardware-accel",
-        "desktop-shell",
-        "google-system-browser-auth",
-        "share-video",
-      ],
+      capabilities: hasPort
+        ? [
+            "native-auto-clip",
+            "gallery-stream",
+            "hardware-accel",
+            "desktop-shell",
+            "google-system-browser-auth",
+            "share-video",
+          ]
+        : ["desktop-shell"],
       platform: isDesktopUa ? "desktop" : "android",
     };
     return cachedNativeShell;

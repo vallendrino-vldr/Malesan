@@ -566,26 +566,56 @@ export function VideoEditor({
       const finalFile = new File([blob], `${base}.${ext}`, { type: blob.type || "video/mp4" });
       setExportedVideoFile(finalFile);
       const nativeShell = await getNativeShell();
-      const isAPK = !!nativeShell?.capabilities.includes("gallery-stream");
-      setIsNativeAPK(isAPK);
+      const isDesktopShell = nativeShell?.platform === "desktop" || (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio"));
+      const isAndroidShell = !isDesktopShell && (nativeShell?.platform === "android" || (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanApp")));
+      setIsDesktop(isDesktopShell);
+      setIsNativeAPK(isAndroidShell);
 
-      if (isAPK) {
-        setExportStage("Menyiapkan Galeri Android...");
-        const prepared = await requestNative({ type: "GALLERY_PREPARE", name: `Malesan_${base}.${ext}`, mimeType: blob.type || "video/mp4", bytes: blob.size });
-        if (prepared.type !== "GALLERY_UPLOAD_READY" || !prepared.downloadToken) throw new Error(prepared.message ?? "Galeri Android gak siap.");
-        const chunkSize = 512 * 1024;
-        for (let offset = 0; offset < blob.size; offset += chunkSize) {
-          const bytes = new Uint8Array(await blob.slice(offset, offset + chunkSize).arrayBuffer());
-          let binary = "";
-          for (let cursor = 0; cursor < bytes.length; cursor += 0x8000) binary += String.fromCharCode(...bytes.subarray(cursor, cursor + 0x8000));
-          const accepted = await requestNative({ type: "GALLERY_CHUNK", downloadToken: prepared.downloadToken, chunk: btoa(binary) }, 60_000);
-          if (accepted.type !== "GALLERY_CHUNK_ACCEPTED") throw new Error(accepted.message ?? "Potongan video gagal ditulis.");
-          setExportPct(90 + Math.round(Math.min(1, (offset + bytes.length) / blob.size) * 10));
+      let savedNatively = false;
+
+      // Safe native stream write: never let bridge error fail or crash the user's export!
+      if ((isDesktopShell || isAndroidShell) && typeof window !== "undefined" && Boolean(window.MalesanNative)) {
+        try {
+          setExportStage(isDesktopShell ? "Menyimpan ke folder Videos/Malesan..." : "Menyiapkan Galeri Android...");
+          const prepared = await requestNative({
+            type: "GALLERY_PREPARE",
+            name: `Malesan_${base}.${ext}`,
+            mimeType: blob.type || "video/mp4",
+            bytes: blob.size,
+          }, 15_000);
+
+          if (prepared.type === "GALLERY_UPLOAD_READY" && prepared.downloadToken) {
+            const chunkSize = 512 * 1024;
+            for (let offset = 0; offset < blob.size; offset += chunkSize) {
+              const bytes = new Uint8Array(await blob.slice(offset, offset + chunkSize).arrayBuffer());
+              let binary = "";
+              for (let cursor = 0; cursor < bytes.length; cursor += 0x8000) {
+                binary += String.fromCharCode(...bytes.subarray(cursor, cursor + 0x8000));
+              }
+              const accepted = await requestNative({
+                type: "GALLERY_CHUNK",
+                downloadToken: prepared.downloadToken,
+                chunk: btoa(binary),
+              }, 60_000);
+              if (accepted.type !== "GALLERY_CHUNK_ACCEPTED") break;
+              setExportPct(90 + Math.round(Math.min(1, (offset + bytes.length) / blob.size) * 10));
+            }
+            const committed = await requestNative({
+              type: "GALLERY_COMMIT",
+              downloadToken: prepared.downloadToken,
+            }, 15_000);
+            if (committed.type === "GALLERY_SAVED") {
+              savedNatively = true;
+            }
+          }
+          void requestNative({ type: "HAPTIC", strength: "heavy" }).catch(() => {});
+        } catch (streamErr) {
+          console.warn("[video-editor] Native stream write failed, falling back to direct browser download:", streamErr);
         }
-        const committed = await requestNative({ type: "GALLERY_COMMIT", downloadToken: prepared.downloadToken });
-        if (committed.type !== "GALLERY_SAVED") throw new Error(committed.message ?? "Video gagal disimpan ke Galeri Android.");
-        void requestNative({ type: "HAPTIC", strength: "heavy" }).catch(() => {});
-      } else {
+      }
+
+      // If not saved to native filesystem (or if in standard web browser), trigger standard download
+      if (!savedNatively) {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = `Auto Caption by malesan.my.id - ${base}.${ext}`;
