@@ -78,6 +78,13 @@ export function AppShell({
     const url = new URL(window.location.href);
     return url.searchParams.get("download") === "1" || url.searchParams.get("install") === "1";
   });
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(
+      (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio")) ||
+      window.MalesanNative
+    );
+  });
   const [isNativeApk, setIsNativeApk] = useState(false);
   const [nativeVersion, setNativeVersion] = useState<string | null>(null);
   const [updateInfo, setUpdateInfo] = useState<ApkUpdateInfo | null>(null);
@@ -88,12 +95,14 @@ export function AppShell({
     void getNativeShell().then((shell) => {
       if (!active) return;
       if (shell) {
-        const isDesktop = shell.platform === "desktop" ||
+        const desktop = shell.platform === "desktop" ||
           shell.capabilities?.includes("desktop-shell") ||
           (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio"));
 
+        setIsDesktop(desktop);
+
         // Only Android APK triggers the APK update modal! Desktop uses dedicated updater
-        if (!isDesktop) {
+        if (!desktop) {
           setIsNativeApk(true);
           setNativeVersion(shell.appVersion);
           void requestNativeNotificationPermission();
@@ -214,7 +223,7 @@ export function AppShell({
 
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            {isNativeApk ? (
+            {isDesktop ? null : isNativeApk ? (
               updateInfo?.hasUpdate ? (
                 <button
                   type="button"
