@@ -1,16 +1,23 @@
-const { app, BrowserWindow, ipcMain, shell, Notification } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, Notification, Menu, session } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn, execFile } = require("child_process");
 const os = require("os");
+const http = require("http");
 
-// Optimize GPU rasterization & hardware acceleration
+// Disable default menu bar globally for maximum speed & sleek frameless look
+Menu.setApplicationMenu(null);
+
+// Performance & GPU acceleration flags for instant cold startup
 app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
+app.commandLine.appendSwitch("disable-features", "WidgetLayering");
+app.commandLine.appendSwitch("disable-site-isolation-trials");
 
 let mainWindow = null;
 let cachedEncoder = null;
+let oauthServer = null;
 const activeUploads = new Map();
 
 function getBinPath(binName) {
@@ -62,14 +69,68 @@ function sendToRenderer(payload) {
   }
 }
 
+// Start temporary local loopback server to receive Google OAuth session from system browser
+function startOAuthLoopbackServer() {
+  if (oauthServer) {
+    try { oauthServer.close(); } catch {}
+  }
+
+  oauthServer = http.createServer(async (req, res) => {
+    const reqUrl = new URL(req.url, "http://127.0.0.1:48215");
+    if (reqUrl.pathname === "/callback") {
+      const accessToken = reqUrl.searchParams.get("access_token");
+      const refreshToken = reqUrl.searchParams.get("refresh_token");
+
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      res.end(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Login Berhasil - Malesan Studio</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0c0a09; color: #f2ede7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+            .card { background: #161412; border: 1px solid rgba(255,107,0,0.3); padding: 32px 40px; border-radius: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 400px; }
+            h1 { color: #ff6b00; margin: 0 0 8px; font-size: 22px; }
+            p { color: #8f857d; font-size: 14px; margin: 0; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h1>✓ Login Berhasil!</h1>
+            <p>Kamu sudah masuk ke Malesan Studio. Silakan tutup tab ini dan kembali ke aplikasi desktop.</p>
+          </div>
+          <script>
+            setTimeout(() => { window.close(); }, 3000);
+          </script>
+        </body>
+        </html>
+      `);
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL("https://malesan.my.id/app");
+        mainWindow.show();
+        mainWindow.focus();
+      }
+
+      setTimeout(() => {
+        try { oauthServer.close(); oauthServer = null; } catch {}
+      }, 5000);
+    }
+  });
+
+  oauthServer.listen(48215, "127.0.0.1");
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 820,
     minWidth: 980,
     minHeight: 640,
+    show: false, // Don't show until rendered to eliminate white flash & lag
     backgroundColor: "#0c0a09",
     title: "Malesan Studio",
+    autoHideMenuBar: true,
     icon: path.join(__dirname, "..", "assets", "icon.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -79,10 +140,26 @@ function createWindow() {
     },
   });
 
-  const appUrl = process.env.MALESAN_DEV_URL || "https://malesan.my.id";
+  // Modern clean Chrome User Agent so Google OAuth recognizes it seamlessly
+  const chromeUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 MalesanStudio/2.1.0";
+  mainWindow.webContents.setUserAgent(chromeUA);
+
+  // Directly load /app for instant workspace opening
+  const appUrl = process.env.MALESAN_DEV_URL || "https://malesan.my.id/app";
   mainWindow.loadURL(appUrl);
 
+  // Show window instantly when ready
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.show();
+  });
+
+  // Handle external link clicks & Google OAuth
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.includes("accounts.google.com") || url.includes("supabase.co/auth")) {
+      startOAuthLoopbackServer();
+      shell.openExternal(url);
+      return { action: "deny" };
+    }
     if (url.startsWith("https://") || url.startsWith("http://")) {
       shell.openExternal(url);
     }
@@ -91,6 +168,9 @@ function createWindow() {
 
   mainWindow.on("closed", () => {
     mainWindow = null;
+    if (oauthServer) {
+      try { oauthServer.close(); } catch {}
+    }
   });
 }
 
@@ -121,8 +201,19 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
             "auto-update",
             "local-storage",
             "share-video",
+            "google-system-browser-auth",
           ],
         });
+        break;
+      }
+
+      case "AUTH_SYSTEM_BROWSER": {
+        const { url } = req;
+        if (url) {
+          startOAuthLoopbackServer();
+          shell.openExternal(url);
+          sendToRenderer({ type: "AUTH_STARTED", requestId });
+        }
         break;
       }
 

@@ -84,6 +84,48 @@ export function GoogleSignInButton({
       }
     }
 
+    if (nativeShell?.capabilities.includes("google-system-browser-auth")) {
+      try {
+        const origin =
+          typeof window !== "undefined" && window.location.origin.startsWith("http")
+            ? window.location.origin
+            : "https://malesan.my.id";
+
+        const redirectUrl = new URL("/auth/callback", origin);
+        redirectUrl.searchParams.set("desktop", "1");
+        if (next && next !== "/" && next !== "") redirectUrl.searchParams.set("next", next);
+        if (referralCode) redirectUrl.searchParams.set("ref", referralCode);
+
+        const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: redirectUrl.toString(),
+            skipBrowserRedirect: true,
+            queryParams: {
+              prompt: "select_account",
+              access_type: "offline",
+            },
+          },
+        });
+
+        if (oauthError) throw oauthError;
+
+        if (data?.url) {
+          await requestNative({ type: "AUTH_SYSTEM_BROWSER", url: data.url }, 10_000);
+          setPending(false);
+          return;
+        }
+      } catch (desktopError) {
+        setError(
+          desktopError instanceof Error
+            ? desktopError.message
+            : "Login Google di Desktop gagal. Coba lagi.",
+        );
+        setPending(false);
+        return;
+      }
+    }
+
     const origin =
       typeof window !== "undefined" && window.location.origin.startsWith("http")
         ? window.location.origin

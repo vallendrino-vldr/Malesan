@@ -88,6 +88,16 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // If requested from desktop app, redirect to local loopback server
+  const isDesktopAuth = searchParams.get("desktop") === "1";
+  if (isDesktopAuth) {
+    const desktopResponse = NextResponse.redirect("http://127.0.0.1:48215/callback?success=1");
+    if (hasPendingBonus) {
+      desktopResponse.cookies.delete("malesan_pending_demo_bonus");
+    }
+    return desktopResponse;
+  }
+
   const response = NextResponse.redirect(`${origin}${next}`);
   if (hasPendingBonus) {
     response.cookies.delete("malesan_pending_demo_bonus");
