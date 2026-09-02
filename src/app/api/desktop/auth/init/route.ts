@@ -5,7 +5,7 @@ export async function POST() {
   const code = createPairingSession();
   return NextResponse.json({
     code,
-    connectUrl: `https://malesan.my.id/auth/desktop?code=${code}`,
+    connectUrl: `https://www.malesan.my.id/auth/desktop?code=${code}`,
   });
 }
 
@@ -13,6 +13,6 @@ export async function GET() {
   const code = createPairingSession();
   return NextResponse.json({
     code,
-    connectUrl: `https://malesan.my.id/auth/desktop?code=${code}`,
+    connectUrl: `https://www.malesan.my.id/auth/desktop?code=${code}`,
   });
 }

@@ -23,7 +23,7 @@ async function startDeviceAuthFlow() {
     currentPollingInterval = null;
   }
   try {
-    const res = await fetch("https://malesan.my.id/api/desktop/auth/init", { method: "POST" });
+    const res = await fetch("https://www.malesan.my.id/api/desktop/auth/init", { method: "POST" });
     if (!res.ok) return;
     const data = await res.json();
     const code = data.code;
@@ -41,7 +41,7 @@ async function startDeviceAuthFlow() {
       }
 
       try {
-        const pollRes = await fetch(`https://malesan.my.id/api/desktop/auth/poll?code=${encodeURIComponent(code)}`);
+        const pollRes = await fetch(`https://www.malesan.my.id/api/desktop/auth/poll?code=${encodeURIComponent(code)}`);
         if (pollRes.ok) {
           const pollData = await pollRes.json();
           if (pollData.status === "approved" && Array.isArray(pollData.cookies)) {
@@ -51,7 +51,7 @@ async function startDeviceAuthFlow() {
             for (const cookieItem of pollData.cookies) {
               try {
                 await session.defaultSession.cookies.set({
-                  url: "https://malesan.my.id",
+                  url: "https://www.malesan.my.id",
                   name: cookieItem.name,
                   value: cookieItem.value,
                   domain: ".malesan.my.id",
@@ -66,7 +66,7 @@ async function startDeviceAuthFlow() {
             }
 
             if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.loadURL("https://malesan.my.id/app");
+              mainWindow.loadURL("https://www.malesan.my.id/app");
               if (mainWindow.isMinimized()) mainWindow.restore();
               mainWindow.show();
               mainWindow.focus();
@@ -90,14 +90,14 @@ ipcMain.handle("START_DESKTOP_LOGIN", () => {
 async function exchangeAndLogin(ticket) {
   if (!ticket) return;
   try {
-    const apiRes = await fetch(`https://malesan.my.id/api/desktop/ticket?ticket=${encodeURIComponent(ticket)}`);
+    const apiRes = await fetch(`https://www.malesan.my.id/api/desktop/ticket?ticket=${encodeURIComponent(ticket)}`);
     if (apiRes.ok) {
       const data = await apiRes.json();
       if (data?.cookies && Array.isArray(data.cookies)) {
         for (const cookieItem of data.cookies) {
           try {
             await session.defaultSession.cookies.set({
-              url: "https://malesan.my.id",
+              url: "https://www.malesan.my.id",
               name: cookieItem.name,
               value: cookieItem.value,
               domain: ".malesan.my.id",
@@ -117,7 +117,7 @@ async function exchangeAndLogin(ticket) {
   }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.loadURL("https://malesan.my.id/app");
+    mainWindow.loadURL("https://www.malesan.my.id/app");
     mainWindow.show();
     mainWindow.focus();
   }
@@ -312,14 +312,14 @@ const oauthServer = http.createServer((req, res) => {
     (async () => {
       if (ticket) {
         try {
-          const apiRes = await fetch(`https://malesan.my.id/api/desktop/ticket?ticket=${encodeURIComponent(ticket)}`);
+          const apiRes = await fetch(`https://www.malesan.my.id/api/desktop/ticket?ticket=${encodeURIComponent(ticket)}`);
           if (apiRes.ok) {
             const data = await apiRes.json();
             if (data?.cookies && Array.isArray(data.cookies)) {
               for (const c of data.cookies) {
                 try {
                   await session.defaultSession.cookies.set({
-                    url: "https://malesan.my.id",
+                    url: "https://www.malesan.my.id",
                     name: c.name,
                     value: c.value,
                     domain: ".malesan.my.id",
@@ -340,7 +340,7 @@ const oauthServer = http.createServer((req, res) => {
       }
 
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL("https://malesan.my.id/app");
+        mainWindow.loadURL("https://www.malesan.my.id/app");
         mainWindow.show();
         mainWindow.focus();
       }
@@ -380,7 +380,7 @@ function createWindow() {
   const chromeUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 MalesanStudio/2.1.0";
   mainWindow.webContents.setUserAgent(chromeUA);
 
-  const appUrl = process.env.MALESAN_DEV_URL || "https://malesan.my.id/app";
+  const appUrl = process.env.MALESAN_DEV_URL || "https://www.malesan.my.id/app";
   mainWindow.loadURL(appUrl);
 
   mainWindow.once("ready-to-show", () => {
