@@ -15,6 +15,77 @@ if (process.defaultApp) {
 } else {
   app.setAsDefaultProtocolClient("malesan");
 }
+let currentPollingInterval = null;
+
+async function startDeviceAuthFlow() {
+  if (currentPollingInterval) {
+    clearInterval(currentPollingInterval);
+    currentPollingInterval = null;
+  }
+  try {
+    const res = await fetch("https://malesan.my.id/api/desktop/auth/init", { method: "POST" });
+    if (!res.ok) return;
+    const data = await res.json();
+    const code = data.code;
+    const connectUrl = data.connectUrl;
+    if (!code || !connectUrl) return;
+
+    shell.openExternal(connectUrl);
+
+    const startTime = Date.now();
+    currentPollingInterval = setInterval(async () => {
+      if (Date.now() - startTime > 120_000) {
+        clearInterval(currentPollingInterval);
+        currentPollingInterval = null;
+        return;
+      }
+
+      try {
+        const pollRes = await fetch(`https://malesan.my.id/api/desktop/auth/poll?code=${encodeURIComponent(code)}`);
+        if (pollRes.ok) {
+          const pollData = await pollRes.json();
+          if (pollData.status === "approved" && Array.isArray(pollData.cookies)) {
+            clearInterval(currentPollingInterval);
+            currentPollingInterval = null;
+
+            for (const cookieItem of pollData.cookies) {
+              try {
+                await session.defaultSession.cookies.set({
+                  url: "https://malesan.my.id",
+                  name: cookieItem.name,
+                  value: cookieItem.value,
+                  domain: ".malesan.my.id",
+                  path: "/",
+                  secure: true,
+                  httpOnly: true,
+                  sameSite: "lax",
+                });
+              } catch (cookieErr) {
+                console.warn("[desktop-auth] cookie error:", cookieItem.name, cookieErr);
+              }
+            }
+
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.loadURL("https://malesan.my.id/app");
+              if (mainWindow.isMinimized()) mainWindow.restore();
+              mainWindow.show();
+              mainWindow.focus();
+            }
+          }
+        }
+      } catch (pollErr) {
+        console.warn("[desktop-auth] poll error:", pollErr);
+      }
+    }, 1200);
+  } catch (err) {
+    console.warn("[desktop-auth] device flow init failed:", err);
+  }
+}
+
+ipcMain.handle("START_DESKTOP_LOGIN", () => {
+  return startDeviceAuthFlow();
+});
+
 
 async function exchangeAndLogin(ticket) {
   if (!ticket) return;
@@ -331,23 +402,7 @@ function createWindow() {
       url.includes("/auth/v1/authorize")
     ) {
       event.preventDefault();
-
-      let targetUrl = url;
-      try {
-        const parsed = new URL(url);
-        const redirectTo = parsed.searchParams.get("redirect_to");
-        if (redirectTo) {
-          const redirectParsed = new URL(redirectTo);
-          redirectParsed.searchParams.set("desktop", "1");
-          parsed.searchParams.set("redirect_to", redirectParsed.toString());
-          targetUrl = parsed.toString();
-        } else {
-          parsed.searchParams.set("desktop", "1");
-          targetUrl = parsed.toString();
-        }
-      } catch {}
-
-      shell.openExternal(targetUrl);
+      startDeviceAuthFlow();
       return;
     }
 
@@ -415,11 +470,8 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
       }
 
       case "AUTH_SYSTEM_BROWSER": {
-        const { url } = req;
-        if (url) {
-          shell.openExternal(url);
-          sendToRenderer({ type: "AUTH_STARTED", requestId });
-        }
+        startDeviceAuthFlow();
+        sendToRenderer({ type: "AUTH_STARTED", requestId });
         break;
       }
 
