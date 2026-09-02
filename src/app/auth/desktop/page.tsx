@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { approvePairingSession } from "@/lib/auth/desktop-device-flow";
+import { createClient } from "@/lib/supabase/server";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 export default async function DesktopAuthPage({
@@ -10,14 +11,15 @@ export default async function DesktopAuthPage({
   const params = await searchParams;
   const code = params.code || "";
   const cookieStore = await cookies();
-  const authCookies = cookieStore
-    .getAll()
-    .filter((c) => c.name.startsWith("sb-") || c.name.startsWith("malesan_"))
-    .map((c) => ({ name: c.name, value: c.value }));
+  const allCookies = cookieStore.getAll();
+  const authCookies = allCookies.map((c) => ({ name: c.name, value: c.value }));
 
-  const hasSession = authCookies.some((c) => c.name.endsWith("-auth-token") || c.name.includes("auth-token"));
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (hasSession && code) {
+  if (user && code) {
     approvePairingSession(code, authCookies);
     return (
       <div className="min-h-screen bg-[#0C0A09] text-[#F2EDE7] flex items-center justify-center p-4">
@@ -26,7 +28,10 @@ export default async function DesktopAuthPage({
             ✓ Sesi Terverifikasi
           </div>
           <h1 className="text-xl font-bold text-[#FF6B00] mb-2">Terhubung ke Malesan Desktop!</h1>
-          <p className="text-sm text-stone-400 mb-6 leading-relaxed">
+          <p className="text-sm text-stone-300 font-medium mb-1">
+            Halo, {user.user_metadata?.full_name || user.email || "Kreator"}!
+          </p>
+          <p className="text-xs text-stone-400 mb-6 leading-relaxed">
             Sesi akun kamu berhasil dikirimkan ke aplikasi Malesan Studio Desktop. Halaman ini akan menutup otomatis.
           </p>
           <script dangerouslySetInnerHTML={{ __html: `setTimeout(() => { try { window.close(); } catch(e) {} }, 1200);` }} />

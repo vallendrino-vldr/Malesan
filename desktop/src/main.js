@@ -54,16 +54,28 @@ async function startDeviceAuthFlow() {
                   url: "https://www.malesan.my.id",
                   name: cookieItem.name,
                   value: cookieItem.value,
-                  domain: ".malesan.my.id",
                   path: "/",
                   secure: true,
-                  httpOnly: true,
+                  httpOnly: false,
+                  sameSite: "lax",
+                });
+                await session.defaultSession.cookies.set({
+                  url: "https://malesan.my.id",
+                  name: cookieItem.name,
+                  value: cookieItem.value,
+                  path: "/",
+                  secure: true,
+                  httpOnly: false,
                   sameSite: "lax",
                 });
               } catch (cookieErr) {
-                console.warn("[desktop-auth] cookie error:", cookieItem.name, cookieErr);
+                console.warn("[desktop-auth] cookie set error:", cookieItem.name, cookieErr);
               }
             }
+
+            try {
+              await session.defaultSession.cookies.flushStore();
+            } catch {}
 
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.loadURL("https://www.malesan.my.id/app");
