@@ -7,6 +7,6 @@ export async function GET(request: NextRequest) {
   if (!code) {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
   }
-  const result = pollPairingSession(code);
+  const result = await pollPairingSession(code);
   return NextResponse.json(result);
 }

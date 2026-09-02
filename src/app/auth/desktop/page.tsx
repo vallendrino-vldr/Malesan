@@ -20,7 +20,7 @@ export default async function DesktopAuthPage({
   } = await supabase.auth.getUser();
 
   if (user && code) {
-    approvePairingSession(code, authCookies);
+    await approvePairingSession(code, authCookies);
     return (
       <div className="min-h-screen bg-[#0C0A09] text-[#F2EDE7] flex items-center justify-center p-4">
         <div className="bg-[#161412] border border-[#FF6B00]/40 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl">

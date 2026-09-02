@@ -1,64 +1,57 @@
-interface PairingSession {
-  code: string;
-  status: "pending" | "approved" | "expired";
-  cookies?: { name: string; value: string }[];
-  createdAt: number;
-}
+import { createServiceRoleClient } from "@/lib/supabase/server";
 
-const globalSessions = globalThis as unknown as {
-  __malesanPairingSessions?: Map<string, PairingSession>;
-};
-
-if (!globalSessions.__malesanPairingSessions) {
-  globalSessions.__malesanPairingSessions = new Map<string, PairingSession>();
-}
-
-const sessions = globalSessions.__malesanPairingSessions;
-
-function cleanup() {
-  const now = Date.now();
-  for (const [code, session] of sessions.entries()) {
-    if (now - session.createdAt > 180_000) {
-      sessions.delete(code);
-    }
-  }
-}
-
-export function createPairingSession(): string {
-  cleanup();
+export async function createPairingSession(): Promise<string> {
   const code = "msk_" + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-  sessions.set(code, {
-    code,
-    status: "pending",
-    createdAt: Date.now(),
-  });
+  const supabase = createServiceRoleClient();
+
+  // Clean old sessions older than 5 minutes
+  await supabase
+    .from("desktop_pairing_sessions")
+    .delete()
+    .lt("created_at", new Date(Date.now() - 300_000).toISOString())
+    .catch(() => {});
+
+  await supabase
+    .from("desktop_pairing_sessions")
+    .insert({ code, status: "pending" });
+
   return code;
 }
 
-export function approvePairingSession(
+export async function approvePairingSession(
   code: string,
   cookies: { name: string; value: string }[]
-): boolean {
-  cleanup();
-  const session = sessions.get(code);
-  if (!session) return false;
-  session.status = "approved";
-  session.cookies = cookies;
-  return true;
+): Promise<boolean> {
+  if (!code) return false;
+  const supabase = createServiceRoleClient();
+
+  const { error } = await supabase
+    .from("desktop_pairing_sessions")
+    .update({ status: "approved", cookies })
+    .eq("code", code);
+
+  return !error;
 }
 
-export function pollPairingSession(code: string): {
+export async function pollPairingSession(code: string): Promise<{
   status: "pending" | "approved" | "expired";
   cookies?: { name: string; value: string }[];
-} {
-  cleanup();
-  const session = sessions.get(code);
-  if (!session) return { status: "expired" };
+}> {
+  if (!code) return { status: "expired" };
+  const supabase = createServiceRoleClient();
 
-  if (session.status === "approved") {
-    const cookies = session.cookies;
-    sessions.delete(code);
-    return { status: "approved", cookies };
+  const { data, error } = await supabase
+    .from("desktop_pairing_sessions")
+    .select("*")
+    .eq("code", code)
+    .single();
+
+  if (error || !data) return { status: "expired" };
+
+  if (data.status === "approved" && Array.isArray(data.cookies)) {
+    // Delete immediately on first claim
+    await supabase.from("desktop_pairing_sessions").delete().eq("code", code).catch(() => {});
+    return { status: "approved", cookies: data.cookies };
   }
 
   return { status: "pending" };
