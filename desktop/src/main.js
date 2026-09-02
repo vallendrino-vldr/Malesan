@@ -496,10 +496,8 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
           return;
         }
 
-        const duration = Math.max(5, Math.round((endTime || 60) - (startTime || 0)));
         const ytDlpPath = getBinPath("yt-dlp");
         const ffmpegPath = getBinPath("ffmpeg");
-        const encoder = await detectHardwareEncoder();
 
         const videosDir = getVideosDirectory();
         if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
@@ -510,113 +508,73 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
         sendToRenderer({
           type: "CLIP_PROGRESS",
           requestId,
-          progress: 15,
-          stage: "Menghubungkan ke YouTube & menganalisis stream...",
+          progress: 20,
+          stage: "Menghubungkan ke YouTube & menganalisis segmen...",
         });
 
-        // Fast extraction using yt-dlp with Node.js runtime for n-token deciphering
+        // Lightning-fast chunk download using yt-dlp native section extraction
+        // Priority 1: HLS m3u8 chunks (downloads exact segments in 5-10s without decoding full stream)
+        // Priority 2: Direct AVC1 MP4 + M4A AAC
         const ytdlpArgs = [
           "--no-check-certificates",
-          "--js-runtimes", "node:node",
-          "-f", "b[ext=mp4]/18/22/bv*+ba/b",
-          "-g",
+          "--no-playlist",
+          "--no-warnings",
+          "--ffmpeg-location", ffmpegPath,
+          "--download-sections", `*${startTime}-${endTime}`,
+          "-f", "270+234/232+234/bestvideo[protocol^=m3u8]+bestaudio[protocol^=m3u8]/bv*[vcodec^=avc][ext=mp4]+ba[acodec^=mp4a][ext=m4a]/bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best",
+          "--merge-output-format", "mp4",
+          "-o", outputPath,
           targetUrl,
         ];
 
-        execFile(ytDlpPath, ytdlpArgs, (ytErr, stdout) => {
-          if (ytErr || !stdout) {
+        const ytdlpProcess = spawn(ytDlpPath, ytdlpArgs);
+
+        ytdlpProcess.stdout.on("data", (data) => {
+          const text = data.toString();
+          if (text.includes("Destination:") || text.includes("download")) {
+            sendToRenderer({
+              type: "CLIP_PROGRESS",
+              requestId,
+              progress: 50,
+              stage: "Mengunduh segmen klip Full HD 1080p...",
+            });
+          }
+        });
+
+        ytdlpProcess.stderr.on("data", (data) => {
+          const text = data.toString();
+          if (text.includes("frame=") || text.includes("Opening") || text.includes("Merging")) {
+            sendToRenderer({
+              type: "CLIP_PROGRESS",
+              requestId,
+              progress: 80,
+              stage: "Menyusun file video Full HD 1080p...",
+            });
+          }
+        });
+
+        ytdlpProcess.on("close", (code) => {
+          if (code === 0 && fs.existsSync(outputPath)) {
+            const stats = fs.statSync(outputPath);
+            activeClips.set(clipToken, outputPath);
+
+            sendToRenderer({
+              type: "CLIP_READY",
+              requestId,
+              progress: 100,
+              downloadUrl: `http://127.0.0.1:48215/clip/${clipToken}`,
+              downloadToken: clipToken,
+              outputBytes: stats.size,
+              filePath: outputPath,
+              message: "Klip video berhasil dibuat & disimpan ke folder Videos/Malesan!",
+            });
+          } else {
             sendToRenderer({
               type: "NATIVE_ERROR",
               requestId,
-              message: "Gagal mengambil stream video YouTube. Pastikan link publik dan dapat diakses.",
+              message: `Gagal memotong klip video (exit code: ${code}). Pastikan link publik dan koneksi internet stabil.`,
             });
-            return;
           }
-
-          const streamUrls = stdout.trim().split(/\r?\n/).filter(Boolean);
-          const videoStream = streamUrls[0];
-          const audioStream = streamUrls[1] || videoStream;
-
-          sendToRenderer({
-            type: "CLIP_PROGRESS",
-            requestId,
-            progress: 40,
-            stage: `Memotong klip dengan akselerasi GPU (${encoder.type.toUpperCase()})...`,
-          });
-
-          const runFFmpeg = (useEncoder, isRetry = false) => {
-            const ffmpegArgs = [
-              "-y",
-              "-reconnect", "1",
-              "-reconnect_at_eof", "1",
-              "-reconnect_streamed", "1",
-              "-reconnect_delay_max", "5",
-              "-ss", String(startTime),
-              "-i", videoStream,
-            ];
-
-            if (audioStream !== videoStream) {
-              ffmpegArgs.push(
-                "-reconnect", "1",
-                "-reconnect_at_eof", "1",
-                "-reconnect_streamed", "1",
-                "-reconnect_delay_max", "5",
-                "-ss", String(startTime),
-                "-i", audioStream
-              );
-            }
-
-            ffmpegArgs.push(
-              "-t", String(duration),
-              "-c:v", useEncoder.name,
-              ...useEncoder.args,
-              "-c:a", "aac",
-              "-b:a", "192k",
-              "-movflags", "+faststart",
-              outputPath
-            );
-
-            const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
-
-            ffmpegProcess.stderr.on("data", () => {
-              sendToRenderer({
-                type: "CLIP_PROGRESS",
-                requestId,
-                progress: isRetry ? 80 : 75,
-                stage: isRetry ? "Menyusun file video (mode CPU)..." : "Menyusun file video Full HD 1080p...",
-              });
-            });
-
-            ffmpegProcess.on("close", (code) => {
-              if (code === 0 && fs.existsSync(outputPath)) {
-                const stats = fs.statSync(outputPath);
-                activeClips.set(clipToken, outputPath);
-
-                sendToRenderer({
-                  type: "CLIP_READY",
-                  requestId,
-                  progress: 100,
-                  downloadUrl: `http://127.0.0.1:48215/clip/${clipToken}`,
-                  downloadToken: clipToken,
-                  outputBytes: stats.size,
-                  filePath: outputPath,
-                  message: "Klip video berhasil dibuat & disimpan ke folder Videos/Malesan!",
-                });
-              } else if (!isRetry && useEncoder.name !== "libx264") {
-                console.warn("[FFmpeg] Hardware encode failed, falling back to libx264 CPU...");
-                const cpuEncoder = { name: "libx264", args: ["-preset", "veryfast"], type: "cpu" };
-                runFFmpeg(cpuEncoder, true);
-              } else {
-                sendToRenderer({
-                  type: "NATIVE_ERROR",
-                  requestId,
-                  message: `Proses render FFmpeg gagal (exit code: ${code}).`,
-                });
-              }
-            });
-          };
-
-          runFFmpeg(encoder);
         });
         break;
       }
