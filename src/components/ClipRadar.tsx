@@ -82,13 +82,25 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
   const elapsedSec = bridgeStartedAt && bridgeBusy ? Math.max(0, Math.floor((nowTs - bridgeStartedAt) / 1000)) : 0;
 
   const isMobile = useSyncExternalStore(emptySubscribe, getIsMobileSnapshot, () => false);
-  const [isNativeApk, setIsNativeApk] = useState(false);
+  const [isNativeApk, setIsNativeApk] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(
+      (typeof navigator !== "undefined" && (navigator.userAgent.includes("MalesanStudio") || navigator.userAgent.includes("MalesanApp"))) ||
+      window.MalesanNative
+    );
+  });
   const [showLockModal, setShowLockModal] = useState(false);
 
   useEffect(() => {
     let active = true;
     void getNativeShell().then((shell) => {
-      if (active) setIsNativeApk(Boolean(shell?.capabilities.includes("native-auto-clip")));
+      if (active) {
+        setIsNativeApk(Boolean(
+          shell?.capabilities.includes("native-auto-clip") ||
+          (typeof navigator !== "undefined" && (navigator.userAgent.includes("MalesanStudio") || navigator.userAgent.includes("MalesanApp"))) ||
+          (typeof window !== "undefined" && Boolean(window.MalesanNative))
+        ));
+      }
     });
     return () => {
       active = false;
@@ -222,46 +234,20 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
     setBridgeError(null);
 
     const nativeShell = await getNativeShell();
-    const isNativeApk = Boolean(nativeShell?.capabilities.includes("native-auto-clip"));
+    const isNative = Boolean(
+      nativeShell?.capabilities.includes("native-auto-clip") ||
+      (typeof navigator !== "undefined" && (navigator.userAgent.includes("MalesanStudio") || navigator.userAgent.includes("MalesanApp"))) ||
+      (typeof window !== "undefined" && Boolean(window.MalesanNative))
+    );
     const isMobileDevice = typeof window !== "undefined" && (/Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || window.innerWidth < 768);
 
-    if (!isNativeApk) {
+    if (!isNative) {
       if (isMobileDevice) {
         setBridgeError("Mode Web HP / PWA tidak memiliki mesin pemotong YouTube lokal. Buka via aplikasi APK Android Malesan (Gratis) atau pilih 'Pakai file sendiri' di bawah.");
         return;
       }
-      const extensionIds = [
-        "momojnfkjflahebbaegiabcedokpibfn",
-        process.env.NEXT_PUBLIC_MALESAN_BRIDGE_EXTENSION_ID || "ckpiijmjnnekfolkhhnoiifjgnbgbpjl",
-      ];
-      const chromeRuntime = (window as typeof window & { chrome?: ChromeExternal }).chrome?.runtime;
-      let bridgeAlive = typeof document !== "undefined" && document.documentElement.getAttribute("data-malesan-bridge") === "ready";
-
-      if (!bridgeAlive && chromeRuntime?.sendMessage) {
-        for (const extId of extensionIds) {
-          const ok = await new Promise<boolean>((resolve) => {
-            const t = setTimeout(() => resolve(false), 500);
-            try {
-              chromeRuntime.sendMessage(extId, { type: "PING" }, (res) => {
-                clearTimeout(t);
-                if (chromeRuntime.lastError) resolve(false);
-                else resolve(res?.ok !== false);
-              });
-            } catch {
-              clearTimeout(t);
-              resolve(false);
-            }
-          });
-          if (ok) {
-            bridgeAlive = true;
-            break;
-          }
-        }
-      }
-      if (!bridgeAlive) {
-        setBridgeError("Malesan Bridge belum terpasang di browser PC kamu. Silakan unduh installer 1-klik di bawah.");
-        return;
-      }
+      setBridgeError("Pemotongan otomatis dari link YouTube membutuhkan aplikasi Malesan Studio Desktop atau Malesan APK. Buka via aplikasi Malesan atau pilih 'Pakai file sendiri' di bawah.");
+      return;
     }
 
     setBridgeBusy(true);
@@ -278,7 +264,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       setBridgeJob(created.job);
 
       let downloadUrl: string;
-      if (isNativeApk) {
+      if (isNative) {
         const claimed = await fetch("/api/bridge/auto-clip/claim", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ jobId: created.job.id, claimToken: created.claimToken }),

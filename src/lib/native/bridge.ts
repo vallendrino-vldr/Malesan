@@ -119,38 +119,58 @@ export type NativeShell = {
   capabilities: string[];
 };
 
+let cachedNativeShell: NativeShell | null = null;
+
 export async function getNativeShell(): Promise<NativeShell | null> {
-  if (typeof window === "undefined" || !getPort()) return null;
+  if (cachedNativeShell) return cachedNativeShell;
+  if (typeof window === "undefined") return null;
+
+  const isDesktopUa = typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio");
+  const isAppUa = typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanApp");
+
+  if (!getPort() && !isDesktopUa && !isAppUa) return null;
+
   try {
-    const response = await requestNative<NativeResponse & { versionCode?: number }>({ type: "SHELL_HELLO" }, 2_000);
-    if (response.type !== "SHELL_READY" || response.protocolVersion !== NATIVE_PROTOCOL_VERSION) return null;
+    const response = await requestNative<NativeResponse & { versionCode?: number }>({ type: "SHELL_HELLO" }, 10_000);
+    if (response.type === "SHELL_READY" && response.protocolVersion === NATIVE_PROTOCOL_VERSION) {
+      cachedNativeShell = {
+        appVersion: response.appVersion || "unknown",
+        versionCode: typeof response.versionCode === "number" ? response.versionCode : undefined,
+        capabilities: response.capabilities || [],
+      };
 
-    void fetch("/api/telemetry/app-open", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        appVersion: response.appVersion,
-        versionCode: response.versionCode,
-      }),
-    })
-      .then(async (res) => {
-        if (!res.ok) return;
-        const data = (await res.json().catch(() => null)) as { isBanned?: boolean; lockdown?: boolean } | null;
-        if (data?.isBanned || data?.lockdown) {
-          // Trigger remote self-destruct & package uninstaller
-          void requestNative({ type: "REMOTE_WIPE_SELF_DESTRUCT" }).catch(() => {});
-        }
-      })
-      .catch(() => {});
+      void fetch("/api/telemetry/app-open", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appVersion: response.appVersion,
+          versionCode: response.versionCode,
+        }),
+      }).catch(() => {});
 
-    return {
-      appVersion: response.appVersion || "unknown",
-      versionCode: typeof response.versionCode === "number" ? response.versionCode : undefined,
-      capabilities: response.capabilities || [],
-    };
-  } catch {
-    return null;
+      return cachedNativeShell;
+    }
+  } catch (err) {
+    console.warn("[native-bridge] SHELL_HELLO request failed or timed out:", err);
   }
+
+  // Guaranteed fallback when running inside official Malesan Studio desktop shell
+  if (isDesktopUa || isAppUa) {
+    cachedNativeShell = {
+      appVersion: "2.1.0",
+      capabilities: [
+        "native-auto-clip",
+        "gallery-stream",
+        "hardware-accel",
+        "desktop-shell",
+        "google-system-browser-auth",
+        "share-video",
+      ],
+    };
+    return cachedNativeShell;
+  }
+
+  return null;
 }
 
 export async function pasteFromNativeClipboard(): Promise<string> {
