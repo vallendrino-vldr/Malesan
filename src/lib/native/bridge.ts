@@ -117,6 +117,7 @@ export type NativeShell = {
   appVersion: string;
   versionCode?: number;
   capabilities: string[];
+  platform?: "android" | "windows" | "desktop" | "unknown";
 };
 
 let cachedNativeShell: NativeShell | null = null;
@@ -137,6 +138,7 @@ export async function getNativeShell(): Promise<NativeShell | null> {
         appVersion: response.appVersion || "unknown",
         versionCode: typeof response.versionCode === "number" ? response.versionCode : undefined,
         capabilities: response.capabilities || [],
+        platform: isDesktopUa || response.capabilities?.includes("desktop-shell") ? "desktop" : "android",
       };
 
       void fetch("/api/telemetry/app-open", {
@@ -166,6 +168,7 @@ export async function getNativeShell(): Promise<NativeShell | null> {
         "google-system-browser-auth",
         "share-video",
       ],
+      platform: isDesktopUa ? "desktop" : "android",
     };
     return cachedNativeShell;
   }

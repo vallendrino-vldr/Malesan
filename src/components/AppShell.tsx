@@ -88,16 +88,23 @@ export function AppShell({
     void getNativeShell().then((shell) => {
       if (!active) return;
       if (shell) {
-        setIsNativeApk(true);
-        setNativeVersion(shell.appVersion);
-        void requestNativeNotificationPermission();
-        const update = checkApkUpdate(shell.versionCode, shell.appVersion);
-        setUpdateInfo(update);
-        if (update.hasUpdate && typeof window !== "undefined") {
-          const prompted = sessionStorage.getItem("malesan_update_prompted");
-          if (!prompted) {
-            sessionStorage.setItem("malesan_update_prompted", "1");
-            setIsUpdateModalOpen(true);
+        const isDesktop = shell.platform === "desktop" ||
+          shell.capabilities?.includes("desktop-shell") ||
+          (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio"));
+
+        // Only Android APK triggers the APK update modal! Desktop uses dedicated updater
+        if (!isDesktop) {
+          setIsNativeApk(true);
+          setNativeVersion(shell.appVersion);
+          void requestNativeNotificationPermission();
+          const update = checkApkUpdate(shell.versionCode, shell.appVersion);
+          setUpdateInfo(update);
+          if (update.hasUpdate && typeof window !== "undefined") {
+            const prompted = sessionStorage.getItem("malesan_update_prompted");
+            if (!prompted) {
+              sessionStorage.setItem("malesan_update_prompted", "1");
+              setIsUpdateModalOpen(true);
+            }
           }
         }
       }
