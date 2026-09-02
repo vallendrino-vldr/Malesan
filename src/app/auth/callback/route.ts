@@ -88,10 +88,20 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If requested from desktop app, redirect to local loopback server
+  // If requested from desktop app, redirect to local loopback server with handoff ticket
   const isDesktopAuth = searchParams.get("desktop") === "1";
   if (isDesktopAuth) {
-    const desktopResponse = NextResponse.redirect("http://127.0.0.1:48215/callback?success=1");
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const authCookies = cookieStore
+      .getAll()
+      .filter((c) => c.name.startsWith("sb-") || c.name.startsWith("malesan_"))
+      .map((c) => ({ name: c.name, value: c.value }));
+
+    const { createDesktopTicket } = await import("@/lib/auth/desktop-ticket");
+    const ticket = createDesktopTicket(authCookies);
+
+    const desktopResponse = NextResponse.redirect(`http://127.0.0.1:48215/callback?ticket=${ticket}`);
     if (hasPendingBonus) {
       desktopResponse.cookies.delete("malesan_pending_demo_bonus");
     }

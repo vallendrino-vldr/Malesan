@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, Notification, Menu } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, Notification, Menu, session } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { spawn, execFile, execSync } = require("child_process");
@@ -135,6 +135,8 @@ const oauthServer = http.createServer((req, res) => {
 
   // Google OAuth callback endpoint
   if (reqUrl.pathname === "/callback") {
+    const ticket = reqUrl.searchParams.get("ticket");
+
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(`
       <!DOCTYPE html>
@@ -143,26 +145,59 @@ const oauthServer = http.createServer((req, res) => {
         <title>Login Berhasil - Malesan Studio</title>
         <style>
           body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0c0a09; color: #f2ede7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-          .card { background: #161412; border: 1px solid rgba(255,107,0,0.3); padding: 32px 40px; border-radius: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 400px; }
-          h1 { color: #ff6b00; margin: 0 0 8px; font-size: 22px; }
-          p { color: #8f857d; font-size: 14px; margin: 0; }
+          .card { background: #161412; border: 1px solid rgba(255,107,0,0.3); padding: 32px 40px; border-radius: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 420px; }
+          h1 { color: #ff6b00; margin: 0 0 12px; font-size: 22px; }
+          p { color: #8f857d; font-size: 14px; margin: 0 0 20px; line-height: 1.6; }
+          .badge { display: inline-block; background: rgba(255,107,0,0.15); color: #ff8533; border: 1px solid rgba(255,107,0,0.4); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
         </style>
       </head>
       <body>
         <div class="card">
-          <h1>✓ Login Berhasil!</h1>
-          <p>Kamu sudah masuk ke Malesan Studio. Silakan tutup tab ini dan kembali ke aplikasi desktop.</p>
+          <div class="badge">✓ Terhubung ke Desktop</div>
+          <h1>Login Berhasil!</h1>
+          <p>Sesi Google kamu telah berhasil disinkronkan ke aplikasi Malesan Studio. Kamu bisa menutup tab ini dan kembali ke aplikasi.</p>
         </div>
-        <script>setTimeout(() => { window.close(); }, 2000);</script>
+        <script>setTimeout(() => { try { window.close(); } catch {} }, 2500);</script>
       </body>
       </html>
     `);
 
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadURL("https://malesan.my.id/app");
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    (async () => {
+      if (ticket) {
+        try {
+          const apiRes = await fetch(`https://malesan.my.id/api/desktop/ticket?ticket=${encodeURIComponent(ticket)}`);
+          if (apiRes.ok) {
+            const data = await apiRes.json();
+            if (data?.cookies && Array.isArray(data.cookies)) {
+              for (const c of data.cookies) {
+                try {
+                  await session.defaultSession.cookies.set({
+                    url: "https://malesan.my.id",
+                    name: c.name,
+                    value: c.value,
+                    domain: ".malesan.my.id",
+                    path: "/",
+                    secure: true,
+                    httpOnly: true,
+                    sameSite: "lax",
+                  });
+                } catch (cookieErr) {
+                  console.warn("[desktop-auth] error setting cookie:", c.name, cookieErr);
+                }
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("[desktop-auth] failed to exchange ticket:", err);
+        }
+      }
+
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL("https://malesan.my.id/app");
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    })();
     return;
   }
 
