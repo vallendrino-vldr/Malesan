@@ -647,9 +647,15 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
         break;
       }
 
-      case "OPEN_VIDEOS_FOLDER": {
+      case "OPEN_VIDEOS_FOLDER":
+      case "SHOW_ITEM_IN_FOLDER": {
+        const { filePath } = req;
         const videosDir = getVideosDirectory();
-        if (fs.existsSync(videosDir)) shell.openPath(videosDir);
+        if (filePath && fs.existsSync(filePath)) {
+          shell.showItemInFolder(filePath);
+        } else if (fs.existsSync(videosDir)) {
+          shell.openPath(videosDir);
+        }
         sendToRenderer({ type: "FOLDER_OPENED", requestId });
         break;
       }

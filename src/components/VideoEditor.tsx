@@ -203,6 +203,7 @@ export function VideoEditor({
   const [renderedVideoUrl, setRenderedVideoUrl] = useState<string | undefined>(undefined);
   const [exportedVideoFile, setExportedVideoFile] = useState<File | null>(null);
   const [isNativeAPK, setIsNativeAPK] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
   const [currentTimeNow, setCurrentTimeNow] = useState(0);
   const [videoDuration, setVideoDuration] = useState(60);
 
@@ -375,7 +376,9 @@ export function VideoEditor({
 
   useEffect(() => {
     void getNativeShell().then((shell) => {
-      setIsNativeAPK(Boolean(shell?.capabilities.includes("native-auto-clip") || shell));
+      const isDsk = shell?.platform === "desktop" || (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio"));
+      setIsDesktop(isDsk);
+      setIsNativeAPK(!isDsk && Boolean(shell?.capabilities?.includes("native-auto-clip") || shell));
     });
   }, []);
 
@@ -1222,6 +1225,7 @@ export function VideoEditor({
         videoFile={exportedVideoFile}
         videoTitle={file?.name.replace(/\.[^.]+$/, "") || "video"}
         isAPK={isNativeAPK}
+        isDesktop={isDesktop}
         transcriptionText={words.map((w) => w.word).join(" ")}
       />
       <VideoProjectHistoryModal
