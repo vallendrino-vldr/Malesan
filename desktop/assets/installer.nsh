@@ -83,7 +83,11 @@
       StrCpy $0 "$PROFILE\Videos\Malesan"
     ${EndIf}
 
-    MessageBox MB_YESNO|MB_ICONQUESTION "Apakah kamu ingin menghapus seluruh data dan video hasil clip di folder ($0) juga?$\n$\n• Pilih 'Yes' (Ya): Hapus bersih total (aplikasi dan seluruh video dihapus).$\n• Pilih 'No' (Tidak): Hanya hapus aplikasi (semua file video kamu tetap tersimpan aman)." IDYES deleteData IDNO keepData
+    ${ifNot} ${Silent}
+      MessageBox MB_YESNO|MB_ICONQUESTION "Apakah kamu ingin menghapus seluruh data dan video hasil clip di folder ($0) juga?$\n$\n• Pilih 'Yes' (Ya): Hapus bersih total (aplikasi dan seluruh video dihapus).$\n• Pilih 'No' (Tidak): Hanya hapus aplikasi (semua file video kamu tetap tersimpan aman)." IDYES deleteData IDNO keepData
+    ${else}
+      Goto keepData
+    ${endif}
 
     deleteData:
       RMDir /r "$0"
