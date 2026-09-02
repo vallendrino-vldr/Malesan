@@ -1,7 +1,7 @@
-const { app, BrowserWindow, ipcMain, shell, Notification, Menu, session } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, Notification, Menu } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { spawn, execFile } = require("child_process");
+const { spawn, execFile, execSync } = require("child_process");
 const os = require("os");
 const http = require("http");
 
@@ -17,8 +17,8 @@ app.commandLine.appendSwitch("disable-site-isolation-trials");
 
 let mainWindow = null;
 let cachedEncoder = null;
-let oauthServer = null;
 const activeUploads = new Map();
+const activeClips = new Map();
 
 function getBinPath(binName) {
   const isDev = !app.isPackaged;
@@ -34,7 +34,7 @@ function getBinPath(binName) {
   return target;
 }
 
-// Detect hardware video encoder (NVIDIA NVENC, AMD AMF, Intel QSV, D3D11, or CPU fallback)
+// Detect hardware video encoder (MediaFoundation, AMD AMF, NVIDIA NVENC, Intel QSV, or CPU fallback)
 async function detectHardwareEncoder() {
   if (cachedEncoder) return cachedEncoder;
   const ffmpegPath = getBinPath("ffmpeg");
@@ -46,14 +46,18 @@ async function detectHardwareEncoder() {
         return resolve(cachedEncoder);
       }
 
-      if (stdout.includes("h264_nvenc")) {
-        cachedEncoder = { name: "h264_nvenc", args: ["-preset", "p4", "-cq", "23"], type: "nvidia" };
+      if (stdout.includes("h264_mf")) {
+        // Universal Windows Hardware Encoder (MediaFoundation) - runs at 10x speed on Win 10/11
+        cachedEncoder = { name: "h264_mf", args: ["-rate_control", "cbr"], type: "windows-gpu" };
       } else if (stdout.includes("h264_amf")) {
-        cachedEncoder = { name: "h264_amf", args: ["-usage", "transcoding", "-quality", "speed"], type: "amd" };
+        // AMD AMF for Ryzen / Radeon APU
+        cachedEncoder = { name: "h264_amf", args: ["-usage", "transcoding", "-quality", "speed"], type: "amd-amf" };
+      } else if (stdout.includes("h264_nvenc")) {
+        // NVIDIA NVENC
+        cachedEncoder = { name: "h264_nvenc", args: ["-preset", "p4", "-cq", "23"], type: "nvidia-nvenc" };
       } else if (stdout.includes("h264_qsv")) {
-        cachedEncoder = { name: "h264_qsv", args: ["-preset", "veryfast"], type: "intel" };
-      } else if (stdout.includes("h264_mf")) {
-        cachedEncoder = { name: "h264_mf", args: ["-rate_control", "cbr"], type: "d3d11" };
+        // Intel QuickSync
+        cachedEncoder = { name: "h264_qsv", args: ["-preset", "veryfast"], type: "intel-qsv" };
       } else {
         const cores = Math.max(2, os.cpus().length - 1);
         cachedEncoder = { name: "libx264", args: ["-preset", "veryfast", "-threads", String(cores)], type: "cpu" };
@@ -63,62 +67,92 @@ async function detectHardwareEncoder() {
   });
 }
 
+// Warm up hardware encoder check immediately in background
+detectHardwareEncoder().catch(() => {});
+
 function sendToRenderer(payload) {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send("malesan-native-response", payload);
   }
 }
 
-// Start temporary local loopback server to receive Google OAuth session from system browser
-function startOAuthLoopbackServer() {
-  if (oauthServer) {
-    try { oauthServer.close(); } catch {}
+// Local loopback HTTP server on port 48215:
+// 1. Receives Google OAuth callback from system browser
+// 2. Streams generated YouTube video clips back to the web studio
+const oauthServer = http.createServer((req, res) => {
+  const reqUrl = new URL(req.url, "http://127.0.0.1:48215");
+
+  // Allow cross-origin requests from malesan.my.id
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "*");
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
   }
 
-  oauthServer = http.createServer(async (req, res) => {
-    const reqUrl = new URL(req.url, "http://127.0.0.1:48215");
-    if (reqUrl.pathname === "/callback") {
-      const accessToken = reqUrl.searchParams.get("access_token");
-      const refreshToken = reqUrl.searchParams.get("refresh_token");
-
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      res.end(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Login Berhasil - Malesan Studio</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0c0a09; color: #f2ede7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-            .card { background: #161412; border: 1px solid rgba(255,107,0,0.3); padding: 32px 40px; border-radius: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 400px; }
-            h1 { color: #ff6b00; margin: 0 0 8px; font-size: 22px; }
-            p { color: #8f857d; font-size: 14px; margin: 0; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h1>✓ Login Berhasil!</h1>
-            <p>Kamu sudah masuk ke Malesan Studio. Silakan tutup tab ini dan kembali ke aplikasi desktop.</p>
-          </div>
-          <script>
-            setTimeout(() => { window.close(); }, 3000);
-          </script>
-        </body>
-        </html>
-      `);
-
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL("https://malesan.my.id/app");
-        mainWindow.show();
-        mainWindow.focus();
-      }
-
-      setTimeout(() => {
-        try { oauthServer.close(); oauthServer = null; } catch {}
-      }, 5000);
+  // Stream local clipped MP4 file to the web studio
+  if (reqUrl.pathname.startsWith("/clip/")) {
+    const token = reqUrl.pathname.replace("/clip/", "");
+    const filePath = activeClips.get(token);
+    if (filePath && fs.existsSync(filePath)) {
+      const stat = fs.statSync(filePath);
+      res.writeHead(200, {
+        "Content-Type": "video/mp4",
+        "Content-Length": stat.size,
+        "Accept-Ranges": "bytes",
+      });
+      fs.createReadStream(filePath).pipe(res);
+      return;
     }
-  });
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Clip file not found or expired.");
+    return;
+  }
 
+  // Google OAuth callback endpoint
+  if (reqUrl.pathname === "/callback") {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+    res.end(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Login Berhasil - Malesan Studio</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0c0a09; color: #f2ede7; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .card { background: #161412; border: 1px solid rgba(255,107,0,0.3); padding: 32px 40px; border-radius: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); max-width: 400px; }
+          h1 { color: #ff6b00; margin: 0 0 8px; font-size: 22px; }
+          p { color: #8f857d; font-size: 14px; margin: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>✓ Login Berhasil!</h1>
+          <p>Kamu sudah masuk ke Malesan Studio. Silakan tutup tab ini dan kembali ke aplikasi desktop.</p>
+        </div>
+        <script>setTimeout(() => { window.close(); }, 2000);</script>
+      </body>
+      </html>
+    `);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL("https://malesan.my.id/app");
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    return;
+  }
+
+  res.writeHead(404);
+  res.end();
+});
+
+try {
   oauthServer.listen(48215, "127.0.0.1");
+} catch (err) {
+  console.warn("Could not start local HTTP server on port 48215:", err);
 }
 
 function createWindow() {
@@ -127,7 +161,7 @@ function createWindow() {
     height: 820,
     minWidth: 980,
     minHeight: 640,
-    show: false, // Don't show until rendered to eliminate white flash & lag
+    show: false,
     backgroundColor: "#0c0a09",
     title: "Malesan Studio",
     autoHideMenuBar: true,
@@ -140,23 +174,18 @@ function createWindow() {
     },
   });
 
-  // Modern clean Chrome User Agent so Google OAuth recognizes it seamlessly
   const chromeUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36 MalesanStudio/2.1.0";
   mainWindow.webContents.setUserAgent(chromeUA);
 
-  // Directly load /app for instant workspace opening
   const appUrl = process.env.MALESAN_DEV_URL || "https://malesan.my.id/app";
   mainWindow.loadURL(appUrl);
 
-  // Show window instantly when ready
   mainWindow.once("ready-to-show", () => {
     mainWindow.show();
   });
 
-  // Handle external link clicks & Google OAuth
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.includes("accounts.google.com") || url.includes("supabase.co/auth")) {
-      startOAuthLoopbackServer();
       shell.openExternal(url);
       return { action: "deny" };
     }
@@ -168,9 +197,6 @@ function createWindow() {
 
   mainWindow.on("closed", () => {
     mainWindow = null;
-    if (oauthServer) {
-      try { oauthServer.close(); } catch {}
-    }
   });
 }
 
@@ -194,14 +220,13 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
           platform: "windows",
           hardwareEncoder: encoder.type,
           capabilities: [
-            "youtube-clip",
-            "hardware-accel",
-            "desktop-shell",
-            "gallery-stream",
-            "auto-update",
-            "local-storage",
-            "share-video",
-            "google-system-browser-auth",
+            "native-auto-clip",          // CRITICAL: Tells ClipRadar to use local yt-dlp & ffmpeg!
+            "gallery-stream",            // Direct local video saving to Videos/Malesan
+            "hardware-accel",            // GPU hardware acceleration
+            "desktop-shell",             // Tells the app it is running in full desktop mode
+            "google-system-browser-auth",// 1-click system browser OAuth
+            "share-video",               // Native video share / open folder
+            "auto-update",               // 1-click auto updater
           ],
         });
         break;
@@ -210,20 +235,22 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
       case "AUTH_SYSTEM_BROWSER": {
         const { url } = req;
         if (url) {
-          startOAuthLoopbackServer();
           shell.openExternal(url);
           sendToRenderer({ type: "AUTH_STARTED", requestId });
         }
         break;
       }
 
+      case "CLIP_START":
       case "CLIP_YOUTUBE": {
-        const { url, startSeconds = 0, duration = 60 } = req;
-        if (!url) {
+        const { sourceUrl, url: fallbackUrl, startTime = 0, endTime = 60 } = req;
+        const targetUrl = sourceUrl || fallbackUrl;
+        if (!targetUrl) {
           sendToRenderer({ type: "NATIVE_ERROR", requestId, message: "URL YouTube tidak boleh kosong." });
           return;
         }
 
+        const duration = Math.max(5, Math.round((endTime || 60) - (startTime || 0)));
         const ytDlpPath = getBinPath("yt-dlp");
         const ffmpegPath = getBinPath("ffmpeg");
         const encoder = await detectHardwareEncoder();
@@ -231,31 +258,31 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
         const videosDir = path.join(os.homedir(), "Videos", "Malesan");
         if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 
-        const safeId = Date.now();
-        const outputPath = path.join(videosDir, `Malesan_Clip_${safeId}.mp4`);
+        const clipToken = `clip_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const outputPath = path.join(videosDir, `${clipToken}.mp4`);
 
         sendToRenderer({
           type: "CLIP_PROGRESS",
           requestId,
-          progress: 10,
+          progress: 15,
           stage: "Menghubungkan ke YouTube & menganalisis stream...",
         });
 
-        // Get direct video + audio stream URLs using yt-dlp
+        // Fast extraction using yt-dlp with Node.js runtime for n-token deciphering
         const ytdlpArgs = [
           "--no-check-certificates",
-          "--format", "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
-          "--format-sort", "res:1080,res:720,fps:60,vcodec:h264,acodec:m4a,res,size",
+          "--js-runtimes", "node:node",
+          "-f", "b[ext=mp4]/18/22/bv*+ba/b",
           "-g",
-          url,
+          targetUrl,
         ];
 
-        execFile(ytDlpPath, ytdlpArgs, async (ytErr, stdout) => {
+        execFile(ytDlpPath, ytdlpArgs, (ytErr, stdout) => {
           if (ytErr || !stdout) {
             sendToRenderer({
               type: "NATIVE_ERROR",
               requestId,
-              message: "Gagal mengambil stream video YouTube. Pastikan link publik.",
+              message: "Gagal mengambil stream video YouTube. Pastikan link publik dan dapat diakses.",
             });
             return;
           }
@@ -273,12 +300,12 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
 
           const ffmpegArgs = [
             "-y",
-            "-ss", String(startSeconds),
+            "-ss", String(startTime),
             "-i", videoStream,
           ];
 
           if (audioStream !== videoStream) {
-            ffmpegArgs.push("-ss", String(startSeconds), "-i", audioStream);
+            ffmpegArgs.push("-ss", String(startTime), "-i", audioStream);
           }
 
           ffmpegArgs.push(
@@ -304,10 +331,16 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
 
           ffmpegProcess.on("close", (code) => {
             if (code === 0 && fs.existsSync(outputPath)) {
+              const stats = fs.statSync(outputPath);
+              activeClips.set(clipToken, outputPath);
+
               sendToRenderer({
-                type: "CLIP_COMPLETE",
+                type: "CLIP_READY",
                 requestId,
                 progress: 100,
+                downloadUrl: `http://127.0.0.1:48215/clip/${clipToken}`,
+                downloadToken: clipToken,
+                outputBytes: stats.size,
                 filePath: outputPath,
                 message: "Klip video berhasil dibuat & disimpan ke folder Videos/Malesan!",
               });
@@ -377,7 +410,7 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
         if (Notification.isSupported()) {
           new Notification({
             title: "Malesan Studio Desktop",
-            body: `Video berhasil disimpan ke ${upload.targetPath}`,
+            body: `Video berhasil disimpan ke folder Videos/Malesan`,
             icon: path.join(__dirname, "..", "assets", "icon.png"),
           }).show();
         }

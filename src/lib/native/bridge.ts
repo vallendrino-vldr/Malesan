@@ -52,6 +52,20 @@ function ensureDispatcher(port: NativePort) {
       // Ignore malformed native messages; origin and frame checks also run natively.
     }
   };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.__malesan_native_message__ && typeof event.data.data === "string") {
+        try {
+          const response = JSON.parse(event.data.data) as NativeResponse;
+          listeners.forEach((listener) => listener(response));
+        } catch {
+          // Ignore malformed native messages
+        }
+      }
+    });
+  }
+
   boundPort = port;
 }
 
