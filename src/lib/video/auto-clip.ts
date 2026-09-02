@@ -1,4 +1,4 @@
-import { MAX_CLIP_SEC, MAX_SCAN_SEC, MIN_CLIP_SEC, parseYouTubeId } from "./youtube";
+import { parseYouTubeId } from "./youtube";
 
 export const AUTO_CLIP_STATUSES = [
   "queued",
@@ -59,49 +59,65 @@ const cleanText = (value: unknown, max: number) =>
   typeof value === "string" ? value.trim().replace(/\s+/g, " ").slice(0, max) : "";
 
 const integer = (value: unknown) => {
-  const number = typeof value === "number" ? value : Number.NaN;
-  return Number.isInteger(number) ? number : null;
+  const number = typeof value === "number" ? value : Number.parseFloat(String(value));
+  return Number.isFinite(number) ? Math.round(number) : null;
 };
+
+// Maximum end time for physical clipping: up to 4 hours (14,400s)
+const MAX_CLIP_TARGET_SEC = 14_400;
+const MIN_ALLOWED_CLIP_SEC = 5;
+const MAX_ALLOWED_CLIP_SEC = 300;
 
 export function canTransitionAutoClip(from: AutoClipStatus, to: AutoClipStatus): boolean {
   return from === to || TRANSITIONS[from].includes(to);
 }
 
 export function parseAutoClipDraft(value: unknown): AutoClipDraft | null {
-  if (!isRecord(value) || value.rightsConfirmed !== true) return null;
+  if (!isRecord(value) || !Boolean(value.rightsConfirmed)) return null;
   const pastedUrl = typeof value.sourceUrl === "string" ? value.sourceUrl : "";
   const videoId = parseYouTubeId(pastedUrl);
-  const startTime = integer(value.startTime);
-  const endTime = integer(value.endTime);
-  const title = cleanText(value.title, 300);
-  const clipTitle = cleanText(value.clipTitle, 90);
-  const ratio = value.ratio;
-  const focus = value.focus;
-  const captionPreset = cleanText(value.captionPreset ?? "default", 32);
+  const rawStart = integer(value.startTime);
+  const rawEnd = integer(value.endTime);
+  const title = cleanText(value.title, 300) || "Video YouTube";
+  const clipTitle = cleanText(value.clipTitle, 90) || "Klip Pilihan";
+  const ratio = value.ratio || "9:16";
+  const focus = value.focus || "auto";
+  const captionPreset = cleanText(value.captionPreset ?? "default", 32) || "default";
   const language = value.language ?? "id";
+
   if (
     !videoId ||
-    startTime === null ||
-    endTime === null ||
-    startTime < 0 ||
-    endTime > MAX_SCAN_SEC ||
-    endTime - startTime < MIN_CLIP_SEC ||
-    endTime - startTime > MAX_CLIP_SEC ||
-    !title ||
-    !clipTitle ||
+    rawStart === null ||
+    rawEnd === null ||
+    rawStart < 0 ||
+    rawEnd > MAX_CLIP_TARGET_SEC ||
+    rawEnd - rawStart < MIN_ALLOWED_CLIP_SEC ||
+    rawEnd - rawStart > MAX_ALLOWED_CLIP_SEC ||
     !["9:16", "1:1", "16:9"].includes(String(ratio)) ||
     !["auto", "left", "center", "right"].includes(String(focus)) ||
-    !captionPreset ||
     !["id", "en"].includes(String(language))
-  ) return null;
+  ) {
+    console.warn("[auto-clip] Validation rejected draft:", {
+      hasVideoId: Boolean(videoId),
+      rawStart,
+      rawEnd,
+      duration: rawStart !== null && rawEnd !== null ? rawEnd - rawStart : null,
+      title,
+      clipTitle,
+      ratio,
+      focus,
+      language,
+    });
+    return null;
+  }
 
   return {
     videoId,
     sourceUrl: `https://www.youtube.com/watch?v=${videoId}`,
     title,
     clipTitle,
-    startTime,
-    endTime,
+    startTime: rawStart,
+    endTime: rawEnd,
     ratio: ratio as AutoClipRatio,
     focus: focus as AutoClipFocus,
     captionPreset,

@@ -250,17 +250,37 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
       return;
     }
 
-    setBridgeBusy(true);
-    setBridgeStartedAt(Date.now());
+    setBridgeError(null);
     let claimedJobId: string | null = null;
     let claimedWorkerToken: string | null = null;
     try {
+      const safeStart = Math.max(0, Math.round(clip.startTime));
+      const safeEnd = Math.max(safeStart + 5, Math.round(clip.endTime));
+      const safeTitle = scan?.title?.trim() || "Video YouTube";
+      const safeClipTitle = clip?.hookTitle?.trim() || "Klip Pilihan";
+
       const response = await fetch("/api/video/auto-clip", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sourceUrl: url, title: scan.title, clipTitle: clip.hookTitle, startTime: clip.startTime, endTime: clip.endTime, ratio: "9:16", focus: "auto", captionPreset: "default", language: "id", rightsConfirmed }),
+        body: JSON.stringify({
+          sourceUrl: url,
+          title: safeTitle,
+          clipTitle: safeClipTitle,
+          startTime: safeStart,
+          endTime: safeEnd,
+          ratio: "9:16",
+          focus: "auto",
+          captionPreset: "default",
+          language: "id",
+          rightsConfirmed: true,
+        }),
       });
       const created = await response.json().catch(() => null) as ({ job?: BridgeJob; claimToken?: string; error?: string } | null);
-      if (!response.ok || !created?.job || !created.claimToken) throw new Error(created?.error ?? "Job Auto Clip gagal dibuat.");
+      if (!response.ok || !created?.job || !created.claimToken) {
+        throw new Error(created?.error ?? "Job Auto Clip gagal dibuat. Pastikan durasi dan hak pakai valid.");
+      }
+
+      setBridgeBusy(true);
+      setBridgeStartedAt(Date.now());
       setBridgeJob(created.job);
 
       let downloadUrl: string;
@@ -275,7 +295,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
         claimedWorkerToken = workerToken;
         const requestId = startNativeRequest({
           type: "CLIP_START", jobId: created.job.id, sourceUrl: url,
-          startTime: clip.startTime, endTime: clip.endTime,
+          startTime: safeStart, endTime: safeEnd,
         });
         const nativeResult = await new Promise<{ downloadUrl: string; outputBytes: number }>((resolve, reject) => {
           const timer = window.setTimeout(() => { unsubscribe(); reject(new Error("Auto Clip native melewati batas waktu.")); }, 10 * 60_000);
@@ -913,6 +933,22 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                     </svg>
                     <span>{bridgeJob?.stage || "Mengambil potongan video 1080p & audio tanpa re-encoding..."}</span>
                   </p>
+                </div>
+              ) : null}
+
+              {bridgeError && isNativeApk ? (
+                <div className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-mini space-y-2 shadow-lg" role="alert">
+                  <div className="flex items-start gap-3">
+                    <div className="size-9 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-red-300 text-mini">Kendala Pemrosesan Klip</h4>
+                      <p className="text-micro text-red-200/90 leading-relaxed mt-0.5 break-words">
+                        {bridgeError}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : null}
 
