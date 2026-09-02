@@ -288,6 +288,197 @@ function ResultVideoPlayerModal({
 }
 
 // -------------------------------------------------------------
+// 🎬 Inline Custom Studio Video Player (Desktop Card)
+// -------------------------------------------------------------
+function InlineCustomStudioPlayer({
+  videoUrl,
+  onExpandFullscreen,
+}: {
+  videoUrl: string;
+  onExpandFullscreen: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isSeeking, setIsSeeking] = useState(false);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      void videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const next = !videoRef.current.muted;
+    videoRef.current.muted = next;
+    setIsMuted(next);
+  };
+
+  return (
+    <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl group select-none">
+      {/* 1. Viewport (Click to Play/Pause) */}
+      <div
+        onClick={togglePlay}
+        className="relative w-full h-[260px] lg:h-[290px] flex items-center justify-center bg-black cursor-pointer overflow-hidden"
+      >
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          playsInline
+          loop
+          preload="auto"
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={(e) => {
+            if (!isSeeking) setCurrentTime(e.currentTarget.currentTime);
+          }}
+          onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+          className="h-full w-full object-contain"
+        />
+
+        {/* Top Badges Overlay */}
+        <div className="absolute top-2.5 left-2.5 pointer-events-none flex items-center gap-1.5 z-20">
+          <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
+            1080p Full HD
+          </span>
+        </div>
+
+        {/* Top Right Fullscreen Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExpandFullscreen();
+          }}
+          className="absolute top-2.5 right-2.5 size-7 rounded-lg bg-black/60 hover:bg-black/90 border border-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20 shadow-md active:scale-95"
+          title="Putar Layar Penuh (Cinema Mode)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          </svg>
+        </button>
+
+        {/* Center Frosted Play Icon Overlay when Paused */}
+        {!isPlaying && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-[1px] transition-all z-10">
+            <div className="flex size-14 items-center justify-center rounded-full bg-ember text-obsidian shadow-2xl ring-4 ring-ember/40 group-hover:scale-110 transition-transform">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="size-7 translate-x-0.5">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 2. Custom Sleek Bottom Control Bar */}
+      <div className="p-2.5 bg-gradient-to-t from-black via-obsidian/95 to-obsidian/85 border-t border-white/10 space-y-2">
+        {/* Scrubber Progress Slider */}
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] text-mist w-8 text-right tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={duration || 100}
+            step={0.05}
+            value={currentTime}
+            onMouseDown={() => setIsSeeking(true)}
+            onTouchStart={() => setIsSeeking(true)}
+            onMouseUp={() => setIsSeeking(false)}
+            onTouchEnd={() => setIsSeeking(false)}
+            onChange={(e) => {
+              const val = parseFloat(e.target.value);
+              setCurrentTime(val);
+              if (videoRef.current) videoRef.current.currentTime = val;
+            }}
+            className="flex-1 h-1.5 rounded-lg appearance-none bg-white/20 accent-ember cursor-pointer"
+          />
+          <span className="font-mono text-[10px] text-mist w-8 tabular-nums">
+            {formatTime(duration)}
+          </span>
+        </div>
+
+        {/* Action Buttons Row */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="size-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              aria-label={isPlaying ? "Jeda" : "Putar"}
+              title={isPlaying ? "Jeda" : "Putar"}
+            >
+              {isPlaying ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="size-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              aria-label={isMuted ? "Bunyikan" : "Bisukan"}
+              title={isMuted ? "Bunyikan" : "Bisukan"}
+            >
+              {isMuted ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (videoRef.current) {
+                  videoRef.current.currentTime = 0;
+                  void videoRef.current.play();
+                  setIsPlaying(true);
+                }
+              }}
+              className="size-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+              title="Putar Ulang dari Awal"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-mist font-medium font-mono">Malesan Custom Player</span>
+            <button
+              type="button"
+              onClick={onExpandFullscreen}
+              className="flex items-center gap-1 px-2 h-6 rounded-md bg-white/10 hover:bg-white/20 text-[10px] text-white font-bold transition-all cursor-pointer active:scale-95"
+              title="Layar Penuh"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+              </svg>
+              <span>Cinema</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
 // 🏆 Main Video Completion Modal (Summary & Social Dispatch)
 // -------------------------------------------------------------
 export function VideoCompletionModal({
@@ -468,37 +659,17 @@ export function VideoCompletionModal({
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
             {/* Left Column: Video Preview & Storage (5 cols) */}
             <div className="md:col-span-5 space-y-4">
-              {/* Video Player Card */}
-              <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-black/80 shadow-xl group">
-                {videoUrl ? (
-                  <video
-                    src={videoUrl}
-                    controls
-                    loop
-                    playsInline
-                    className="w-full max-h-[300px] object-contain rounded-2xl bg-black"
-                  />
-                ) : (
-                  <div className="aspect-[9/16] max-h-[300px] w-full flex items-center justify-center bg-black/60 text-mist text-xs">
-                    <span>Pratinjau video siap</span>
-                  </div>
-                )}
-                <div className="absolute top-2.5 left-2.5 pointer-events-none">
-                  <span className="rounded-md bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300 border border-emerald-500/30 backdrop-blur-md">
-                    1080p Full HD
-                  </span>
+              {/* Video Player Card (Custom Studio Player) */}
+              {videoUrl ? (
+                <InlineCustomStudioPlayer
+                  videoUrl={videoUrl}
+                  onExpandFullscreen={() => setShowResultPlayer(true)}
+                />
+              ) : (
+                <div className="aspect-[9/16] max-h-[290px] w-full flex items-center justify-center rounded-2xl border border-white/10 bg-black/60 text-mist text-xs">
+                  <span>Pratinjau video siap</span>
                 </div>
-                {videoUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setShowResultPlayer(true)}
-                    className="absolute top-2.5 right-2.5 size-7 rounded-lg bg-black/60 hover:bg-black/90 border border-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
-                    title="Putar Layar Penuh"
-                  >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
-                  </button>
-                )}
-              </div>
+              )}
 
               {/* Storage Location Card (Desktop) */}
               <div className="rounded-2xl border border-white/10 bg-white/5 p-3 space-y-1.5">

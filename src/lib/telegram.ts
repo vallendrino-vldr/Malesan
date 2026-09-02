@@ -410,6 +410,35 @@ export async function notifyAppInstall(data: {
   });
 }
 
+export async function notifyDesktopAppOpen(data: {
+  email?: string | null;
+  deviceModel?: string | null;
+  osVersion?: string | null;
+  appVersion?: string | null;
+}) {
+  const config = await getTelegramConfig();
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+  const text = `<b>[MALESAN STUDIO DESKTOP DIBUKA]</b>\n\n• <b>Akun:</b> <code>${escapeHtml(data.email || "Tamu / Belum Login")}</code>\n• <b>Perangkat:</b> ${escapeHtml(data.deviceModel || "Windows PC / Desktop")}\n• <b>Sistem:</b> ${escapeHtml(data.osVersion || "Windows 10/11")}\n• <b>Versi Desktop:</b> v${escapeHtml(data.appVersion || "2.1.0")}\n• <b>Waktu:</b> ${now} WIB`;
+
+  return sendTelegramMessage(text, {
+    messageThreadId: config.topics?.users,
+  });
+}
+
+export async function notifyDesktopLogin(data: {
+  email?: string | null;
+  name?: string | null;
+  provider?: string | null;
+}) {
+  const config = await getTelegramConfig();
+  const now = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
+  const text = `<b>[LOGIN MALESAN STUDIO DESKTOP]</b>\n\n• <b>Nama:</b> ${escapeHtml(data.name || "Tanpa Nama")}\n• <b>Email:</b> <code>${escapeHtml(data.email || "-")}</code>\n• <b>Metode:</b> ${escapeHtml(data.provider || "Google OAuth (System Browser)")}\n• <b>Aplikasi:</b> Malesan Studio Desktop v2.1.0\n• <b>Waktu:</b> ${now} WIB`;
+
+  return sendTelegramMessage(text, {
+    messageThreadId: config.topics?.users,
+  });
+}
+
 export async function notifyGeneration(data: {
   email: string;
   moduleName: string;

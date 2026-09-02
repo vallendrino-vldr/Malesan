@@ -91,6 +91,19 @@ export async function GET(request: NextRequest) {
   // If requested from desktop app, return dual-channel HTML bridge (loopback HTTP + malesan:// deep-link)
   const isDesktopAuth = searchParams.get("desktop") === "1" || next.includes("desktop=1");
   if (isDesktopAuth) {
+    if (sessionData.user) {
+      try {
+        const { notifyDesktopLogin } = await import("@/lib/telegram");
+        await notifyDesktopLogin({
+          email: sessionData.user.email || null,
+          name: sessionData.user.user_metadata?.full_name || sessionData.user.user_metadata?.name || null,
+          provider: sessionData.user.app_metadata?.provider || "Google OAuth (System Browser)",
+        });
+      } catch (teleErr) {
+        console.warn("[auth-callback] Telegram desktop login notify error:", teleErr);
+      }
+    }
+
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
     const authCookies = cookieStore

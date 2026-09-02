@@ -156,6 +156,7 @@ export async function getNativeShell(): Promise<NativeShell | null> {
         body: JSON.stringify({
           appVersion: response.appVersion,
           versionCode: response.versionCode,
+          platform: cachedNativeShell.platform,
         }),
       }).catch(() => {});
 
@@ -182,6 +183,16 @@ export async function getNativeShell(): Promise<NativeShell | null> {
         : ["desktop-shell"],
       platform: isDesktopUa ? "desktop" : "android",
     };
+
+    void fetch("/api/telemetry/app-open", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        appVersion: "2.1.0",
+        platform: isDesktopUa ? "desktop" : "android",
+      }),
+    }).catch(() => {});
+
     return cachedNativeShell;
   }
 

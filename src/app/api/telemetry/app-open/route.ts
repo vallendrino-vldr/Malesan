@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { notifyAppInstall } from "@/lib/telegram";
+import { notifyAppInstall, notifyDesktopAppOpen } from "@/lib/telegram";
 import { checkApkUpdate } from "@/lib/native/version";
 
 export const runtime = "nodejs";
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       versionCode?: number;
       deviceModel?: string;
       osVersion?: string;
+      platform?: string;
     } | null;
 
     const userAgent = request.headers.get("user-agent") || "";
@@ -51,13 +52,23 @@ export async function POST(request: NextRequest) {
 
     const isLockdown = lockdownConfig?.value === "true";
     const updateInfo = checkApkUpdate(body?.versionCode, body?.appVersion);
+    const isDesktop = body?.platform === "desktop" || userAgent.includes("MalesanStudio");
 
-    await notifyAppInstall({
-      email: user?.email || null,
-      deviceModel: deviceModel || "Android Mobile",
-      osVersion: osVersion || "Android",
-      appVersion: body?.appVersion || updateInfo.latestVersion,
-    });
+    if (isDesktop) {
+      await notifyDesktopAppOpen({
+        email: user?.email || null,
+        deviceModel: deviceModel || "Windows PC / Desktop",
+        osVersion: osVersion || "Windows 10/11",
+        appVersion: body?.appVersion || "2.1.0",
+      });
+    } else {
+      await notifyAppInstall({
+        email: user?.email || null,
+        deviceModel: deviceModel || "Android Mobile",
+        osVersion: osVersion || "Android",
+        appVersion: body?.appVersion || updateInfo.latestVersion,
+      });
+    }
 
     return NextResponse.json({
       ok: true,
