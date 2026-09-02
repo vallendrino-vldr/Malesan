@@ -20,6 +20,27 @@ let cachedEncoder = null;
 const activeUploads = new Map();
 const activeClips = new Map();
 
+function getVideosDirectory() {
+  if (process.platform === "win32") {
+    try {
+      const stdout = execSync(
+        'reg query "HKCU\\Software\\Malesan Studio" /v DataDir',
+        { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
+      );
+      const match = stdout.match(/DataDir\s+REG_SZ\s+(.+)/);
+      if (match && match[1] && fs.existsSync(match[1].trim())) {
+        return match[1].trim();
+      }
+    } catch {}
+  }
+
+  const defaultDir = path.join(os.homedir(), "Videos", "Malesan");
+  if (!fs.existsSync(defaultDir)) {
+    try { fs.mkdirSync(defaultDir, { recursive: true }); } catch {}
+  }
+  return defaultDir;
+}
+
 function getBinPath(binName) {
   const isDev = !app.isPackaged;
   const target = binName + (process.platform === "win32" ? ".exe" : "");
@@ -255,7 +276,7 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
         const ffmpegPath = getBinPath("ffmpeg");
         const encoder = await detectHardwareEncoder();
 
-        const videosDir = path.join(os.homedir(), "Videos", "Malesan");
+        const videosDir = getVideosDirectory();
         if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 
         const clipToken = `clip_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -358,7 +379,7 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
 
       case "GALLERY_PREPARE": {
         const { name = `Malesan_${Date.now()}.mp4` } = req;
-        const videosDir = path.join(os.homedir(), "Videos", "Malesan");
+        const videosDir = getVideosDirectory();
         if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
 
         const downloadToken = `desktop_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -425,7 +446,7 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
       }
 
       case "OPEN_VIDEOS_FOLDER": {
-        const videosDir = path.join(os.homedir(), "Videos", "Malesan");
+        const videosDir = getVideosDirectory();
         if (fs.existsSync(videosDir)) shell.openPath(videosDir);
         sendToRenderer({ type: "FOLDER_OPENED", requestId });
         break;
