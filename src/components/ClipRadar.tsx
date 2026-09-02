@@ -282,7 +282,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
           const unsubscribe = subscribeNative((message) => {
             if (message.requestId !== requestId) return;
             if (message.type === "CLIP_PROGRESS") {
-              setBridgeJob({ ...created.job!, status: "processing", progress: Math.round(message.progress ?? 0), stage: message.stage ?? "Memproses clip di HP..." });
+              setBridgeJob({ ...created.job!, status: "processing", progress: Math.round(message.progress ?? 0), stage: message.stage ?? (isMobileDevice ? "Memproses clip di HP..." : "Memproses klip di komputer...") });
               return;
             }
             window.clearTimeout(timer); unsubscribe();

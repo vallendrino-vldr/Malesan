@@ -544,60 +544,79 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
             stage: `Memotong klip dengan akselerasi GPU (${encoder.type.toUpperCase()})...`,
           });
 
-          const ffmpegArgs = [
-            "-y",
-            "-ss", String(startTime),
-            "-i", videoStream,
-          ];
+          const runFFmpeg = (useEncoder, isRetry = false) => {
+            const ffmpegArgs = [
+              "-y",
+              "-reconnect", "1",
+              "-reconnect_at_eof", "1",
+              "-reconnect_streamed", "1",
+              "-reconnect_delay_max", "5",
+              "-ss", String(startTime),
+              "-i", videoStream,
+            ];
 
-          if (audioStream !== videoStream) {
-            ffmpegArgs.push("-ss", String(startTime), "-i", audioStream);
-          }
-
-          ffmpegArgs.push(
-            "-t", String(duration),
-            "-c:v", encoder.name,
-            ...encoder.args,
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-movflags", "+faststart",
-            outputPath
-          );
-
-          const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
-
-          ffmpegProcess.stderr.on("data", () => {
-            sendToRenderer({
-              type: "CLIP_PROGRESS",
-              requestId,
-              progress: 75,
-              stage: "Menyusun file video Full HD 1080p...",
-            });
-          });
-
-          ffmpegProcess.on("close", (code) => {
-            if (code === 0 && fs.existsSync(outputPath)) {
-              const stats = fs.statSync(outputPath);
-              activeClips.set(clipToken, outputPath);
-
-              sendToRenderer({
-                type: "CLIP_READY",
-                requestId,
-                progress: 100,
-                downloadUrl: `http://127.0.0.1:48215/clip/${clipToken}`,
-                downloadToken: clipToken,
-                outputBytes: stats.size,
-                filePath: outputPath,
-                message: "Klip video berhasil dibuat & disimpan ke folder Videos/Malesan!",
-              });
-            } else {
-              sendToRenderer({
-                type: "NATIVE_ERROR",
-                requestId,
-                message: `Proses render FFmpeg gagal (exit code: ${code}).`,
-              });
+            if (audioStream !== videoStream) {
+              ffmpegArgs.push(
+                "-reconnect", "1",
+                "-reconnect_at_eof", "1",
+                "-reconnect_streamed", "1",
+                "-reconnect_delay_max", "5",
+                "-ss", String(startTime),
+                "-i", audioStream
+              );
             }
-          });
+
+            ffmpegArgs.push(
+              "-t", String(duration),
+              "-c:v", useEncoder.name,
+              ...useEncoder.args,
+              "-c:a", "aac",
+              "-b:a", "192k",
+              "-movflags", "+faststart",
+              outputPath
+            );
+
+            const ffmpegProcess = spawn(ffmpegPath, ffmpegArgs);
+
+            ffmpegProcess.stderr.on("data", () => {
+              sendToRenderer({
+                type: "CLIP_PROGRESS",
+                requestId,
+                progress: isRetry ? 80 : 75,
+                stage: isRetry ? "Menyusun file video (mode CPU)..." : "Menyusun file video Full HD 1080p...",
+              });
+            });
+
+            ffmpegProcess.on("close", (code) => {
+              if (code === 0 && fs.existsSync(outputPath)) {
+                const stats = fs.statSync(outputPath);
+                activeClips.set(clipToken, outputPath);
+
+                sendToRenderer({
+                  type: "CLIP_READY",
+                  requestId,
+                  progress: 100,
+                  downloadUrl: `http://127.0.0.1:48215/clip/${clipToken}`,
+                  downloadToken: clipToken,
+                  outputBytes: stats.size,
+                  filePath: outputPath,
+                  message: "Klip video berhasil dibuat & disimpan ke folder Videos/Malesan!",
+                });
+              } else if (!isRetry && useEncoder.name !== "libx264") {
+                console.warn("[FFmpeg] Hardware encode failed, falling back to libx264 CPU...");
+                const cpuEncoder = { name: "libx264", args: ["-preset", "veryfast"], type: "cpu" };
+                runFFmpeg(cpuEncoder, true);
+              } else {
+                sendToRenderer({
+                  type: "NATIVE_ERROR",
+                  requestId,
+                  message: `Proses render FFmpeg gagal (exit code: ${code}).`,
+                });
+              }
+            });
+          };
+
+          runFFmpeg(encoder);
         });
         break;
       }

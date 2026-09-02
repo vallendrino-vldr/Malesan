@@ -41,24 +41,33 @@ function getPort(): NativePort | null {
 
 const listeners = new Set<(response: NativeResponse) => void>();
 let boundPort: NativePort | null = null;
+let windowMessageListenerAttached = false;
 
 function ensureDispatcher(port: NativePort) {
   if (boundPort === port) return;
-  port.onmessage = (event) => {
-    try {
-      const response = JSON.parse(event.data) as NativeResponse;
-      listeners.forEach((listener) => listener(response));
-    } catch {
-      // Ignore malformed native messages; origin and frame checks also run natively.
-    }
-  };
 
-  if (typeof window !== "undefined") {
+  // Safe listener assignment: in Electron contextBridge, port is frozen/read-only so setting onmessage directly throws.
+  try {
+    port.onmessage = (event) => {
+      try {
+        const response = JSON.parse(event.data) as NativeResponse;
+        listeners.forEach((listener) => listener(response));
+      } catch {
+        // Ignore malformed native messages
+      }
+    };
+  } catch {
+    // Port is read-only (e.g. Electron contextBridge); window message listener below handles all events safely.
+  }
+
+  // Universal window event listener for Electron and iframe communications
+  if (typeof window !== "undefined" && !windowMessageListenerAttached) {
+    windowMessageListenerAttached = true;
     window.addEventListener("message", (event) => {
-      if (event.data && event.data.__malesan_native_message__ && typeof event.data.data === "string") {
+      if (event.data && event.data.__malesan_native_message__) {
         try {
-          const response = JSON.parse(event.data.data) as NativeResponse;
-          listeners.forEach((listener) => listener(response));
+          const raw = typeof event.data.data === "string" ? JSON.parse(event.data.data) : event.data.data;
+          listeners.forEach((listener) => listener(raw as NativeResponse));
         } catch {
           // Ignore malformed native messages
         }
