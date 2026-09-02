@@ -23,6 +23,14 @@
     "directories": {
       "output": "dist"
     },
+    "protocols": [
+      {
+        "name": "malesan-desktop-protocol",
+        "schemes": [
+          "malesan"
+        ]
+      }
+    ],
     "files": [
       "src/**/*",
       "assets/**/*"

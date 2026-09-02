@@ -7,6 +7,82 @@ const http = require("http");
 
 // Disable default menu bar globally for maximum speed & sleek frameless look
 Menu.setApplicationMenu(null);
+// Register malesan:// custom protocol
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient("malesan", process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient("malesan");
+}
+
+async function exchangeAndLogin(ticket) {
+  if (!ticket) return;
+  try {
+    const apiRes = await fetch(`https://malesan.my.id/api/desktop/ticket?ticket=${encodeURIComponent(ticket)}`);
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      if (data?.cookies && Array.isArray(data.cookies)) {
+        for (const cookieItem of data.cookies) {
+          try {
+            await session.defaultSession.cookies.set({
+              url: "https://malesan.my.id",
+              name: cookieItem.name,
+              value: cookieItem.value,
+              domain: ".malesan.my.id",
+              path: "/",
+              secure: true,
+              httpOnly: true,
+              sameSite: "lax",
+            });
+          } catch (cookieErr) {
+            console.warn("[desktop-auth] cookie error:", cookieItem.name, cookieErr);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[desktop-auth] failed to exchange ticket:", err);
+  }
+
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.loadURL("https://malesan.my.id/app");
+    mainWindow.show();
+    mainWindow.focus();
+  }
+}
+
+function handleDeepLink(link) {
+  if (!link || !link.startsWith("malesan://")) return;
+  try {
+    const parsed = new URL(link);
+    const ticket = parsed.searchParams.get("ticket");
+    if (ticket) { exchangeAndLogin(ticket); return; }
+      if (false) {
+      exchangeAndLogin(ticket);
+    }
+  } catch (e) {
+    console.warn("[desktop-deeplink] error:", e);
+  }
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (_event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+    const deepLink = commandLine.find((arg) => arg.startsWith("malesan://"));
+    if (deepLink) {
+      handleDeepLink(deepLink);
+    }
+  });
+}
+
 
 // Performance & GPU acceleration flags for instant cold startup
 app.commandLine.appendSwitch("enable-gpu-rasterization");
@@ -240,6 +316,13 @@ function createWindow() {
     mainWindow.show();
   });
 
+  // Wipe stale service workers so desktop always gets fresh live code
+  try {
+    session.defaultSession.clearStorageData({
+      storages: ["serviceworkers", "cachestorage"],
+    });
+  } catch {}
+
   // Intercept any in-frame navigation to Google OAuth or external URLs
   mainWindow.webContents.on("will-navigate", (event, url) => {
     if (
@@ -248,7 +331,23 @@ function createWindow() {
       url.includes("/auth/v1/authorize")
     ) {
       event.preventDefault();
-      shell.openExternal(url);
+
+      let targetUrl = url;
+      try {
+        const parsed = new URL(url);
+        const redirectTo = parsed.searchParams.get("redirect_to");
+        if (redirectTo) {
+          const redirectParsed = new URL(redirectTo);
+          redirectParsed.searchParams.set("desktop", "1");
+          parsed.searchParams.set("redirect_to", redirectParsed.toString());
+          targetUrl = parsed.toString();
+        } else {
+          parsed.searchParams.set("desktop", "1");
+          targetUrl = parsed.toString();
+        }
+      } catch {}
+
+      shell.openExternal(targetUrl);
       return;
     }
 

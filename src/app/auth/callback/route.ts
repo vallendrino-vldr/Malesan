@@ -88,8 +88,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If requested from desktop app, redirect to local loopback server with handoff ticket
-  const isDesktopAuth = searchParams.get("desktop") === "1";
+  // If requested from desktop app, return dual-channel HTML bridge (loopback HTTP + malesan:// deep-link)
+  const isDesktopAuth = searchParams.get("desktop") === "1" || next.includes("desktop=1");
   if (isDesktopAuth) {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
@@ -101,7 +101,49 @@ export async function GET(request: NextRequest) {
     const { createDesktopTicket } = await import("@/lib/auth/desktop-ticket");
     const ticket = createDesktopTicket(authCookies);
 
-    const desktopResponse = NextResponse.redirect(`http://127.0.0.1:48215/callback?ticket=${ticket}`);
+    const bridgeHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login Berhasil - Malesan Studio</title>
+  <style>
+    body { background: #0c0a09; color: #f2ede7; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .card { background: #161412; border: 1px solid rgba(255,107,0,0.3); padding: 36px 44px; border-radius: 24px; text-align: center; box-shadow: 0 24px 48px rgba(0,0,0,0.8); max-width: 440px; }
+    h1 { color: #ff6b00; margin: 0 0 12px; font-size: 22px; font-weight: 700; }
+    p { color: #a8a29e; font-size: 14px; margin: 0 0 24px; line-height: 1.6; }
+    .btn { display: inline-block; background: #ff6b00; color: #ffffff; padding: 12px 28px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 14px; box-shadow: 0 4px 14px rgba(255,107,0,0.4); }
+    .badge { display: inline-block; background: rgba(52,211,153,0.15); color: #34d399; border: 1px solid rgba(52,211,153,0.4); padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="badge">✓ Terverifikasi</div>
+    <h1>Login Berhasil!</h1>
+    <p>Sesi kamu sedang dihubungkan ke aplikasi Malesan Studio Desktop...</p>
+    <a id="btnOpen" class="btn" href="malesan://auth?ticket=${ticket}">Buka Aplikasi Desktop</a>
+  </div>
+  <script>
+    const ticket = "${ticket}";
+    fetch("http://127.0.0.1:48215/callback?ticket=" + ticket)
+      .then(() => {
+        setTimeout(() => { try { window.close(); } catch {} }, 1200);
+      })
+      .catch(() => {});
+
+    try {
+      window.location.href = "malesan://auth?ticket=" + ticket;
+    } catch {}
+
+    setTimeout(() => { try { window.close(); } catch {} }, 4000);
+  </script>
+</body>
+</html>`;
+
+    const desktopResponse = new NextResponse(bridgeHtml, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
+
     if (hasPendingBonus) {
       desktopResponse.cookies.delete("malesan_pending_demo_bonus");
     }
