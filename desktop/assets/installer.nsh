@@ -1,6 +1,13 @@
 !include nsDialogs.nsh
 !include LogicLib.nsh
 
+!define MUI_BGCOLOR "0C0A09"
+!define MUI_TEXTCOLOR "F2EDE7"
+
+!macro customInstallMode
+  StrCpy $isForceCurrentInstall "1"
+!macroend
+
 !ifndef BUILD_UNINSTALLER
   Var CustomDialog
   Var CheckboxDesktop
@@ -17,10 +24,10 @@
       Abort
     ${EndIf}
 
-    ${NSD_CreateLabel} 0 0 100% 12u "Pengaturan Shortcut & Lokasi Penyimpanan Video"
+    ${NSD_CreateLabel} 0 0 100% 14u "Pengaturan Shortcut Desktop & Lokasi Folder Video"
     Pop $0
 
-    ${NSD_CreateCheckbox} 0 18u 100% 12u "Buat shortcut Malesan Studio di Desktop"
+    ${NSD_CreateCheckbox} 0 20u 100% 12u "Buat shortcut Malesan Studio di Desktop"
     Pop $CheckboxDesktop
     ${NSD_Check} $CheckboxDesktop
 
