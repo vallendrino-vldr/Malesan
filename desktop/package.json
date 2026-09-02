@@ -49,7 +49,6 @@
       "createDesktopShortcut": false,
       "createStartMenuShortcut": false,
       "shortcutName": "Malesan Studio",
-      "installerHeader": "assets/nsis-header.bmp",
       "installerSidebar": "assets/nsis-sidebar.bmp",
       "uninstallerSidebar": "assets/nsis-sidebar.bmp",
       "include": "assets/installer.nsh",

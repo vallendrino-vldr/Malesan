@@ -1,14 +1,24 @@
 !include nsDialogs.nsh
 !include LogicLib.nsh
 
-!define MUI_BGCOLOR "0C0A09"
-!define MUI_TEXTCOLOR "F2EDE7"
-
 !macro customInstallMode
   StrCpy $isForceCurrentInstall "1"
 !macroend
 
 !ifndef BUILD_UNINSTALLER
+  !macro customWelcomePage
+    !define MUI_WELCOMEPAGE_TITLE "Selamat Datang di Setup Malesan Studio"
+    !define MUI_WELCOMEPAGE_TEXT "Malesan Studio adalah platform AI all-in-one untuk konten kreator Indonesia.$\r$\n$\r$\nWizard ini akan membantu kamu:$\r$\n• Menentukan folder penyimpanan aplikasi$\r$\n• Mengatur folder hasil download & video klip$\r$\n• Membuat icon shortcut di Desktop$\r$\n$\r$\nKlik 'Lanjut' untuk memulai."
+    !insertmacro MUI_PAGE_WELCOME
+  !macroend
+
+  !define MUI_DIRECTORYPAGE_TEXT_TOP "Setup akan memasang Malesan Studio di folder berikut. Untuk memilih folder lain, klik Cari."
+  !define MUI_DIRECTORYPAGE_TEXT_DESTINATION "Folder Lokasi Instalasi"
+
+  !define MUI_FINISHPAGE_TITLE "Instalasi Malesan Studio Selesai"
+  !define MUI_FINISHPAGE_TEXT "Aplikasi Malesan Studio berhasil dipasang di komputer kamu.$\r$\nShortcut telah dibuat di Desktop untuk akses cepat.$\r$\n$\r$\nKlik 'Selesai' untuk mulai berkreasi."
+  !define MUI_FINISHPAGE_RUN_TEXT "Jalankan Malesan Studio sekarang"
+
   Var CustomDialog
   Var CheckboxDesktop
   Var TextDataDir
@@ -24,7 +34,7 @@
       Abort
     ${EndIf}
 
-    ${NSD_CreateLabel} 0 0 100% 14u "Pengaturan Shortcut Desktop & Lokasi Folder Video"
+    ${NSD_CreateLabel} 0 0 100% 14u "Pengaturan Shortcut Desktop & Folder Video"
     Pop $0
 
     ${NSD_CreateCheckbox} 0 20u 100% 12u "Buat shortcut Malesan Studio di Desktop"
