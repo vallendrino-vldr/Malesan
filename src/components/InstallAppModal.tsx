@@ -217,7 +217,7 @@ export function InstallAppModal({
               Jalankan langsung di browser atau pasang shortcut ke layar utama tanpa download file besar.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={triggerPwaInstall}
@@ -230,15 +230,6 @@ export function InstallAppModal({
                 </svg>
                 <span>{isInstalled ? "Buka di Mode PWA" : "Pasang Shortcut PWA"}</span>
               </button>
-
-              <a
-                href="/malesan-bridge.zip"
-                download="malesan-bridge.zip"
-                onClick={onClose}
-                className="flex h-9 w-full sm:w-auto px-3 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-black/40 hover:bg-white/5 font-display text-[11px] font-medium text-mist hover:text-white transition-all whitespace-nowrap"
-              >
-                <span>Bridge Browser (.zip)</span>
-              </a>
             </div>
           </div>
         </div>

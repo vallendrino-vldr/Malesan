@@ -455,45 +455,13 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
             </span>
-            <span className="truncate text-[11px] font-bold text-ink">Mesin Native Android Aktif</span>
+            <span className="truncate text-[11px] font-bold text-ink">Mesin Pemotong Native Aktif</span>
           </div>
           <span className="shrink-0 rounded-md border border-emerald-500/20 bg-emerald-500/15 px-2 py-0.5 font-mono text-[10px] font-bold text-emerald-300">
             1080p HD
           </span>
         </div>
-      ) : (
-        <div className="mt-3 rounded-xl border border-hairline/80 bg-obsidian/70 p-3 text-mini">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-start gap-2">
-              <span className="text-ember shrink-0 mt-0.5">
-                {isMobile ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                )}
-              </span>
-              <div className="space-y-0.5">
-                <p className="font-bold text-ink text-[11px]">
-                  {isMobile ? "📱 Potong Otomatis di HP Butuh APK Android" : "💻 Potong di Komputer Butuh Malesan Bridge"}
-                </p>
-                <p className="text-[10px] text-muted leading-relaxed">
-                  {isMobile
-                    ? "Di HP browser/PWA, pasang APK Android Malesan (ada mesin pemotong bawaan). Atau pakai opsi 'Pakai file sendiri' di bawah."
-                    : "Di browser PC, pasang Malesan Bridge (.zip) sekali saja. Atau gunakan opsi 'Pakai file sendiri'."}
-                </p>
-              </div>
-            </div>
-            <a
-              href={isMobile ? "/malesan.apk" : "/malesan-bridge.zip"}
-              download={isMobile ? "malesan.apk" : "malesan-bridge.zip"}
-              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ember/40 bg-ember/15 px-3 text-[11px] font-bold text-ember transition-colors hover:bg-ember/25 active:scale-[0.98]"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>{isMobile ? "Unduh APK Android (.apk)" : "Unduh Bridge (.zip)"}</span>
-            </a>
-          </div>
-        </div>
-      )}
+      ) : null}
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1 min-w-0">
@@ -969,11 +937,11 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     </div>
                     <div>
-                      <h4 className="font-bold text-ink text-mini">Auto Clip Butuh Mesin Pemotong Video</h4>
+                      <h4 className="font-bold text-ink text-mini">Auto Clip Butuh Aplikasi Malesan</h4>
                       <p className="text-micro text-muted leading-relaxed mt-0.5">
                         {isMobile
                           ? "Di browser HP / PWA, pasang APK Android Malesan (ada mesin pemotong bawaan) atau gunakan tab 'Pakai file sendiri'."
-                          : "Di komputer, pasang Malesan Bridge (.zip) sekali saja, atau gunakan tab 'Pakai file sendiri'."}
+                          : "Di komputer, pasang aplikasi Malesan Studio Desktop atau gunakan tab 'Pakai file sendiri'."}
                       </p>
                     </div>
                   </div>
@@ -1008,16 +976,16 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                           <span>💻 Pengguna PC / Laptop (Windows)</span>
                         </div>
                         <p className="text-[10px] text-muted leading-relaxed">
-                          Download Malesan Bridge (1-Click Installer). Ekstrak lalu jalankan <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali saja.
+                          Gunakan aplikasi Malesan Studio Desktop. Mesin pemotong yt-dlp &amp; FFmpeg sudah terpasang bawaan.
                         </p>
                       </div>
                       <a
-                        href="/malesan-bridge.zip"
-                        download="malesan-bridge.zip"
+                        href="/Malesan-Setup.exe"
+                        download="Malesan-Setup.exe"
                         className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 text-[11px] font-bold text-ink transition-colors hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"
                       >
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        <span>Unduh Bridge Installer (.zip)</span>
+                        <span>Unduh Malesan Studio (.exe)</span>
                       </a>
                     </div>
                   </div>
@@ -1155,18 +1123,18 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <span className="font-bold text-ink text-mini flex items-center gap-1.5">
                         💻 Pengguna PC / Laptop
                       </span>
-                      <span className="rounded bg-ember/15 px-2 py-0.5 font-mono text-[9px] font-bold text-ember">1-Click</span>
+                      <span className="rounded bg-ember/15 px-2 py-0.5 font-mono text-[9px] font-bold text-ember">Resmi</span>
                     </div>
                     <p className="text-[10px] text-muted leading-relaxed">
-                      Ekstrak <code>malesan-bridge.zip</code> dan jalankan <code>INSTALL_MALESAN_BRIDGE.cmd</code> sekali.
+                      Download aplikasi Malesan Studio Desktop (.exe). Mesin pemotong bawaan langsung aktif.
                     </p>
                     <a
-                      href="/malesan-bridge.zip"
-                      download="malesan-bridge.zip"
+                      href="/Malesan-Setup.exe"
+                      download="Malesan-Setup.exe"
                       className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.05] text-xs font-bold text-ink hover:border-ember/40 hover:bg-ember/10 hover:text-ember"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      <span>Unduh Bridge Installer (.zip)</span>
+                      <span>Unduh Malesan Studio (.exe)</span>
                     </a>
                   </div>
                 </div>
