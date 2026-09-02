@@ -38,10 +38,7 @@
       }
     ],
     "win": {
-      "target": [
-        "nsis",
-        "portable"
-      ],
+      "target": "nsis",
       "icon": "assets/icon.ico",
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "legalTrademarks": "Malesan"

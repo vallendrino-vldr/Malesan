@@ -205,6 +205,33 @@ function createWindow() {
     mainWindow.show();
   });
 
+  // Intercept any in-frame navigation to Google OAuth or external URLs
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    if (
+      url.includes("accounts.google.com") ||
+      url.includes("supabase.co/auth") ||
+      url.includes("/auth/v1/authorize")
+    ) {
+      event.preventDefault();
+      shell.openExternal(url);
+      return;
+    }
+
+    try {
+      const parsed = new URL(url);
+      if (
+        parsed.hostname.includes("malesan") ||
+        parsed.hostname === "localhost" ||
+        parsed.hostname === "127.0.0.1"
+      ) {
+        return;
+      }
+    } catch {}
+
+    event.preventDefault();
+    shell.openExternal(url);
+  });
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.includes("accounts.google.com") || url.includes("supabase.co/auth")) {
       shell.openExternal(url);
