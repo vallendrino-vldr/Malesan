@@ -167,8 +167,10 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
       <div className="rounded-2xl border border-ember/30 bg-surface p-4 sm:p-5 shadow-xs">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-ember/15 border border-ember/30 text-base">
-              🛍️
+            <span className="flex size-8 items-center justify-center rounded-lg bg-ember/15 border border-ember/30 text-ember">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4.5">
+                <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+              </svg>
             </span>
             <div>
               <h2 className="font-display text-base font-bold text-ink">
@@ -219,9 +221,9 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "Campuran", label: "🎯 3 Varian Campuran" },
-                { id: "Problem-Solution", label: "💡 Keresahan & Solusi" },
-                { id: "Flash-Sale-FOMO", label: "🔥 Promo & Keranjang Kuning" },
+                { id: "Campuran", label: "3 Varian Campuran" },
+                { id: "Problem-Solution", label: "Keresahan & Solusi" },
+                { id: "Flash-Sale-FOMO", label: "Promo & Keranjang Kuning" },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -294,7 +296,10 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
           {/* Hook Box */}
           <div className="rounded-xl border border-ember/40 bg-ember/5 p-3.5 space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="eyebrow text-ember font-bold">🎯 Hook Pembuka (0-3 Detik Pertama)</span>
+              <div className="flex items-center gap-1.5 eyebrow text-ember font-bold">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                <span>Hook Pembuka (0-3 Detik Pertama)</span>
+              </div>
               <span className="text-[10px] font-mono text-muted">Daya Henti FYP</span>
             </div>
             <p className="font-display text-sm font-bold text-ink">
@@ -307,7 +312,10 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
 
           {/* Scenes Breakdown */}
           <div className="space-y-2.5">
-            <p className="eyebrow text-muted">🎬 Alur Scene Naskah:</p>
+            <div className="flex items-center gap-1.5 eyebrow text-muted">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+              <span>Alur Scene Naskah:</span>
+            </div>
             <div className="space-y-2">
               {currentVariant.scenes.map((s) => (
                 <div
@@ -339,7 +347,10 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
           {/* CTA Keranjang Kuning */}
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 space-y-1">
             <div className="flex items-center justify-between">
-              <span className="eyebrow text-emerald-400 font-bold">🛒 Call to Action (Keranjang Kuning)</span>
+              <div className="flex items-center gap-1.5 eyebrow text-emerald-400 font-bold">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+                <span>Call to Action (Keranjang Kuning)</span>
+              </div>
             </div>
             <p className="text-xs font-semibold text-emerald-300">
               &ldquo;{currentVariant.cta_fomo}&rdquo;

@@ -124,7 +124,7 @@ ATURAN KETAT:
     });
   } catch (err) {
     console.error("[speaking-quiz] AI error:", err);
-    return json({ error: "Gagal membuat kuis. Silakan coba lagi." }, 500);
+    return json({ error: "Gagal bikin kuis. Coba lagi bentar ya." }, 500);
   }
 }
 

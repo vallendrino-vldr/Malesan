@@ -135,7 +135,7 @@ export async function claimTutorialBonusAction(
   if (!user) {
     return {
       success: false,
-      error: "Sesi login belum terdeteksi. Silakan masuk dulu untuk klaim bonus kredit.",
+      error: "Lo belum login nih. Masuk dulu yuk buat klaim bonus kredit.",
     };
   }
 

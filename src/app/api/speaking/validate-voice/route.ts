@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
   if (!spend.ok) {
     return json(
       {
-        error: "Kredit lo nggak cukup untuk validasi suara AI. Silakan top-up dulu.",
+        error: "Kredit lo nggak cukup buat validasi suara AI. Top up dulu ya.",
         creditError: true,
       },
       402,

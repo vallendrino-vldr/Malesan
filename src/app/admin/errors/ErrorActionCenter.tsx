@@ -58,7 +58,7 @@ export function ErrorActionCenter({ totalErrors }: { totalErrors: number }) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-sm sm:text-base font-bold text-ink flex items-center gap-2">
-            <span>⚡</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span>Aksi Cepat Founder (Penyelesaian Kendala)</span>
           </h2>
           <p className="text-xs text-muted mt-0.5">
@@ -80,7 +80,7 @@ export function ErrorActionCenter({ totalErrors }: { totalErrors: number }) {
               </>
             ) : (
               <>
-                <span>⚡</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 <span>Tes Kunci AI Sekarang</span>
               </>
             )}
@@ -100,7 +100,7 @@ export function ErrorActionCenter({ totalErrors }: { totalErrors: number }) {
                 </>
               ) : (
                 <>
-                  <span>🧹</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                   <span>Bersihkan Log Error</span>
                 </>
               )}
@@ -111,7 +111,7 @@ export function ErrorActionCenter({ totalErrors }: { totalErrors: number }) {
             href="/admin/ai"
             className="inline-flex items-center gap-1.5 rounded-xl border border-white/[0.08] bg-surface px-3.5 py-2 text-xs font-semibold text-ink transition-colors hover:border-ember/40 hover:text-ember"
           >
-            <span>🧠</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"/></svg>
             <span>Atur Otak AI →</span>
           </Link>
         </div>

@@ -142,6 +142,7 @@ for (const file of routeFiles) {
     file.includes("telegram") ||
     file.includes("performance") ||
     file.includes("version") ||
+    file.includes("desktop") ||
     file.includes("auth");
 
   if (!isPublicRoute) {

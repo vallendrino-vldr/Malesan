@@ -50,7 +50,7 @@ export function DemoBypassModal({
     const enteredPassword = (password || inputRef.current?.value || "").trim();
 
     if (!enteredPassword) {
-      setErrorMessage("Silakan masukkan kata sandi.");
+      setErrorMessage("Masukkan password tester dulu ya.");
       return;
     }
 
@@ -64,7 +64,7 @@ export function DemoBypassModal({
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setErrorMessage(data.error || "Kata sandi salah. Akses ditolak.");
+        setErrorMessage(data.error || "Password salah. Akses ditolak.");
         setIsLoading(false);
         return;
       }
@@ -81,7 +81,7 @@ export function DemoBypassModal({
         window.location.href = data.redirect || "/app";
       }, 1000);
     } catch {
-      setErrorMessage("Terjadi kesalahan koneksi ke server. Coba lagi.");
+      setErrorMessage("Koneksi server lagi ngadat. Coba refresh bentar ya.");
       setIsLoading(false);
     }
   }
@@ -256,7 +256,7 @@ export function DemoBypassModal({
                 <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5 shrink-0">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span>Mode Tester Aktif! Silakan mulai rekaman dari landing page.</span>
+                <span>Mode Tester Aktif! Langsung gas rekam dari landing page ya.</span>
               </div>
             )}
 

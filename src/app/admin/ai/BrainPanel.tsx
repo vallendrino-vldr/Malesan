@@ -137,8 +137,9 @@ export function BrainPanel({
       {/* ---------- 1-Click Quick AI Switcher (Non-Developer Friendly) ---------- */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">
-          <p className="font-display text-xs font-bold text-ink">
-            ⚡ Pilih Provider AI Utama (1-Tap Langsung Aktif)
+          <p className="font-display text-xs font-bold text-ink flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span>Pilih Provider AI Utama (1-Tap Langsung Aktif)</span>
           </p>
           <span className="text-micro text-muted">
             Otomatis sinkron ke seluruh fitur Malesan
@@ -175,11 +176,19 @@ export function BrainPanel({
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-obsidian px-2.5 py-0.5 font-display text-micro font-bold text-ink">
-                      {isGemini
-                        ? "⚡ Google Gemini"
-                        : isDeepSeek
-                          ? "🧠 DeepSeek"
-                          : p?.label ?? "AI Gateway"}
+                      {isGemini ? (
+                        <>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                          <span>Google Gemini</span>
+                        </>
+                      ) : isDeepSeek ? (
+                        <>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-blue-400"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"/></svg>
+                          <span>DeepSeek</span>
+                        </>
+                      ) : (
+                        <span>{p?.label ?? "AI Gateway"}</span>
+                      )}
                     </span>
                     {isPrimary ? (
                       <span className="inline-flex items-center gap-1.5 text-micro font-bold text-ember">
@@ -231,8 +240,9 @@ export function BrainPanel({
                       {busy ? "Mengganti..." : "Jadikan Otak Utama"}
                     </button>
                   ) : (
-                    <span className="rounded-xl border border-ember/30 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
-                      ✓ Otak Terpilih
+                    <span className="inline-flex items-center gap-1 rounded-xl border border-ember/30 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>Otak Terpilih</span>
                     </span>
                   )}
                 </div>

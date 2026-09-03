@@ -974,7 +974,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 font-bold text-ink text-[11px]">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                          <span>📱 Pengguna Android (Paling Praktis)</span>
+                          <span>Pengguna Android (Paling Praktis)</span>
                         </div>
                         <p className="text-[10px] text-muted leading-relaxed">
                           Gunakan aplikasi Android Malesan. Sudah ada mesin pemotong bawaan, tinggal paste link langsung jadi tanpa install tool lain.
@@ -995,7 +995,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 font-bold text-ink text-[11px]">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                          <span>💻 Pengguna PC / Laptop (Windows)</span>
+                          <span>Pengguna PC / Laptop (Windows)</span>
                         </div>
                         <p className="text-[10px] text-muted leading-relaxed">
                           Gunakan aplikasi Malesan Studio Desktop. Mesin pemotong yt-dlp &amp; FFmpeg sudah terpasang bawaan.
@@ -1077,7 +1077,7 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                 </div>
 
                 <div className="rounded-2xl border border-hairline/60 bg-obsidian/40 p-3 text-micro leading-relaxed text-muted text-left flex items-start gap-2.5">
-                  <span className="text-ember text-sm shrink-0">💡</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0 mt-0.5"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                   <span>Proses berjalan di perangkat lo. Layar terkunci sementara agar proses tidak terganggu.</span>
                 </div>
               </div>
@@ -1108,8 +1108,9 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                     type="button"
                     onClick={() => setShowLockModal(false)}
                     className="grid size-8 place-items-center rounded-lg border border-hairline bg-surface text-muted hover:text-ink cursor-pointer"
+                    aria-label="Tutup"
                   >
-                    ✕
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                   </button>
                 </div>
 
@@ -1122,7 +1123,8 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                   <div className="rounded-xl border border-hairline/80 bg-obsidian/70 p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-ink text-mini flex items-center gap-1.5">
-                        📱 Pengguna HP Android
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                        <span>Pengguna HP Android</span>
                       </span>
                       <span className="rounded bg-emerald-500/15 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-400">Paling Praktis</span>
                     </div>
@@ -1143,7 +1145,8 @@ export function ClipRadar({ cost, onClipReady }: { cost: number; onClipReady?: (
                   <div className="rounded-xl border border-hairline/80 bg-obsidian/70 p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-ink text-mini flex items-center gap-1.5">
-                        💻 Pengguna PC / Laptop
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span>Pengguna PC / Laptop</span>
                       </span>
                       <span className="rounded bg-ember/15 px-2 py-0.5 font-mono text-[9px] font-bold text-ember">Resmi</span>
                     </div>

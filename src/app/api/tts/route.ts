@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeIndonesianSpeech } from "@/lib/speech-cleaner";
+import { createClient } from "@/lib/supabase/server";
 
 export const maxDuration = 30;
 
@@ -83,6 +84,15 @@ async function synthesizeWithPolly(text: string, speaker: string): Promise<Array
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Sesi login diperlukan untuk menggunakan suara AI" }, { status: 401 });
+    }
+
     const body = await req.json();
     const rawText = typeof body.text === "string" ? body.text : "";
     const lang = typeof body.lang === "string" ? body.lang : "id";

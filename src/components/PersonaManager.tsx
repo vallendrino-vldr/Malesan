@@ -372,7 +372,10 @@ function PersonaForm({
                 : "text-muted hover:text-ink"
             }`}
           >
-            ✨ Panduan 3 Langkah (Rekomendasi)
+            <span className="flex items-center gap-1.5 justify-center">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              <span>Panduan 3 Langkah (Rekomendasi)</span>
+            </span>
           </button>
           <button
             type="button"
@@ -671,7 +674,8 @@ function PersonaForm({
                 onClick={() => setStep(step + 1)}
                 className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-ember px-5 font-display text-xs font-bold text-obsidian shadow-xs hover:bg-ember-lo active:scale-[0.98] cursor-pointer"
               >
-                <span>Lanjut ke Step {step + 2} ➔</span>
+                <span>Lanjut ke Step {step + 2}</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
             ) : (
               <button
@@ -685,7 +689,10 @@ function PersonaForm({
                     <span>Menyimpan Persona...</span>
                   </>
                 ) : (
-                  <span>{submitLabel} ➔</span>
+                  <>
+                    <span>{submitLabel}</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  </>
                 )}
               </button>
             )}
@@ -883,8 +890,9 @@ export function CtaSettings({
               </strong>{" "}
               — <span className="font-mono text-xs font-medium text-ember">{shownUrl}</span>&rdquo;
             </p>
-            <p className="mt-2 text-[11px] leading-relaxed text-muted">
-              ✨ Kalimat bervariasi mengikuti topik konten lo. Link hanya muncul 1 kali di bagian akhir tanpa kesan jualan agresif.
+            <p className="mt-2 text-[11px] leading-relaxed text-muted flex items-start gap-1.5">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0 mt-0.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+              <span>Kalimat bervariasi mengikuti topik konten lo. Link hanya muncul 1 kali di bagian akhir tanpa kesan jualan agresif.</span>
             </p>
           </div>
         </div>

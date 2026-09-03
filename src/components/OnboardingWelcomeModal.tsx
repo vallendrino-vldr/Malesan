@@ -68,7 +68,7 @@ export function OnboardingWelcomeModal({ show }: { show: boolean }) {
         {/* Headline & Body */}
         <div className="mt-4">
           <h2 id="welcome-modal-title" className="font-display text-xl sm:text-2xl font-bold tracking-tight text-ink">
-            Kenalan Dulu Biar Hasilnya Maksimal! 👋
+            Kenalan Dulu Biar Hasilnya Maksimal!
           </h2>
           <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted">
             Biar ide, hook, dan skrip yang dibikin AI langsung meniru gaya bahasa &amp; niche lo (bukan kayak robot kaku), yuk luangkan waktu 1 menit untuk atur profil konten lo.
@@ -115,7 +115,8 @@ export function OnboardingWelcomeModal({ show }: { show: boolean }) {
             onClick={handleDismiss}
             className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-ember px-5 font-display text-xs sm:text-sm font-bold text-obsidian shadow-md transition-all hover:bg-ember-lo active:scale-[0.98] cursor-pointer"
           >
-            <span>Atur Profil Karakter Sekarang ➔</span>
+            <span>Atur Profil Karakter Sekarang</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </Link>
 
           <button

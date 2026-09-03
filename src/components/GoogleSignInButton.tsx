@@ -124,7 +124,7 @@ export function GoogleSignInButton({
     });
 
     if (oauthError) {
-      setError(`Gagal menghubungkan ke Google: ${oauthError.message}. Silakan coba lagi.`);
+      setError(`Gagal menghubungkan ke Google: ${oauthError.message}. Coba klik sekali lagi ya.`);
       setPending(false);
     }
   }

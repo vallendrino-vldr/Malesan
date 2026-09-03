@@ -144,7 +144,7 @@ export default function TopupPage() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sesi login kamu sudah berakhir. Silakan login kembali.");
+      if (!user) throw new Error("Sesi login lo udah habis nih. Masuk lagi yuk.");
 
       const compressed = await compressImage(file, 420);
       const hash = await sha256Hex(compressed);
@@ -623,7 +623,7 @@ export default function TopupPage() {
                   {loading ? (
                     <div className="flex items-center gap-2">
                       <span className="size-4 animate-spin rounded-full border-2 border-obsidian border-t-transparent" />
-                      <span>Mengunggah & Memproses...</span>
+                      <span>Lagi diproses & dicek...</span>
                     </div>
                   ) : (
                     <span>Kirim & Konfirmasi Pembayaran</span>

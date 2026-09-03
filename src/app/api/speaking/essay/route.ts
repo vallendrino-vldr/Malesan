@@ -115,7 +115,7 @@ ATURAN KETAT:
     });
   } catch (err) {
     console.error("[speaking-essay] AI error:", err);
-    return json({ error: "Gagal mengevaluasi esai. Silakan coba lagi." }, 500);
+    return json({ error: "Gagal ngevaluasi esai. Coba lagi bentar ya." }, 500);
   }
 }
 
