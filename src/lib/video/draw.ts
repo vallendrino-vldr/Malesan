@@ -59,7 +59,7 @@ export function drawFrame(
     const filter = layout.filter ?? "original";
     const intensity = Math.max(0.1, Math.min(1.0, layout.filterIntensity ?? 0.8));
     if (filter === "wink_hd" || filter === "ultra_hd") {
-      // Wink / Remini 4K HD Super-Resolution unblur & edge recovery
+      // Ultra Clarity 4K Super-Resolution unblur & edge recovery
       const c = (1 + 0.22 * intensity).toFixed(2);
       const s = (1 + 0.15 * intensity).toFixed(2);
       const b = (1 + 0.05 * intensity).toFixed(2);

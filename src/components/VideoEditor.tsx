@@ -1016,7 +1016,7 @@ export function VideoEditor({
                       <div className="grid grid-cols-2 gap-1.5">
                         {[
                           { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
-                          { id: "wink_hd", label: "Wink 4K Magic", desc: "Ketajaman ultra 4K (Remini style)" },
+                          { id: "wink_hd", label: "Ultra Clarity 4K", desc: "Ketajaman ultra 4K & unblur detail mikro" },
                           { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
                           { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
                           { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
@@ -1350,7 +1350,7 @@ export function VideoEditor({
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
                         { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
-                        { id: "wink_hd", label: "Wink 4K Magic", desc: "Ketajaman ultra 4K (Remini style)" },
+                        { id: "wink_hd", label: "Ultra Clarity 4K", desc: "Ketajaman ultra 4K & unblur detail mikro" },
                         { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
                         { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
                         { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
@@ -1732,7 +1732,7 @@ function VideoPreviewPlayer({
   const [isDragging, setIsDragging] = useState(false);
   const [dragTarget, setDragTarget] = useState<"single" | "top" | "bottom" | null>(null);
   const [showTrimBar, setShowTrimBar] = useState(false);
-  const [showWinkPanel, setShowWinkPanel] = useState(false);
+  const [showClarityPanel, setShowClarityPanel] = useState(false);
   const [subtitleDragging, setSubtitleDragging] = useState(false);
   const subDragInfoRef = useRef<{ isDragging: boolean; startY: number; startPos: number; moved: boolean }>({
     isDragging: false,
@@ -1770,24 +1770,24 @@ function VideoPreviewPlayer({
     const f = layout.filter ?? "original";
     const i = Math.max(0.1, Math.min(1.0, layout.filterIntensity ?? 0.8));
     if (f === "wink_hd" || f === "ultra_hd") {
-      // Wink / Remini 4K HD Super-Resolution unblur & edge recovery
+      // 4K HD Super-Resolution unblur & edge recovery
       const c = (1 + 0.22 * i).toFixed(2);
       const s = (1 + 0.15 * i).toFixed(2);
       const b = (1 + 0.05 * i).toFixed(2);
-      return `url(#wink-4k-clarity) contrast(${c}) saturate(${s}) brightness(${b})`;
+      return `url(#ai-4k-clarity) contrast(${c}) saturate(${s}) brightness(${b})`;
     }
     if (f === "face_restore") {
       // Face & Portrait Restore: Retains skin warmth and texture, sharpens facial details
       const c = (1 + 0.14 * i).toFixed(2);
       const s = (1 + 0.10 * i).toFixed(2);
       const b = (1 + 0.03 * i).toFixed(2);
-      return `url(#wink-4k-clarity) contrast(${c}) saturate(${s}) brightness(${b})`;
+      return `url(#ai-4k-clarity) contrast(${c}) saturate(${s}) brightness(${b})`;
     }
     if (f === "clean_pro") {
       // Studio Clean Pro: Balanced clarity
       const c = (1 + 0.15 * i).toFixed(2);
       const s = (1 + 0.10 * i).toFixed(2);
-      return `url(#wink-4k-clarity) contrast(${c}) saturate(${s}) brightness(1.02)`;
+      return `url(#ai-4k-clarity) contrast(${c}) saturate(${s}) brightness(1.02)`;
     }
     if (f === "warm_creator") {
       return "contrast(1.10) brightness(1.03) saturate(1.15) sepia(0.05)";
@@ -2435,7 +2435,7 @@ function VideoPreviewPlayer({
 
           {/* Dynamic Optical High-Pass Unsharp Convolution Filter */}
           <svg className="sr-only" aria-hidden="true" width="0" height="0">
-            <filter id="wink-4k-clarity" colorInterpolationFilters="sRGB">
+            <filter id="ai-4k-clarity" colorInterpolationFilters="sRGB">
               <feConvolveMatrix
                 order="3"
                 preserveAlpha="true"
@@ -2444,7 +2444,7 @@ function VideoPreviewPlayer({
             </filter>
           </svg>
 
-          {/* Docked Camera Pan, CapCut Keyframe & Wink AI Suite — ZERO OVERFLOW */}
+          {/* Docked Camera Pan, Keyframe & AI Super-Resolution Suite — ZERO OVERFLOW */}
           <div className="rounded-xl border border-white/10 bg-surface/90 p-2 space-y-2 backdrop-blur-md shadow-md">
             {/* Row 1: Pan Framing Controls (Host, Center, Guest) + Live Framing Percent (Uncluttered!) */}
             <div className="flex items-center justify-between gap-1.5">
@@ -2527,7 +2527,7 @@ function VideoPreviewPlayer({
                       triggerHaptic(10);
                     }}
                     className="flex-1 h-7.5 rounded-lg bg-ember text-obsidian text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-ember/90 active:scale-95 transition-all cursor-pointer"
-                    title="Kunci Posisi Kamera (CapCut Keyframe)"
+                    title="Kunci Posisi Kamera (Keyframe)"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-obsidian shrink-0">
                       <path d="M12 2L22 12L12 22L2 12Z"/>
@@ -2587,12 +2587,12 @@ function VideoPreviewPlayer({
               )}
             </div>
 
-            {/* Row 3: Wink / CapCut AI Super-Resolution Unblur Suite */}
+            {/* Row 3: AI Super-Resolution & Unblur 4K Suite */}
             <div className="pt-1.5 border-t border-white/10 flex items-center justify-between gap-1.5">
               <button
                 type="button"
                 onClick={() => {
-                  setShowWinkPanel((prev) => !prev);
+                  setShowClarityPanel((prev) => !prev);
                   triggerHaptic(8);
                 }}
                 className={`flex-1 h-7 px-2 rounded-lg border text-[10px] font-bold flex items-center justify-between transition-all cursor-pointer select-none ${
@@ -2600,7 +2600,7 @@ function VideoPreviewPlayer({
                     ? "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-xs"
                     : "bg-surface-raised text-muted hover:text-ink border-white/10"
                 }`}
-                title="Buka Pengaturan AI Unblur & Restorasi Wink"
+                title="Buka Pengaturan Restorasi AI & Unblur 4K"
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-amber-300 shrink-0">
@@ -2613,15 +2613,15 @@ function VideoPreviewPlayer({
                       ? `Wajah & Detail (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
                       : layout.filter === "clean_pro"
                       ? `Studio HD (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
-                      : "Wink 4K AI: Nonaktif"}
+                      : "AI Unblur 4K: Nonaktif"}
                   </span>
                 </div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className={`size-3 shrink-0 transition-transform ${showWinkPanel ? "rotate-180" : ""}`}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className={`size-3 shrink-0 transition-transform ${showClarityPanel ? "rotate-180" : ""}`}>
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </button>
 
-              {/* Wink Hold to Compare Button */}
+              {/* Hold to Compare Button */}
               <button
                 type="button"
                 onPointerDown={() => {
@@ -2646,8 +2646,8 @@ function VideoPreviewPlayer({
               </button>
             </div>
 
-            {/* Expandable Wink AI Unblur & Super-Resolution Panel */}
-            {showWinkPanel && (
+            {/* Expandable AI Unblur & Super-Resolution Panel */}
+            {showClarityPanel && (
               <div className="pt-2 pb-1 border-t border-white/10 space-y-2 animate-in fade-in slide-in-from-top-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-amber-200 flex items-center gap-1.5">
@@ -2697,7 +2697,7 @@ function VideoPreviewPlayer({
                 {(layout.filter ?? "original") !== "original" && (
                   <div className="pt-1 space-y-1">
                     <div className="flex items-center justify-between text-[10px] text-mist font-semibold">
-                      <span>Intensitas Restorasi (Wink Slider)</span>
+                      <span>Intensitas Restorasi &amp; Ketajaman</span>
                       <span className="font-mono text-amber-300 font-bold">
                         {Math.round((layout.filterIntensity ?? 0.8) * 100)}%
                       </span>
