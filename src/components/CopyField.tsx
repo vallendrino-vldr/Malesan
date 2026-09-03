@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { haptic } from "@/lib/haptics";
 
 export function CopyField({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -8,6 +9,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(value);
+      haptic.success();
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {

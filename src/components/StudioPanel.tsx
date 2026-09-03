@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { STUDIO_MODULES, type StudioModule as Mod } from "@/lib/studio-modules";
+import { haptic } from "@/lib/haptics";
 
 function StudioSkeleton({ label }: { label: string }) {
   return (
@@ -91,12 +92,15 @@ export function StudioPanel({
   home: ReactNode;
 }) {
   const [mod, setMod] = useState<Mod | null>(initialMod);
+  const [visitedMods, setVisitedMods] = useState<Set<Mod>>(() => new Set(initialMod ? [initialMod] : []));
 
   useEffect(() => {
     const open = (e: Event) => {
       const next = (e as CustomEvent<string>).detail;
       if (!STUDIO_MODULES.includes(next as Mod)) return;
+      haptic.tap();
       setMod(next as Mod);
+      setVisitedMods((prev) => new Set([...prev, next as Mod]));
       window.history.replaceState(null, "", `/app?tab=studio&m=${next}`);
       document.querySelector("main")?.scrollTo({ top: 0 });
     };
@@ -116,6 +120,7 @@ export function StudioPanel({
   }, []);
 
   const back = () => {
+    haptic.tap();
     setMod(null);
     window.history.replaceState(null, "", "/app");
     document.querySelector("main")?.scrollTo({ top: 0 });
@@ -131,6 +136,19 @@ export function StudioPanel({
     return <>{home}</>;
   }
 
+  const renderModule = (m: Mod) => {
+    if (m === "ide") return <IdeHariIni cost={costs.ide} />;
+    if (m === "idea") return <IdeaEngine />;
+    if (m === "clip") return <ClipEngine cost={clipCost} />;
+    if (m === "thread") return <ThreadEngine cost={threadCost} />;
+    if (m === "auto_clip") return <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} mode="auto_clip" />;
+    if (m === "video") return <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} mode="subtitle" />;
+    if (m === "affiliate") return <AffiliateEngine cost={affiliateCost} />;
+    if (m === "carousel") return <CarouselGenerator cost={costs.carousel ?? 3} credits={credits} />;
+    if (m === "lancar_bahasa") return <LancarBahasa cost={costs.lancar_bahasa ?? 2} credits={credits} />;
+    return <ModuleRunner moduleKey={m} cost={costs[m]} credits={credits} />;
+  };
+
   return (
     <div className="reveal space-y-2.5 sm:space-y-4">
       <button
@@ -143,27 +161,18 @@ export function StudioPanel({
         Balik ke Studio
       </button>
 
-      {mod === "ide" ? (
-        <IdeHariIni cost={costs.ide} />
-      ) : mod === "idea" ? (
-        <IdeaEngine />
-      ) : mod === "clip" ? (
-        <ClipEngine cost={clipCost} />
-      ) : mod === "thread" ? (
-        <ThreadEngine cost={threadCost} />
-      ) : mod === "auto_clip" ? (
-        <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} mode="auto_clip" />
-      ) : mod === "video" ? (
-        <VideoEditor cost={videoCost} noWatermarkCost={videoNoWmCost} mode="subtitle" />
-      ) : mod === "affiliate" ? (
-        <AffiliateEngine cost={affiliateCost} />
-      ) : mod === "carousel" ? (
-        <CarouselGenerator cost={costs.carousel ?? 3} credits={credits} />
-      ) : mod === "lancar_bahasa" ? (
-        <LancarBahasa cost={costs.lancar_bahasa ?? 2} credits={credits} />
-      ) : (
-        <ModuleRunner moduleKey={mod} cost={costs[mod]} credits={credits} />
-      )}
+      {/* Keep-Alive Active Module Cache: Visited tools remain in memory for 0ms re-entry */}
+      <div className="relative">
+        {Array.from(visitedMods).map((m) => (
+          <div
+            key={m}
+            className={m === mod ? "block animate-fade-in" : "hidden"}
+            aria-hidden={m !== mod}
+          >
+            {renderModule(m)}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { decryptSecret } from "@/lib/gemini/crypto";
 import { processReferral } from "@/app/actions/payments";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { aiRateLimit } from "@/lib/rate-limit";
+import { acquireRequestLock } from "@/lib/ai/dedup";
 import { notifyGeneration } from "@/lib/telegram";
 import {
   normalizeTodayGoal,
@@ -138,6 +139,18 @@ export async function POST(request: NextRequest) {
 
     const limited = await aiRateLimit(user.id, "generate", 12);
     if (limited) return limited;
+
+    const dedupPayloadKey = `${user.id}:${module}:${JSON.stringify(input ?? {})}`;
+    const { acquired, release: releaseLock } = acquireRequestLock(dedupPayloadKey);
+    if (!acquired) {
+      return new Response(
+        JSON.stringify({ error: "Permintaan yang sama lagi diproses di latar belakang. Tunggu sebentar ya." }),
+        {
+          status: 429,
+          headers: { "Content-Type": "application/json", "Retry-After": "4" },
+        },
+      );
+    }
 
     /**
      * BYOK, decrypted.
@@ -379,16 +392,17 @@ export async function POST(request: NextRequest) {
     // Set up SSE stream
     const stream = new ReadableStream({
       async start(controller) {
-        const aiStartedAt = Date.now();
-        let fullResponse = "";
-        let parsed = null;
-        let isError = false;
-        // Which provider and model actually answered. Filled by the engine, and
-        // used below so `generations.model_used` records what ran rather than
-        // what we intended to run — those differ the moment a fallback fires.
-        let meta: StreamMeta | null = null;
-
         try {
+          const aiStartedAt = Date.now();
+          let fullResponse = "";
+          let parsed = null;
+          let isError = false;
+          // Which provider and model actually answered. Filled by the engine, and
+          // used below so `generations.model_used` records what ran rather than
+          // what we intended to run — those differ the moment a fallback fires.
+          let meta: StreamMeta | null = null;
+
+          try {
           // This event is emitted exactly where the provider work begins. The
           // client used to invent "nyusun angle / ngerapiin" stages from a
           // timer; those labels looked precise but described no observed event.
@@ -613,7 +627,12 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        controller.close();
+        } finally {
+          releaseLock();
+          try {
+            controller.close();
+          } catch {}
+        }
       },
     });
 

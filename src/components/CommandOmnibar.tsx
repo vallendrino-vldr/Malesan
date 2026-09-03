@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { TabKey } from "./AppShell";
+import { haptic } from "@/lib/haptics";
 
 export interface CommandItem {
   id: string;
@@ -400,13 +401,16 @@ export function CommandOmnibar({
         onClose();
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
+        haptic.tick();
         setSelectedIndex((prev) => (prev + 1 < filteredCommands.length ? prev + 1 : 0));
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
+        haptic.tick();
         setSelectedIndex((prev) => (prev - 1 >= 0 ? prev - 1 : filteredCommands.length - 1));
       } else if (e.key === "Enter") {
         e.preventDefault();
         if (filteredCommands[selectedIndex]) {
+          haptic.tap();
           filteredCommands[selectedIndex].onSelect();
         }
       }
