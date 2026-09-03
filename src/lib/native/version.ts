@@ -3,8 +3,8 @@
  * Keeps app shell, download modals, update notifications, and telemetry strictly in sync.
  */
 
-export const LATEST_APK_VERSION = "2.2.6";
-export const LATEST_APK_VERSION_CODE = 29;
+export const LATEST_APK_VERSION = "2.2.5";
+export const LATEST_APK_VERSION_CODE = 28;
 export const LATEST_APK_SIZE_MB = "57.9 MB";
 export const LATEST_APK_DISPLAY_SIZE = "58 MB";
 export const LATEST_ARM32_SIZE = "51 MB";

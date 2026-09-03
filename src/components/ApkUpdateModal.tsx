@@ -83,11 +83,9 @@ export function ApkUpdateModal({
         updateInfo.downloadUrl,
         updateInfo.latestVersion,
       );
+      setDownloading(false);
       if (started) {
         setDownloadSuccess(true);
-        setTimeout(() => {
-          handleClose();
-        }, 2500);
         return;
       }
     }
