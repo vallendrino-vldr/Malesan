@@ -25,7 +25,7 @@ import { VideoCompletionModal } from "./VideoCompletionModal";
 import { VideoProjectHistoryModal } from "./VideoProjectHistoryModal";
 import { saveVideoProject, getVideoProject, type VideoProject } from "@/lib/video/project-history";
 import { interpolateKeyframes, manualKeyframesToTrajectory, type ManualKeyframe } from "@/lib/video/keyframe-engine";
-import { BGM_PRESETS, createProceduralBgmBlob } from "@/lib/video/bgm";
+import { BGM_PRESETS, createProceduralBgmBlob, playBgmAudition, stopBgmAudition, getProceduralBgmUrl } from "@/lib/video/bgm";
 /**
  * Video Auto-CC editor.
  *
@@ -199,6 +199,15 @@ export function VideoEditor({
   const [bgmTrack, setBgmTrack] = useState<string>("none");
   const [bgmVolume, setBgmVolume] = useState<number>(0.15);
   const [customBgmFile, setCustomBgmFile] = useState<File | null>(null);
+  const [auditioningPreset, setAuditioningPreset] = useState<string | null>(null);
+  const currentPlayingPreset = activeDrawer === "audio" ? auditioningPreset : null;
+
+  // Stop BGM audition audio when switching away from audio drawer
+  useEffect(() => {
+    if (activeDrawer !== "audio") {
+      stopBgmAudition();
+    }
+  }, [activeDrawer]);
 
   // Advanced Framing, Keyframe & Project History States
   const [manualKeyframes, setManualKeyframes] = useState<ManualKeyframe[]>([]);
@@ -856,6 +865,9 @@ export function VideoEditor({
                   onSubtitleYChange={(y) => setLayout((curr) => ({ ...curr, subtitleY: y }))}
                   onFilterChange={(f) => setLayout((curr) => ({ ...curr, filter: f }))}
                   onFilterIntensityChange={(i) => setLayout((curr) => ({ ...curr, filterIntensity: i }))}
+                  bgmTrack={bgmTrack}
+                  bgmVolume={bgmVolume}
+                  customBgmFile={customBgmFile}
                   onAttachVideo={(picked) => {
                     if (videoUrl) URL.revokeObjectURL(videoUrl);
                     setFile(picked);
@@ -1176,29 +1188,78 @@ export function VideoEditor({
                       <p className="text-[11px] text-muted">
                         Musik instrumen yang di-generate langsung di browser. Bebas copyright strike di TikTok, Reels, dan Shorts.
                       </p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {BGM_PRESETS.map((preset) => (
-                          <button
+                          <div
                             key={preset.id}
-                            type="button"
                             onClick={() => {
                               setBgmTrack(preset.id);
                               triggerHaptic(8);
+                              if (preset.id !== "none" && preset.id !== "custom") {
+                                setAuditioningPreset(preset.id);
+                                void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                              } else {
+                                stopBgmAudition();
+                                setAuditioningPreset(null);
+                              }
                             }}
-                            className={`h-12 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
+                            className={`min-h-[3.5rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
                               bgmTrack === preset.id
                                 ? "border-ember bg-ember/20 text-white shadow-xs"
                                 : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
                             }`}
                           >
-                            <div className="flex w-full items-center justify-between">
-                              <span className={`text-[11px] font-bold ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
-                                {preset.label}
-                              </span>
-                              <span className="text-[9px] font-mono text-mist uppercase">{preset.mood}</span>
+                            <div className="flex-1 min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
+                                  {preset.label}
+                                </span>
+                                <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase">{preset.mood}</span>
+                              </div>
+                              <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
                             </div>
-                            <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
-                          </button>
+
+                            {preset.id !== "none" && preset.id !== "custom" && (
+                              <div className="shrink-0 flex items-center">
+                                {currentPlayingPreset === preset.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      stopBgmAudition();
+                                      setAuditioningPreset(null);
+                                    }}
+                                    className="h-6.5 px-2 rounded-lg bg-ember text-obsidian text-[9px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                    title="Hentikan contoh musik"
+                                  >
+                                    <span className="flex items-center gap-0.5">
+                                      <span className="w-0.5 h-2 bg-obsidian animate-pulse" />
+                                      <span className="w-0.5 h-3 bg-obsidian animate-pulse delay-75" />
+                                      <span className="w-0.5 h-1.5 bg-obsidian animate-pulse delay-150" />
+                                    </span>
+                                    <span>Stop</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setBgmTrack(preset.id);
+                                      setAuditioningPreset(preset.id);
+                                      void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                                    }}
+                                    className="h-6.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-ink text-[9px] font-bold flex items-center gap-1 border border-white/15 cursor-pointer transition-all active:scale-95"
+                                    title="Dengarkan sampel musik latar ini"
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5 text-ember">
+                                      <polygon points="5 3 19 12 5 21 5 3" />
+                                    </svg>
+                                    <span>Dengar</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
 
@@ -1512,29 +1573,78 @@ export function VideoEditor({
                     <p className="text-[11px] text-muted">
                       Musik instrumen yang di-generate langsung di browser. Bebas copyright strike di TikTok, Reels, dan Shorts.
                     </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {BGM_PRESETS.map((preset) => (
-                        <button
+                        <div
                           key={preset.id}
-                          type="button"
                           onClick={() => {
                             setBgmTrack(preset.id);
                             triggerHaptic(8);
+                            if (preset.id !== "none" && preset.id !== "custom") {
+                              setAuditioningPreset(preset.id);
+                              void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                            } else {
+                              stopBgmAudition();
+                              setAuditioningPreset(null);
+                            }
                           }}
-                          className={`h-12 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
+                          className={`min-h-[3.5rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
                             bgmTrack === preset.id
                               ? "border-ember bg-ember/20 text-white shadow-xs"
                               : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
                           }`}
                         >
-                          <div className="flex w-full items-center justify-between">
-                            <span className={`text-[11px] font-bold ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
-                              {preset.label}
-                            </span>
-                            <span className="text-[9px] font-mono text-mist uppercase">{preset.mood}</span>
+                          <div className="flex-1 min-w-0 pr-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
+                                {preset.label}
+                              </span>
+                              <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase">{preset.mood}</span>
+                            </div>
+                            <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
                           </div>
-                          <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
-                        </button>
+
+                          {preset.id !== "none" && preset.id !== "custom" && (
+                            <div className="shrink-0 flex items-center">
+                              {currentPlayingPreset === preset.id ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    stopBgmAudition();
+                                    setAuditioningPreset(null);
+                                  }}
+                                  className="h-6.5 px-2 rounded-lg bg-ember text-obsidian text-[9px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                  title="Hentikan contoh musik"
+                                >
+                                  <span className="flex items-center gap-0.5">
+                                    <span className="w-0.5 h-2 bg-obsidian animate-pulse" />
+                                    <span className="w-0.5 h-3 bg-obsidian animate-pulse delay-75" />
+                                    <span className="w-0.5 h-1.5 bg-obsidian animate-pulse delay-150" />
+                                  </span>
+                                  <span>Stop</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setBgmTrack(preset.id);
+                                    setAuditioningPreset(preset.id);
+                                    void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                                  }}
+                                  className="h-6.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-ink text-[9px] font-bold flex items-center gap-1 border border-white/15 cursor-pointer transition-all active:scale-95"
+                                  title="Dengarkan sampel musik latar ini"
+                                >
+                                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5 text-ember">
+                                    <polygon points="5 3 19 12 5 21 5 3" />
+                                  </svg>
+                                  <span>Dengar</span>
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
 
@@ -1698,6 +1808,9 @@ function VideoPreviewPlayer({
   onSubtitleYChange,
   onFilterChange,
   onFilterIntensityChange,
+  bgmTrack = "none",
+  bgmVolume = 0.15,
+  customBgmFile,
   onAttachVideo,
   onResetStudio,
 }: {
@@ -1723,6 +1836,9 @@ function VideoPreviewPlayer({
   onSubtitleYChange?: (y: number) => void;
   onFilterChange?: (filter: ClarityFilter) => void;
   onFilterIntensityChange?: (intensity: number) => void;
+  bgmTrack?: string;
+  bgmVolume?: number;
+  customBgmFile?: File | null;
   onAttachVideo?: (file: File) => void;
   onResetStudio?: () => void;
 }) {
@@ -1731,6 +1847,73 @@ function VideoPreviewPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragTarget, setDragTarget] = useState<"single" | "top" | "bottom" | null>(null);
+
+  // Synchronized BGM Audio in Video Preview
+  const bgmAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const bgmAudio = bgmAudioRef.current ?? new Audio();
+    bgmAudioRef.current = bgmAudio;
+    bgmAudio.loop = true;
+
+    if (!bgmTrack || bgmTrack === "none") {
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
+      bgmAudio.src = "";
+      return;
+    }
+
+    void getProceduralBgmUrl(bgmTrack, Math.max(30, duration || 30), customBgmFile).then((url) => {
+      if (!cancelled && url && bgmAudio.src !== url) {
+        bgmAudio.src = url;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [bgmTrack, customBgmFile, duration]);
+
+  useEffect(() => {
+    const v1 = videoRef.current;
+    const bgmAudio = bgmAudioRef.current;
+    if (!v1 || !bgmAudio) return;
+
+    bgmAudio.volume = Math.max(0, Math.min(1, bgmVolume ?? 0.15));
+
+    const onPlay = () => {
+      if (bgmTrack !== "none" && bgmAudio.src) {
+        bgmAudio.currentTime = v1.currentTime % (bgmAudio.duration || 30);
+        void bgmAudio.play().catch(() => {});
+      }
+    };
+    const onPause = () => {
+      bgmAudio.pause();
+    };
+    const onSeeking = () => {
+      bgmAudio.currentTime = v1.currentTime % (bgmAudio.duration || 30);
+    };
+    const onSeeked = () => {
+      bgmAudio.currentTime = v1.currentTime % (bgmAudio.duration || 30);
+      if (!v1.paused && bgmTrack !== "none" && bgmAudio.src) {
+        void bgmAudio.play().catch(() => {});
+      }
+    };
+
+    v1.addEventListener("play", onPlay);
+    v1.addEventListener("pause", onPause);
+    v1.addEventListener("seeking", onSeeking);
+    v1.addEventListener("seeked", onSeeked);
+
+    return () => {
+      v1.removeEventListener("play", onPlay);
+      v1.removeEventListener("pause", onPause);
+      v1.removeEventListener("seeking", onSeeking);
+      v1.removeEventListener("seeked", onSeeked);
+      bgmAudio.pause();
+    };
+  }, [videoRef, bgmTrack, bgmVolume]);
   const [showTrimBar, setShowTrimBar] = useState(false);
   const [showClarityPanel, setShowClarityPanel] = useState(false);
   const [subtitleDragging, setSubtitleDragging] = useState(false);
@@ -2433,10 +2616,28 @@ function VideoPreviewPlayer({
             </div>
           )}
 
-          {/* Dynamic Optical High-Pass Unsharp Convolution Filter */}
+          {/* True 2-Stage Optical Super-Resolution & Bilateral Denoise Filter Pipeline */}
           <svg className="sr-only" aria-hidden="true" width="0" height="0">
-            <filter id="ai-4k-clarity" colorInterpolationFilters="sRGB">
+            <filter id="ai-4k-clarity" colorInterpolationFilters="sRGB" x="-5%" y="-5%" width="110%" height="110%">
+              {/* Stage 1: Adaptive Smoothing (Wipes out camera sensor noise, ISO grain, and compression artifacts) */}
+              <feGaussianBlur in="SourceGraphic" stdDeviation={layout.filter === "face_restore" ? "1.1" : "0.7"} result="denoisedBase" />
+
+              {/* Stage 2: Micro-Edge Extraction (Source - DenoisedBase) */}
+              <feComposite in="SourceGraphic" in2="denoisedBase" operator="arithmetic" k1="0" k2="1" k3="-1" k4="0.5" result="rawDiff" />
+
+              {/* Stage 3: Noise Coring (Zeroes out low-amplitude grain noise, amplifies real structural edges) */}
+              <feComponentTransfer in="rawDiff" result="coredEdges">
+                <feFuncR type="linear" slope={(1.0 + 1.35 * intensity).toFixed(2)} intercept={(-0.5 * (1.0 + 1.35 * intensity) + 0.5).toFixed(2)} />
+                <feFuncG type="linear" slope={(1.0 + 1.35 * intensity).toFixed(2)} intercept={(-0.5 * (1.0 + 1.35 * intensity) + 0.5).toFixed(2)} />
+                <feFuncB type="linear" slope={(1.0 + 1.35 * intensity).toFixed(2)} intercept={(-0.5 * (1.0 + 1.35 * intensity) + 0.5).toFixed(2)} />
+              </feComponentTransfer>
+
+              {/* Stage 4: Merge Denoised Base with Reconstructed Cored Edges */}
+              <feComposite in="denoisedBase" in2="coredEdges" operator="arithmetic" k1="0" k2="1" k3="1" k4="-0.5" result="sharpDenoised" />
+
+              {/* Stage 5: High-Pass Convolution Pass on clean reconstructed signal */}
               <feConvolveMatrix
+                in="sharpDenoised"
                 order="3"
                 preserveAlpha="true"
                 kernelMatrix={kernelMatrixStr}

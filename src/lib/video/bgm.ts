@@ -269,3 +269,86 @@ function writeString(view: DataView, offset: number, string: string) {
     view.setUint8(offset + i, string.charCodeAt(i));
   }
 }
+
+// In-memory cache of generated BGM Blob URLs for instant playback
+const bgmUrlCache = new Map<string, string>();
+let currentAuditionAudio: HTMLAudioElement | null = null;
+let currentAuditionPresetId: string | null = null;
+
+export function stopBgmAudition() {
+  if (currentAuditionAudio) {
+    try {
+      currentAuditionAudio.pause();
+      currentAuditionAudio.currentTime = 0;
+    } catch {}
+    currentAuditionAudio = null;
+    currentAuditionPresetId = null;
+  }
+}
+
+export function getCurrentAuditionPresetId(): string | null {
+  return currentAuditionPresetId;
+}
+
+export async function getProceduralBgmUrl(
+  presetId: string,
+  durationSeconds: number = 30,
+  customFile?: File | null,
+): Promise<string | null> {
+  if (presetId === "none") return null;
+  if (presetId === "custom" && customFile) {
+    return URL.createObjectURL(customFile);
+  }
+  const cacheKey = `${presetId}_${durationSeconds}`;
+  if (bgmUrlCache.has(cacheKey)) {
+    return bgmUrlCache.get(cacheKey)!;
+  }
+  const blob = await createProceduralBgmBlob(presetId, durationSeconds);
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
+  bgmUrlCache.set(cacheKey, url);
+  return url;
+}
+
+export async function playBgmAudition(
+  presetId: string,
+  volume: number = 0.4,
+  customFile?: File | null,
+  onEnded?: () => void,
+): Promise<boolean> {
+  stopBgmAudition();
+
+  if (presetId === "none") {
+    onEnded?.();
+    return false;
+  }
+
+  // Generate an 8-second quick preview for audition
+  const audioUrl = await getProceduralBgmUrl(presetId, 12, customFile);
+  if (!audioUrl) {
+    onEnded?.();
+    return false;
+  }
+
+  try {
+    const audio = new Audio(audioUrl);
+    audio.volume = Math.max(0.05, Math.min(1.0, volume));
+    audio.loop = true;
+    currentAuditionAudio = audio;
+    currentAuditionPresetId = presetId;
+
+    audio.onended = () => {
+      stopBgmAudition();
+      onEnded?.();
+    };
+
+    await audio.play();
+    return true;
+  } catch (err) {
+    console.warn("BGM Audition autoplay blocked or failed:", err);
+    stopBgmAudition();
+    onEnded?.();
+    return false;
+  }
+}
+

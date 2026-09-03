@@ -2,6 +2,7 @@
 
 import { activeAt, type CaptionStyle, type Line } from "./captions";
 import { cropFocusAt, trackedCoverCrop } from "./face-track";
+import { applySuperResolutionPass } from "./superResolutionEngine";
 import { coverCrop, type VideoLayout } from "./layout";
 
 export { coverCrop, frameSize } from "./layout";
@@ -122,6 +123,17 @@ export function drawFrame(
     ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, W, H);
   }
   ctx.restore();
+
+  // Apply True AI Super-Resolution Denoise & Micro-Edge Recovery on pixel buffer
+  const activeFilter = layout.filter ?? "original";
+  if (
+    activeFilter === "wink_hd" ||
+    activeFilter === "ultra_hd" ||
+    activeFilter === "face_restore" ||
+    activeFilter === "clean_pro"
+  ) {
+    applySuperResolutionPass(ctx, W, H, activeFilter, layout.filterIntensity ?? 0.8);
+  }
 
   const a = activeAt(lines, t);
   if (a) {
