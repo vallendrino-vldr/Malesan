@@ -55,6 +55,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  /**
+   * Seamless high-speed redirect for desktop installer to GitHub Releases CDN (no 404).
+   */
+  async redirects() {
+    return [
+      {
+        source: "/Malesan-Setup.exe",
+        destination:
+          "https://github.com/vallendrino-vldr/Malesan/releases/download/v2.1.0/Malesan-Setup.exe",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

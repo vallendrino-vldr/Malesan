@@ -70,10 +70,10 @@ export function ApkUpdateModal({
         updateInfo.latestVersion,
       );
       if (!started) {
-        // Fallback: direct browser download
-        window.open(updateInfo.downloadUrl, "_blank");
-        setDownloadSuccess(true);
         setDownloading(false);
+        setErrorMessage(
+          "Fitur Studio Video (Trim & Cut, BGM AI, Face Tracking & Lip-Sync) sudah otomatis aktif di aplikasi Malesan Desktop kamu melalui cloud tanpa perlu instalasi ulang."
+        );
       }
       return;
     }
@@ -205,10 +205,20 @@ export function ApkUpdateModal({
           </div>
         )}
 
-        {/* Error message */}
+        {/* Error / Notice message */}
         {errorMessage && (
-          <div className="relative z-10 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400">
-            {errorMessage}
+          <div className="relative z-10 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-200 space-y-2 leading-relaxed">
+            <p>{errorMessage}</p>
+            {isDesktop && (
+              <a
+                href={updateInfo.downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-ember font-semibold hover:underline"
+              >
+                <span>Unduh manual installer via GitHub Releases (192 MB) &rarr;</span>
+              </a>
+            )}
           </div>
         )}
 
