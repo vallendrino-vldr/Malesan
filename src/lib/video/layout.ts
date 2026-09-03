@@ -2,8 +2,17 @@ import type { CropKeyframe } from "./face-track";
 import type { ManualKeyframe } from "./keyframe-engine";
 
 export type VideoRatio = "9:16" | "1:1" | "16:9";
-export type VideoFocus = "left" | "center" | "right" | "podcast_split" | "podcast_dynamic" | "manual_keyframe";
-export type ClarityFilter = "original" | "ultra_hd" | "fyp_pop" | "clean_denoise" | "wink_hd" | "soft_clean";
+export type VideoFocus = "auto" | "center" | "left" | "right" | "face_track" | "podcast_split" | "manual_keyframe" | "podcast_dynamic";
+export type ClarityFilter =
+  | "original"
+  | "clean_pro"
+  | "warm_creator"
+  | "cinematic"
+  | "ultra_hd"
+  | "fyp_pop"
+  | "clean_denoise"
+  | "wink_hd"
+  | "soft_clean";
 
 export type VideoLayout = {
   ratio: VideoRatio;

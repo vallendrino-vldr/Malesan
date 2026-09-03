@@ -56,20 +56,22 @@ export function drawFrame(
 
   ctx.save();
   try {
-    const filter = layout.filter ?? "ultra_hd";
-    if (filter === "ultra_hd" || filter === "wink_hd") {
-      // Studio Ultra-HD: Micro-contrast enhancement + spatial edge definitions + crisp clarity
-      ctx.filter = typeof document !== "undefined" && document.getElementById("malesan-ultra-hd")
-        ? "url(#malesan-ultra-hd) contrast(1.12) brightness(1.02) saturate(1.12)"
-        : "contrast(1.16) brightness(1.02) saturate(1.14)";
+    const filter = layout.filter ?? "original";
+    if (filter === "clean_pro" || filter === "ultra_hd" || filter === "wink_hd") {
+      // Natural Studio Crisp: Clean, subtle micro-contrast without pixel halos or noise exaggeration
+      ctx.filter = "contrast(1.03) brightness(1.01) saturate(1.02)";
+    } else if (filter === "warm_creator") {
+      // Warm Creator: Flattering skin tones with gentle golden warmth
+      ctx.filter = "contrast(1.02) brightness(1.02) saturate(1.03) sepia(0.03)";
+    } else if (filter === "cinematic") {
+      // Cinematic Look: Balanced rich shadows with soft highlights
+      ctx.filter = "contrast(1.05) brightness(0.99) saturate(1.02)";
     } else if (filter === "fyp_pop") {
-      // Viral Color Pop: Vibrant colors, punchy highlights for TikTok/Reels/Shorts
-      ctx.filter = "contrast(1.20) brightness(1.03) saturate(1.24)";
+      // Vibrant Pop: Lively colors for short-form feed without oversaturating skin
+      ctx.filter = "contrast(1.05) brightness(1.02) saturate(1.07)";
     } else if (filter === "clean_denoise" || filter === "soft_clean") {
-      // Smooth De-Noise: Suppresses harsh sensor noise and provides subtle smoothing
-      ctx.filter = typeof document !== "undefined" && document.getElementById("malesan-clean-denoise")
-        ? "url(#malesan-clean-denoise) contrast(1.08) brightness(1.02) saturate(1.05)"
-        : "contrast(1.08) brightness(1.02) saturate(1.05)";
+      // Soft Clean: Gentle smoothing without blur
+      ctx.filter = "contrast(1.02) brightness(1.01)";
     } else {
       ctx.filter = "none";
     }

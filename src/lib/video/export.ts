@@ -37,6 +37,14 @@ export type ExportOpts = {
   watermark: boolean;
   /** Output aspect ratio and horizontal subject focus. */
   layout: VideoLayout;
+  /** Optional trim range in seconds */
+  trimStart?: number;
+  trimEnd?: number;
+  /** Optional background music audio file/blob & volume (0..1) */
+  bgmFile?: File | Blob | null;
+  bgmVolume?: number;
+  /** Optional subtitle acoustic timing offset in seconds */
+  subtitleOffset?: number;
   onProgress: (ratio: number) => void;
   /** Short label for the blocking overlay, so the user knows what is happening. */
   onStage?: (stage: string) => void;
@@ -61,7 +69,7 @@ export async function exportBurnedVideo(
 /* ------------------------------------------------- legacy real-time fallback */
 
 async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: string }> {
-  const { file, lines, style, bitrateMbps, watermark, layout, onProgress, onStage } = opts;
+  const { file, lines, style, bitrateMbps, watermark, layout, trimStart, trimEnd, subtitleOffset, onProgress, onStage } = opts;
   onStage?.("Nge-render (mode kompatibel)");
 
   const video = document.createElement("video");
@@ -78,6 +86,11 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   document.body.appendChild(video);
 
   await once(video, "loadedmetadata");
+
+  const effectiveStart = Math.max(0, trimStart ?? 0);
+  const effectiveEnd = Math.min(video.duration, Math.max(effectiveStart + 0.5, trimEnd ?? video.duration));
+  const effectiveDuration = effectiveEnd - effectiveStart;
+  video.currentTime = effectiveStart;
 
   const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920, layout.ratio);
 
@@ -138,9 +151,10 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   const stopped = new Promise<void>((res) => (rec.onstop = () => res()));
 
   const paint = (t: number) => {
-    drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
+    const subTime = t + (subtitleOffset ?? -0.12);
+    drawFrame(ctx, video, lines, subTime, style, W, H, watermark, layout);
     vTrack?.requestFrame?.();
-    onProgress(Math.min(0.999, t / (video.duration || 1)));
+    onProgress(Math.min(0.999, (t - effectiveStart) / (effectiveDuration || 1)));
   };
 
   rec.start(1000);
@@ -163,14 +177,14 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
     video.addEventListener("ended", () => resolve(), { once: true });
     if (typeof rvfc.requestVideoFrameCallback === "function") {
       const step = (_now: number, meta: { mediaTime: number }) => {
-        if (video.ended) return;
+        if (video.ended || meta.mediaTime >= effectiveEnd) return resolve();
         paint(meta.mediaTime);
         rvfc.requestVideoFrameCallback!(step);
       };
       rvfc.requestVideoFrameCallback!(step);
     } else {
       const step = () => {
-        if (video.ended) return;
+        if (video.ended || video.currentTime >= effectiveEnd) return resolve();
         paint(video.currentTime);
         raf = requestAnimationFrame(step);
       };
@@ -179,7 +193,7 @@ async function exportRealtime(opts: ExportOpts): Promise<{ blob: Blob; ext: stri
   });
   cancelAnimationFrame(raf);
 
-  drawFrame(ctx, video, lines, video.duration || 0, style, W, H, watermark, layout);
+  drawFrame(ctx, video, lines, effectiveEnd, style, W, H, watermark, layout);
   vTrack?.requestFrame?.();
   rec.stop();
   await stopped;

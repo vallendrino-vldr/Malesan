@@ -34,9 +34,9 @@ export function buildCropTrajectory(samples: readonly FaceSample[]): CropKeyfram
   let missingSince: number | null = null;
   let lastSeenFace: { x: number; y: number } = { ...tracked };
 
-  // Deadband thresholds: prevent micro-jitters from breathing / head tilts
-  const DEADBAND_X = 0.07;
-  const DEADBAND_Y = 0.05;
+  // Cinematic Deadband thresholds: eliminate all micro-jitters from speaking, breathing, and microphone occlusion
+  const DEADBAND_X = 0.09;
+  const DEADBAND_Y = 0.08;
 
   for (const sample of ordered) {
     const valid = sample.faces
@@ -78,13 +78,13 @@ export function buildCropTrajectory(samples: readonly FaceSample[]): CropKeyfram
       const effectiveDx = Math.abs(dx) > DEADBAND_X ? dx - Math.sign(dx) * DEADBAND_X : 0;
       const effectiveDy = Math.abs(dy) > DEADBAND_Y ? dy - Math.sign(dy) * DEADBAND_Y : 0;
 
-      // Adaptive smoothing: faster response on large deliberate moves, ultra-smooth on small adjustments
+      // Cinematic inertial dampening: velvety smooth glide like a high-end PTZ broadcast camera
       const moveDist = Math.hypot(effectiveDx, effectiveDy);
-      const alpha = moveDist > 0.20 ? 0.45 : clamp(0.18 + target.score * 0.12, 0.20, 0.35);
+      const alpha = moveDist > 0.25 ? 0.22 : clamp(0.06 + target.score * 0.04, 0.06, 0.12);
 
       tracked = {
         x: clamp(tracked.x + effectiveDx * alpha, 0.15, 0.85),
-        y: clamp(tracked.y + effectiveDy * alpha, 0.30, 0.60),
+        y: clamp(tracked.y + effectiveDy * alpha, 0.35, 0.55),
       };
       confidence = target.score;
     } else {

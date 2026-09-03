@@ -38,6 +38,14 @@ export type EncodeOpts = {
   bitrateMbps: number;
   watermark: boolean;
   layout: VideoLayout;
+  /** Optional trim range in seconds */
+  trimStart?: number;
+  trimEnd?: number;
+  /** Optional background music audio file/blob & volume (0..1) */
+  bgmFile?: File | Blob | null;
+  bgmVolume?: number;
+  /** Optional subtitle acoustic timing offset in seconds */
+  subtitleOffset?: number;
   /** 0..1 over the whole job, frame-accurate. */
   onProgress: (ratio: number) => void;
   /** Short human label for the overlay, e.g. "Nyiapin audio". */
@@ -72,7 +80,7 @@ export function canUseWebCodecs(): boolean {
 export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob; ext: string }> {
   if (!canUseWebCodecs()) throw new UnsupportedEncoder("WebCodecs tidak tersedia");
 
-  const { file, lines, style, bitrateMbps, watermark, layout, onProgress, onStage } = opts;
+  const { file, lines, style, bitrateMbps, watermark, layout, trimStart, trimEnd, bgmFile, bgmVolume, subtitleOffset, onProgress, onStage } = opts;
   onStage?.("Nyiapin video");
 
   const video = document.createElement("video");
@@ -108,6 +116,10 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     throw new Error("Durasi videonya gak kebaca. Coba video lain.");
   }
 
+  const effectiveStart = Math.max(0, trimStart ?? 0);
+  const effectiveEnd = Math.min(duration, Math.max(effectiveStart + 0.5, trimEnd ?? duration));
+  const effectiveDuration = effectiveEnd - effectiveStart;
+
   const { W, H } = frameSize(video.videoWidth || 1080, video.videoHeight || 1920, layout.ratio);
   const fps = await probeFps(video);
   const bitrate = bitrateFor(bitrateMbps, W, H, fps);
@@ -139,7 +151,16 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
   const handle = await root.getFileHandle("malesan-export.mp4", { create: true });
   const writable = await handle.createWritable();
 
-  const audio = await loadAudio(file).catch(() => null);
+  let audio = await loadAudio(file).catch(() => null);
+  if (audio) {
+    if (effectiveStart > 0 || effectiveEnd < duration) {
+      audio = sliceAudioForTrim(audio, effectiveStart, effectiveEnd);
+    }
+    if (bgmFile) {
+      onStage?.("Nge-mix musik latar");
+      await mixBgm(audio, bgmFile, bgmVolume ?? 0.15);
+    }
+  }
 
   const muxer = new Muxer({
     target: new FileSystemWritableFileStreamTarget(writable),
@@ -230,14 +251,16 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
     onStage?.("Nge-render tiap frame");
     const primeCount = Math.min(3, Math.max(1, Math.floor(fps * 0.1)));
     let frameIndex = 0;
-    let lastRenderedTime = 0;
+    let lastRenderedTime = effectiveStart;
 
+    await seekToFrame(video, effectiveStart);
     for (let p = 0; p < primeCount; p++) {
-      const pt = p / fps;
+      const pt = effectiveStart + (p / fps);
       await seekToFrame(video, pt);
-      drawFrame(ctx, video, lines, pt, style, W, H, watermark, layout);
+      const subTime = pt + (subtitleOffset ?? -0.12);
+      drawFrame(ctx, video, lines, subTime, style, W, H, watermark, layout);
       const pFrame = new VideoFrame(canvas, {
-        timestamp: Math.round(pt * 1_000_000),
+        timestamp: Math.round((pt - effectiveStart) * 1_000_000),
         duration: frameDurUs,
       });
       videoEncoder.encode(pFrame, { keyFrame: p === 0 });
@@ -265,28 +288,30 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
         };
 
         video.addEventListener("ended", finish, { once: true });
-        const maxTimer = setTimeout(finish, (duration * 2.5 + 8) * 1000);
+        const maxTimer = setTimeout(finish, (effectiveDuration * 2.5 + 8) * 1000);
 
         const step = (_now: number, meta: { mediaTime: number }) => {
-          if (isDone || failure || video.ended) {
+          if (isDone || failure || video.ended || meta.mediaTime >= effectiveEnd) {
             clearTimeout(maxTimer);
             finish();
             return;
           }
           const t = meta.mediaTime;
+          if (t < effectiveStart) return;
           if (t > lastRenderedTime + 0.008) {
             lastRenderedTime = t;
-            drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
+            const subTime = t + (subtitleOffset ?? -0.12);
+            drawFrame(ctx, video, lines, subTime, style, W, H, watermark, layout);
             const frame = new VideoFrame(canvas, {
-              timestamp: Math.max(0, Math.round(t * 1_000_000)),
+              timestamp: Math.max(0, Math.round((t - effectiveStart) * 1_000_000)),
               duration: frameDurUs,
             });
             videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
             frame.close();
             frameIndex++;
-            onProgress(Math.min(0.999, t / (duration || 1)));
+            onProgress(Math.min(0.999, (t - effectiveStart) / (effectiveDuration || 1)));
           }
-          if (!video.ended && !failure && !isDone) {
+          if (!video.ended && !failure && !isDone && video.currentTime < effectiveEnd) {
             rvfc.requestVideoFrameCallback!(step);
           }
         };
@@ -307,28 +332,30 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
         };
 
         video.addEventListener("ended", finish, { once: true });
-        const maxTimer = setTimeout(finish, (duration * 2.5 + 8) * 1000);
+        const maxTimer = setTimeout(finish, (effectiveDuration * 2.5 + 8) * 1000);
 
         const step = () => {
-          if (isDone || failure || video.ended) {
+          if (isDone || failure || video.ended || video.currentTime >= effectiveEnd) {
             clearTimeout(maxTimer);
             finish();
             return;
           }
           const t = video.currentTime;
+          if (t < effectiveStart) return;
           if (t > lastRenderedTime + 0.015) {
             lastRenderedTime = t;
-            drawFrame(ctx, video, lines, t, style, W, H, watermark, layout);
+            const subTime = t + (subtitleOffset ?? -0.12);
+            drawFrame(ctx, video, lines, subTime, style, W, H, watermark, layout);
             const frame = new VideoFrame(canvas, {
-              timestamp: Math.max(0, Math.round(t * 1_000_000)),
+              timestamp: Math.max(0, Math.round((t - effectiveStart) * 1_000_000)),
               duration: frameDurUs,
             });
             videoEncoder.encode(frame, { keyFrame: frameIndex % gop === 0 });
             frame.close();
             frameIndex++;
-            onProgress(Math.min(0.999, t / (duration || 1)));
+            onProgress(Math.min(0.999, (t - effectiveStart) / (effectiveDuration || 1)));
           }
-          if (!video.ended && !failure && !isDone) {
+          if (!video.ended && !failure && !isDone && video.currentTime < effectiveEnd) {
             raf = requestAnimationFrame(step);
           }
         };
@@ -357,6 +384,60 @@ export async function exportFrameByFrame(opts: EncodeOpts): Promise<{ blob: Blob
 /* ------------------------------------------------------------------ audio */
 
 type LoadedAudio = { channels: Float32Array[]; sampleRate: number; numberOfChannels: number; frames: number };
+
+function sliceAudioForTrim(
+  audio: LoadedAudio,
+  trimStart: number,
+  trimEnd: number,
+): LoadedAudio {
+  const startFrame = Math.max(0, Math.floor(trimStart * audio.sampleRate));
+  const endFrame = Math.min(audio.frames, Math.floor(trimEnd * audio.sampleRate));
+  const newFrames = Math.max(0, endFrame - startFrame);
+  const slicedChannels: Float32Array[] = [];
+  for (let c = 0; c < audio.numberOfChannels; c++) {
+    slicedChannels.push(audio.channels[c].slice(startFrame, endFrame));
+  }
+  return {
+    channels: slicedChannels,
+    sampleRate: audio.sampleRate,
+    numberOfChannels: audio.numberOfChannels,
+    frames: newFrames,
+  };
+}
+
+async function mixBgm(
+  audio: LoadedAudio,
+  bgmFile: File | Blob,
+  volume: number = 0.15,
+) {
+  const AC: typeof AudioContext | undefined =
+    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AC) return;
+  const actx = new AC();
+  try {
+    const buf = await bgmFile.arrayBuffer();
+    const decoded = await actx.decodeAudioData(buf);
+    if (!decoded || !decoded.length) return;
+    const bgmChannels: Float32Array[] = [];
+    for (let c = 0; c < decoded.numberOfChannels; c++) {
+      bgmChannels.push(decoded.getChannelData(c));
+    }
+    const bgmFrames = decoded.length;
+    for (let c = 0; c < audio.numberOfChannels; c++) {
+      const targetChan = audio.channels[c];
+      const bgmChan = bgmChannels[c % bgmChannels.length];
+      for (let i = 0; i < audio.frames; i++) {
+        const bgmSample = bgmChan[i % bgmFrames] * volume;
+        const sum = targetChan[i] + bgmSample;
+        targetChan[i] = Math.max(-1, Math.min(1, sum));
+      }
+    }
+  } catch (err) {
+    console.warn("BGM mix non-fatal failure:", err);
+  } finally {
+    try { await actx.close(); } catch {}
+  }
+}
 
 /**
  * Decode audio losslessly. If native AudioContext cannot parse the container

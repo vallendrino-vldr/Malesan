@@ -25,6 +25,7 @@ import { VideoCompletionModal } from "./VideoCompletionModal";
 import { VideoProjectHistoryModal } from "./VideoProjectHistoryModal";
 import { saveVideoProject, getVideoProject, type VideoProject } from "@/lib/video/project-history";
 import { interpolateKeyframes, manualKeyframesToTrajectory, type ManualKeyframe } from "@/lib/video/keyframe-engine";
+import { BGM_PRESETS, createProceduralBgmBlob } from "@/lib/video/bgm";
 /**
  * Video Auto-CC editor.
  *
@@ -183,13 +184,21 @@ export function VideoEditor({
   const [sourceLanguage, setSourceLanguage] = useState<"id" | "en">("id");
   const [sourceWords, setSourceWords] = useState<Word[] | null>(null);
   const [translating, setTranslating] = useState(false);
-  const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center", filter: "ultra_hd" });
-  const [editorTab, setEditorTab] = useState<"frame" | "subtitles" | "style" | "export">("frame");
-  const [activeDrawer, setActiveDrawer] = useState<"frame" | "subtitles" | "style" | "export" | null>(null);
+  const [layout, setLayout] = useState<VideoLayout>({ ratio: "9:16", focus: "center", filter: "original" });
+  const [editorTab, setEditorTab] = useState<"frame" | "subtitles" | "audio" | "style" | "export">("frame");
+  const [activeDrawer, setActiveDrawer] = useState<"frame" | "subtitles" | "audio" | "style" | "export" | null>(null);
   const [exportPct, setExportPct] = useState(0);
   const [exportStage, setExportStage] = useState("");
   const [trackingFace, setTrackingFace] = useState(false);
   const [autoProcess, setAutoProcess] = useState(false);
+
+  // Trim, BGM & Lip-sync Calibration States
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [subtitleOffset, setSubtitleOffset] = useState(-0.12);
+  const [bgmTrack, setBgmTrack] = useState<string>("none");
+  const [bgmVolume, setBgmVolume] = useState<number>(0.15);
+  const [customBgmFile, setCustomBgmFile] = useState<File | null>(null);
 
   // Advanced Framing, Keyframe & Project History States
   const [manualKeyframes, setManualKeyframes] = useState<ManualKeyframe[]>([]);
@@ -549,6 +558,14 @@ export function VideoEditor({
         }
         router.refresh();
       }
+      let bgmBlob: Blob | null = null;
+      if (bgmTrack === "custom" && customBgmFile) {
+        bgmBlob = customBgmFile;
+      } else if (bgmTrack !== "none") {
+        setExportStage("Menyiapkan musik latar...");
+        bgmBlob = await createProceduralBgmBlob(bgmTrack, (trimEnd > trimStart ? trimEnd - trimStart : videoDuration) || 30);
+      }
+
       const { blob, ext } = await exportBurnedVideo({
         file,
         lines,
@@ -556,6 +573,11 @@ export function VideoEditor({
         bitrateMbps: bitrate,
         watermark: !noWatermark,
         layout,
+        trimStart: trimStart > 0 ? trimStart : undefined,
+        trimEnd: trimEnd > 0 ? trimEnd : undefined,
+        bgmFile: bgmBlob,
+        bgmVolume,
+        subtitleOffset,
         onProgress: (r) => {
           setProgress(Math.round(r * 100));
           setExportPct(r * 100);
@@ -639,25 +661,28 @@ export function VideoEditor({
       setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
       setPhase("ready");
     }
-  }, [file, videoUrl, words, lines, style, bitrate, noWatermark, noWatermarkCost, router, layout]);
+  }, [
+    file,
+    videoUrl,
+    words,
+    lines,
+    style,
+    bitrate,
+    noWatermark,
+    noWatermarkCost,
+    router,
+    layout,
+    trimStart,
+    trimEnd,
+    videoDuration,
+    bgmTrack,
+    bgmVolume,
+    customBgmFile,
+    subtitleOffset,
+  ]);
 
   return (
     <div className="space-y-3.5">
-      {/* Hardware-Accelerated SVG Filters for Studio Ultra-HD & Smooth Denoise */}
-      <svg className="sr-only" aria-hidden="true" width="0" height="0">
-        <defs>
-          <filter id="malesan-ultra-hd" colorInterpolationFilters="sRGB">
-            <feConvolveMatrix
-              order="3"
-              kernelMatrix="0 -0.25 0 -0.25 2.0 -0.25 0 -0.25 0"
-              preserveAlpha="true"
-            />
-          </filter>
-          <filter id="malesan-clean-denoise" colorInterpolationFilters="sRGB">
-            <feGaussianBlur stdDeviation="0.40" />
-          </filter>
-        </defs>
-      </svg>
 
       <ExportOverlay open={phase === "exporting"} progress={exportPct} stage={exportStage} />
 
@@ -785,8 +810,19 @@ export function VideoEditor({
                   safeZones={safeZones}
                   layout={layout}
                   watermark={!noWatermark}
+                  manualKeyframes={manualKeyframes}
+                  onAddKeyframe={handleAddKeyframe}
+                  onRemoveKeyframe={handleRemoveKeyframe}
+                  trimStart={trimStart}
+                  trimEnd={trimEnd}
+                  onTrimStartChange={setTrimStart}
+                  onTrimEndChange={setTrimEnd}
+                  subtitleOffset={subtitleOffset}
                   onTimeChange={setCurrentTimeNow}
-                  onDurationChange={setVideoDuration}
+                  onDurationChange={(d) => {
+                    setVideoDuration(d);
+                    setTrimEnd((prev) => (prev === 0 || prev > d ? d : prev));
+                  }}
                   onManualPanChange={(panX) => handlePanChange(panX)}
                   onSplitPanChange={handleSplitPanChange}
                   onSubtitleYChange={(y) => setLayout((curr) => ({ ...curr, subtitleY: y }))}
@@ -794,12 +830,16 @@ export function VideoEditor({
                     if (videoUrl) URL.revokeObjectURL(videoUrl);
                     setFile(picked);
                     setVideoUrl(URL.createObjectURL(picked));
+                    setTrimStart(0);
+                    setTrimEnd(0);
                     setDoneMsg(`Video "${picked.name}" berhasil terhubung ke draf.`);
                   }}
                   onResetStudio={() => {
                     setFile(null);
                     setVideoUrl("");
                     setWords([]);
+                    setTrimStart(0);
+                    setTrimEnd(0);
                     setPhase("idle");
                     setError(null);
                     setDoneMsg(null);
@@ -829,7 +869,7 @@ export function VideoEditor({
                   <button
                     type="button"
                     onClick={() => setActiveDrawer(activeDrawer === "frame" ? null : "frame")}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl text-[10px] font-bold transition-all ${
                       activeDrawer === "frame" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
@@ -839,7 +879,7 @@ export function VideoEditor({
                   <button
                     type="button"
                     onClick={() => setActiveDrawer(activeDrawer === "subtitles" ? null : "subtitles")}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl text-[10px] font-bold transition-all ${
                       activeDrawer === "subtitles" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
@@ -848,8 +888,18 @@ export function VideoEditor({
                   </button>
                   <button
                     type="button"
+                    onClick={() => setActiveDrawer(activeDrawer === "audio" ? null : "audio")}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl text-[10px] font-bold transition-all ${
+                      activeDrawer === "audio" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                    <span>Audio</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setActiveDrawer(activeDrawer === "style" ? null : "style")}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl text-[10px] font-bold transition-all ${
                       activeDrawer === "style" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
@@ -859,7 +909,7 @@ export function VideoEditor({
                   <button
                     type="button"
                     onClick={() => setActiveDrawer(activeDrawer === "export" ? null : "export")}
-                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-[11px] font-bold transition-all ${
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-xl text-[10px] font-bold transition-all ${
                       activeDrawer === "export" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
@@ -872,20 +922,24 @@ export function VideoEditor({
 
             {/* Desktop Control Panel (Visible on lg+) */}
             <div className="hidden lg:flex lg:col-span-6 flex-col rounded-2xl border border-hairline bg-surface overflow-hidden shadow-xs">
-              <div className="grid grid-cols-4 border-b border-hairline bg-surface-raised p-1 gap-1">
-                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+              <div className="grid grid-cols-5 border-b border-hairline bg-surface-raised p-1 gap-1">
+                <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
                   <span>Bingkai</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
                   <span>Teks</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("audio")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "audio" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  <span>Audio</span>
+                </button>
+                <button type="button" onClick={() => setEditorTab("style")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
                   <span>Gaya</span>
                 </button>
-                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1.5 text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
+                <button type="button" onClick={() => setEditorTab("export")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                   <span>Export</span>
                 </button>
@@ -931,22 +985,24 @@ export function VideoEditor({
                       </div>
                       <div className="grid grid-cols-2 gap-1.5">
                         {[
-                          { id: "ultra_hd", label: "Studio Ultra-HD", desc: "Super jernih & ultra tajam" },
-                          { id: "fyp_pop", label: "Viral Color Pop", desc: "Warna cerah & hidup" },
-                          { id: "clean_denoise", label: "Smooth De-Noise", desc: "Halus bebas bintik" },
-                          { id: "original", label: "Natural Original", desc: "Alami apa adanya" },
+                          { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
+                          { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
+                          { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
+                          { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
+                          { id: "fyp_pop", label: "Viral Color Pop", desc: "Warna cerah feed medsos" },
+                          { id: "clean_denoise", label: "Smooth Soft", desc: "Halus bebas noise" },
                         ].map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             onClick={() => setLayout((curr) => ({ ...curr, filter: opt.id as ClarityFilter }))}
                             className={`h-11 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
-                              (layout.filter ?? "ultra_hd") === opt.id
+                              (layout.filter ?? "original") === opt.id
                                 ? "border-ember bg-ember/20 text-white shadow-xs"
                                 : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
                             }`}
                           >
-                            <span className={`text-[11px] font-bold ${(layout.filter ?? "ultra_hd") === opt.id ? "text-ember" : "text-ink"}`}>
+                            <span className={`text-[11px] font-bold ${(layout.filter ?? "original") === opt.id ? "text-ember" : "text-ink"}`}>
                               {opt.label}
                             </span>
                             <span className="text-[9px] text-muted line-clamp-1">{opt.desc}</span>
@@ -999,6 +1055,60 @@ export function VideoEditor({
                         </div>
                       </div>
                     </div>
+
+                    {/* Kalibrasi Sinkronisasi Suara (Lip-Sync) */}
+                    <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+                            <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span className="text-xs font-bold text-ink">Sinkronisasi Suara &amp; Teks (Lip-Sync)</span>
+                        </div>
+                        <span className="font-mono text-[10px] font-bold text-ember bg-ember/15 px-2 py-0.5 rounded border border-ember/30">
+                          {subtitleOffset >= 0 ? `+${subtitleOffset.toFixed(2)}s` : `${subtitleOffset.toFixed(2)}s`}
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-muted leading-tight">
+                        Jika teks subtitle muncul sedikit terlambat dibanding suara bicara, geser ke kiri (lebih cepat).
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSubtitleOffset((prev) => Math.max(-1.5, Number((prev - 0.1).toFixed(2))));
+                            triggerHaptic(8);
+                          }}
+                          className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
+                        >
+                          <span>◀ 0.1s Lebih Cepat</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSubtitleOffset(-0.12);
+                            triggerHaptic(8);
+                          }}
+                          className="px-2.5 h-8 rounded-lg bg-surface border border-white/10 text-[10px] text-muted hover:text-ink active:scale-95"
+                          title="Reset ke setelan optimal (-0.12s)"
+                        >
+                          Reset
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSubtitleOffset((prev) => Math.min(1.5, Number((prev + 0.1).toFixed(2))));
+                            triggerHaptic(8);
+                          }}
+                          className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
+                        >
+                          <span>0.1s Lebih Lambat ▶</span>
+                        </button>
+                      </div>
+                    </div>
+
                     {words.length > 0 ? (
                       <SentenceTimelineEditor
                         words={words}
@@ -1017,6 +1127,92 @@ export function VideoEditor({
                       <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
                         <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
                         <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">Buat Subtitle AI Sekarang</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {editorTab === "audio" && (
+                  <div className="space-y-4">
+                    {/* Royalty-Free BGM Presets */}
+                    <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                          <span className="text-xs font-bold text-ink">Musik Latar Bebas Hak Cipta</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">100% Aman Medsos</span>
+                      </div>
+                      <p className="text-[11px] text-muted">
+                        Musik instrumen yang di-generate langsung di browser. Bebas copyright strike di TikTok, Reels, dan Shorts.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {BGM_PRESETS.map((preset) => (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              setBgmTrack(preset.id);
+                              triggerHaptic(8);
+                            }}
+                            className={`h-12 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
+                              bgmTrack === preset.id
+                                ? "border-ember bg-ember/20 text-white shadow-xs"
+                                : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
+                            }`}
+                          >
+                            <div className="flex w-full items-center justify-between">
+                              <span className={`text-[11px] font-bold ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
+                                {preset.label}
+                              </span>
+                              <span className="text-[9px] font-mono text-mist uppercase">{preset.mood}</span>
+                            </div>
+                            <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Custom File Upload if "custom" selected */}
+                      {bgmTrack === "custom" && (
+                        <div className="pt-2 border-t border-hairline/60">
+                          <label className="flex flex-col items-center justify-center p-3 rounded-lg border border-dashed border-ember/40 bg-ember/5 cursor-pointer hover:bg-ember/10 transition-all text-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-ember mb-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                            <span className="text-xs font-bold text-ink">
+                              {customBgmFile ? customBgmFile.name : "Pilih File Audio (.mp3, .wav)"}
+                            </span>
+                            <span className="text-[10px] text-muted">Maksimal 25MB</span>
+                            <input
+                              type="file"
+                              accept="audio/mp3,audio/wav,audio/mpeg,audio/aac,audio/m4a"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) setCustomBgmFile(f);
+                              }}
+                            />
+                          </label>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Volume Control */}
+                    {bgmTrack !== "none" && (
+                      <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-ink">Volume Musik Latar</span>
+                          <span className="font-mono text-xs font-bold text-ember">{Math.round(bgmVolume * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.05"
+                          max="0.50"
+                          step="0.01"
+                          value={bgmVolume}
+                          onChange={(e) => setBgmVolume(parseFloat(e.target.value))}
+                          className="w-full accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
+                        />
+                        <p className="text-[10px] text-muted">
+                          Rekomendasi 10% - 20% agar vokal pembicara tetap terdengar jernih dan mendominasi.
+                        </p>
                       </div>
                     )}
                   </div>
@@ -1067,6 +1263,8 @@ export function VideoEditor({
                         ? "Pengaturan Bingkai & Sudut"
                         : activeDrawer === "subtitles"
                         ? "Pengaturan Teks & Subtitle"
+                        : activeDrawer === "audio"
+                        ? "Musik Latar & Audio"
                         : activeDrawer === "style"
                         ? "Gaya Tampilan Subtitle"
                         : "Export Video Mateng"}
@@ -1107,7 +1305,7 @@ export function VideoEditor({
                     </div>
                   </div>
 
-                  {/* Kejernihan & Filter Visual (Studio Ultra-HD) */}
+                  {/* Kejernihan & Filter Visual */}
                   <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
@@ -1120,22 +1318,24 @@ export function VideoEditor({
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
-                        { id: "ultra_hd", label: "Studio Ultra-HD", desc: "Super jernih & ultra tajam" },
-                        { id: "fyp_pop", label: "Viral Color Pop", desc: "Warna cerah & hidup" },
-                        { id: "clean_denoise", label: "Smooth De-Noise", desc: "Halus bebas bintik" },
-                        { id: "original", label: "Natural Original", desc: "Alami apa adanya" },
+                        { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
+                        { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
+                        { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
+                        { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
+                        { id: "fyp_pop", label: "Viral Color Pop", desc: "Warna cerah feed medsos" },
+                        { id: "clean_denoise", label: "Smooth Soft", desc: "Halus bebas noise" },
                       ].map((opt) => (
                         <button
                           key={opt.id}
                           type="button"
                           onClick={() => setLayout((curr) => ({ ...curr, filter: opt.id as ClarityFilter }))}
                           className={`h-11 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
-                            (layout.filter ?? "ultra_hd") === opt.id
+                            (layout.filter ?? "original") === opt.id
                               ? "border-ember bg-ember/20 text-white shadow-xs"
                               : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
                           }`}
                         >
-                          <span className={`text-[11px] font-bold ${(layout.filter ?? "ultra_hd") === opt.id ? "text-ember" : "text-ink"}`}>
+                          <span className={`text-[11px] font-bold ${(layout.filter ?? "original") === opt.id ? "text-ember" : "text-ink"}`}>
                             {opt.label}
                           </span>
                           <span className="text-[9px] text-muted line-clamp-1">{opt.desc}</span>
@@ -1189,6 +1389,60 @@ export function VideoEditor({
                       </div>
                     </div>
                   </div>
+
+                  {/* Kalibrasi Sinkronisasi Suara (Lip-Sync) */}
+                  <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
+                          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span className="text-xs font-bold text-ink">Sinkronisasi Suara &amp; Teks (Lip-Sync)</span>
+                      </div>
+                      <span className="font-mono text-[10px] font-bold text-ember bg-ember/15 px-2 py-0.5 rounded border border-ember/30">
+                        {subtitleOffset >= 0 ? `+${subtitleOffset.toFixed(2)}s` : `${subtitleOffset.toFixed(2)}s`}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-muted leading-tight">
+                      Jika teks subtitle muncul sedikit terlambat dibanding suara bicara, geser ke kiri (lebih cepat).
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubtitleOffset((prev) => Math.max(-1.5, Number((prev - 0.1).toFixed(2))));
+                          triggerHaptic(8);
+                        }}
+                        className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
+                      >
+                        <span>◀ 0.1s Lebih Cepat</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubtitleOffset(-0.12);
+                          triggerHaptic(8);
+                        }}
+                        className="px-2.5 h-8 rounded-lg bg-surface border border-white/10 text-[10px] text-muted hover:text-ink active:scale-95"
+                        title="Reset ke setelan optimal (-0.12s)"
+                      >
+                        Reset
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubtitleOffset((prev) => Math.min(1.5, Number((prev + 0.1).toFixed(2))));
+                          triggerHaptic(8);
+                        }}
+                        className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
+                      >
+                        <span>0.1s Lebih Lambat ▶</span>
+                      </button>
+                    </div>
+                  </div>
+
                   {words.length > 0 ? (
                     <SentenceTimelineEditor
                       words={words}
@@ -1207,6 +1461,93 @@ export function VideoEditor({
                     <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
                       <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
                       <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">Buat Subtitle AI Sekarang</button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeDrawer === "audio" && (
+                <div className="space-y-4">
+                  {/* Royalty-Free BGM Presets */}
+                  <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        <span className="text-xs font-bold text-ink">Musik Latar Bebas Hak Cipta</span>
+                      </div>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">100% Aman Medsos</span>
+                    </div>
+                    <p className="text-[11px] text-muted">
+                      Musik instrumen yang di-generate langsung di browser. Bebas copyright strike di TikTok, Reels, dan Shorts.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {BGM_PRESETS.map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setBgmTrack(preset.id);
+                            triggerHaptic(8);
+                          }}
+                          className={`h-12 rounded-lg border px-2.5 flex flex-col items-start justify-center text-left transition-all cursor-pointer ${
+                            bgmTrack === preset.id
+                              ? "border-ember bg-ember/20 text-white shadow-xs"
+                              : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
+                          }`}
+                        >
+                          <div className="flex w-full items-center justify-between">
+                            <span className={`text-[11px] font-bold ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
+                              {preset.label}
+                            </span>
+                            <span className="text-[9px] font-mono text-mist uppercase">{preset.mood}</span>
+                          </div>
+                          <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Custom File Upload if "custom" selected */}
+                    {bgmTrack === "custom" && (
+                      <div className="pt-2 border-t border-hairline/60">
+                        <label className="flex flex-col items-center justify-center p-3 rounded-lg border border-dashed border-ember/40 bg-ember/5 cursor-pointer hover:bg-ember/10 transition-all text-center">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-ember mb-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                          <span className="text-xs font-bold text-ink">
+                            {customBgmFile ? customBgmFile.name : "Pilih File Audio (.mp3, .wav)"}
+                          </span>
+                          <span className="text-[10px] text-muted">Maksimal 25MB</span>
+                          <input
+                            type="file"
+                            accept="audio/mp3,audio/wav,audio/mpeg,audio/aac,audio/m4a"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) setCustomBgmFile(f);
+                            }}
+                          />
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Volume Control */}
+                  {bgmTrack !== "none" && (
+                    <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-ink">Volume Musik Latar</span>
+                        <span className="font-mono text-xs font-bold text-ember">{Math.round(bgmVolume * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.05"
+                        max="0.50"
+                        step="0.01"
+                        value={bgmVolume}
+                        onChange={(e) => setBgmVolume(parseFloat(e.target.value))}
+                        className="w-full accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
+                      />
+                      <p className="text-[10px] text-muted">
+                        Rekomendasi 10% - 20% agar vokal pembicara tetap terdengar jernih dan mendominasi.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -1310,6 +1651,14 @@ function VideoPreviewPlayer({
   safeZones,
   layout,
   watermark = true,
+  manualKeyframes,
+  onAddKeyframe,
+  onRemoveKeyframe,
+  trimStart = 0,
+  trimEnd = 0,
+  onTrimStartChange,
+  onTrimEndChange,
+  subtitleOffset = -0.12,
   onTimeChange,
   onDurationChange,
   onManualPanChange,
@@ -1325,6 +1674,14 @@ function VideoPreviewPlayer({
   safeZones: boolean;
   layout: VideoLayout;
   watermark?: boolean;
+  manualKeyframes?: readonly ManualKeyframe[];
+  onAddKeyframe?: (kf: Omit<ManualKeyframe, "id">) => void;
+  onRemoveKeyframe?: (id: string) => void;
+  trimStart?: number;
+  trimEnd?: number;
+  onTrimStartChange?: (t: number) => void;
+  onTrimEndChange?: (t: number) => void;
+  subtitleOffset?: number;
   onTimeChange?: (time: number) => void;
   onDurationChange?: (duration: number) => void;
   onManualPanChange?: (panX: number) => void;
@@ -1337,6 +1694,7 @@ function VideoPreviewPlayer({
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [showTrimBar, setShowTrimBar] = useState(false);
   const [subtitleDragging, setSubtitleDragging] = useState(false);
   const subDragInfoRef = useRef<{ isDragging: boolean; startY: number; startPos: number; moved: boolean }>({
     isDragging: false,
@@ -1367,15 +1725,21 @@ function VideoPreviewPlayer({
 
   const cssFilter = useMemo(() => {
     if (isHoldingOriginal) return "none";
-    const f = layout.filter ?? "ultra_hd";
-    if (f === "ultra_hd" || f === "wink_hd") {
-      return "url(#malesan-ultra-hd) contrast(1.12) brightness(1.02) saturate(1.12)";
+    const f = layout.filter ?? "original";
+    if (f === "clean_pro" || f === "ultra_hd" || f === "wink_hd") {
+      return "contrast(1.03) brightness(1.01) saturate(1.02)";
+    }
+    if (f === "warm_creator") {
+      return "contrast(1.02) brightness(1.02) saturate(1.03) sepia(0.03)";
+    }
+    if (f === "cinematic") {
+      return "contrast(1.05) brightness(0.99) saturate(1.02)";
     }
     if (f === "fyp_pop") {
-      return "contrast(1.20) brightness(1.03) saturate(1.24)";
+      return "contrast(1.05) brightness(1.02) saturate(1.07)";
     }
     if (f === "clean_denoise" || f === "soft_clean") {
-      return "url(#malesan-clean-denoise) contrast(1.08) brightness(1.02) saturate(1.05)";
+      return "contrast(1.02) brightness(1.01)";
     }
     return "none";
   }, [layout.filter, isHoldingOriginal]);
@@ -1419,8 +1783,14 @@ function VideoPreviewPlayer({
       const v = videoRef.current;
       if (v && !v.paused) {
         const ct = v.currentTime;
-        setNow(ct);
-        onTimeChange?.(ct);
+        if (trimEnd > trimStart && ct >= trimEnd) {
+          v.currentTime = trimStart;
+          setNow(trimStart);
+          onTimeChange?.(trimStart);
+        } else {
+          setNow(ct);
+          onTimeChange?.(ct);
+        }
         if (Number.isFinite(v.duration) && v.duration > 0 && duration !== v.duration) {
           setDuration(v.duration);
           onDurationChange?.(v.duration);
@@ -1466,7 +1836,7 @@ function VideoPreviewPlayer({
       active = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [videoRef, onTimeChange, onDurationChange, duration, isPodcastSplit]);
+  }, [videoRef, onTimeChange, onDurationChange, duration, isPodcastSplit, trimStart, trimEnd]);
 
   // Sync secondary video with primary video during playback/seek for split view
   useEffect(() => {
@@ -1506,7 +1876,7 @@ function VideoPreviewPlayer({
     };
   }, [isPodcastSplit, videoRef]);
 
-  const active = activeAt(lines, now);
+  const active = activeAt(lines, now + (subtitleOffset ?? -0.12));
   const tracked = layout.trajectory?.length ? cropFocusAt(layout.trajectory, now) : null;
   const currentKeyframe = layout.manualKeyframes?.length
     ? interpolateKeyframes(layout.manualKeyframes, now, layout.panX ?? 0.5, 0.45, layout.zoom ?? 1.0)
@@ -1857,52 +2227,243 @@ function VideoPreviewPlayer({
         )}
       </div>
 
-      {/* Sleek Mini Timeline Scrubber */}
+      {/* Sleek Mini Timeline Scrubber, Trim & Quick Camera Dock */}
       {videoUrl ? (
-        <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] flex items-center gap-2 px-1 py-1 rounded-xl bg-surface-raised border border-hairline shadow-xs">
-          <button
-            type="button"
-            onClick={togglePlay}
-            className="flex size-7 items-center justify-center rounded-lg bg-ember text-obsidian font-bold shadow-xs hover:bg-ember/90 shrink-0 transition-transform active:scale-95"
-            aria-label={isPlaying ? "Pause Video" : "Play Video"}
-          >
-            {isPlaying ? (
-              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
-            )}
-          </button>
+        <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] space-y-2">
+          {/* Main Scrubber Row */}
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-surface-raised border border-hairline shadow-xs">
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="flex size-7 items-center justify-center rounded-lg bg-ember text-obsidian font-bold shadow-xs hover:bg-ember/90 shrink-0 transition-transform active:scale-95 cursor-pointer"
+              aria-label={isPlaying ? "Pause Video" : "Play Video"}
+            >
+              {isPlaying ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5 translate-x-0.5"><path d="M8 5v14l11-7z"/></svg>
+              )}
+            </button>
 
-          <span className="font-mono text-[10px] font-bold text-ink shrink-0">
-            {formatMinSec(now)}
-          </span>
+            <span className="font-mono text-[10px] font-bold text-ink shrink-0">
+              {formatMinSec(now)}
+            </span>
 
-          <input
-            type="range"
-            min="0"
-            max={duration || 1}
-            step="0.05"
-            value={now}
-            onChange={(e) => {
-              const t = parseFloat(e.target.value);
-              const v = videoRef.current;
-              const v2 = secondaryVideoRef.current;
-              if (v) {
-                v.currentTime = t;
-                setNow(t);
-                onTimeChange?.(t);
-              }
-              if (isPodcastSplit && v2) {
-                v2.currentTime = t;
-              }
-            }}
-            className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
-            aria-label="Timeline Video"
-          />
+            <input
+              type="range"
+              min="0"
+              max={duration || 1}
+              step="0.05"
+              value={now}
+              onChange={(e) => {
+                const t = parseFloat(e.target.value);
+                const v = videoRef.current;
+                const v2 = secondaryVideoRef.current;
+                if (v) {
+                  v.currentTime = t;
+                  setNow(t);
+                  onTimeChange?.(t);
+                }
+                if (isPodcastSplit && v2) {
+                  v2.currentTime = t;
+                }
+              }}
+              className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
+              aria-label="Timeline Video"
+            />
 
-          <span className="font-mono text-[10px] font-semibold text-mist shrink-0">
-            {formatMinSec(duration)}
-          </span>
+            <span className="font-mono text-[10px] font-semibold text-mist shrink-0">
+              {formatMinSec(duration)}
+            </span>
+
+            {/* Toggle Trim Bar */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowTrimBar((prev) => !prev);
+                triggerHaptic(8);
+              }}
+              className={`flex size-7 items-center justify-center rounded-lg border text-xs shrink-0 transition-all cursor-pointer ${
+                showTrimBar || (trimStart > 0 || (trimEnd > 0 && trimEnd < duration))
+                  ? "bg-amber-400/20 text-amber-300 border-amber-400/50 ring-1 ring-amber-400/30"
+                  : "bg-surface text-muted hover:text-ink border-white/10"
+              }`}
+              title="Potong / Trim Video"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
+                <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Interactive Trim Panel (When Toggled) */}
+          {showTrimBar && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-2 space-y-1.5 backdrop-blur-md animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="font-bold text-amber-200 flex items-center gap-1">
+                  <span>✂️ Potong Video</span>
+                </span>
+                <span className="font-mono text-[10px] text-amber-300 font-bold">
+                  Durasi: {formatMinSec(Math.max(0, (trimEnd || duration) - trimStart))}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onTrimStartChange?.(now);
+                    triggerHaptic(8);
+                  }}
+                  className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-amber-300 active:scale-95 transition-all cursor-pointer"
+                >
+                  Set Mulai: {formatMinSec(trimStart)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onTrimEndChange?.(now);
+                    triggerHaptic(8);
+                  }}
+                  className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-amber-300 active:scale-95 transition-all cursor-pointer"
+                >
+                  Set Selesai: {formatMinSec(trimEnd || duration)}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onTrimStartChange?.(0);
+                    onTrimEndChange?.(duration);
+                    triggerHaptic(8);
+                  }}
+                  className="px-2 h-7 rounded-lg bg-surface border border-white/10 text-[10px] text-muted hover:text-ink active:scale-95 transition-all cursor-pointer"
+                  title="Kembalikan durasi penuh"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Docked Camera Pan & Quick Keyframe Action Bar — ZERO SCROLLING on mobile! */}
+          <div className="rounded-xl border border-white/10 bg-surface/90 p-2 space-y-1.5 backdrop-blur-md shadow-md">
+            {/* Row 1: Pan Controls */}
+            <div className="flex items-center justify-between gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  onManualPanChange?.(Math.max(0, Number((currentPanX - 0.15).toFixed(2))));
+                  triggerHaptic(8);
+                }}
+                className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                title="Geser Kamera ke Kiri (Host)"
+              >
+                <span>◀ Kiri</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onManualPanChange?.(0.5);
+                  triggerHaptic(8);
+                }}
+                className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                title="Pusatkan Kamera"
+              >
+                <span>🎯 Tengah</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onManualPanChange?.(Math.min(1, Number((currentPanX + 0.15).toFixed(2))));
+                  triggerHaptic(8);
+                }}
+                className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                title="Geser Kamera ke Kanan (Tamu)"
+              >
+                <span>Kanan ▶</span>
+              </button>
+              <span className="text-[10px] font-mono font-bold text-ember px-1.5 py-0.5 rounded bg-ember/10 border border-ember/20 shrink-0">
+                {Math.round(currentPanX * 100)}%
+              </span>
+            </div>
+
+            {/* Row 2: 1-Tap Keyframe Action & Quick Nav */}
+            <div className="flex items-center gap-1.5">
+              {(() => {
+                const activeKf = manualKeyframes?.find((k) => Math.abs(k.time - now) <= 0.35);
+                if (activeKf) {
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onRemoveKeyframe?.(activeKf.id);
+                        triggerHaptic(10);
+                      }}
+                      className="flex-1 h-7.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <span>Hapus Kunci ({formatMinSec(now)})</span>
+                    </button>
+                  );
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAddKeyframe?.({ time: Number(now.toFixed(2)), panX: currentPanX, panY: currentPanY, zoom: currentZoom });
+                      triggerHaptic(10);
+                    }}
+                    className="flex-1 h-7.5 rounded-lg bg-ember text-obsidian text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-ember/90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3"><path d="M12 4v16m8-8H4" /></svg>
+                    <span>+ Kunci Posisi ({formatMinSec(now)})</span>
+                  </button>
+                );
+              })()}
+
+              {/* Prev / Next Keyframe Jumpers */}
+              {manualKeyframes && manualKeyframes.length > 0 && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sorted = [...manualKeyframes].sort((a, b) => a.time - b.time);
+                      const prevKf = sorted.filter((k) => k.time < now - 0.2).pop() ?? sorted[sorted.length - 1];
+                      if (prevKf && videoRef.current) {
+                        videoRef.current.currentTime = prevKf.time;
+                        setNow(prevKf.time);
+                        onTimeChange?.(prevKf.time);
+                        triggerHaptic(8);
+                      }
+                    }}
+                    className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-[10px] font-bold text-muted hover:text-ink active:scale-95 cursor-pointer"
+                    title="Keyframe Sebelumnya"
+                  >
+                    ⏮
+                  </button>
+                  <span className="text-[9px] font-mono font-bold text-mist px-1">
+                    {manualKeyframes.length} titik
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const sorted = [...manualKeyframes].sort((a, b) => a.time - b.time);
+                      const nextKf = sorted.find((k) => k.time > now + 0.2) ?? sorted[0];
+                      if (nextKf && videoRef.current) {
+                        videoRef.current.currentTime = nextKf.time;
+                        setNow(nextKf.time);
+                        onTimeChange?.(nextKf.time);
+                        triggerHaptic(8);
+                      }
+                    }}
+                    className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-[10px] font-bold text-muted hover:text-ink active:scale-95 cursor-pointer"
+                    title="Keyframe Berikutnya"
+                  >
+                    ⏭
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="w-full max-w-[270px] xs:max-w-[290px] sm:max-w-[320px] flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-surface-raised/70 border border-hairline/60 text-xs text-mist font-medium">

@@ -141,4 +141,27 @@ const tail = yt.normalizeClips(
 assert.equal(tail[0].endTime, 600);
 assert.equal(tail[0].startTime, 580, "padding must not run past the end of the scanned window");
 
-console.log("Video/time core: pacing, timing, sizing, pricing day boundary verified");
+// Studio enhancements verification: BGM presets, natural filters, and tracking dampening
+const bgmModule = await import(pathToFileURL(resolve("src/lib/video/bgm.ts")));
+assert.ok(Array.isArray(bgmModule.BGM_PRESETS), "BGM_PRESETS must be an array");
+assert.equal(bgmModule.BGM_PRESETS.length, 6, "Must provide 6 distinct BGM options");
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "none"));
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "lofi"));
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "inspiratif"));
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "upbeat"));
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "suspense"));
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "custom"));
+
+const faceTrackSource = readFileSync(resolve("src/lib/video/face-track.ts"), "utf8");
+assert.match(faceTrackSource, /DEADBAND_X\s*=\s*0\.09/, "Deadband X must be damped against minor twitching");
+assert.match(faceTrackSource, /DEADBAND_Y\s*=\s*0\.08/, "Deadband Y must be damped against breathing motion");
+assert.match(faceTrackSource, /0\.06/, "Smoothing alpha must support cinematic broadcast glide");
+
+const drawCode = readFileSync(resolve("src/lib/video/draw.ts"), "utf8");
+assert.match(drawCode, /filter === "clean_pro"/, "Clean pro studio filter must be supported");
+assert.match(drawCode, /filter === "warm_creator"/, "Warm creator studio filter must be supported");
+assert.match(drawCode, /filter === "cinematic"/, "Cinematic moody studio filter must be supported");
+assert.match(drawCode, /layout\.filter \?\? "original"/, "Original 100% natural pixels must be the default");
+
+console.log("Video/time core: pacing, timing, sizing, pricing day boundary, BGM presets, filters, face-tracking verified");
+
