@@ -112,6 +112,48 @@ export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
 
 const PLATFORMS = ["tiktok", "instagram", "youtube", "x", "threads"] as const;
 
+function PlatformIcon({ platform, className = "size-3.5" }: { platform: string; className?: string }) {
+  if (platform === "tiktok") {
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 1 1-2.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 1 0 5.55 6.29V8.41a8.3 8.3 0 0 0 4.77 1.73V6.69z"/>
+      </svg>
+    );
+  }
+  if (platform === "instagram") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+        <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+      </svg>
+    );
+  }
+  if (platform === "youtube") {
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+      </svg>
+    );
+  }
+  if (platform === "x") {
+    return (
+      <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+      </svg>
+    );
+  }
+  if (platform === "threads") {
+    return (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
+      </svg>
+    );
+  }
+  return null;
+}
+
 /* ------------------------------------------------------------------------- *
  * Optional source material + the content-profile picker
  *
@@ -458,42 +500,142 @@ export function ModuleRunner({
   }
 
   return (
-    <div className="space-y-4">
-      <section className="surface-card rounded-2xl p-5">
-        <h2 className="font-display text-xl font-bold tracking-display-sm text-ink">{spec.title}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted">{spec.blurb}</p>
+    <div className="max-w-2xl sm:max-w-3xl mx-auto space-y-5 pb-28 sm:pb-12">
+      <section className="rounded-2xl border border-hairline/80 bg-surface/90 backdrop-blur-md p-5 sm:p-7 shadow-lg space-y-6 relative overflow-hidden">
+        {/* Ambient Ember Glow Accents */}
+        <div className="pointer-events-none absolute -top-24 -right-24 size-48 rounded-full bg-ember/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 size-48 rounded-full bg-amber-500/10 blur-3xl" />
 
-        <div className="mt-4 space-y-3.5">
+        {/* Module Identity Header */}
+        <div className="relative flex items-start gap-3.5 sm:gap-4">
+          <div className="size-11 sm:size-12 rounded-xl bg-obsidian border border-ember/30 p-2.5 flex items-center justify-center text-ember shadow-inner shrink-0">
+            {spec.key === "script" ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-full">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <line x1="10" y1="9" x2="8" y2="9"/>
+              </svg>
+            ) : spec.key === "hook" ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-full">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-full">
+                <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>
+              </svg>
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono text-[10.5px] font-extrabold uppercase tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-md">
+                {spec.key === "script" ? "AI Script Engine" : spec.key === "hook" ? "Hook Generator" : "Content Repurpose"}
+              </span>
+              <span className="font-mono text-[10px] font-bold text-muted border border-hairline/80 px-2 py-0.5 rounded-md">
+                {spec.cost} Kredit
+              </span>
+            </div>
+            <h2 className="mt-1.5 font-display text-xl sm:text-2xl font-bold tracking-tight text-ink">
+              {spec.title}
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted">
+              {spec.blurb}
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
           {spec.fields.map((f) =>
             f.options ? (
-              <div key={f.name}>
-                <label className="block text-sm font-semibold text-ink">{f.label}</label>
-                <div className="mt-2 flex flex-wrap gap-2">
+              <div key={f.name} className="rounded-xl border border-hairline/70 bg-surface-raised/40 p-3.5 sm:p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-1.5">
+                    <span>{f.label}</span>
+                    {f.required && <span className="text-[10px] font-mono text-ember font-bold">*Pilih satu</span>}
+                  </label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {f.options.map((o) => {
                     const on = values[f.name] === o;
                     return (
                       <button
                         key={o}
+                        type="button"
                         onClick={() => setValues((v) => ({ ...v, [f.name]: o }))}
                         aria-pressed={on}
-                        className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                        className={`h-9.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
                           on
-                            ? "border-ember/45 bg-ember/10 text-ember"
-                            : "border-hairline text-muted hover:text-ink"
+                            ? "border-ember bg-ember/20 text-ember shadow-xs ring-1 ring-ember/30"
+                            : "border-hairline/80 bg-obsidian/60 text-muted hover:text-ink hover:border-white/20"
                         }`}
                       >
-                        {o}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`size-3.5 ${on ? "text-ember" : "text-muted"}`}>
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span>{o}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
             ) : (
-              <div key={f.name}>
-                <label htmlFor={`module-field-${f.name}`} className="block text-sm font-semibold text-ink">
-                  {f.label}
-                </label>
-                {f.hint && <p className="mt-0.5 text-micro text-muted">{f.hint}</p>}
+              <div key={f.name} className="rounded-xl border border-hairline/70 bg-surface-raised/40 p-3.5 sm:p-4 space-y-2 transition-colors focus-within:border-ember/60 focus-within:ring-1 focus-within:ring-ember/30">
+                <div className="flex items-center justify-between">
+                  <label htmlFor={`module-field-${f.name}`} className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-1.5">
+                    <span>{f.label}</span>
+                    {f.required && <span className="text-[10px] font-mono text-ember font-bold">*Wajib</span>}
+                  </label>
+                  {f.hint && (
+                    <span className="text-[11px] text-muted hidden sm:inline">{f.hint}</span>
+                  )}
+                </div>
+
+                {/* Quick starter suggestions */}
+                {spec.key === "script" && f.name === "idea" && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {[
+                      "Review Produk Jujur",
+                      "Storytelling Viral",
+                      "Tips Praktis 3 Langkah",
+                      "Bongkar Rahasia Industri",
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setValues((v) => ({ ...v, [f.name]: chip }))}
+                        className="text-[10.5px] font-medium px-2 py-0.5 rounded-md bg-obsidian/60 border border-hairline/80 text-mist hover:text-amber-300 hover:border-amber-400/40 active:scale-95 transition-all cursor-pointer"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {spec.key === "script" && f.name === "hook" && (
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {[
+                      "Jangan kaget kalau...",
+                      "Hati-hati, banyak yang ketipu...",
+                      "Gue nyesel baru tahu sekarang...",
+                      "Stop lakuin ini kalau gamau rugi...",
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setValues((v) => ({ ...v, [f.name]: chip }))}
+                        className="text-[10.5px] font-medium px-2 py-0.5 rounded-md bg-obsidian/60 border border-hairline/80 text-mist hover:text-amber-300 hover:border-amber-400/40 active:scale-95 transition-all cursor-pointer"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <textarea
                   id={`module-field-${f.name}`}
                   name={`field_${f.name}`}
@@ -503,28 +645,35 @@ export function ModuleRunner({
                   onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
                   placeholder={f.placeholder}
                   disabled={busy}
-                  className="mt-2 w-full resize-none skeu-inset rounded-xl border border-hairline bg-obsidian p-3.5 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
+                  className="w-full resize-none rounded-lg border border-hairline/60 bg-obsidian/80 p-3 text-sm text-ink placeholder:text-muted/70 focus:outline-none disabled:opacity-50 transition-all leading-relaxed"
                 />
               </div>
             ),
           )}
 
           {spec.platformPicker && (
-            <div>
-              <label className="block text-sm font-semibold text-ink">Platform</label>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <div className="rounded-xl border border-hairline/70 bg-surface-raised/40 p-3.5 sm:p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs sm:text-sm font-semibold text-ink">Target Platform</label>
+                <span className="text-[11px] font-mono text-muted">Format disesuaikan</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {PLATFORMS.map((p) => {
                   const on = platform === p;
                   return (
                     <button
                       key={p}
+                      type="button"
                       onClick={() => setPlatform(p)}
                       aria-pressed={on}
-                      className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-semibold capitalize transition-colors duration-[var(--duration-standard)] ease-heat ${
-                        on ? "border-ember/45 bg-ember/10 text-ember" : "border-hairline text-muted hover:text-ink"
+                      className={`h-9.5 px-2 rounded-xl border text-xs font-bold capitalize transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+                        on
+                          ? "border-amber-400 bg-amber-400/20 text-amber-300 shadow-xs ring-1 ring-amber-400/30"
+                          : "border-hairline/80 bg-obsidian/60 text-muted hover:text-ink hover:border-white/20"
                       }`}
                     >
-                      {p}
+                      <PlatformIcon platform={p} className={`size-3.5 shrink-0 ${on ? "text-amber-300" : "text-muted"}`} />
+                      <span className="truncate">{p}</span>
                     </button>
                   );
                 })}
@@ -544,11 +693,29 @@ export function ModuleRunner({
         <button
           onClick={run}
           disabled={busy}
-          className={`mt-5 w-full cursor-pointer rounded-xl bg-ember px-5 py-3.5 font-display text-sm font-bold text-obsidian transition-all duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50 ${
-            busy ? "glow-ember" : ""
+          className={`w-full h-12 cursor-pointer rounded-xl bg-gradient-to-r from-ember via-amber-400 to-ember text-obsidian font-display text-sm font-extrabold flex items-center justify-center gap-2 shadow-md hover:shadow-ember/30 hover:brightness-105 active:scale-[0.99] transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
+            busy ? "glow-ember animate-pulse" : ""
           }`}
         >
-          {busy ? spec.busy : `${spec.cta} · ${spec.cost} kredit`}
+          {busy ? (
+            <span className="flex items-center gap-2">
+              <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              </svg>
+              <span>{spec.busy}</span>
+            </span>
+          ) : (
+            <>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+              <span>{spec.cta}</span>
+              <span className="ml-1 px-2 py-0.5 rounded-md bg-obsidian/20 text-obsidian text-xs font-mono font-black">
+                {spec.cost} Kredit
+              </span>
+            </>
+          )}
         </button>
       </section>
 

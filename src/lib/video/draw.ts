@@ -57,12 +57,24 @@ export function drawFrame(
   ctx.save();
   try {
     const filter = layout.filter ?? "original";
+    const intensity = Math.max(0.1, Math.min(1.0, layout.filterIntensity ?? 0.8));
     if (filter === "wink_hd" || filter === "ultra_hd") {
-      // Wink / Remini 4K HD Magic: Deep micro-clarity, rich blacks, crisp skin details
-      ctx.filter = "contrast(1.18) saturate(1.12) brightness(1.04)";
+      // Wink / Remini 4K HD Super-Resolution unblur & edge recovery
+      const c = (1 + 0.22 * intensity).toFixed(2);
+      const s = (1 + 0.15 * intensity).toFixed(2);
+      const b = (1 + 0.05 * intensity).toFixed(2);
+      ctx.filter = `contrast(${c}) saturate(${s}) brightness(${b})`;
+    } else if (filter === "face_restore") {
+      // Face & Portrait Restore: Retains skin warmth and texture, sharpens facial details
+      const c = (1 + 0.14 * intensity).toFixed(2);
+      const s = (1 + 0.10 * intensity).toFixed(2);
+      const b = (1 + 0.03 * intensity).toFixed(2);
+      ctx.filter = `contrast(${c}) saturate(${s}) brightness(${b})`;
     } else if (filter === "clean_pro") {
       // Studio Clean Pro: Balanced studio crispness
-      ctx.filter = "contrast(1.12) saturate(1.08) brightness(1.02)";
+      const c = (1 + 0.15 * intensity).toFixed(2);
+      const s = (1 + 0.10 * intensity).toFixed(2);
+      ctx.filter = `contrast(${c}) saturate(${s}) brightness(1.02)`;
     } else if (filter === "warm_creator") {
       // Warm Creator: Golden creator warmth
       ctx.filter = "contrast(1.10) brightness(1.03) saturate(1.15) sepia(0.05)";

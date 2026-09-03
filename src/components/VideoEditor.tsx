@@ -855,6 +855,7 @@ export function VideoEditor({
                   onSplitPanChange={handleSplitPanChange}
                   onSubtitleYChange={(y) => setLayout((curr) => ({ ...curr, subtitleY: y }))}
                   onFilterChange={(f) => setLayout((curr) => ({ ...curr, filter: f }))}
+                  onFilterIntensityChange={(i) => setLayout((curr) => ({ ...curr, filterIntensity: i }))}
                   onAttachVideo={(picked) => {
                     if (videoUrl) URL.revokeObjectURL(videoUrl);
                     setFile(picked);
@@ -1696,6 +1697,7 @@ function VideoPreviewPlayer({
   onSplitPanChange,
   onSubtitleYChange,
   onFilterChange,
+  onFilterIntensityChange,
   onAttachVideo,
   onResetStudio,
 }: {
@@ -1720,6 +1722,7 @@ function VideoPreviewPlayer({
   onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
   onSubtitleYChange?: (y: number) => void;
   onFilterChange?: (filter: ClarityFilter) => void;
+  onFilterIntensityChange?: (intensity: number) => void;
   onAttachVideo?: (file: File) => void;
   onResetStudio?: () => void;
 }) {
@@ -1729,6 +1732,7 @@ function VideoPreviewPlayer({
   const [isDragging, setIsDragging] = useState(false);
   const [dragTarget, setDragTarget] = useState<"single" | "top" | "bottom" | null>(null);
   const [showTrimBar, setShowTrimBar] = useState(false);
+  const [showWinkPanel, setShowWinkPanel] = useState(false);
   const [subtitleDragging, setSubtitleDragging] = useState(false);
   const subDragInfoRef = useRef<{ isDragging: boolean; startY: number; startPos: number; moved: boolean }>({
     isDragging: false,
@@ -1756,17 +1760,34 @@ function VideoPreviewPlayer({
   });
 
   const [isHoldingOriginal, setIsHoldingOriginal] = useState(false);
+  const intensity = Math.max(0.1, Math.min(1.0, layout.filterIntensity ?? 0.8));
+  const k = Number((0.32 * intensity).toFixed(3));
+  const center = Number((1 + 4 * k).toFixed(3));
+  const kernelMatrixStr = `0 -${k} 0  -${k} ${center} -${k}  0 -${k} 0`;
 
   const cssFilter = useMemo(() => {
     if (isHoldingOriginal) return "none";
     const f = layout.filter ?? "original";
+    const i = Math.max(0.1, Math.min(1.0, layout.filterIntensity ?? 0.8));
     if (f === "wink_hd" || f === "ultra_hd") {
-      // Wink / Remini 4K HD Magic: Deep micro-contrast + edge clarity convolution
-      return "url(#wink-4k-clarity) contrast(1.18) saturate(1.12) brightness(1.04)";
+      // Wink / Remini 4K HD Super-Resolution unblur & edge recovery
+      const c = (1 + 0.22 * i).toFixed(2);
+      const s = (1 + 0.15 * i).toFixed(2);
+      const b = (1 + 0.05 * i).toFixed(2);
+      return `url(#wink-4k-clarity) contrast(${c}) saturate(${s}) brightness(${b})`;
+    }
+    if (f === "face_restore") {
+      // Face & Portrait Restore: Retains skin warmth and texture, sharpens facial details
+      const c = (1 + 0.14 * i).toFixed(2);
+      const s = (1 + 0.10 * i).toFixed(2);
+      const b = (1 + 0.03 * i).toFixed(2);
+      return `url(#wink-4k-clarity) contrast(${c}) saturate(${s}) brightness(${b})`;
     }
     if (f === "clean_pro") {
       // Studio Clean Pro: Balanced clarity
-      return "url(#wink-4k-clarity) contrast(1.12) saturate(1.08) brightness(1.02)";
+      const c = (1 + 0.15 * i).toFixed(2);
+      const s = (1 + 0.10 * i).toFixed(2);
+      return `url(#wink-4k-clarity) contrast(${c}) saturate(${s}) brightness(1.02)`;
     }
     if (f === "warm_creator") {
       return "contrast(1.10) brightness(1.03) saturate(1.15) sepia(0.05)";
@@ -1781,7 +1802,7 @@ function VideoPreviewPlayer({
       return "contrast(1.06) brightness(1.02) saturate(1.04)";
     }
     return "none";
-  }, [layout.filter, isHoldingOriginal]);
+  }, [layout.filter, layout.filterIntensity, isHoldingOriginal]);
 
   const handleSubtitlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -2412,23 +2433,20 @@ function VideoPreviewPlayer({
             </div>
           )}
 
-          {/* High-Pass 4K Crisp Optical Convolution Filter definition */}
+          {/* Dynamic Optical High-Pass Unsharp Convolution Filter */}
           <svg className="sr-only" aria-hidden="true" width="0" height="0">
             <filter id="wink-4k-clarity" colorInterpolationFilters="sRGB">
               <feConvolveMatrix
                 order="3"
                 preserveAlpha="true"
-                kernelMatrix="
-                  0    -0.28   0
-                 -0.28  2.12  -0.28
-                  0    -0.28   0"
+                kernelMatrix={kernelMatrixStr}
               />
             </filter>
           </svg>
 
-          {/* Docked Camera Pan & Quick Keyframe Action Bar — ZERO SCROLLING on mobile! */}
-          <div className="rounded-xl border border-white/10 bg-surface/90 p-2 space-y-1.5 backdrop-blur-md shadow-md">
-            {/* Row 1: Pan Controls + 1-Tap 4K Magic Button */}
+          {/* Docked Camera Pan, CapCut Keyframe & Wink AI Suite — ZERO OVERFLOW */}
+          <div className="rounded-xl border border-white/10 bg-surface/90 p-2 space-y-2 backdrop-blur-md shadow-md">
+            {/* Row 1: Pan Framing Controls (Host, Center, Guest) + Live Framing Percent (Uncluttered!) */}
             <div className="flex items-center justify-between gap-1.5">
               <button
                 type="button"
@@ -2474,29 +2492,7 @@ function VideoPreviewPlayer({
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
               </button>
-
-              {/* 1-Tap Wink / Remini 4K Magic AI Filter Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  const is4K = layout.filter === "wink_hd" || layout.filter === "ultra_hd";
-                  onFilterChange?.(is4K ? "original" : "wink_hd");
-                  triggerHaptic(12);
-                }}
-                className={`h-7 px-2.5 rounded-lg border text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none shrink-0 ${
-                  layout.filter === "wink_hd" || layout.filter === "ultra_hd"
-                    ? "bg-amber-400 text-obsidian border-amber-300 font-extrabold shadow-sm ring-1 ring-amber-400/40"
-                    : "bg-surface-raised text-muted hover:text-white border-white/10"
-                }`}
-                title="Filter 4K Magic AI (Wink & Remini Style)"
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
-                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
-                </svg>
-                <span>{layout.filter === "wink_hd" || layout.filter === "ultra_hd" ? "4K Magic: Aktif" : "4K Magic"}</span>
-              </button>
-
-              <span className="text-[10px] font-mono font-bold text-ember px-1.5 py-0.5 rounded bg-ember/10 border border-ember/20 shrink-0">
+              <span className="text-[10px] font-mono font-bold text-ember px-2 py-1 rounded bg-ember/10 border border-ember/20 shrink-0">
                 {Math.round(currentPanX * 100)}%
               </span>
             </div>
@@ -2590,6 +2586,139 @@ function VideoPreviewPlayer({
                 </div>
               )}
             </div>
+
+            {/* Row 3: Wink / CapCut AI Super-Resolution Unblur Suite */}
+            <div className="pt-1.5 border-t border-white/10 flex items-center justify-between gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowWinkPanel((prev) => !prev);
+                  triggerHaptic(8);
+                }}
+                className={`flex-1 h-7 px-2 rounded-lg border text-[10px] font-bold flex items-center justify-between transition-all cursor-pointer select-none ${
+                  layout.filter === "wink_hd" || layout.filter === "ultra_hd" || layout.filter === "face_restore" || layout.filter === "clean_pro"
+                    ? "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-xs"
+                    : "bg-surface-raised text-muted hover:text-ink border-white/10"
+                }`}
+                title="Buka Pengaturan AI Unblur & Restorasi Wink"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-amber-300 shrink-0">
+                    <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+                  </svg>
+                  <span className="truncate">
+                    {layout.filter === "wink_hd" || layout.filter === "ultra_hd"
+                      ? `AI UHD 4K (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
+                      : layout.filter === "face_restore"
+                      ? `Wajah & Detail (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
+                      : layout.filter === "clean_pro"
+                      ? `Studio HD (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
+                      : "Wink 4K AI: Nonaktif"}
+                  </span>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className={`size-3 shrink-0 transition-transform ${showWinkPanel ? "rotate-180" : ""}`}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+
+              {/* Wink Hold to Compare Button */}
+              <button
+                type="button"
+                onPointerDown={() => {
+                  setIsHoldingOriginal(true);
+                  triggerHaptic(10);
+                }}
+                onPointerUp={() => setIsHoldingOriginal(false)}
+                onPointerCancel={() => setIsHoldingOriginal(false)}
+                onPointerLeave={() => setIsHoldingOriginal(false)}
+                className={`h-7 px-2.5 rounded-lg border text-[10px] font-bold flex items-center gap-1 shrink-0 select-none cursor-pointer transition-all ${
+                  isHoldingOriginal
+                    ? "bg-white text-obsidian border-white shadow-md scale-95"
+                    : "bg-surface-raised text-muted hover:text-ink border-white/10 active:scale-95"
+                }`}
+                title="Tahan tombol ini untuk melihat video asli sebelum diperbaiki"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <span>{isHoldingOriginal ? "Asli" : "Bandingkan"}</span>
+              </button>
+            </div>
+
+            {/* Expandable Wink AI Unblur & Super-Resolution Panel */}
+            {showWinkPanel && (
+              <div className="pt-2 pb-1 border-t border-white/10 space-y-2 animate-in fade-in slide-in-from-top-1">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-amber-200 flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-amber-300">
+                      <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+                    </svg>
+                    <span>Mode AI Unblur &amp; Super-Resolution</span>
+                  </span>
+                  <span className="font-mono text-[10px] text-amber-300 font-bold">
+                    {Math.round((layout.filterIntensity ?? 0.8) * 100)}% Ketajaman
+                  </span>
+                </div>
+
+                {/* 4 Super-Resolution Modes */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: "wink_hd", label: "AI UHD (4K)", desc: "Super-Resolution & Unblur" },
+                    { id: "face_restore", label: "Wajah & Detail", desc: "Pertahankan kulit & rambut" },
+                    { id: "clean_pro", label: "Studio HD (1080p)", desc: "Bersih & bebas noise" },
+                    { id: "original", label: "Original Kamera", desc: "Warna asli tanpa proses" },
+                  ].map((m) => {
+                    const isSelected = (layout.filter ?? "original") === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          onFilterChange?.(m.id as ClarityFilter);
+                          triggerHaptic(8);
+                        }}
+                        className={`p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-amber-400/20 text-white border-amber-400/60 shadow-xs"
+                            : "bg-surface-raised/80 text-muted hover:text-ink border-white/10"
+                        }`}
+                      >
+                        <div className={`text-[10px] font-bold ${isSelected ? "text-amber-300" : "text-ink"}`}>
+                          {m.label}
+                        </div>
+                        <div className="text-[8.5px] text-muted line-clamp-1">{m.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Intensity Slider (Only when an AI filter is active) */}
+                {(layout.filter ?? "original") !== "original" && (
+                  <div className="pt-1 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-mist font-semibold">
+                      <span>Intensitas Restorasi (Wink Slider)</span>
+                      <span className="font-mono text-amber-300 font-bold">
+                        {Math.round((layout.filterIntensity ?? 0.8) * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="1.0"
+                      step="0.05"
+                      value={layout.filterIntensity ?? 0.8}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        onFilterIntensityChange?.(val);
+                      }}
+                      className="w-full accent-amber-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
+                      aria-label="Intensitas Ketajaman AI"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       ) : (

@@ -12,12 +12,14 @@ export type ClarityFilter =
   | "fyp_pop"
   | "clean_denoise"
   | "wink_hd"
+  | "face_restore"
   | "soft_clean";
 
 export type VideoLayout = {
   ratio: VideoRatio;
   focus: VideoFocus;
   filter?: ClarityFilter;
+  filterIntensity?: number;
   trajectory?: readonly CropKeyframe[];
   manualKeyframes?: readonly ManualKeyframe[];
   zoom?: number;
