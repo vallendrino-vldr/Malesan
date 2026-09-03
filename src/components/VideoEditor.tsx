@@ -251,13 +251,41 @@ export function VideoEditor({
 
   const handlePanChange = (panX: number) => {
     setCurrentPanX(panX);
-    setLayout((curr) => ({
-      ...curr,
-      panX,
-      focus: "manual_keyframe",
-      trajectory: undefined,
-      zoom: curr.ratio === "16:9" && (curr.zoom ?? 1.0) <= 1.05 ? 1.25 : curr.zoom,
-    }));
+    setLayout((curr) => {
+      let nextKeyframes = curr.manualKeyframes;
+      // CapCut workflow: If keyframes exist, dragging or panning updates the keyframe at current playhead!
+      if (curr.manualKeyframes && curr.manualKeyframes.length > 0) {
+        const timeNow = currentTimeNow;
+        const existingIdx = curr.manualKeyframes.findIndex(
+          (k) => Math.abs(k.time - timeNow) <= 0.35
+        );
+        if (existingIdx >= 0) {
+          nextKeyframes = curr.manualKeyframes.map((k, i) =>
+            i === existingIdx ? { ...k, panX } : k
+          );
+        } else {
+          nextKeyframes = [
+            ...curr.manualKeyframes,
+            {
+              id: `kf_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              time: Number(timeNow.toFixed(2)),
+              panX,
+              panY: 0.45,
+              zoom: curr.zoom ?? 1.0,
+              transition: "smooth" as const,
+            },
+          ].sort((a, b) => a.time - b.time);
+        }
+      }
+      return {
+        ...curr,
+        panX,
+        focus: "manual_keyframe",
+        trajectory: undefined,
+        manualKeyframes: nextKeyframes,
+        zoom: curr.ratio === "16:9" && (curr.zoom ?? 1.0) <= 1.05 ? 1.25 : curr.zoom,
+      };
+    });
     setFramingMode("manual_keyframe");
   };
 
@@ -826,6 +854,7 @@ export function VideoEditor({
                   onManualPanChange={(panX) => handlePanChange(panX)}
                   onSplitPanChange={handleSplitPanChange}
                   onSubtitleYChange={(y) => setLayout((curr) => ({ ...curr, subtitleY: y }))}
+                  onFilterChange={(f) => setLayout((curr) => ({ ...curr, filter: f }))}
                   onAttachVideo={(picked) => {
                     if (videoUrl) URL.revokeObjectURL(videoUrl);
                     setFile(picked);
@@ -986,6 +1015,7 @@ export function VideoEditor({
                       <div className="grid grid-cols-2 gap-1.5">
                         {[
                           { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
+                          { id: "wink_hd", label: "Wink 4K Magic", desc: "Ketajaman ultra 4K (Remini style)" },
                           { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
                           { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
                           { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
@@ -1319,6 +1349,7 @@ export function VideoEditor({
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
                         { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
+                        { id: "wink_hd", label: "Wink 4K Magic", desc: "Ketajaman ultra 4K (Remini style)" },
                         { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
                         { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
                         { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
@@ -1664,6 +1695,7 @@ function VideoPreviewPlayer({
   onManualPanChange,
   onSplitPanChange,
   onSubtitleYChange,
+  onFilterChange,
   onAttachVideo,
   onResetStudio,
 }: {
@@ -1687,6 +1719,7 @@ function VideoPreviewPlayer({
   onManualPanChange?: (panX: number) => void;
   onSplitPanChange?: (speaker: "top" | "bottom", panX: number) => void;
   onSubtitleYChange?: (y: number) => void;
+  onFilterChange?: (filter: ClarityFilter) => void;
   onAttachVideo?: (file: File) => void;
   onResetStudio?: () => void;
 }) {
@@ -1694,6 +1727,7 @@ function VideoPreviewPlayer({
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragTarget, setDragTarget] = useState<"single" | "top" | "bottom" | null>(null);
   const [showTrimBar, setShowTrimBar] = useState(false);
   const [subtitleDragging, setSubtitleDragging] = useState(false);
   const subDragInfoRef = useRef<{ isDragging: boolean; startY: number; startPos: number; moved: boolean }>({
@@ -1726,20 +1760,25 @@ function VideoPreviewPlayer({
   const cssFilter = useMemo(() => {
     if (isHoldingOriginal) return "none";
     const f = layout.filter ?? "original";
-    if (f === "clean_pro" || f === "ultra_hd" || f === "wink_hd") {
-      return "contrast(1.03) brightness(1.01) saturate(1.02)";
+    if (f === "wink_hd" || f === "ultra_hd") {
+      // Wink / Remini 4K HD Magic: Deep micro-contrast + edge clarity convolution
+      return "url(#wink-4k-clarity) contrast(1.18) saturate(1.12) brightness(1.04)";
+    }
+    if (f === "clean_pro") {
+      // Studio Clean Pro: Balanced clarity
+      return "url(#wink-4k-clarity) contrast(1.12) saturate(1.08) brightness(1.02)";
     }
     if (f === "warm_creator") {
-      return "contrast(1.02) brightness(1.02) saturate(1.03) sepia(0.03)";
+      return "contrast(1.10) brightness(1.03) saturate(1.15) sepia(0.05)";
     }
     if (f === "cinematic") {
-      return "contrast(1.05) brightness(0.99) saturate(1.02)";
+      return "contrast(1.20) brightness(0.97) saturate(1.06)";
     }
     if (f === "fyp_pop") {
-      return "contrast(1.05) brightness(1.02) saturate(1.07)";
+      return "contrast(1.14) brightness(1.04) saturate(1.24)";
     }
     if (f === "clean_denoise" || f === "soft_clean") {
-      return "contrast(1.02) brightness(1.01)";
+      return "contrast(1.06) brightness(1.02) saturate(1.04)";
     }
     return "none";
   }, [layout.filter, isHoldingOriginal]);
@@ -1882,7 +1921,9 @@ function VideoPreviewPlayer({
     ? interpolateKeyframes(layout.manualKeyframes, now, layout.panX ?? 0.5, 0.45, layout.zoom ?? 1.0)
     : null;
 
-  const currentPanX = currentKeyframe?.panX ?? (tracked ? tracked.x : layout.panX ?? (layout.focus === "left" ? 0.2 : layout.focus === "right" ? 0.8 : 0.5));
+  const currentPanX = isDragging && dragTarget === "single"
+    ? (layout.panX ?? 0.5)
+    : (currentKeyframe?.panX ?? (tracked ? tracked.x : layout.panX ?? (layout.focus === "left" ? 0.2 : layout.focus === "right" ? 0.8 : 0.5)));
   const currentPanY = currentKeyframe?.panY ?? (tracked ? tracked.y : 0.45);
   const currentZoom = currentKeyframe?.zoom ?? layout.zoom ?? 1.0;
 
@@ -1941,6 +1982,7 @@ function VideoPreviewPlayer({
       moved: false,
     };
     setIsDragging(true);
+    setDragTarget(target);
     try {
       e.currentTarget.setPointerCapture(e.pointerId);
     } catch {}
@@ -1972,6 +2014,7 @@ function VideoPreviewPlayer({
     }
     dragInfoRef.current.isDragging = false;
     setIsDragging(false);
+    setDragTarget(null);
   };
 
   const formatMinSec = (sec: number) => {
@@ -2249,28 +2292,50 @@ function VideoPreviewPlayer({
               {formatMinSec(now)}
             </span>
 
-            <input
-              type="range"
-              min="0"
-              max={duration || 1}
-              step="0.05"
-              value={now}
-              onChange={(e) => {
-                const t = parseFloat(e.target.value);
-                const v = videoRef.current;
-                const v2 = secondaryVideoRef.current;
-                if (v) {
-                  v.currentTime = t;
-                  setNow(t);
-                  onTimeChange?.(t);
-                }
-                if (isPodcastSplit && v2) {
-                  v2.currentTime = t;
-                }
-              }}
-              className="flex-1 accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
-              aria-label="Timeline Video"
-            />
+            {/* CapCut Timeline with Keyframe Diamond Markers */}
+            <div className="relative flex-1 flex items-center">
+              <input
+                type="range"
+                min="0"
+                max={duration || 1}
+                step="0.05"
+                value={now}
+                onChange={(e) => {
+                  const t = parseFloat(e.target.value);
+                  const v = videoRef.current;
+                  const v2 = secondaryVideoRef.current;
+                  if (v) {
+                    v.currentTime = t;
+                    setNow(t);
+                    onTimeChange?.(t);
+                  }
+                  if (isPodcastSplit && v2) {
+                    v2.currentTime = t;
+                  }
+                }}
+                className="w-full accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg relative z-10"
+                aria-label="Timeline Video"
+              />
+              {manualKeyframes && manualKeyframes.length > 0 && duration > 0 && (
+                <div className="pointer-events-none absolute inset-x-0 h-1.5 top-1/2 -translate-y-1/2 z-20">
+                  {manualKeyframes.map((kf) => {
+                    const pct = Math.max(0, Math.min(100, (kf.time / duration) * 100));
+                    const isCurrent = Math.abs(kf.time - now) <= 0.35;
+                    return (
+                      <div
+                        key={kf.id}
+                        style={{ left: `${pct}%` }}
+                        className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 size-2 rotate-45 border transition-all ${
+                          isCurrent
+                            ? "bg-amber-400 border-white ring-2 ring-amber-400/50 scale-125 z-30"
+                            : "bg-ember border-obsidian z-20"
+                        }`}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <span className="font-mono text-[10px] font-semibold text-mist shrink-0">
               {formatMinSec(duration)}
@@ -2300,8 +2365,11 @@ function VideoPreviewPlayer({
           {showTrimBar && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-950/30 p-2 space-y-1.5 backdrop-blur-md animate-in fade-in slide-in-from-top-1">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-amber-200 flex items-center gap-1">
-                  <span>✂️ Potong Video</span>
+                <span className="font-bold text-amber-200 flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-amber-300">
+                    <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>
+                  </svg>
+                  <span>Potong Video</span>
                 </span>
                 <span className="font-mono text-[10px] text-amber-300 font-bold">
                   Durasi: {formatMinSec(Math.max(0, (trimEnd || duration) - trimStart))}
@@ -2344,9 +2412,23 @@ function VideoPreviewPlayer({
             </div>
           )}
 
+          {/* High-Pass 4K Crisp Optical Convolution Filter definition */}
+          <svg className="sr-only" aria-hidden="true" width="0" height="0">
+            <filter id="wink-4k-clarity" colorInterpolationFilters="sRGB">
+              <feConvolveMatrix
+                order="3"
+                preserveAlpha="true"
+                kernelMatrix="
+                  0    -0.28   0
+                 -0.28  2.12  -0.28
+                  0    -0.28   0"
+              />
+            </filter>
+          </svg>
+
           {/* Docked Camera Pan & Quick Keyframe Action Bar — ZERO SCROLLING on mobile! */}
           <div className="rounded-xl border border-white/10 bg-surface/90 p-2 space-y-1.5 backdrop-blur-md shadow-md">
-            {/* Row 1: Pan Controls */}
+            {/* Row 1: Pan Controls + 1-Tap 4K Magic Button */}
             <div className="flex items-center justify-between gap-1.5">
               <button
                 type="button"
@@ -2357,7 +2439,10 @@ function VideoPreviewPlayer({
                 className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
                 title="Geser Kamera ke Kiri (Host)"
               >
-                <span>◀ Kiri</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                <span>Kiri</span>
               </button>
               <button
                 type="button"
@@ -2368,7 +2453,12 @@ function VideoPreviewPlayer({
                 className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
                 title="Pusatkan Kamera"
               >
-                <span>🎯 Tengah</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
+                  <circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/>
+                  <line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/>
+                  <line x1="12" x2="12" y1="22" y2="18"/>
+                </svg>
+                <span>Tengah</span>
               </button>
               <button
                 type="button"
@@ -2379,14 +2469,39 @@ function VideoPreviewPlayer({
                 className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
                 title="Geser Kamera ke Kanan (Tamu)"
               >
-                <span>Kanan ▶</span>
+                <span>Kanan</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
               </button>
+
+              {/* 1-Tap Wink / Remini 4K Magic AI Filter Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  const is4K = layout.filter === "wink_hd" || layout.filter === "ultra_hd";
+                  onFilterChange?.(is4K ? "original" : "wink_hd");
+                  triggerHaptic(12);
+                }}
+                className={`h-7 px-2.5 rounded-lg border text-[10px] font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none shrink-0 ${
+                  layout.filter === "wink_hd" || layout.filter === "ultra_hd"
+                    ? "bg-amber-400 text-obsidian border-amber-300 font-extrabold shadow-sm ring-1 ring-amber-400/40"
+                    : "bg-surface-raised text-muted hover:text-white border-white/10"
+                }`}
+                title="Filter 4K Magic AI (Wink & Remini Style)"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
+                  <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
+                </svg>
+                <span>{layout.filter === "wink_hd" || layout.filter === "ultra_hd" ? "4K Magic: Aktif" : "4K Magic"}</span>
+              </button>
+
               <span className="text-[10px] font-mono font-bold text-ember px-1.5 py-0.5 rounded bg-ember/10 border border-ember/20 shrink-0">
                 {Math.round(currentPanX * 100)}%
               </span>
             </div>
 
-            {/* Row 2: 1-Tap Keyframe Action & Quick Nav */}
+            {/* Row 2: CapCut-Style Keyframe Action & Quick Nav */}
             <div className="flex items-center gap-1.5">
               {(() => {
                 const activeKf = manualKeyframes?.find((k) => Math.abs(k.time - now) <= 0.35);
@@ -2399,8 +2514,11 @@ function VideoPreviewPlayer({
                         triggerHaptic(10);
                       }}
                       className="flex-1 h-7.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                      title="Hapus Keyframe pada Titik Ini"
                     >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-red-400 shrink-0">
+                        <path d="M12 2L22 12L12 22L2 12Z"/>
+                      </svg>
                       <span>Hapus Kunci ({formatMinSec(now)})</span>
                     </button>
                   );
@@ -2413,8 +2531,13 @@ function VideoPreviewPlayer({
                       triggerHaptic(10);
                     }}
                     className="flex-1 h-7.5 rounded-lg bg-ember text-obsidian text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-ember/90 active:scale-95 transition-all cursor-pointer"
+                    title="Kunci Posisi Kamera (CapCut Keyframe)"
                   >
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="size-3"><path d="M12 4v16m8-8H4" /></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-obsidian shrink-0">
+                      <path d="M12 2L22 12L12 22L2 12Z"/>
+                      <line x1="12" y1="8" x2="12" y2="16" strokeWidth="2.5"/>
+                      <line x1="8" y1="12" x2="16" y2="12" strokeWidth="2.5"/>
+                    </svg>
                     <span>+ Kunci Posisi ({formatMinSec(now)})</span>
                   </button>
                 );
@@ -2435,10 +2558,12 @@ function VideoPreviewPlayer({
                         triggerHaptic(8);
                       }
                     }}
-                    className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-[10px] font-bold text-muted hover:text-ink active:scale-95 cursor-pointer"
+                    className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-muted hover:text-ink active:scale-95 cursor-pointer"
                     title="Keyframe Sebelumnya"
                   >
-                    ⏮
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                      <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
+                    </svg>
                   </button>
                   <span className="text-[9px] font-mono font-bold text-mist px-1">
                     {manualKeyframes.length} titik
@@ -2455,10 +2580,12 @@ function VideoPreviewPlayer({
                         triggerHaptic(8);
                       }
                     }}
-                    className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-[10px] font-bold text-muted hover:text-ink active:scale-95 cursor-pointer"
+                    className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-muted hover:text-ink active:scale-95 cursor-pointer"
                     title="Keyframe Berikutnya"
                   >
-                    ⏭
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
+                      <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
+                    </svg>
                   </button>
                 </div>
               )}

@@ -57,21 +57,24 @@ export function drawFrame(
   ctx.save();
   try {
     const filter = layout.filter ?? "original";
-    if (filter === "clean_pro" || filter === "ultra_hd" || filter === "wink_hd") {
-      // Natural Studio Crisp: Clean, subtle micro-contrast without pixel halos or noise exaggeration
-      ctx.filter = "contrast(1.03) brightness(1.01) saturate(1.02)";
+    if (filter === "wink_hd" || filter === "ultra_hd") {
+      // Wink / Remini 4K HD Magic: Deep micro-clarity, rich blacks, crisp skin details
+      ctx.filter = "contrast(1.18) saturate(1.12) brightness(1.04)";
+    } else if (filter === "clean_pro") {
+      // Studio Clean Pro: Balanced studio crispness
+      ctx.filter = "contrast(1.12) saturate(1.08) brightness(1.02)";
     } else if (filter === "warm_creator") {
-      // Warm Creator: Flattering skin tones with gentle golden warmth
-      ctx.filter = "contrast(1.02) brightness(1.02) saturate(1.03) sepia(0.03)";
+      // Warm Creator: Golden creator warmth
+      ctx.filter = "contrast(1.10) brightness(1.03) saturate(1.15) sepia(0.05)";
     } else if (filter === "cinematic") {
-      // Cinematic Look: Balanced rich shadows with soft highlights
-      ctx.filter = "contrast(1.05) brightness(0.99) saturate(1.02)";
+      // Cinematic Moody: High dynamic range film tone
+      ctx.filter = "contrast(1.20) brightness(0.97) saturate(1.06)";
     } else if (filter === "fyp_pop") {
-      // Vibrant Pop: Lively colors for short-form feed without oversaturating skin
-      ctx.filter = "contrast(1.05) brightness(1.02) saturate(1.07)";
+      // Viral Pop: Vibrant colors for social media feeds
+      ctx.filter = "contrast(1.14) brightness(1.04) saturate(1.24)";
     } else if (filter === "clean_denoise" || filter === "soft_clean") {
       // Soft Clean: Gentle smoothing without blur
-      ctx.filter = "contrast(1.02) brightness(1.01)";
+      ctx.filter = "contrast(1.06) brightness(1.02) saturate(1.04)";
     } else {
       ctx.filter = "none";
     }
