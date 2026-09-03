@@ -4,6 +4,124 @@ const fs = require("fs");
 const { spawn, execFile, execSync } = require("child_process");
 const os = require("os");
 const http = require("http");
+const https = require("https");
+
+const CURRENT_DESKTOP_VERSION = "2.1.0";
+
+function downloadFileWithRedirects(fileUrl, destPath, onProgress, maxRedirects = 5) {
+  return new Promise((resolve, reject) => {
+    if (maxRedirects < 0) return reject(new Error("Too many redirects"));
+
+    const client = fileUrl.startsWith("https:") ? https : http;
+    const req = client.get(fileUrl, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        let redirectUrl = res.headers.location;
+        if (!redirectUrl.startsWith("http")) {
+          const parsed = new URL(fileUrl);
+          redirectUrl = `${parsed.protocol}//${parsed.host}${redirectUrl}`;
+        }
+        return resolve(downloadFileWithRedirects(redirectUrl, destPath, onProgress, maxRedirects - 1));
+      }
+
+      if (res.statusCode !== 200) {
+        return reject(new Error(`Failed to download update: HTTP ${res.statusCode}`));
+      }
+
+      const totalBytes = parseInt(res.headers["content-length"] || "0", 10);
+      let downloadedBytes = 0;
+      const fileStream = fs.createWriteStream(destPath);
+
+      res.on("data", (chunk) => {
+        downloadedBytes += chunk.length;
+        if (totalBytes > 0 && typeof onProgress === "function") {
+          const percent = Math.min(100, Math.round((downloadedBytes / totalBytes) * 100));
+          onProgress(percent, downloadedBytes, totalBytes);
+        }
+      });
+
+      res.pipe(fileStream);
+
+      fileStream.on("finish", () => {
+        fileStream.close(() => resolve(destPath));
+      });
+
+      fileStream.on("error", (err) => {
+        fs.unlink(destPath, () => {});
+        reject(err);
+      });
+    });
+
+    req.on("error", (err) => {
+      fs.unlink(destPath, () => {});
+      reject(err);
+    });
+  });
+}
+
+async function checkAndNotifyDesktopUpdate() {
+  try {
+    const res = await fetch("https://www.malesan.my.id/api/desktop/version", { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.version) return;
+
+    const curParts = CURRENT_DESKTOP_VERSION.split(".").map((n) => parseInt(n, 10) || 0);
+    const latParts = data.version.split(".").map((n) => parseInt(n, 10) || 0);
+    let hasUpdate = false;
+    for (let i = 0; i < Math.max(curParts.length, latParts.length); i++) {
+      const cur = curParts[i] || 0;
+      const lat = latParts[i] || 0;
+      if (lat > cur) {
+        hasUpdate = true;
+        break;
+      }
+      if (lat < cur) break;
+    }
+
+    if (hasUpdate) {
+      if (Notification.isSupported()) {
+        const notif = new Notification({
+          title: `Pembaruan Malesan Studio v${data.version} Siap!`,
+          body: "Pembaruan Studio Video baru siap dipasang. Klik untuk melihat & memperbarui.",
+          icon: path.join(__dirname, "..", "assets", "icon.png"),
+        });
+        notif.on("click", () => {
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.show();
+            mainWindow.focus();
+            sendToRenderer({
+              type: "OPEN_UPDATE_MODAL",
+              updateInfo: {
+                hasUpdate: true,
+                version: data.version,
+                currentVersion: CURRENT_DESKTOP_VERSION,
+                downloadUrl: data.downloadUrl,
+                fileSizeMb: data.fileSizeMb || 226,
+                changelog: data.changelog || [],
+              },
+            });
+          }
+        });
+        notif.show();
+      }
+
+      sendToRenderer({
+        type: "DESKTOP_UPDATE_AVAILABLE",
+        updateInfo: {
+          hasUpdate: true,
+          version: data.version,
+          currentVersion: CURRENT_DESKTOP_VERSION,
+          downloadUrl: data.downloadUrl,
+          fileSizeMb: data.fileSizeMb || 226,
+          changelog: data.changelog || [],
+        },
+      });
+    }
+  } catch (err) {
+    console.warn("[desktop-update] check error:", err);
+  }
+}
 
 // Disable default menu bar globally for maximum speed & sleek frameless look
 Menu.setApplicationMenu(null);
@@ -660,6 +778,78 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
         break;
       }
 
+      case "CHECK_DESKTOP_UPDATE": {
+        await checkAndNotifyDesktopUpdate();
+        sendToRenderer({ type: "CHECK_COMPLETED", requestId });
+        break;
+      }
+
+      case "TRIGGER_DESKTOP_UPDATE": {
+        const { downloadUrl, version } = req;
+        const targetUrl = downloadUrl || "https://malesan.my.id/Malesan-Setup.exe";
+        const tempInstaller = path.join(os.tmpdir(), "malesan-desktop-update.exe");
+
+        sendToRenderer({
+          type: "DESKTOP_UPDATE_STARTED",
+          requestId,
+          message: "Mengunduh file pembaruan Malesan Studio...",
+        });
+
+        downloadFileWithRedirects(targetUrl, tempInstaller, (percent, downloaded, total) => {
+          sendToRenderer({
+            type: "DESKTOP_UPDATE_PROGRESS",
+            requestId,
+            progress: percent,
+            downloaded,
+            total,
+          });
+        })
+          .then(() => {
+            if (Notification.isSupported()) {
+              new Notification({
+                title: "Pembaruan Siap Dipasang!",
+                body: `Malesan Studio v${version || "terbaru"} siap dipasang. Klik Pasang & Restart sekarang.`,
+                icon: path.join(__dirname, "..", "assets", "icon.png"),
+              }).show();
+            }
+            sendToRenderer({
+              type: "DESKTOP_UPDATE_READY",
+              requestId,
+              filePath: tempInstaller,
+            });
+          })
+          .catch((dlErr) => {
+            sendToRenderer({
+              type: "NATIVE_ERROR",
+              requestId,
+              message: `Gagal mengunduh pembaruan: ${dlErr.message}`,
+            });
+          });
+        break;
+      }
+
+      case "INSTALL_DESKTOP_UPDATE": {
+        const tempInstaller = path.join(os.tmpdir(), "malesan-desktop-update.exe");
+        if (fs.existsSync(tempInstaller)) {
+          sendToRenderer({ type: "DESKTOP_INSTALLING", requestId });
+          const child = spawn(tempInstaller, ["--updated"], {
+            detached: true,
+            stdio: "ignore",
+          });
+          child.unref();
+          setTimeout(() => {
+            app.quit();
+          }, 600);
+        } else {
+          sendToRenderer({
+            type: "NATIVE_ERROR",
+            requestId,
+            message: "File instalasi pembaruan tidak ditemukan.",
+          });
+        }
+        break;
+      }
+
       default:
         sendToRenderer({
           type: "NATIVE_ERROR",
@@ -679,6 +869,10 @@ ipcMain.on("malesan-native-request", async (_event, req) => {
 
 app.whenReady().then(() => {
   createWindow();
+
+  setTimeout(() => {
+    checkAndNotifyDesktopUpdate();
+  }, 4000);
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

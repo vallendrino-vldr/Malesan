@@ -2,7 +2,12 @@
 
 import Link from "next/link";
 import { useState, useEffect, type ReactNode } from "react";
-import { getNativeShell, requestNativeNotificationPermission } from "@/lib/native/bridge";
+import {
+  getNativeShell,
+  requestNativeNotificationPermission,
+  checkDesktopUpdate,
+  subscribeNativeResponses,
+} from "@/lib/native/bridge";
 import { checkApkUpdate, type ApkUpdateInfo } from "@/lib/native/version";
 import { Logo } from "./Logo";
 import { AmbientField } from "./AmbientField";
@@ -95,16 +100,39 @@ export function AppShell({
     void getNativeShell().then((shell) => {
       if (!active) return;
       if (shell) {
-        const desktop = shell.platform === "desktop" ||
+        const desktop =
+          shell.platform === "desktop" ||
           shell.capabilities?.includes("desktop-shell") ||
           (typeof navigator !== "undefined" && navigator.userAgent.includes("MalesanStudio"));
 
         setIsDesktop(desktop);
+        setNativeVersion(shell.appVersion);
 
-        // Only Android APK triggers the APK update modal! Desktop uses dedicated updater
-        if (!desktop) {
+        if (desktop) {
+          void checkDesktopUpdate(shell.appVersion || "2.1.0").then((dUpdate) => {
+            if (!active || !dUpdate) return;
+            if (dUpdate.hasUpdate) {
+              setUpdateInfo({
+                hasUpdate: true,
+                latestVersion: dUpdate.version,
+                latestVersionCode: 0,
+                currentVersion: dUpdate.currentVersion,
+                sizeMB: `${dUpdate.fileSizeMb} MB`,
+                displaySize: `${dUpdate.fileSizeMb} MB`,
+                downloadUrl: dUpdate.downloadUrl,
+                changelog: dUpdate.changelog,
+              });
+              if (typeof window !== "undefined") {
+                const prompted = sessionStorage.getItem("malesan_desktop_update_prompted");
+                if (!prompted) {
+                  sessionStorage.setItem("malesan_desktop_update_prompted", "1");
+                  setIsUpdateModalOpen(true);
+                }
+              }
+            }
+          });
+        } else {
           setIsNativeApk(true);
-          setNativeVersion(shell.appVersion);
           void requestNativeNotificationPermission();
           const update = checkApkUpdate(shell.versionCode, shell.appVersion);
           setUpdateInfo(update);
@@ -118,8 +146,36 @@ export function AppShell({
         }
       }
     });
+
+    const unsubscribe = subscribeNativeResponses((res) => {
+      if (res.type === "OPEN_UPDATE_MODAL" || res.type === "DESKTOP_UPDATE_AVAILABLE") {
+        const payload = res as unknown as {
+          updateInfo?: {
+            version: string;
+            downloadUrl: string;
+            fileSizeMb?: number;
+            changelog?: string[];
+          };
+        };
+        const u = payload.updateInfo;
+        if (u) {
+          setUpdateInfo({
+            hasUpdate: true,
+            latestVersion: u.version,
+            latestVersionCode: 0,
+            sizeMB: `${u.fileSizeMb || 226} MB`,
+            displaySize: `${u.fileSizeMb || 226} MB`,
+            downloadUrl: u.downloadUrl,
+            changelog: u.changelog || [],
+          });
+          setIsUpdateModalOpen(true);
+        }
+      }
+    });
+
     return () => {
       active = false;
+      unsubscribe();
     };
   }, []);
 
@@ -223,7 +279,36 @@ export function AppShell({
 
           {/* Right utility & user cluster */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
-            {isDesktop ? null : isNativeApk ? (
+            {isDesktop ? (
+              updateInfo?.hasUpdate ? (
+                <button
+                  type="button"
+                  onClick={() => setIsUpdateModalOpen(true)}
+                  title={`Pembaruan Malesan Studio v${updateInfo.latestVersion} Siap Dipasang`}
+                  className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/60 bg-ember/15 px-2.5 sm:px-3 text-xs font-bold text-ember shadow-xs hover:bg-ember/25 transition-all cursor-pointer animate-pulse whitespace-nowrap shrink-0"
+                >
+                  <span className="relative flex size-2 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-75" />
+                    <span className="relative inline-flex size-2 rounded-full bg-ember" />
+                  </span>
+                  <span className="hidden sm:inline">Update Studio v{updateInfo.latestVersion}</span>
+                  <span className="sm:hidden">Update v{updateInfo.latestVersion}</span>
+                </button>
+              ) : (
+                <div
+                  title={`Malesan Studio Desktop v${nativeVersion || "2.1.0"} Aktif • Akselerasi Hardware GPU & yt-dlp Lokal`}
+                  className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 sm:px-3 text-xs font-semibold text-cyan-400 shadow-xs whitespace-nowrap shrink-0"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-cyan-400 shrink-0">
+                    <rect width="20" height="14" x="2" y="3" rx="2" />
+                    <line x1="8" x2="16" y1="21" y2="21" />
+                    <line x1="12" x2="12" y1="17" y2="21" />
+                  </svg>
+                  <span className="hidden sm:inline">Desktop Studio</span>
+                  <span className="sm:hidden">Studio</span>
+                </div>
+              )
+            ) : isNativeApk ? (
               updateInfo?.hasUpdate ? (
                 <button
                   type="button"
@@ -493,12 +578,13 @@ export function AppShell({
         onClose={() => setIsInstallModalOpen(false)}
       />
 
-      {/* Instant In-App APK Update Modal */}
+      {/* Instant In-App APK / Desktop Update Modal */}
       <ApkUpdateModal
         open={isUpdateModalOpen}
         onClose={() => setIsUpdateModalOpen(false)}
         updateInfo={updateInfo}
         isNativeApk={isNativeApk}
+        isDesktop={isDesktop}
       />
     </div>
   );

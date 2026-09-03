@@ -61,6 +61,12 @@ function ensureDispatcher(port: NativePort) {
   }
 
   // Universal window event listener for Electron and iframe communications
+  attachUniversalMessageListener();
+
+  boundPort = port;
+}
+
+function attachUniversalMessageListener() {
   if (typeof window !== "undefined" && !windowMessageListenerAttached) {
     windowMessageListenerAttached = true;
     window.addEventListener("message", (event) => {
@@ -74,8 +80,11 @@ function ensureDispatcher(port: NativePort) {
       }
     });
   }
+}
 
-  boundPort = port;
+// Auto attach on module load if in browser
+if (typeof window !== "undefined") {
+  attachUniversalMessageListener();
 }
 
 export function subscribeNative(listener: (response: NativeResponse) => void) {
@@ -232,6 +241,81 @@ export async function triggerNativeTestNotification(): Promise<void> {
   try {
     await requestNative({ type: "TRIGGER_TEST_NOTIFICATION" }, 2_000);
   } catch {}
+}
+
+export interface DesktopUpdateInfo {
+  hasUpdate: boolean;
+  version: string;
+  currentVersion?: string;
+  downloadUrl: string;
+  fileSizeMb: number;
+  changelog: string[];
+}
+
+export async function checkDesktopUpdate(currentVersion = "2.1.0"): Promise<DesktopUpdateInfo | null> {
+  try {
+    const res = await fetch("/api/desktop/version", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      version: string;
+      downloadUrl: string;
+      fileSizeMb?: number;
+      changelog?: string[];
+    };
+    const curParts = currentVersion.split(".").map((n) => parseInt(n, 10) || 0);
+    const latParts = data.version.split(".").map((n) => parseInt(n, 10) || 0);
+    let hasUpdate = false;
+    for (let i = 0; i < Math.max(curParts.length, latParts.length); i++) {
+      const cur = curParts[i] || 0;
+      const lat = latParts[i] || 0;
+      if (lat > cur) {
+        hasUpdate = true;
+        break;
+      }
+      if (lat < cur) break;
+    }
+    return {
+      hasUpdate,
+      version: data.version,
+      currentVersion,
+      downloadUrl: data.downloadUrl,
+      fileSizeMb: data.fileSizeMb || 226,
+      changelog: data.changelog || [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function triggerDesktopUpdate(downloadUrl: string, version: string): Promise<boolean> {
+  if (typeof window === "undefined" || !getPort()) return false;
+  try {
+    const res = await requestNative<NativeResponse>({
+      type: "TRIGGER_DESKTOP_UPDATE",
+      downloadUrl,
+      version,
+    }, 5_000);
+    return res.type === "DESKTOP_UPDATE_STARTED";
+  } catch {
+    return false;
+  }
+}
+
+export async function installDesktopUpdate(): Promise<boolean> {
+  if (typeof window === "undefined" || !getPort()) return false;
+  try {
+    const res = await requestNative<NativeResponse>({ type: "INSTALL_DESKTOP_UPDATE" }, 5_000);
+    return res.type === "DESKTOP_INSTALLING";
+  } catch {
+    return false;
+  }
+}
+
+export function subscribeNativeResponses(callback: (res: NativeResponse) => void): () => void {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
 }
 
 
