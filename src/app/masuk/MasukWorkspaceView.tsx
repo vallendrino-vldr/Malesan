@@ -253,8 +253,10 @@ export function MasukWorkspaceView({
               {/* Free Credits & Automatic 1-Click Signup Info */}
               <div className="mt-6 space-y-3 rounded-2xl border border-white/[0.08] bg-black/40 p-4 text-xs">
                 <div className="flex items-start gap-2.5">
-                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-ember/20 text-ember font-bold text-[10px]">
-                    ✓
+                  <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-ember/20 text-ember">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="size-2.5">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
                   </span>
                   <p className="leading-relaxed text-muted">
                     <strong className="text-ink font-semibold">10 kredit gratis</strong> langsung masuk tiap hari. Tanpa perlu kartu kredit.
