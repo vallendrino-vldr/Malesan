@@ -377,7 +377,7 @@ export function StudioAutoClipWideTile({
           onClick={() => {
             window.dispatchEvent(new CustomEvent("malesan:open-module", { detail: "auto_clip" }));
           }}
-          className="relative flex w-full flex-col justify-between overflow-hidden rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#140803]/98 via-[#180a04]/96 to-[#0d0502]/98 p-3.5 sm:p-4 text-left backdrop-blur-md transition-all duration-200 group-hover:bg-[#1b0c05] active:scale-[0.995]"
+          className="relative flex w-full flex-col justify-between overflow-hidden rounded-[calc(1rem-1.5px)] bg-gradient-to-br from-[#140803]/98 via-[#180a04]/96 to-[#0d0502]/98 py-[13.5px] px-3.5 sm:py-[14.5px] sm:px-4 text-left backdrop-blur-md transition-all duration-200 group-hover:bg-[#1b0c05] active:scale-[0.995]"
         >
           {/* Subtle Warm Gradient Overlay with Heat Shimmer */}
           <div 
@@ -402,10 +402,10 @@ export function StudioAutoClipWideTile({
                 </svg>
               </div>
 
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <span className="font-display text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1.5 group-hover:text-amber-300 transition-colors">
-                    Auto Clip YouTube
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <span className="font-display text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1 shrink truncate group-hover:text-amber-300 transition-colors">
+                    <span className="truncate">Auto Clip YouTube</span>
                     {/* Fiery Flame Stroke Icon (Clean SVG, No cheap emoji) */}
                     <svg viewBox="0 0 24 24" fill="url(#malesan-flame-grad)" stroke="#ff8a3d" strokeWidth="1.6" className="size-3.5 sm:size-4 shrink-0 animate-flame-flicker">
                       <defs>
@@ -418,10 +418,10 @@ export function StudioAutoClipWideTile({
                       <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
                     </svg>
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/50 bg-gradient-to-r from-amber-500/25 to-rose-600/25 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-amber-200 uppercase tracking-wider shadow-[0_0_10px_rgba(255,120,30,0.3)]">
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/50 bg-gradient-to-r from-amber-500/25 to-rose-600/25 px-1.5 sm:px-2 py-0.5 text-[8.5px] sm:text-[10px] font-bold text-amber-200 uppercase tracking-wider shadow-[0_0_10px_rgba(255,120,30,0.3)]">
                     AI Flagship
                   </span>
-                  <span className="rounded-md bg-[#230f07] px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-amber-400 border border-amber-500/40 shadow-xs">
+                  <span className="shrink-0 rounded-md bg-[#230f07] px-1.5 sm:px-2 py-0.5 font-mono text-[8.5px] sm:text-[10px] font-bold text-amber-400 border border-amber-500/40 shadow-xs">
                     {cost} kredit
                   </span>
                 </div>
