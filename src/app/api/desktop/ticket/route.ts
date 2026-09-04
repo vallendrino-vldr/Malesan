@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Ticket required" }, { status: 400 });
   }
 
-  const cookies = claimDesktopTicket(ticket);
+  const cookies = await claimDesktopTicket(ticket);
   if (!cookies) {
     return NextResponse.json({ error: "Invalid or expired ticket" }, { status: 404 });
   }

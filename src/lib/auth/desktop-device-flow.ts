@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { randomBytes } from "node:crypto";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 export async function createPairingSession(): Promise<string> {
-  const code = "msk_" + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
+  const code = "msk_" + randomBytes(16).toString("hex");
   const supabase = createServiceRoleClient() as any;
 
   try {

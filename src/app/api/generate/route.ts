@@ -5,7 +5,7 @@ import { getCost, isModuleEnabled, getShadowPrompt } from "@/lib/config";
 import { runAI, runAIStream, type StreamMeta } from "@/lib/ai/engine";
 import { userFacingError } from "@/lib/ai/errors";
 import { decryptSecret } from "@/lib/gemini/crypto";
-import { processReferral } from "@/app/actions/payments";
+import { processReferral } from "@/lib/payments/referrals";
 import { spendCredits, refundCredits } from "@/lib/credits";
 import { aiRateLimit } from "@/lib/rate-limit";
 import { acquireRequestLock } from "@/lib/ai/dedup";

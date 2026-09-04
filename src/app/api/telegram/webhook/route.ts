@@ -68,10 +68,10 @@ export async function POST(request: NextRequest) {
   const adminChatId = config.chatId || process.env.TELEGRAM_ADMIN_CHAT_ID;
   const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET || "malesan_tele_sec_7a8f9c2d1b0e3f4a9821";
 
-  // 1. Verify Secret Header if present
+  // 1. Strictly verify Telegram Bot API secret token header
   const secretHeader = request.headers.get("x-telegram-bot-api-secret-token");
-  if (secretHeader && secretHeader !== webhookSecret) {
-    console.warn("[telegram-webhook] unauthorized secret token attempt");
+  if (!secretHeader || secretHeader !== webhookSecret) {
+    console.warn("[telegram-webhook] unauthorized or missing secret token attempt");
     return new Response("Unauthorized", { status: 401 });
   }
 

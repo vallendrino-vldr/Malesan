@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeIndonesianSpeech } from "@/lib/speech-cleaner";
 import { createClient } from "@/lib/supabase/server";
+import { aiRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 30;
 
@@ -92,6 +93,9 @@ export async function POST(req: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: "Sesi login diperlukan untuk menggunakan suara AI" }, { status: 401 });
     }
+
+    const limited = await aiRateLimit(user.id, "tts", 25);
+    if (limited) return limited;
 
     const body = await req.json();
     const rawText = typeof body.text === "string" ? body.text : "";

@@ -1,42 +1,53 @@
-interface DesktopAuthTicket {
-  cookies: Array<{ name: string; value: string }>;
-  expiresAt: number;
-}
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createServiceRoleClient } from "@/lib/supabase/server";
 
-const globalStore = globalThis as unknown as {
-  __malesan_desktop_tickets__?: Map<string, DesktopAuthTicket>;
-};
+export async function createDesktopTicket(
+  cookiesList: Array<{ name: string; value: string }>
+): Promise<string> {
+  const ticket = "tkt_" + crypto.randomUUID();
+  const supabase = createServiceRoleClient() as any;
 
-if (!globalStore.__malesan_desktop_tickets__) {
-  globalStore.__malesan_desktop_tickets__ = new Map();
-}
+  // Purge expired rows older than 5 minutes
+  try {
+    await supabase
+      .from("desktop_pairing_sessions")
+      .delete()
+      .lt("created_at", new Date(Date.now() - 300_000).toISOString());
+  } catch {}
 
-const tickets = globalStore.__malesan_desktop_tickets__;
-
-export function createDesktopTicket(cookiesList: Array<{ name: string; value: string }>): string {
-  const ticket = crypto.randomUUID();
-  const now = Date.now();
-
-  // Purge expired tickets
-  for (const [k, v] of tickets.entries()) {
-    if (v.expiresAt < now) tickets.delete(k);
-  }
-
-  tickets.set(ticket, {
-    cookies: cookiesList,
-    expiresAt: now + 90_000, // 90 seconds TTL
-  });
+  // Store ticket with 90s TTL
+  await supabase
+    .from("desktop_pairing_sessions")
+    .insert({
+      code: ticket,
+      status: "approved",
+      cookies: cookiesList,
+    });
 
   return ticket;
 }
 
-export function claimDesktopTicket(ticket: string): Array<{ name: string; value: string }> | null {
-  if (!ticket) return null;
-  const item = tickets.get(ticket);
-  if (!item) return null;
+export async function claimDesktopTicket(
+  ticket: string
+): Promise<Array<{ name: string; value: string }> | null> {
+  if (!ticket || typeof ticket !== "string") return null;
+  const supabase = createServiceRoleClient() as any;
 
-  tickets.delete(ticket); // strictly one-time use
-  if (item.expiresAt < Date.now()) return null;
+  const ninetySecondsAgo = new Date(Date.now() - 90_000).toISOString();
 
-  return item.cookies;
+  // Strictly one-time use: delete and return cookies in one atomic operation if not expired
+  const { data, error } = await supabase
+    .from("desktop_pairing_sessions")
+    .delete()
+    .eq("code", ticket)
+    .eq("status", "approved")
+    .gt("created_at", ninetySecondsAgo)
+    .select("cookies")
+    .maybeSingle();
+
+  if (error || !data || !Array.isArray(data.cookies)) {
+    return null;
+  }
+
+  return data.cookies as Array<{ name: string; value: string }>;
 }

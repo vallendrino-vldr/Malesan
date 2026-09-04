@@ -17,15 +17,24 @@ const getIsInstalledSnapshot = () => {
   );
 };
 
+const getOsSnapshot = (): "android" | "windows" | "ios" | "other" => {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent.toLowerCase();
+  if (/android/i.test(ua)) return "android";
+  if (/windows/i.test(ua)) return "windows";
+  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
+  return "other";
+};
+
 export function InstallAppModal({
   open,
   onClose,
 }: {
   open: boolean;
   onClose: () => void;
-  }) {
+}) {
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null);
-  const [os, setOs] = useState<"android" | "windows" | "ios" | "other">("other");
+  const os = useSyncExternalStore(emptySubscribe, getOsSnapshot, () => "other");
   const isInstalled = useSyncExternalStore(emptySubscribe, getIsInstalledSnapshot, () => false);
 
   useEffect(() => {
@@ -36,20 +45,6 @@ export function InstallAppModal({
 
     window.addEventListener("beforeinstallprompt", handlePrompt);
     return () => window.removeEventListener("beforeinstallprompt", handlePrompt);
-  }, []);
-
-  useEffect(() => {
-    if (typeof navigator === "undefined") return;
-    const ua = navigator.userAgent.toLowerCase();
-    if (/android/i.test(ua)) {
-      setOs("android");
-    } else if (/windows/i.test(ua)) {
-      setOs("windows");
-    } else if (/iphone|ipad|ipod/i.test(ua)) {
-      setOs("ios");
-    } else {
-      setOs("other");
-    }
   }, []);
 
   if (!open) return null;

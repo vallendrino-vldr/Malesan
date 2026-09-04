@@ -53,21 +53,26 @@ export async function POST(request: NextRequest) {
     const isLockdown = lockdownConfig?.value === "true";
     const updateInfo = checkApkUpdate(body?.versionCode, body?.appVersion);
     const isDesktop = body?.platform === "desktop" || userAgent.includes("MalesanStudio");
+    const { aiRateLimit } = await import("@/lib/rate-limit");
+    const rateLimitKey = user?.id || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+    const notifyThrottled = await aiRateLimit(rateLimitKey, "telemetry_telegram_notify", 5, 300);
 
-    if (isDesktop) {
-      await notifyDesktopAppOpen({
-        email: user?.email || null,
-        deviceModel: deviceModel || "Windows PC / Desktop",
-        osVersion: osVersion || "Windows 10/11",
-        appVersion: body?.appVersion || "2.1.0",
-      });
-    } else {
-      await notifyAppInstall({
-        email: user?.email || null,
-        deviceModel: deviceModel || "Android Mobile",
-        osVersion: osVersion || "Android",
-        appVersion: body?.appVersion || updateInfo.latestVersion,
-      });
+    if (!notifyThrottled) {
+      if (isDesktop) {
+        await notifyDesktopAppOpen({
+          email: user?.email || null,
+          deviceModel: deviceModel || "Windows PC / Desktop",
+          osVersion: osVersion || "Windows 10/11",
+          appVersion: body?.appVersion || "2.1.0",
+        });
+      } else {
+        await notifyAppInstall({
+          email: user?.email || null,
+          deviceModel: deviceModel || "Android Mobile",
+          osVersion: osVersion || "Android",
+          appVersion: body?.appVersion || updateInfo.latestVersion,
+        });
+      }
     }
 
     return NextResponse.json({

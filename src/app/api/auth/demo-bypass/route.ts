@@ -29,7 +29,14 @@ export async function POST(request: NextRequest) {
 
     const password = body?.password?.trim();
 
-    const expectedPassword = process.env.DEMO_BYPASS_PASSWORD || process.env.DEV_LOGIN_SECRET || "vadlyvldr";
+    const expectedPassword = process.env.DEMO_BYPASS_PASSWORD || process.env.DEV_LOGIN_SECRET;
+    if (!expectedPassword) {
+      return NextResponse.json(
+        { error: "Mode demo tidak diaktifkan pada server ini." },
+        { status: 403 }
+      );
+    }
+
     if (!password || password !== expectedPassword) {
       return NextResponse.json(
         { error: "Kata sandi salah. Akses ditolak." },

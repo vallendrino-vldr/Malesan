@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       .map((c) => ({ name: c.name, value: c.value }));
 
     const { createDesktopTicket } = await import("@/lib/auth/desktop-ticket");
-    const ticket = createDesktopTicket(authCookies);
+    const ticket = await createDesktopTicket(authCookies);
 
     const bridgeHtml = `<!DOCTYPE html>
 <html>

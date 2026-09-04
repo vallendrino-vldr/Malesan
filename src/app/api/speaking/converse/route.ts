@@ -72,6 +72,25 @@ export async function POST(request: NextRequest) {
   const limited = await aiRateLimit(user.id, "speaking_converse", 10);
   if (limited) return limited;
 
+  // Pre-check credits to prevent unauthorized Groq Whisper resource drainage
+  const cost = await getCost("speaking_coach").catch(() => 1);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("credits_free, credits_paid, is_banned")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) return json({ error: "Profil akun tidak ditemukan." }, 404);
+  if (profile.is_banned) return json({ error: "Akun ini sedang dibekukan." }, 403);
+
+  const totalCredits = (profile.credits_free ?? 0) + (profile.credits_paid ?? 0);
+  if (totalCredits < cost) {
+    return json(
+      { error: "Kredit kamu tidak mencukupi untuk sesi latihan ini. Top up dulu ya." },
+      402
+    );
+  }
+
   let textInput = "";
   let persona = "david";
   let level = "intermediate";
@@ -120,7 +139,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Deduct credits server-side
-  const cost = await getCost("speaking_coach").catch(() => 1);
   const spend = await spendCredits(user.id, cost, "speaking_coach");
   if (!spend.ok) {
     return json({ error: spend.message }, spend.reason === "insufficient" ? 402 : 500);

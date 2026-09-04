@@ -15,16 +15,11 @@ function getAdminSupabase(): SupabaseClient {
 }
 
 export async function GET(request: NextRequest) {
-  // 1. Verify Vercel Cron authorization header if present
+  // 1. Strictly verify Vercel Cron authorization header
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    // Allow manual admin trigger if authorized
-    const { searchParams } = new URL(request.url);
-    const key = searchParams.get("key");
-    if (key !== "malesan_briefing_force") {
-      return new Response("Unauthorized", { status: 401 });
-    }
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const supabase = getAdminSupabase();
