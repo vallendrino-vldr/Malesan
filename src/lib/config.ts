@@ -70,7 +70,7 @@ export async function getModel(tier: "free" | "pro"): Promise<string> {
   if (typeof v === "string" && v.trim()) return v;
   return (
     (tier === "pro" ? process.env.GEMINI_MODEL_PRO : process.env.GEMINI_MODEL_FREE) ??
-    (tier === "pro" ? "gemini-3.5-flash" : "gemini-3.1-flash-lite")
+    (tier === "pro" ? "gemini-3.8-flash" : "gemini-3.1-flash-lite")
   );
 }
 
