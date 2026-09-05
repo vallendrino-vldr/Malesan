@@ -264,8 +264,20 @@ export async function generateDetailed(args: GenerateArgs): Promise<GenerateResu
   // fall back to modelFor(), which reads env. Kept as an override rather than
   // a replacement so this module stays usable with no database.
   const a = await resolveProvider(args);
-  const model = a.model ?? modelFor(a.tier ?? "free");
-  const { res, key } = await withRotation(model, a, false);
+  let model = a.model ?? modelFor(a.tier ?? "free");
+  let rotationResult: { res: Response; key: PoolKey };
+  try {
+    rotationResult = await withRotation(model, a, false);
+  } catch (err) {
+    if (model === "gemini-3.8-flash" && err instanceof GeminiError && err.retryable) {
+      console.warn("[gemini] gemini-3.8-flash unavailable, falling back to gemini-3.7-flash");
+      model = "gemini-3.7-flash";
+      rotationResult = await withRotation(model, a, false);
+    } else {
+      throw err;
+    }
+  }
+  const { res, key } = rotationResult;
   const json = await res.json();
 
   const adapter = adapterFor(a.provider ?? "gemini");
@@ -322,8 +334,20 @@ export async function* generateStream(
     return;
   }
 
-  const model = a.model ?? modelFor(a.tier ?? "free");
-  const { res, key } = await withRotation(model, a, true);
+  let model = a.model ?? modelFor(a.tier ?? "free");
+  let rotationResult: { res: Response; key: PoolKey };
+  try {
+    rotationResult = await withRotation(model, a, true);
+  } catch (err) {
+    if (model === "gemini-3.8-flash" && err instanceof GeminiError && err.retryable) {
+      console.warn("[gemini] gemini-3.8-flash stream unavailable, falling back to gemini-3.7-flash");
+      model = "gemini-3.7-flash";
+      rotationResult = await withRotation(model, a, true);
+    } else {
+      throw err;
+    }
+  }
+  const { res, key } = rotationResult;
 
   // The adapter owns the frame envelope; everything below owns the plumbing.
   // Without this the loop decoded Gemini's shape unconditionally, so an
