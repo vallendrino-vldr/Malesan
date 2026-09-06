@@ -361,10 +361,10 @@ export default async function AdminDashboardPage() {
             </div>
           </div>
           <Link
-            href="/admin/ai"
-            className="shrink-0 inline-flex items-center gap-1 text-micro font-medium text-ember-lo hover:underline self-start sm:self-center"
+            href="/admin/ai?tab=tracker"
+            className="shrink-0 inline-flex items-center gap-1 text-micro font-medium text-emerald-400 hover:underline self-start sm:self-center"
           >
-            <span>Detail Otak AI</span>
+            <span>Buka Quota Tracker & Cuan (4 Akun)</span>
             <span>&rarr;</span>
           </Link>
         </div>

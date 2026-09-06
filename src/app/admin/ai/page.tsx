@@ -1,36 +1,47 @@
 import Link from "next/link";
-import { listProviders, listModels, brainStatus } from "@/app/actions/ai-admin";
+import { listProviders, listModels, brainStatus, getQuotaTrackerDataAction } from "@/app/actions/ai-admin";
 import { costSummary, savingsSuggestions, quotaFor } from "@/lib/ai/analytics";
 import { getGeminiPoolQuota } from "@/lib/gemini/pool-report";
+import { fetchQuotaTrackerData } from "@/lib/gemini/account-quotas";
 import { getAdminMode, getUsdToIdr } from "@/lib/config";
 import { verifyAdmin } from "@/lib/admin/guard";
 import { formatIdr } from "@/lib/ai/cost";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { BrainPanel } from "./BrainPanel";
 import { ProviderManager } from "./ProviderManager";
+import { AccountQuotaTracker } from "./AccountQuotaTracker";
+import { AdminAiClientTabs } from "./AdminAiClientTabs";
 
 /**
- * The AI Control Center.
+ * The AI Control Center & Quota Tracker.
  *
  * Built for the person who owns the business, not the person who wrote the code.
- * Simple mode answers the only three questions that matter day to day — what is
- * my AI, what is it costing me, is it making money — and hides everything else.
- *
- * Gateways, model registries, routing tables and logs are not removed, they are
- * demoted. They are the answer to "how do I change it", which is a question you
- * ask once a month, not every time you open the panel.
+ * Two key views:
+ * 1. Otak AI & Brain: Controls models, 1-click switcher, daily usage and routing.
+ * 2. Quota Tracker & ATM Cuan (4 Akun): Amati, Tiru 9Router layout, with Malesan
+ *    founder 100% margin profit calculator and real-time reset countdown.
  */
-export default async function AdminAiPage() {
+export default async function AdminAiPage(props: {
+  searchParams?: Promise<{ tab?: string }>;
+}) {
   await verifyAdmin();
 
-  const [mode, brain, providers, models, summary, usdToIdr] = await Promise.all([
-    getAdminMode(),
-    brainStatus(),
-    listProviders(),
-    listModels(),
-    costSummary(7),
-    getUsdToIdr(),
-  ]);
+  const searchParams = props.searchParams ? await props.searchParams : undefined;
+  const defaultTab =
+    searchParams?.tab === "quota" || searchParams?.tab === "tracker"
+      ? "tracker"
+      : "brain";
+
+  const [mode, brain, providers, models, summary, usdToIdr, quotaTrackerData] =
+    await Promise.all([
+      getAdminMode(),
+      brainStatus(),
+      listProviders(),
+      listModels(),
+      costSummary(7),
+      getUsdToIdr(),
+      fetchQuotaTrackerData(),
+    ]);
 
   const suggestions = await savingsSuggestions(summary.byFeature, models, usdToIdr);
   const providerName = (id: string) => providers.find((p) => p.id === id)?.label ?? "?";
@@ -57,14 +68,8 @@ export default async function AdminAiPage() {
       ? (summary.today.marginIdr / summary.today.revenueIdr) * 100
       : null;
 
-  return (
+  const brainView = (
     <div className="space-y-6">
-      <LiveRefresh
-        tables={["ai_providers", "ai_models", "app_config", "ai_provider_balance"]}
-        label="Setelan AI berubah"
-        pollMs={15_000}
-      />
-
       <BrainPanel
         brain={brain}
         models={models}
@@ -200,6 +205,31 @@ export default async function AdminAiPage() {
           <span className="text-ink">Setelan lanjutan</span> di atas.
         </p>
       )}
+    </div>
+  );
+
+  const quotaTrackerView = (
+    <AccountQuotaTracker
+      initialData={quotaTrackerData}
+      onRefreshAction={getQuotaTrackerDataAction}
+    />
+  );
+
+  return (
+    <div className="space-y-6">
+      <LiveRefresh
+        tables={["ai_providers", "ai_models", "app_config", "ai_provider_balance", "gemini_usage"]}
+        label="Setelan AI berubah"
+        pollMs={15_000}
+      />
+
+      <AdminAiClientTabs
+        defaultTab={defaultTab}
+        brainView={brainView}
+        quotaTrackerView={quotaTrackerView}
+        totalQuotaRemaining={quotaTrackerData.totalRemainingToday}
+        totalCapacity={quotaTrackerData.totalCapacity}
+      />
     </div>
   );
 }

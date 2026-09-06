@@ -856,3 +856,16 @@ export async function refreshBalance(id: string): Promise<{
     daysLeft: trend.daysLeft,
   };
 }
+
+// ============================================================
+// 9ROUTER & ACCOUNT QUOTA TRACKER
+// ============================================================
+
+export async function getQuotaTrackerDataAction(forceRefresh = true): Promise<import("@/lib/gemini/account-quotas").QuotaTrackerPayload> {
+  await verifyAdmin();
+  const { fetchQuotaTrackerData } = await import("@/lib/gemini/account-quotas");
+  const data = await fetchQuotaTrackerData(forceRefresh);
+  revalidateAll();
+  return data;
+}
+
