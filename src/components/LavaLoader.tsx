@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import { Mascot } from "./Mascot";
 import { useLanguage } from "@/lib/i18n/LanguageContext";

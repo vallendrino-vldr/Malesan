@@ -284,6 +284,9 @@ export function AdminNav({ waiting }: { waiting: number }) {
   const mobilePrimaryItems = MOBILE_PRIMARY_HREFS.map(
     (href) => allItems.find((i) => i.href === href)!
   );
+  const isAnyPrimaryActive = mobilePrimaryItems.some((item) => isLinkActive(item.href));
+  const isSecondaryActive = !isAnyPrimaryActive && pathname.startsWith("/admin");
+  const isMenuActive = isDrawerOpen || isSecondaryActive;
 
   return (
     <>
@@ -408,13 +411,18 @@ export function AdminNav({ waiting }: { waiting: number }) {
             onClick={() => setIsDrawerOpen(true)}
             aria-label="Buka semua menu admin"
             className={`relative flex min-h-[54px] flex-1 flex-col items-center justify-center gap-1 py-1.5 transition-colors duration-[var(--duration-standard)] ease-heat ${
-              isDrawerOpen ? "text-ember font-bold" : "text-muted hover:text-ink font-medium"
+              isMenuActive ? "text-ember font-bold" : "text-muted hover:text-ink font-medium"
             }`}
           >
             <div className="relative flex items-center justify-center">
-              <MenuIcon className={`size-5 transition-transform ${isDrawerOpen ? "scale-110 text-ember" : "text-muted"}`} />
+              <MenuIcon className={`size-5 transition-transform ${isMenuActive ? "scale-110 text-ember" : "text-muted"}`} />
             </div>
             <span className="text-[10px] leading-tight tracking-tight">Menu</span>
+
+            {/* Subtle active glow pill */}
+            {isMenuActive && (
+              <span className="absolute bottom-1 h-0.5 w-6 rounded-full bg-ember shadow-[0_0_8px_rgba(255,138,61,0.8)]" />
+            )}
           </button>
         </div>
       </nav>

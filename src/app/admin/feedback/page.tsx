@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { FeedbackList, type FeedbackItem } from "./FeedbackList";
@@ -59,6 +60,18 @@ export default async function AdminFeedbackPage() {
   return (
     <div className="space-y-6">
       <LiveRefresh tables={["user_feedback"]} label="Feedback baru masuk" />
+
+      <div className="flex items-center justify-between">
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted transition hover:text-ink"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Kembali ke Ringkasan
+        </Link>
+      </div>
 
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-hairline pb-4">
         <div>

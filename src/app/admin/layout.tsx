@@ -74,8 +74,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
         </header>
 
-        {/* Content Region: Scrollable dengan padding bawah ramah mobile */}
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-24 md:pb-8 custom-scrollbar">
+        {/* Content Region: Scrollable dengan padding bawah ramah mobile & bebas scrollbar abu-abu */}
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-24 md:pb-8 custom-scrollbar [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:[scrollbar-width:auto] md:[&::-webkit-scrollbar]:block">
           <div className="mx-auto w-full max-w-5xl px-3.5 py-4 sm:px-6 sm:py-6">
             {children}
           </div>

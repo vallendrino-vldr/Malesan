@@ -1,9 +1,27 @@
+import Link from "next/link";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { ProfitPanel, type ProfitDay } from "@/components/ProfitPanel";
 import { isPriced } from "@/lib/ai/cost";
 import type { ModelRow } from "@/lib/ai/types";
 import { jakartaDayKey, lastJakartaDays, startOfJakartaDay } from "@/lib/time";
+
+const MODULE_NAMES: Record<string, string> = {
+  ide_hari_ini: "Ide Hari Ini",
+  idea: "Matengin Ide",
+  hook: "Bikin Hook",
+  script: "Bikin Script",
+  repurpose: "Ubah Format",
+  vibe_kit: "Bikin App",
+  clip: "Potong Momen",
+  thread: "Bikin Thread",
+  video_cc: "Auto Subtitle Video",
+  affiliate: "Naskah Affiliate",
+  carousel: "Carousel Post",
+  lancar_bahasa: "Lancar Bahasa",
+  lancar_ngoding: "Lancar Ngoding",
+  trends_cron: "Pencarian Tren",
+};
 
 /**
  * Analytics.
@@ -200,8 +218,20 @@ export default async function AdminStatsPage() {
         pollMs={30_000}
       />
 
+      <div className="flex items-center justify-between">
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted transition hover:text-ink"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          Kembali ke Ringkasan
+        </Link>
+      </div>
+
       <header>
-        <h1 className="font-display text-xl font-bold text-ink">Grafik</h1>
+        <h1 className="font-display text-xl font-bold text-ink">Grafik & Statistik</h1>
         <p className="mt-1 text-sm text-muted">{DAYS} hari terakhir.</p>
       </header>
 
@@ -252,7 +282,7 @@ export default async function AdminStatsPage() {
             {moduleRows.map(([m, n]) => (
               <div key={m}>
                 <div className="flex items-baseline justify-between text-mini">
-                  <span className="text-ink">{m}</span>
+                  <span className="font-medium text-ink">{MODULE_NAMES[m] ?? m}</span>
                   <span className="font-mono text-muted">{n}</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-obsidian">
@@ -281,7 +311,7 @@ export default async function AdminStatsPage() {
             {activity.map((u) => (
               <div key={u.user_id} className="surface-card rounded-xl p-3.5">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">
                       {u.display_name || u.email}
                     </p>
@@ -316,7 +346,7 @@ export default async function AdminStatsPage() {
                       key={m}
                       className="rounded bg-obsidian px-2 py-0.5 text-micro text-muted"
                     >
-                      {m}
+                      {MODULE_NAMES[m] ?? m}
                     </span>
                   ))}
                 </div>

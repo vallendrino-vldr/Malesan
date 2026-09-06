@@ -177,14 +177,18 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
                 className="surface-card rounded-2xl border border-hairline p-5 transition-all hover:border-hairline/80"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="grid size-7 place-items-center rounded-lg bg-surface-raised border border-hairline text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-surface-raised border border-hairline text-xs">
                       {cat.icon}
                     </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-display text-sm font-bold text-ink">{item.user_name}</span>
-                        <span className="text-micro text-muted font-mono">{item.user_email}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="font-display text-sm font-bold text-ink truncate max-w-[140px] sm:max-w-none">
+                          {item.user_name}
+                        </span>
+                        <span className="text-micro text-muted font-mono truncate max-w-[160px] sm:max-w-none">
+                          {item.user_email}
+                        </span>
                       </div>
                       <span className="text-[11px] text-muted">
                         {new Date(item.created_at).toLocaleString("id-ID", {
@@ -197,7 +201,7 @@ export function FeedbackList({ initialItems }: { initialItems: FeedbackItem[] })
                   </div>
 
                   <span
-                    className={`rounded-full border px-2.5 py-0.5 text-micro font-semibold ${badge.bg} ${badge.text} ${badge.border}`}
+                    className={`rounded-full border px-2.5 py-0.5 text-micro font-semibold shrink-0 ${badge.bg} ${badge.text} ${badge.border}`}
                   >
                     {badge.label}
                   </span>
