@@ -97,3 +97,69 @@ export async function updateFeedbackStatusAction(data: {
   revalidatePath("/admin/feedback");
   return { success: true };
 }
+
+export async function deleteFeedbackAction(data: { id: string }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Hanya admin yang bisa menghapus feedback");
+  }
+
+  const serviceRole = createServiceRoleClient();
+  const { error } = await (serviceRole.from("user_feedback" as "profiles") as unknown as {
+    delete: () => {
+      eq: (col: string, val: string) => Promise<{ error: Error | null }>;
+    };
+  })
+    .delete()
+    .eq("id", data.id);
+
+  if (error) {
+    console.error("Gagal hapus feedback:", error);
+    throw new Error("Gagal menghapus feedback");
+  }
+
+  revalidatePath("/admin/feedback");
+  return { success: true };
+}
+
+export async function clearResolvedFeedbacksAction() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") {
+    throw new Error("Hanya admin yang bisa membersihkan feedback");
+  }
+
+  const serviceRole = createServiceRoleClient();
+  const { error } = await (serviceRole.from("user_feedback" as "profiles") as unknown as {
+    delete: () => {
+      eq: (col: string, val: string) => Promise<{ error: Error | null }>;
+    };
+  })
+    .delete()
+    .eq("status", "selesai");
+
+  if (error) {
+    console.error("Gagal bersihkan feedback selesai:", error);
+    throw new Error("Gagal membersihkan feedback selesai");
+  }
+
+  revalidatePath("/admin/feedback");
+  return { success: true };
+}

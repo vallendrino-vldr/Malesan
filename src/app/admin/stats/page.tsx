@@ -5,6 +5,7 @@ import { ProfitPanel, type ProfitDay } from "@/components/ProfitPanel";
 import { isPriced } from "@/lib/ai/cost";
 import type { ModelRow } from "@/lib/ai/types";
 import { jakartaDayKey, lastJakartaDays, startOfJakartaDay } from "@/lib/time";
+import { AdminStatsUserList, AdminStatsModuleList } from "@/components/admin/AdminStatsLists";
 
 const MODULE_NAMES: Record<string, string> = {
   ide_hari_ini: "Ide Hari Ini",
@@ -271,112 +272,22 @@ export default async function AdminStatsPage() {
         </div>
       </section>
 
-      <section>
-        <h2 className="eyebrow mb-2 text-muted">Modul paling kepakai</h2>
-        {moduleRows.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
-            Belum ada generasi dalam {DAYS} hari terakhir.
-          </p>
-        ) : (
-          <div className="space-y-1.5 rounded-xl border border-hairline bg-surface p-3">
-            {moduleRows.map(([m, n]) => (
-              <div key={m}>
-                <div className="flex items-baseline justify-between text-mini">
-                  <span className="font-medium text-ink">{MODULE_NAMES[m] ?? m}</span>
-                  <span className="font-mono text-muted">{n}</span>
-                </div>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-obsidian">
-                  <div
-                    className="h-full bg-ember"
-                    style={{ width: `${Math.max(3, (n / maxModule) * 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <section className="space-y-2">
+        <h2 className="eyebrow text-muted">Modul paling kepakai · {DAYS} hari</h2>
+        <AdminStatsModuleList
+          modules={moduleRows}
+          maxModule={maxModule}
+          moduleNames={MODULE_NAMES}
+        />
       </section>
 
-      {/* Who is actually using this, and for what. The panel could show a user
-          list and a global generation count but nothing joining the two, so
-          there was no way to tell an active user from a dormant one. */}
-      <section>
-        <h2 className="eyebrow mb-2 text-muted">Aktivitas user · {DAYS} hari</h2>
-        {activity.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
-            Belum ada user.
-          </p>
-        ) : (
-          <div className="space-y-2">
-            {activity.map((u) => (
-              <div key={u.user_id} className="surface-card rounded-xl p-3.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-ink">
-                      {u.display_name || u.email}
-                    </p>
-                    <p className="truncate text-micro text-muted">{u.email}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-mono text-sm text-ember">{u.generations}</p>
-                    <p className="eyebrow text-muted">generate</p>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  {u.role === "admin" && (
-                    <span className="rounded bg-ember/15 px-2 py-0.5 text-micro text-ember">
-                      Admin
-                    </span>
-                  )}
-                  {u.is_banned && (
-                    <span className="rounded bg-danger/10 px-2 py-0.5 text-micro text-danger">
-                      Banned
-                    </span>
-                  )}
-                  <span
-                    className={`rounded px-2 py-0.5 text-micro ${
-                      u.is_pro ? "bg-success/10 text-success" : "bg-surface-raised text-muted"
-                    }`}
-                  >
-                    {u.is_pro ? "Pro" : "Free"}
-                  </span>
-                  {(u.modules_used ?? []).map((m) => (
-                    <span
-                      key={m}
-                      className="rounded bg-obsidian px-2 py-0.5 text-micro text-muted"
-                    >
-                      {MODULE_NAMES[m] ?? m}
-                    </span>
-                  ))}
-                </div>
-
-                <p className="mt-2 flex flex-wrap gap-x-3 text-micro text-muted">
-                  <span>
-                    Kredit kepakai:{" "}
-                    <span className="font-mono text-ink">{u.credits_spent}</span>
-                  </span>
-                  <span>
-                    Sisa: <span className="font-mono text-ink">{u.credits_total}</span>
-                  </span>
-                  <span>
-                    Terakhir aktif:{" "}
-                    <span className="text-ink">
-                      {u.last_active
-                        ? new Date(u.last_active).toLocaleString("id-ID", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "belum pernah"}
-                    </span>
-                  </span>
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Who is actually using this, and for what */}
+      <section className="space-y-2">
+        <h2 className="eyebrow text-muted">Aktivitas user · {DAYS} hari</h2>
+        <AdminStatsUserList
+          activity={activity}
+          moduleNames={MODULE_NAMES}
+        />
       </section>
 
       <p className="text-micro leading-relaxed text-muted">

@@ -605,6 +605,43 @@ export async function clearErrorLogs() {
   revalidatePath("/admin");
 }
 
+export async function deleteErrorGroup(ids: number[]) {
+  await verifyAdmin();
+  if (!ids.length) return;
+  const serviceRole = createServiceRoleClient();
+  const { error } = await serviceRole.from("error_log").delete().in("id", ids);
+  if (error) throw new Error(`Gagal menghapus log error: ${error.message}`);
+  revalidatePath("/admin/errors");
+  revalidatePath("/admin");
+}
+
+export async function clearAiUsageLogs() {
+  const adminId = await verifyAdmin();
+  const serviceRole = createServiceRoleClient();
+  const { error } = await serviceRole.from("ai_usage_log").delete().gte("id", 0);
+  if (error) throw new Error(`Gagal membersihkan riwayat aktivitas AI: ${error.message}`);
+  await audit(adminId, "ai_usage_log.clear", "all", {});
+  revalidatePath("/admin");
+  revalidatePath("/admin/stats");
+}
+
+export async function deleteAiUsageLog(id: number) {
+  await verifyAdmin();
+  const serviceRole = createServiceRoleClient();
+  const { error } = await serviceRole.from("ai_usage_log").delete().eq("id", id);
+  if (error) throw new Error(`Gagal menghapus log: ${error.message}`);
+  revalidatePath("/admin");
+}
+
+export async function clearAuditLogs() {
+  const adminId = await verifyAdmin();
+  const serviceRole = createServiceRoleClient();
+  const { error } = await serviceRole.from("audit_log").delete().gte("id", 0);
+  if (error) throw new Error(`Gagal membersihkan riwayat log admin: ${error.message}`);
+  await audit(adminId, "audit_log.clear", "all", {});
+  revalidatePath("/admin");
+}
+
 /** Recent admin activity, newest first. Powers the trail shown in the panel. */
 export async function recentAuditLog(limit = 30) {
   await verifyAdmin();

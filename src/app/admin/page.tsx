@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { AiHealthCard } from "@/components/AiHealthCard";
+import { AdminActivityFeed } from "@/components/admin/AdminActivityFeed";
 import { startOfJakartaDay } from "@/lib/time";
 
 /**
@@ -62,14 +63,6 @@ const MODULE_NAMES: Record<string, string> = {
   trends_cron: "Pencarian Tren Otomatis",
 };
 
-function timeAgo(iso: string) {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return "barusan";
-  if (mins < 60) return `${mins}m lalu`;
-  const h = Math.floor(mins / 60);
-  if (h < 24) return `${h}j lalu`;
-  return `${Math.floor(h / 24)}h lalu`;
-}
 
 function formatRp(amount: number) {
   return "Rp " + Math.round(amount).toLocaleString("id-ID");
@@ -411,139 +404,46 @@ export default async function AdminDashboardPage() {
       {/* 4. STATUS KESEHATAN AI */}
       <AiHealthCard />
 
-      {/* 5. AKTIVITAS USER NYATA TERBARU (Founder Realtime Feed: Siapa, Melakukan Apa, Kapan, Sukses/Gagal & Kenapa Gagal) */}
-      <section>
-        <div className="mb-2.5 flex items-center justify-between">
-          <div>
-            <h2 className="eyebrow text-muted">Aktivitas Nyata Kreator</h2>
-            <p className="text-micro text-muted">Timeline interaksi real-time: siapa, bikin apa, hasil, dan biaya</p>
-          </div>
-          <span className="text-micro text-muted">12 aktivitas terakhir</span>
-        </div>
-
-        {recentUsageLogs.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-hairline px-4 py-8 text-center text-xs text-muted bg-surface">
-            Belum ada aktivitas konten tercatat hari ini.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-xs">
-            <ul className="divide-y divide-hairline">
-              {recentUsageLogs.map((log) => {
-                const userProfile = log.user_id ? usageProfileMap.get(log.user_id) : null;
-                const userName = userProfile?.display_name || (userProfile?.email ? maskEmail(userProfile.email) : "Pengguna Tamu");
-                const modName = MODULE_NAMES[log.feature] || log.feature;
-                const isSuccess = log.status === "success";
-
-                return (
-                  <li key={log.id} className="p-3.5 sm:p-4 hover:bg-surface-raised/30 transition-colors space-y-1.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-display text-xs font-bold text-ink truncate">{userName}</span>
-                        <span className="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold bg-surface-raised border border-white/[0.06] text-ink">
-                          Membuat {modName}
-                        </span>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                            isSuccess
-                              ? "bg-success/10 text-success border border-success/30"
-                              : "bg-danger/10 text-danger border border-danger/30"
-                          }`}
-                        >
-                          {isSuccess ? "Berhasil" : "Gagal"}
-                        </span>
-                      </div>
-
-                      <span className="font-mono text-micro text-muted">{timeAgo(log.created_at)}</span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-x-3 text-micro text-muted font-mono">
-                      <span>Biaya AI: {formatRp(log.cost_idr || 0)}</span>
-                      <span>• Kredit: -{log.credits_charged || 1}</span>
-                      {!isSuccess && (
-                        <span className="text-danger/90">
-                          (Kredit otomatis di-refund ke pengguna)
-                        </span>
-                      )}
-                    </div>
-
-                    {!isSuccess && log.error_message && (
-                      <details className="mt-1 pt-1 text-xs">
-                        <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">
-                          Lihat detail kegagalan
-                        </summary>
-                        <p className="mt-1 font-mono text-[10px] text-muted whitespace-pre-wrap bg-obsidian/60 p-2.5 rounded-lg border border-hairline">
-                          {log.error_message}
-                        </p>
-                      </details>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
-      </section>
-
-      {/* 6. MASALAH SISTEM & ERROR TERAKHIR */}
-      {recentErrors.length > 0 && (
-        <section>
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="eyebrow text-muted">Log Kendala Terakhir (Solusi & Dampak)</h2>
-            <Link href="/admin/errors" className="text-micro text-ember hover:underline">
-              Lihat semua error →
-            </Link>
-          </div>
-          <div className="overflow-hidden rounded-xl border border-hairline bg-surface">
-            <ul className="divide-y divide-hairline">
-              {recentErrors.map((err) => (
-                <li key={err.id} className="p-3 text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-semibold text-danger">{err.endpoint}</span>
-                    <span className="text-micro text-muted">{timeAgo(err.created_at)}</span>
-                  </div>
-                  <p className="mt-1 text-ink text-xs line-clamp-2">{err.message}</p>
-                  <p className="mt-1 text-micro text-muted">
-                    Tipe: {err.error_type} • Tindakan: Sistem otomatis fallback atau refund kredit ke user.
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      {/* 7. AKTIVITAS ADMIN (AUDIT LOG) */}
-      <section>
-        <h2 className="eyebrow mb-2 text-muted">Aktivitas Tim Admin</h2>
-        {audit.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-hairline px-4 py-6 text-center text-xs text-muted">
-            Belum ada aksi admin yang tercatat.
-          </p>
-        ) : (
-          <ol className="overflow-hidden rounded-xl border border-hairline bg-surface">
-            {audit.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-start justify-between gap-3 border-b border-hairline px-3.5 py-2.5 last:border-b-0"
-              >
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-ink">
-                    {ACTION_LABEL[a.action] ?? a.action}
-                  </p>
-                  <p className="truncate text-micro text-muted">
-                    {typeof a.metadata?.reason === "string"
-                      ? String(a.metadata.reason)
-                      : typeof a.metadata?.email === "string"
-                        ? String(a.metadata.email)
-                        : (a.target_id ?? "").slice(0, 8)}
-                  </p>
-                </div>
-                <span className="shrink-0 text-micro text-muted">{timeAgo(a.created_at)}</span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      {/* 5. AKTIVITAS, ERROR, & AUDIT FEED (Interaktif dengan Nested Accordion & Tombol Bersihkan Riwayat) */}
+      <AdminActivityFeed
+        initialLogs={recentUsageLogs.map((log) => {
+          const userProfile = log.user_id ? usageProfileMap.get(log.user_id) : null;
+          const userName = userProfile?.display_name || (userProfile?.email ? maskEmail(userProfile.email) : "Pengguna Tamu");
+          const modName = MODULE_NAMES[log.feature] || log.feature;
+          return {
+            id: log.id,
+            feature: log.feature,
+            status: log.status,
+            error_message: log.error_message,
+            cost_idr: log.cost_idr,
+            credits_charged: log.credits_charged,
+            user_id: log.user_id,
+            created_at: log.created_at,
+            userName,
+            modName,
+          };
+        })}
+        initialAudit={audit.map((a) => ({
+          id: a.id,
+          action: a.action,
+          actionLabel: ACTION_LABEL[a.action] ?? a.action,
+          target_id: a.target_id,
+          detail:
+            typeof a.metadata?.reason === "string"
+              ? String(a.metadata.reason)
+              : typeof a.metadata?.email === "string"
+                ? String(a.metadata.email)
+                : (a.target_id ?? "").slice(0, 8),
+          created_at: a.created_at,
+        }))}
+        initialErrors={recentErrors.map((err) => ({
+          id: err.id,
+          endpoint: err.endpoint,
+          error_type: err.error_type,
+          message: err.message,
+          created_at: err.created_at,
+        }))}
+      />
     </div>
   );
 }

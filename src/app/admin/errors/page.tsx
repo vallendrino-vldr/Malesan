@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { ErrorActionCenter } from "./ErrorActionCenter";
+import { ErrorListAccordion } from "./ErrorListAccordion";
 
 /**
  * Why things failed.
@@ -91,15 +92,6 @@ function explain(r: Row): {
   };
 }
 
-function timeAgo(iso: string) {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return "barusan";
-  if (mins < 60) return `${mins} menit lalu`;
-  const h = Math.floor(mins / 60);
-  if (h < 24) return `${h} jam lalu`;
-  return `${Math.floor(h / 24)} hari lalu`;
-}
-
 export default async function AdminErrorsPage() {
   const { data } = await createServiceRoleClient()
     .from("error_log")
@@ -165,128 +157,7 @@ export default async function AdminErrorsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {grouped.map((g, i) => {
-            const latest = g.rows[0];
-            const severityBg =
-              g.info.severity === "high"
-                ? "border-danger/40 bg-danger/5"
-                : "border-amber-500/30 bg-amber-500/5";
-            const badgeColor =
-              g.info.severity === "high"
-                ? "bg-danger/10 text-danger border-danger/30"
-                : "bg-amber-500/10 text-amber-400 border-amber-500/30";
-
-            return (
-              <div
-                key={i}
-                className={`surface-card rounded-2xl border p-5 space-y-4 transition-all shadow-xs ${severityBg}`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="flex size-6 items-center justify-center rounded-md border border-current/30 text-xs">
-                        {g.info.severity === "high" ? (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-danger">
-                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                          </svg>
-                        ) : (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-amber-400">
-                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                            <line x1="12" y1="9" x2="12" y2="13" />
-                            <line x1="12" y1="17" x2="12.01" y2="17" />
-                          </svg>
-                        )}
-                      </span>
-                      <h2 className="font-display text-base font-bold text-ink">
-                        {g.info.masalah}
-                      </h2>
-                    </div>
-                    <p className="mt-1 flex flex-wrap items-center gap-x-2 text-micro text-muted font-mono">
-                      {latest.status && <span className="text-danger font-semibold">HTTP {latest.status}</span>}
-                      {latest.model && <span>• {latest.model}</span>}
-                      {latest.key_index != null && <span>• key #{latest.key_index}</span>}
-                      <span>• {timeAgo(latest.created_at)}</span>
-                    </p>
-                  </div>
-
-                  <span
-                    className={`shrink-0 rounded-full border px-3 py-1 font-mono text-xs font-bold ${badgeColor}`}
-                  >
-                    Terjadi {g.rows.length}×
-                  </span>
-                </div>
-
-                {/* 4 Pertanyaan Kunci Founder */}
-                <div className="grid gap-2.5 sm:grid-cols-3">
-                  <div className="rounded-xl border border-hairline bg-surface p-3.5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-muted">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-danger">
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="15" y1="9" x2="9" y2="15" />
-                          <line x1="9" y1="9" x2="15" y2="15" />
-                        </svg>
-                        <span className="eyebrow text-muted">Dampak ke User</span>
-                      </div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
-                        {g.info.dampak}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-hairline bg-surface p-3.5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-muted">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
-                          <rect x="3" y="11" width="18" height="10" rx="2" />
-                          <circle cx="12" cy="5" r="2" />
-                          <path d="M12 7v4" />
-                          <line x1="8" y1="16" x2="8" y2="16" />
-                          <line x1="16" y1="16" x2="16" y2="16" />
-                        </svg>
-                        <span className="eyebrow text-muted">Aksi Otomatis Sistem</span>
-                      </div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-ink/90">
-                        {g.info.sistemAction}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-ember/30 bg-ember/10 p-3.5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5 text-ember">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
-                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                        </svg>
-                        <span className="eyebrow text-ember font-bold">Tindakan Founder</span>
-                      </div>
-                      <p className="mt-1.5 text-xs leading-relaxed text-ember-lo font-medium">
-                        {g.info.founderAction}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Technical details (collapsible) */}
-                <details className="group border-t border-hairline/60 pt-2.5">
-                  <summary className="cursor-pointer text-micro font-semibold text-muted hover:text-ink select-none flex items-center gap-1.5">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
-                      <polyline points="4 17 10 11 4 5" />
-                      <line x1="12" y1="19" x2="20" y2="19" />
-                    </svg>
-                    <span>Lihat Log Teknis Asli</span>
-                  </summary>
-                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded-xl border border-hairline bg-obsidian p-3 font-mono text-micro leading-relaxed text-muted">
-                    {latest.message}
-                  </pre>
-                </details>
-              </div>
-            );
-          })}
-        </div>
+        <ErrorListAccordion initialGroups={grouped} />
       )}
     </div>
   );

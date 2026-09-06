@@ -90,6 +90,8 @@ export function BrainPanel({
 }) {
   const active = models.filter((m) => m.is_active);
   const [editing, setEditing] = useState(false);
+  const [isQuickSwitchOpen, setIsQuickSwitchOpen] = useState(true);
+  const [isFallbackOpen, setIsFallbackOpen] = useState(false);
   const [primary, setPrimary] = useState(brain.primary?.modelId ?? "");
   const [fallbacks, setFallbacks] = useState<string[]>(
     brain.fallbacks.map((f) => f.modelId),
@@ -134,144 +136,219 @@ export function BrainPanel({
         </button>
       </header>
 
-      {/* ---------- 1-Click Quick AI Switcher (Non-Developer Friendly) ---------- */}
-      <div className="space-y-2.5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-          <p className="font-display text-xs font-bold text-ink flex items-center gap-1.5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span>Pilih Provider AI Utama (1-Tap Langsung Aktif)</span>
-          </p>
-          <span className="text-micro text-muted">
-            Otomatis sinkron ke seluruh fitur Malesan
-          </span>
-        </div>
-
-        {err && (
-          <p className="rounded-lg border border-danger/20 bg-danger/10 p-3 text-xs text-danger">
-            {err}
-          </p>
-        )}
-
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          {active.map((m) => {
-            const isPrimary = brain.primary?.modelId === m.id;
-            const p = providers.find((x) => x.id === m.provider_id);
-            const isGemini =
-              (m.label ?? m.model_id).toLowerCase().includes("gemini") ||
-              p?.slug.includes("gemini");
-            const isDeepSeek =
-              (m.label ?? m.model_id).toLowerCase().includes("deepseek") ||
-              p?.slug.includes("ipenk") ||
-              p?.slug.includes("deepseek");
-
-            return (
-              <div
-                key={m.id}
-                className={`relative flex flex-col justify-between rounded-2xl border p-4 transition-all ${
-                  isPrimary
-                    ? "border-ember/60 bg-surface-raised shadow-xs ring-1 ring-ember/30"
-                    : "border-white/[0.08] bg-surface/50 hover:border-ember/30"
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-obsidian px-2.5 py-0.5 font-display text-micro font-bold text-ink">
-                      {isGemini ? (
-                        <>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                          <span>Google Gemini</span>
-                        </>
-                      ) : isDeepSeek ? (
-                        <>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-blue-400"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"/></svg>
-                          <span>DeepSeek</span>
-                        </>
-                      ) : (
-                        <span>{p?.label ?? "AI Gateway"}</span>
-                      )}
-                    </span>
-                    {isPrimary ? (
-                      <span className="inline-flex items-center gap-1.5 text-micro font-bold text-ember">
-                        <span className="size-2 rounded-full bg-ember animate-pulse" />
-                        Sedang Aktif
-                      </span>
-                    ) : (
-                      <span className="text-micro text-muted">Cadangan Siap Pakai</span>
-                    )}
-                  </div>
-
-                  <p className="mt-2.5 font-display text-sm font-bold text-ink">
-                    {m.label ?? m.model_id}
-                  </p>
-                  <p className="mt-1 text-micro text-muted leading-relaxed">
-                    {isGemini
-                      ? "Pilihan paling stabil, cepat, dan bahasa Indonesianya sangat luwes."
-                      : isDeepSeek
-                        ? "Pilihan super hemat biaya dengan kemampuan nalar analitis tinggi."
-                        : "Model alternatif berkecepatan tinggi untuk akselerasi performa."}
-                  </p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
-                  <div className="text-micro text-muted">
-                    {m.pricing_mode === "prepaid_package" ? (
-                      <span className="text-ember-lo font-medium">Paket Kuota Token</span>
-                    ) : (
-                      <span>Pay-as-you-go</span>
-                    )}
-                  </div>
-
-                  {!isPrimary ? (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => {
-                        setErr(null);
-                        startTransition(async () => {
-                          try {
-                            await quickSwitchPrimaryModel(m.id);
-                          } catch (e) {
-                            setErr(e instanceof Error ? e.message : "Gagal ganti model.");
-                          }
-                        });
-                      }}
-                      className="cursor-pointer rounded-xl border border-ember/40 bg-ember/10 px-3.5 py-1.5 font-display text-xs font-bold text-ember transition-all hover:bg-ember hover:text-obsidian active:scale-95 disabled:opacity-50"
-                    >
-                      {busy ? "Mengganti..." : "Jadikan Otak Utama"}
-                    </button>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-xl border border-ember/30 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span>Otak Terpilih</span>
-                    </span>
-                  )}
-                </div>
+      {/* ---------- 1-Click Quick AI Switcher (Collapsible Accordion) ---------- */}
+      <div className="surface-card rounded-2xl border border-white/[0.08] overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setIsQuickSwitchOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-raised/40 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-ember/10 text-ember border border-ember/20 shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-display text-xs font-bold text-ink">
+                  Pilihan Otak AI Utama
+                </span>
+                <span className="rounded-full border border-white/10 bg-surface px-2 py-0.5 text-micro font-medium text-muted">
+                  {active.length} Model Aktif
+                </span>
               </div>
-            );
-          })}
-        </div>
+              <p className="text-micro text-muted truncate mt-0.5">
+                {brain.primary ? `Sedang aktif: ${brain.primary.label}` : "Pilih 1 model untuk seluruh fitur"}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-micro text-muted hidden sm:inline">
+              {isQuickSwitchOpen ? "Ciutkan" : "Buka Pilihan"}
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className={`size-4 text-muted transition-transform duration-200 ${isQuickSwitchOpen ? "rotate-180" : ""}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </button>
+
+        {isQuickSwitchOpen && (
+          <div className="p-4 pt-1 space-y-2.5 border-t border-white/[0.06]">
+            <p className="text-micro text-muted">
+              1-tap langsung aktif dan otomatis sinkron ke seluruh modul kreatif Malesan.
+            </p>
+
+            {err && (
+              <p className="rounded-lg border border-danger/20 bg-danger/10 p-3 text-xs text-danger">
+                {err}
+              </p>
+            )}
+
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {active.map((m) => {
+                const isPrimary = brain.primary?.modelId === m.id;
+                const p = providers.find((x) => x.id === m.provider_id);
+                const isGemini =
+                  (m.label ?? m.model_id).toLowerCase().includes("gemini") ||
+                  p?.slug.includes("gemini");
+                const isDeepSeek =
+                  (m.label ?? m.model_id).toLowerCase().includes("deepseek") ||
+                  p?.slug.includes("ipenk") ||
+                  p?.slug.includes("deepseek");
+
+                return (
+                  <div
+                    key={m.id}
+                    className={`relative flex flex-col justify-between rounded-2xl border p-4 transition-all ${
+                      isPrimary
+                        ? "border-ember/60 bg-surface-raised shadow-xs ring-1 ring-ember/30"
+                        : "border-white/[0.08] bg-surface/50 hover:border-ember/30"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-obsidian px-2.5 py-0.5 font-display text-micro font-bold text-ink">
+                          {isGemini ? (
+                            <>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                              <span>Google Gemini</span>
+                            </>
+                          ) : isDeepSeek ? (
+                            <>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-blue-400"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"/></svg>
+                              <span>DeepSeek</span>
+                            </>
+                          ) : (
+                            <span>{p?.label ?? "AI Gateway"}</span>
+                          )}
+                        </span>
+                        {isPrimary ? (
+                          <span className="inline-flex items-center gap-1.5 text-micro font-bold text-ember">
+                            <span className="size-2 rounded-full bg-ember animate-pulse" />
+                            Sedang Aktif
+                          </span>
+                        ) : (
+                          <span className="text-micro text-muted">Cadangan Siap Pakai</span>
+                        )}
+                      </div>
+
+                      <p className="mt-2.5 font-display text-sm font-bold text-ink">
+                        {m.label ?? m.model_id}
+                      </p>
+                      <p className="mt-1 text-micro text-muted leading-relaxed">
+                        {isGemini
+                          ? "Pilihan paling stabil, cepat, dan bahasa Indonesianya sangat luwes."
+                          : isDeepSeek
+                            ? "Pilihan super hemat biaya dengan kemampuan nalar analitis tinggi."
+                            : "Model alternatif berkecepatan tinggi untuk akselerasi performa."}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between">
+                      <div className="text-micro text-muted">
+                        {m.pricing_mode === "prepaid_package" ? (
+                          <span className="text-ember-lo font-medium">Paket Kuota Token</span>
+                        ) : (
+                          <span>Pay-as-you-go</span>
+                        )}
+                      </div>
+
+                      {!isPrimary ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            setErr(null);
+                            startTransition(async () => {
+                              try {
+                                await quickSwitchPrimaryModel(m.id);
+                              } catch (e) {
+                                setErr(e instanceof Error ? e.message : "Gagal ganti model.");
+                              }
+                            });
+                          }}
+                          className="cursor-pointer rounded-xl border border-ember/40 bg-ember/10 px-3.5 py-1.5 font-display text-xs font-bold text-ember transition-all hover:bg-ember hover:text-obsidian active:scale-95 disabled:opacity-50"
+                        >
+                          {busy ? "Mengganti..." : "Jadikan Otak Utama"}
+                        </button>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-xl border border-ember/30 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><polyline points="20 6 9 17 4 12"/></svg>
+                          <span>Otak Terpilih</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="surface-card space-y-3 rounded-xl p-4">
-        <div className="flex items-center justify-between gap-3">
-          <p
-            className={`text-mini leading-relaxed ${
-              brain.healthy ? "text-ember-lo" : "text-danger"
-            }`}
-          >
-            {brain.status}
-          </p>
-          {!editing && (
-            <button
-              onClick={() => setEditing(true)}
-              className="shrink-0 rounded-full bg-ember px-4 py-1.5 text-micro font-bold text-obsidian"
+      {/* ---------- Status Cadangan & Kuota Detail (Collapsible Accordion) ---------- */}
+      <div className="surface-card rounded-2xl border border-white/[0.08] overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setIsFallbackOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-raised/40 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-surface text-muted border border-white/10 shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-display text-xs font-bold text-ink">
+                  Status Cadangan & Kuota
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-micro font-medium ${brain.healthy ? "bg-ember/15 text-ember-lo border border-ember/20" : "bg-danger/15 text-danger border border-danger/20"}`}>
+                  {brain.healthy ? "Sehat" : "Perlu Cek"}
+                </span>
+              </div>
+              <p className="text-micro text-muted truncate mt-0.5">
+                {brain.status}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {!editing && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsFallbackOpen(true);
+                  setEditing(true);
+                }}
+                role="button"
+                tabIndex={0}
+                className="shrink-0 rounded-full bg-ember px-3 py-1 text-micro font-bold text-obsidian hover:bg-ember-lo cursor-pointer transition-colors"
+              >
+                Ganti Kustom
+              </span>
+            )}
+            <span className="text-micro text-muted hidden sm:inline">
+              {(isFallbackOpen || editing) ? "Ciutkan" : "Buka Detail"}
+            </span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              className={`size-4 text-muted transition-transform duration-200 ${(isFallbackOpen || editing) ? "rotate-180" : ""}`}
             >
-              Ganti Kustom
-            </button>
-          )}
-        </div>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </div>
+        </button>
 
-        {!editing ? (
+        {(isFallbackOpen || editing) && (
+          <div className="p-4 pt-2 space-y-3 border-t border-white/[0.06]">
+            {!editing ? (
           <>
             {brain.primary ? (
               <div className="space-y-1.5">
@@ -434,6 +511,8 @@ export function BrainPanel({
                 Batal
               </button>
             </div>
+          </div>
+        )}
           </div>
         )}
       </div>
