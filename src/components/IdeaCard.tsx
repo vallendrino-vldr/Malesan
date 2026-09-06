@@ -9,6 +9,7 @@ import {
   todayPlatformLabel,
   type TodayPlatform,
 } from "@/lib/content-options";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type IdeaData = {
   title: string;
@@ -28,6 +29,9 @@ export type IdeaData = {
 };
 
 export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<IdeaData>; isStreaming?: boolean; generationId?: string }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -37,12 +41,12 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
   const isVideo = normalizedPlatform === "tiktok_reels" || normalizedPlatform === "youtube_shorts";
   const beatLabel =
     normalizedPlatform === "x" || normalizedPlatform === "threads"
-      ? "Alur thread"
+      ? isEn ? "Thread flow" : "Alur thread"
       : normalizedPlatform === "facebook"
-        ? "Alur cerita"
+        ? isEn ? "Story flow" : "Alur cerita"
         : normalizedPlatform === "linkedin"
-          ? "Kerangka insight"
-          : "Alur video";
+          ? isEn ? "Insight framework" : "Kerangka insight"
+          : isEn ? "Video flow" : "Alur video";
 
   const handleSave = async () => {
     if (!idea.title) return;
@@ -52,7 +56,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       await saveToPipeline(idea.title, idea, generationId);
       setSaved(true);
     } catch {
-      setSaveError("Belum berhasil masuk Alur. Coba tap sekali lagi.");
+      setSaveError(isEn ? "Failed to save to Pipeline. Tap once again." : "Belum berhasil masuk Alur. Coba tap sekali lagi.");
     }
     setIsSaving(false);
   };
@@ -69,7 +73,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2200);
     } catch {
-      setCopyError("Belum bisa disalin otomatis. Buka kontennya, lalu salin manual ya.");
+      setCopyError(isEn ? "Could not copy automatically. Open the content, then copy manually." : "Belum bisa disalin otomatis. Buka kontennya, lalu salin manual ya.");
     }
   };
 
@@ -96,7 +100,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       <div className="mt-4 space-y-3">
         {idea.angle && (
           <div>
-            <span className="eyebrow text-ember">Sudutnya</span>
+            <span className="eyebrow text-ember">{isEn ? "Angle" : "Sudutnya"}</span>
             <p className="mt-1 text-sm leading-relaxed text-ink/90">
               {isStreaming ? <StreamingText text={idea.angle} /> : idea.angle}
             </p>
@@ -105,7 +109,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
         
         {idea.why_now && (
           <div>
-            <span className="eyebrow text-ember">Kenapa sekarang</span>
+            <span className="eyebrow text-ember">{isEn ? "Why Now" : "Kenapa sekarang"}</span>
             <p className="mt-1 text-sm leading-relaxed text-ink/90">
               {isStreaming ? <StreamingText text={idea.why_now} /> : idea.why_now}
             </p>
@@ -114,7 +118,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
 
         {idea.hook_seed && (
           <div className="rounded-lg bg-obsidian p-3 border border-hairline">
-            <span className="eyebrow text-ember">Calon hook</span>
+            <span className="eyebrow text-ember">{isEn ? "Hook Idea" : "Calon hook"}</span>
             <p className="mt-1 text-sm font-semibold text-ink">
               {isStreaming ? <StreamingText text={idea.hook_seed} /> : idea.hook_seed}
             </p>
@@ -125,13 +129,13 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
       {(idea.opening || idea.ready_copy || idea.beats?.length || idea.caption || idea.hashtags?.length) && (
         <details className="mt-5 overflow-hidden rounded-xl border border-hairline bg-obsidian/45">
           <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 py-3 text-mini font-bold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
-            <span>Konten siap posting</span>
-            <span className="text-micro font-normal text-muted">Buka</span>
+            <span>{isEn ? "Ready-to-post content" : "Konten siap posting"}</span>
+            <span className="text-micro font-normal text-muted">{isEn ? "Open" : "Buka"}</span>
           </summary>
           <div className="space-y-4 border-t border-hairline px-4 py-4">
             {idea.opening && (
               <div>
-                <p className="eyebrow text-ember">{isVideo ? "Hook" : "Pembuka"}</p>
+                <p className="eyebrow text-ember">{isVideo ? "Hook" : (isEn ? "Opening" : "Pembuka")}</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm font-semibold leading-relaxed text-ink">
                   {idea.opening}
                 </p>
@@ -152,7 +156,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
             )}
             {idea.ready_copy && (
               <div>
-                <p className="eyebrow text-ember">{isVideo ? "Voice-over" : "Draft siap posting"}</p>
+                <p className="eyebrow text-ember">{isVideo ? "Voice-over" : (isEn ? "Ready-to-post draft" : "Draft siap posting")}</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/90">
                   {idea.ready_copy}
                 </p>
@@ -160,7 +164,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
             )}
             {idea.caption && (
               <div>
-                <p className="eyebrow text-ember">{isVideo ? "Caption" : "Penutup"}</p>
+                <p className="eyebrow text-ember">{isVideo ? "Caption" : (isEn ? "Closing" : "Penutup")}</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-ink/90">
                   {idea.caption}
                 </p>
@@ -193,7 +197,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
 
       {!isStreaming && idea.title && (
         <div className="mt-4 space-y-3 border-t border-hairline pt-4">
-          <p className="text-mini font-semibold text-ink">Mau langsung dipakai?</p>
+          <p className="text-mini font-semibold text-ink">{isEn ? "Ready to use right away?" : "Mau langsung dipakai?"}</p>
           <div className={`grid gap-2 ${copyPayload ? "grid-cols-2" : "grid-cols-1"}`}>
             {copyPayload && (
               <button
@@ -203,7 +207,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
                   copied ? "bg-success text-obsidian" : "bg-ember text-obsidian hover:bg-ember-lo"
                 }`}
               >
-                {copied ? "Udah tersalin" : "Salin konten"}
+                {copied ? (isEn ? "Copied" : "Udah tersalin") : (isEn ? "Copy content" : "Salin konten")}
               </button>
             )}
             <button
@@ -216,7 +220,7 @@ export function IdeaCard({ idea, isStreaming, generationId }: { idea: Partial<Id
                   : "cursor-pointer border-hairline bg-surface-raised text-ink hover:border-ember/40 hover:text-ember-lo"
               }`}
             >
-              {saved ? "Udah masuk Alur" : isSaving ? "Lagi nyimpen..." : "Simpan ke Alur"}
+              {saved ? (isEn ? "Saved to Pipeline" : "Udah masuk Alur") : isSaving ? (isEn ? "Saving..." : "Lagi nyimpen...") : (isEn ? "Save to Pipeline" : "Simpan ke Alur")}
             </button>
           </div>
           {copyError && (

@@ -5,6 +5,7 @@ import { adaptSceneFootage } from "@/app/actions/pipeline";
 import { saveOfflineScriptCache, markOfflineScriptSynced } from "@/lib/offline-draft-cache";
 import { VoicePreview } from "./VoicePreview";
 import { ScriptFullViewModal } from "./ScriptFullViewModal";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type ScriptScene = {
   timestamp?: string;
@@ -57,16 +58,16 @@ function isTextPlatform(platform?: string) {
   return ["x", "threads", "facebook", "linkedin"].includes((platform ?? "").toLowerCase());
 }
 
-function buildReadThrough(s: ScriptOutput, textMode: boolean) {
+function buildReadThrough(s: ScriptOutput, textMode: boolean, isEn = false) {
   const scenes = s.script ?? [];
   const hook = scenes[0];
   const body = scenes.slice(1);
 
   const lines: string[] = [];
-  if (hook?.spoken) lines.push(`${textMode ? "PEMBUKA" : "HOOK"}\n${hook.spoken}`);
+  if (hook?.spoken) lines.push(`${textMode ? (isEn ? "OPENING" : "PEMBUKA") : "HOOK"}\n${hook.spoken}`);
   if (body.length) {
     lines.push(
-      `${textMode ? "LANJUTAN" : "BODY"}\n${body
+      `${textMode ? (isEn ? "BODY" : "LANJUTAN") : "BODY"}\n${body
         .map((sc) => sc.spoken)
         .filter(Boolean)
         .join("\n\n")}`,
@@ -76,31 +77,31 @@ function buildReadThrough(s: ScriptOutput, textMode: boolean) {
   return lines.join("\n\n");
 }
 
-function buildMarkdown(s: ScriptOutput, title: string, textMode: boolean) {
+function buildMarkdown(s: ScriptOutput, title: string, textMode: boolean, isEn = false) {
   const out: string[] = [
     `# ${title}`,
     "",
-    textMode ? "## Tulisan siap posting" : "## Voice over",
+    textMode ? (isEn ? "## Ready-to-post copy" : "## Tulisan siap posting") : "## Voice over",
     "",
-    buildReadThrough(s, textMode),
+    buildReadThrough(s, textMode, isEn),
     "",
   ];
 
   if (s.script?.length) {
-    out.push(textMode ? "## Bagian" : "## Scene", "");
+    out.push(textMode ? (isEn ? "## Sections" : "## Bagian") : "## Scene", "");
     s.script.forEach((sc, i) => {
       out.push(`### ${i + 1}. ${sc.timestamp ?? ""}`.trim());
-      if (sc.spoken) out.push(`**${textMode ? "Teks" : "Diucapkan"}:** ${sc.spoken}`);
-      if (sc.on_screen_text) out.push(`**${textMode ? "Fungsi" : "Teks di layar"}:** ${sc.on_screen_text}`);
+      if (sc.spoken) out.push(`**${textMode ? (isEn ? "Text" : "Teks") : (isEn ? "Spoken" : "Diucapkan")}:** ${sc.spoken}`);
+      if (sc.on_screen_text) out.push(`**${textMode ? (isEn ? "Function" : "Fungsi") : (isEn ? "On-Screen Text" : "Teks di layar")}:** ${sc.on_screen_text}`);
       if (sc.visual && !textMode) out.push(`**Footage:** ${sc.visual}`);
-      if (sc.user_footage_note && !textMode) out.push(`**Bahan Kreator:** ${sc.user_footage_note}`);
+      if (sc.user_footage_note && !textMode) out.push(`**${isEn ? "Creator Notes" : "Bahan Kreator"}:** ${sc.user_footage_note}`);
       out.push("");
     });
   }
 
   if (s.cta?.text) {
     out.push("## CTA", "", s.cta.text);
-    if (s.cta.placement) out.push("", `_Penempatan: ${s.cta.placement}_`);
+    if (s.cta.placement) out.push("", `_${isEn ? "Placement" : "Penempatan"}: ${s.cta.placement}_`);
     out.push("");
   }
   if (s.caption) out.push("## Caption", "", s.caption, "");
@@ -120,6 +121,9 @@ export function ScriptView({
   platform?: string;
   onSaveScript?: (updated: ScriptOutput) => Promise<void>;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [prevScript, setPrevScript] = useState<ScriptOutput>(script);
   const [currentScript, setCurrentScript] = useState<ScriptOutput>(script);
   const [tab, setTab] = useState<"scene" | "baca">("scene");
@@ -138,8 +142,8 @@ export function ScriptView({
   }
 
   const textMode = isTextPlatform(platform);
-  const readThrough = useMemo(() => buildReadThrough(currentScript, textMode), [currentScript, textMode]);
-  const markdown = useMemo(() => buildMarkdown(currentScript, title, textMode), [currentScript, title, textMode]);
+  const readThrough = useMemo(() => buildReadThrough(currentScript, textMode, isEn), [currentScript, textMode, isEn]);
+  const markdown = useMemo(() => buildMarkdown(currentScript, title, textMode, isEn), [currentScript, title, textMode, isEn]);
 
   const copy = async (key: string, text: string) => {
     try {
@@ -247,9 +251,13 @@ export function ScriptView({
             >
               {t === "baca"
                 ? textMode
-                  ? "Tulisan"
-                  : "Baca"
-                : `${textMode ? "Bagian" : "Scene"} · ${scenes.length}`}
+                  ? isEn
+                    ? "Text"
+                    : "Tulisan"
+                  : isEn
+                    ? "Read"
+                    : "Baca"
+                : `${textMode ? (isEn ? "Section" : "Bagian") : "Scene"} · ${scenes.length}`}
             </button>
           ))}
         </div>
@@ -262,7 +270,7 @@ export function ScriptView({
             disabled={isSaving}
             className="h-7 cursor-pointer shrink-0 rounded-lg bg-emerald-500/20 border border-emerald-500/40 px-2.5 text-micro font-bold text-emerald-400 hover:bg-emerald-500/30 transition-all disabled:opacity-50 flex items-center justify-center"
           >
-            {isSaving ? "Simpan..." : "Simpan ✓"}
+            {isSaving ? (isEn ? "Saving..." : "Simpan...") : (isEn ? "Save ✓" : "Simpan ✓")}
           </button>
         )}
 
@@ -270,7 +278,7 @@ export function ScriptView({
         <button
           type="button"
           onClick={() => setShowFullView(true)}
-          title="Buka tampilan naskah layar penuh & teleprompter"
+          title={isEn ? "Open full-screen script view & teleprompter" : "Buka tampilan naskah layar penuh & teleprompter"}
           className="h-7 inline-flex items-center gap-1 cursor-pointer shrink-0 rounded-lg border border-ember/35 bg-ember/10 px-2.5 text-micro font-bold text-ember hover:bg-ember/20 transition-all active:scale-95"
         >
           <svg
@@ -285,7 +293,7 @@ export function ScriptView({
           >
             <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
           </svg>
-          <span>Layar Penuh</span>
+          <span>{isEn ? "Full Screen" : "Layar Penuh"}</span>
         </button>
       </div>
 
@@ -321,7 +329,13 @@ export function ScriptView({
                     htmlFor={`scene-${i}-spoken`}
                     className="block text-[10px] font-semibold text-muted/70 uppercase tracking-wider mb-1"
                   >
-                    {textMode ? "Teks Kalimat" : "Voiceover (Diucapkan)"}
+                    {textMode
+                      ? isEn
+                        ? "Sentence Copy"
+                        : "Teks Kalimat"
+                      : isEn
+                        ? "Voiceover (Spoken)"
+                        : "Voiceover (Diucapkan)"}
                   </label>
                   <textarea
                     id={`scene-${i}-spoken`}
@@ -330,7 +344,11 @@ export function ScriptView({
                     rows={2}
                     value={sc.spoken || ""}
                     onChange={(e) => handleUpdateScene(i, "spoken", e.target.value)}
-                    placeholder="Ketik kalimat voiceover scene ini..."
+                    placeholder={
+                      isEn
+                        ? "Type voiceover lines for this scene..."
+                        : "Ketik kalimat voiceover scene ini..."
+                    }
                     className="w-full rounded-lg border border-white/[0.06] bg-obsidian/70 p-2 text-xs leading-relaxed text-ink placeholder:text-muted/40 focus:border-ember/50 focus:outline-none transition-colors resize-y"
                   />
                 </div>
@@ -341,7 +359,13 @@ export function ScriptView({
                     htmlFor={`scene-${i}-overlay`}
                     className="block text-[10px] font-semibold text-muted/70 uppercase tracking-wider mb-1"
                   >
-                    {textMode ? "Fungsi / Judul Bagian" : "Teks di Layar (Overlay)"}
+                    {textMode
+                      ? isEn
+                        ? "Function / Section Title"
+                        : "Fungsi / Judul Bagian"
+                      : isEn
+                        ? "On-Screen Text (Overlay)"
+                        : "Teks di Layar (Overlay)"}
                   </label>
                   <input
                     id={`scene-${i}-overlay`}
@@ -350,7 +374,11 @@ export function ScriptView({
                     type="text"
                     value={sc.on_screen_text || ""}
                     onChange={(e) => handleUpdateScene(i, "on_screen_text", e.target.value)}
-                    placeholder="Contoh: Bahaya cuci CVT pakai bensin"
+                    placeholder={
+                      isEn
+                        ? "e.g. Danger of cleaning CVT with gasoline"
+                        : "Contoh: Bahaya cuci CVT pakai bensin"
+                    }
                     className="w-full rounded-lg border border-white/[0.06] bg-obsidian/70 px-2.5 py-1.5 text-micro text-ink placeholder:text-muted/40 focus:border-ember/50 focus:outline-none transition-colors"
                   />
                 </div>
@@ -364,7 +392,7 @@ export function ScriptView({
                         className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate"
                       >
                         <FilmIcon className="size-3 text-ember shrink-0" />
-                        <span className="truncate">Arahan Visual</span>
+                        <span className="truncate">{isEn ? "Visual Direction" : "Arahan Visual"}</span>
                       </label>
 
                       {/* Top quick helper button */}
@@ -372,7 +400,7 @@ export function ScriptView({
                         type="button"
                         onClick={() => handleAIFootageSuggest(i)}
                         disabled={adaptingSceneIdx === i}
-                        title="Sesuaikan arahan visual dengan AI"
+                        title={isEn ? "Adapt visual direction with AI" : "Sesuaikan arahan visual dengan AI"}
                         className="cursor-pointer inline-flex shrink-0 items-center gap-1 rounded-md border border-ember/30 bg-ember/10 px-2 py-0.5 text-micro font-bold text-ember transition-all hover:bg-ember/20 disabled:opacity-50"
                       >
                         {adaptingSceneIdx === i ? (
@@ -397,7 +425,11 @@ export function ScriptView({
                       rows={2}
                       value={sc.visual || ""}
                       onChange={(e) => handleUpdateScene(i, "visual", e.target.value)}
-                      placeholder="Contoh: Close-in gearbox terbuka, zoom ke sil kruk as..."
+                      placeholder={
+                        isEn
+                          ? "e.g. Close-in open gearbox, zoom to crankshaft seal..."
+                          : "Contoh: Close-in gearbox terbuka, zoom ke sil kruk as..."
+                      }
                       className="w-full rounded-lg border border-white/[0.08] bg-obsidian p-2 text-xs leading-relaxed text-ink/90 placeholder:text-muted/40 focus:border-ember/60 focus:outline-none transition-colors resize-y"
                     />
 
@@ -410,7 +442,7 @@ export function ScriptView({
                             className="flex min-w-0 items-center gap-1 text-[10px] font-bold tracking-wider text-ember uppercase truncate"
                           >
                             <FilmIcon className="size-2.5 text-ember shrink-0" />
-                            <span className="truncate">Rekaman Sendiri</span>
+                            <span className="truncate">{isEn ? "Own Footage" : "Rekaman Sendiri"}</span>
                           </label>
                           <button
                             type="button"
@@ -420,7 +452,7 @@ export function ScriptView({
                             }}
                             className="cursor-pointer shrink-0 rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-medium text-muted transition-colors hover:border-white/20 hover:text-ink"
                           >
-                            Tutup
+                            {isEn ? "Close" : "Tutup"}
                           </button>
                         </div>
 
@@ -433,7 +465,7 @@ export function ScriptView({
                             type="text"
                             value={sc.user_footage_note || ""}
                             onChange={(e) => handleUpdateScene(i, "user_footage_note", e.target.value)}
-                            placeholder="Ketik rekamanmu..."
+                            placeholder={isEn ? "Type your footage..." : "Ketik rekamanmu..."}
                             className="min-w-0 flex-1 bg-transparent px-1.5 py-0.5 text-xs text-ink placeholder:text-muted/40 outline-none"
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && sc.user_footage_note?.trim()) {
@@ -456,7 +488,7 @@ export function ScriptView({
                             ) : (
                               <>
                                 <SparkleIcon className="size-2 fill-current" />
-                                <span>Sesuaikan</span>
+                                <span>{isEn ? "Adapt" : "Sesuaikan"}</span>
                               </>
                             )}
                           </button>
@@ -469,7 +501,7 @@ export function ScriptView({
                         className="mt-2 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/15 bg-white/[0.02] py-1.5 px-2 text-micro font-semibold text-ink/80 transition-all hover:border-ember/50 hover:bg-ember/[0.06] hover:text-ember active:scale-[0.98]"
                       >
                         <FilmIcon className="size-3 opacity-70" />
-                        <span>+ Tambah rekaman sendiri</span>
+                        <span>{isEn ? "+ Add own footage" : "+ Tambah rekaman sendiri"}</span>
                       </button>
                     )}
                   </div>
@@ -482,7 +514,7 @@ export function ScriptView({
         {currentScript.caption && (
           <div className="mt-3 border-t border-hairline pt-3">
             <label htmlFor="script-caption-input" className="eyebrow text-muted block">
-              {textMode ? "Penutup" : "Caption"}
+              {textMode ? (isEn ? "Closing" : "Penutup") : "Caption"}
             </label>
             <textarea
               id="script-caption-input"
@@ -516,18 +548,40 @@ export function ScriptView({
       {/* Bottom Action Strip */}
       <div className="flex gap-1.5 border-t border-hairline p-1.5">
         <Btn
-          label={copied === "vo" ? "Kesalin!" : textMode ? "Salin tulisan" : "Salin voice over"}
+          label={
+            copied === "vo"
+              ? isEn
+                ? "Copied!"
+                : "Kesalin!"
+              : textMode
+                ? isEn
+                  ? "Copy text"
+                  : "Salin tulisan"
+                : isEn
+                  ? "Copy voice over"
+                  : "Salin voice over"
+          }
           onClick={() => copy("vo", readThrough)}
         />
         <Btn
-          label={copied === "all" ? "Kesalin!" : "Salin semua"}
+          label={
+            copied === "all"
+              ? isEn
+                ? "Copied!"
+                : "Kesalin!"
+              : isEn
+                ? "Copy all"
+                : "Salin semua"
+          }
           onClick={() => copy("all", markdown)}
         />
-        <Btn label="Unduh .md" onClick={download} />
+        <Btn label={isEn ? "Download .md" : "Unduh .md"} onClick={download} />
       </div>
       {copied === "gagal" && (
         <p className="px-3 pb-2 text-micro text-danger">
-          Browser-nya nolak akses clipboard. Pakai Unduh aja.
+          {isEn
+            ? "Clipboard access denied by browser. Please use Download."
+            : "Browser-nya nolak akses clipboard. Pakai Unduh aja."}
         </p>
       )}
 

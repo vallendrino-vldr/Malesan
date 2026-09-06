@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type SlideTheme = "obsidian" | "midnight" | "noir" | "emerald" | "sunset" | "porcelain";
 export type SlideRatio = "4:5" | "1:1" | "9:16";
@@ -65,6 +66,51 @@ const DEFAULT_SLIDES: SlideData[] = [
   },
 ];
 
+const DEFAULT_SLIDES_EN: SlideData[] = [
+  {
+    id: "slide-1",
+    type: "cover",
+    badge: "CONTENT STRATEGY",
+    title: "3 Fatal Mistakes Keeping Your Videos From Going Viral",
+    body: "Subtle habits that secretly cause algorithms to suppress your reach and leave viewers scrolling away.",
+    footer: "Swipe right ➔",
+  },
+  {
+    id: "slide-2",
+    type: "point",
+    badge: "MISTAKE #01",
+    title: "Starting Videos with Small Talk & Greetings",
+    body: "The first 3 seconds are a retention warzone. Skip 'Hey guys welcome back...', jump straight into the audience's core problem.",
+    footer: "Slide 2 of 5",
+  },
+  {
+    id: "slide-3",
+    type: "stat",
+    badge: "ALGORITHM FACT",
+    title: "3-Second Retention Determines 80% of Distribution",
+    body: "If viewers swipe away at second 2, the algorithm immediately stops distributing your video to new audiences.",
+    stat_number: "87%",
+    stat_label: "Viewers swipe away due to slow hooks",
+    footer: "Slide 3 of 5",
+  },
+  {
+    id: "slide-4",
+    type: "point",
+    badge: "PRACTICAL SOLUTION",
+    title: "Apply the Pattern Interrupt Hook Formula",
+    body: "Use contradictions, sudden visual actions, or paradox questions to stop the viewer's scroll instantly.",
+    footer: "Slide 4 of 5",
+  },
+  {
+    id: "slide-5",
+    type: "cta",
+    badge: "CONCLUSION",
+    title: "Ready to Create High-Performing Content On Autopilot?",
+    body: "Use Malesan AI to brainstorm ideas, craft sharp hooks, and structure video scripts in seconds effortlessly.",
+    footer: "Save & share this post ✨",
+  },
+];
+
 const THEMES: { id: SlideTheme; name: string; desc: string; accent: string; bg: string; border: string }[] = [
   {
     id: "obsidian",
@@ -123,6 +169,13 @@ const PROMPT_SUGGESTIONS = [
   "Cara Jualan Affiliate Tanpa Hard-Selling",
 ];
 
+const PROMPT_SUGGESTIONS_EN = [
+  "3 Fatal Mistakes Making Content Low-View",
+  "10x Creator Productivity Framework",
+  "Secrets of 3-Second FYP TikTok Hooks",
+  "How to Sell Affiliate Without Hard-Selling",
+];
+
 export function CarouselGenerator({
   initialTitle,
   initialText,
@@ -135,13 +188,16 @@ export function CarouselGenerator({
   credits?: number;
 }) {
   const router = useRouter();
+  const { language } = useLanguage();
+  const isEn = language === "en";
 
   // State
   const [slides, setSlides] = useState<SlideData[]>(() => {
+    const baseDefault = isEn ? DEFAULT_SLIDES_EN : DEFAULT_SLIDES;
     if (initialTitle) {
       return [
         {
-          ...DEFAULT_SLIDES[0],
+          ...baseDefault[0],
           title: initialTitle,
           body: initialText ? initialText.slice(0, 140) : DEFAULT_SLIDES[0].body,
         },
@@ -809,12 +865,12 @@ export function CarouselGenerator({
   // AI Generation Handler
   const handleGenerateAI = async () => {
     if (!aiTopic.trim()) {
-      alert("Masukkan topik atau ide konten carousel terlebih dahulu.");
+      alert(isEn ? "Please enter a topic or content idea for the carousel first." : "Masukkan topik atau ide konten carousel terlebih dahulu.");
       return;
     }
 
     setIsGenerating(true);
-    setGenerationProgress("Menghubungi AI Studio...");
+    setGenerationProgress(isEn ? "Connecting to AI Studio..." : "Menghubungi AI Studio...");
 
     try {
       const res = await fetch("/api/generate", {
@@ -825,6 +881,7 @@ export function CarouselGenerator({
           input: {
             topic: aiTopic.trim(),
             slide_count: String(slideCount),
+            language: isEn ? "English" : "Indonesian",
           },
           platform: "instagram",
         }),
@@ -832,7 +889,7 @@ export function CarouselGenerator({
 
       if (!res.ok) {
         const errText = await res.text();
-        throw new Error(errText || "Gagal membuat konten carousel.");
+        throw new Error(errText || (isEn ? "Failed to generate carousel content." : "Gagal membuat konten carousel."));
       }
 
       const reader = res.body?.getReader();
@@ -887,12 +944,12 @@ export function CarouselGenerator({
         const newSlides: SlideData[] = finalJson.slides.map((s, idx) => ({
           id: `ai-slide-${idx + 1}-${Date.now()}`,
           type: (s.type || (idx === 0 ? "cover" : idx === finalJson!.slides!.length - 1 ? "cta" : "point")) as SlideType,
-          badge: s.badge || (idx === 0 ? "TIPS KONTEN" : `POIN #${idx}`),
-          title: s.title || "Judul Slide",
+          badge: s.badge || (idx === 0 ? (isEn ? "CONTENT TIPS" : "TIPS KONTEN") : (isEn ? `POINT #${idx}` : `POIN #${idx}`)),
+          title: s.title || (isEn ? "Slide Title" : "Judul Slide"),
           body: s.body || "",
           stat_number: s.stat_number,
           stat_label: s.stat_label,
-          footer: s.footer || `Slide ${idx + 1} dari ${finalJson!.slides!.length}`,
+          footer: s.footer || (isEn ? `Slide ${idx + 1} of ${finalJson!.slides!.length}` : `Slide ${idx + 1} dari ${finalJson!.slides!.length}`),
         }));
 
         setSlides(newSlides);
@@ -904,7 +961,7 @@ export function CarouselGenerator({
       }
     } catch (err: unknown) {
       console.error("AI Carousel Error:", err);
-      alert(err instanceof Error ? err.message : "Terjadi kendala saat generate carousel.");
+      alert(err instanceof Error ? err.message : (isEn ? "An issue occurred while generating carousel." : "Terjadi kendala saat generate carousel."));
     } finally {
       setIsGenerating(false);
       setGenerationProgress("");
@@ -946,7 +1003,7 @@ export function CarouselGenerator({
 
     try {
       for (let i = 0; i < slides.length; i++) {
-        setExportProgress(`Mengunduh Slide ${i + 1}/${slides.length}...`);
+        setExportProgress(isEn ? `Downloading Slide ${i + 1}/${slides.length}...` : `Mengunduh Slide ${i + 1}/${slides.length}...`);
         renderSlideToCanvas(
           ctx,
           slides[i],
@@ -975,7 +1032,7 @@ export function CarouselGenerator({
       }
     } catch (err) {
       console.error("Export error", err);
-      alert("Gagal mengunduh gambar slide.");
+      alert(isEn ? "Failed to download slide images." : "Gagal mengunduh gambar slide.");
     } finally {
       setIsExporting(false);
       setExportProgress("");
@@ -986,12 +1043,12 @@ export function CarouselGenerator({
   const handleCopyCaption = () => {
     let textToCopy = postCaption;
     if (!textToCopy) {
-      textToCopy = `${slides[0]?.title || "Tips Hari Ini"}\n\n`;
+      textToCopy = `${slides[0]?.title || (isEn ? "Today's Tips" : "Tips Hari Ini")}\n\n`;
       slides.slice(1, -1).forEach((s, idx) => {
         textToCopy += `📌 ${idx + 1}. ${s.title}\n${s.body}\n\n`;
       });
-      textToCopy += `👉 ${slides[slides.length - 1]?.body || "Follow untuk tips lainnya!"}\n\n`;
-      textToCopy += postHashtags.length > 0 ? postHashtags.map((h) => `#${h}`).join(" ") : "#malesan #tipscreator #carouseltips";
+      textToCopy += `👉 ${slides[slides.length - 1]?.body || (isEn ? "Follow for more tips!" : "Follow untuk tips lainnya!")}\n\n`;
+      textToCopy += postHashtags.length > 0 ? postHashtags.map((h) => `#${h}`).join(" ") : (isEn ? "#malesan #creatortips #carouseltips" : "#malesan #tipscreator #carouseltips");
     }
 
     navigator.clipboard.writeText(textToCopy);
@@ -1010,10 +1067,14 @@ export function CarouselGenerator({
     const newSlide: SlideData = {
       id: `slide-${Date.now()}`,
       type: "point",
-      badge: `POIN #${slides.length}`,
-      title: "Judul Poin Baru",
-      body: "Tuliskan penjelasan tajam dan solusi konkret di sini agar nyaman dibaca di layar HP.",
-      footer: `Slide ${slides.length + 1} dari ${slides.length + 1}`,
+      badge: isEn ? `POINT #${slides.length}` : `POIN #${slides.length}`,
+      title: isEn ? "New Point Headline" : "Judul Poin Baru",
+      body: isEn
+        ? "Write sharp explanation and concrete solution here for optimal mobile screen reading."
+        : "Tuliskan penjelasan tajam dan solusi konkret di sini agar nyaman dibaca di layar HP.",
+      footer: isEn
+        ? `Slide ${slides.length + 1} of ${slides.length + 1}`
+        : `Slide ${slides.length + 1} dari ${slides.length + 1}`,
     };
     setSlides((prev) => [...prev, newSlide]);
     setCurrentIdx(slides.length);
@@ -1021,7 +1082,7 @@ export function CarouselGenerator({
 
   const handleDeleteSlide = (idxToDelete: number) => {
     if (slides.length <= 2) {
-      alert("Carousel minimal harus memiliki 2 slide.");
+      alert(isEn ? "Carousel must have at least 2 slides." : "Carousel minimal harus memiliki 2 slide.");
       return;
     }
     setSlides((prev) => prev.filter((_, idx) => idx !== idxToDelete));
@@ -1034,7 +1095,7 @@ export function CarouselGenerator({
     const duplicated: SlideData = {
       ...target,
       id: `slide-dup-${Date.now()}`,
-      title: `${target.title} (Salinan)`,
+      title: `${target.title} (${isEn ? "Copy" : "Salinan"})`,
     };
     const nextSlides = [...slides];
     nextSlides.splice(idxToDup + 1, 0, duplicated);
@@ -1071,11 +1132,11 @@ export function CarouselGenerator({
                 AI Carousel &amp; Slide Studio
               </h1>
               <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
-                Gratis
+                {isEn ? "Free" : "Gratis"}
               </span>
               {typeof credits === "number" && (
                 <span className="hidden sm:inline text-micro text-muted font-mono">
-                  Saldo: {credits}
+                  {isEn ? "Balance" : "Saldo"}: {credits}
                 </span>
               )}
             </div>
@@ -1092,8 +1153,8 @@ export function CarouselGenerator({
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
             </svg>
-            <span className="hidden sm:inline">{copiedCaption ? "Caption Disalin!" : "Salin Caption"}</span>
-            <span className="sm:hidden">{copiedCaption ? "Disalin!" : "Caption"}</span>
+            <span className="hidden sm:inline">{copiedCaption ? (isEn ? "Caption Copied!" : "Caption Disalin!") : (isEn ? "Copy Caption" : "Salin Caption")}</span>
+            <span className="sm:hidden">{copiedCaption ? (isEn ? "Copied!" : "Disalin!") : "Caption"}</span>
           </button>
 
           <button
@@ -1107,7 +1168,7 @@ export function CarouselGenerator({
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" x2="12" y1="15" y2="3" />
             </svg>
-            <span>{isExporting ? exportProgress : "Download Semua (.PNG)"}</span>
+            <span>{isExporting ? exportProgress : (isEn ? "Download All (.PNG)" : "Download Semua (.PNG)")}</span>
           </button>
         </div>
       </div>
@@ -1126,7 +1187,7 @@ export function CarouselGenerator({
             <circle cx="9" cy="9" r="2" />
             <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
           </svg>
-          <span>Preview Kartu</span>
+          <span>{isEn ? "Card Preview" : "Preview Kartu"}</span>
         </button>
 
         <button
@@ -1140,7 +1201,7 @@ export function CarouselGenerator({
             <path d="M12 20h9" />
             <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
           </svg>
-          <span>Atur &amp; Edit Konten</span>
+          <span>{isEn ? "Edit & Content" : "Atur & Edit Konten"}</span>
         </button>
       </div>
 
@@ -1155,9 +1216,9 @@ export function CarouselGenerator({
           {/* TAB BAR (4 DEDICATED CRISP TABS) */}
           <div className="grid grid-cols-4 gap-1 rounded-xl border border-white/[0.1] bg-surface p-1 shadow-xs">
             {[
-              { id: "content" as StudioTab, label: "Teks Slide", badge: `#${currentIdx + 1}` },
-              { id: "design" as StudioTab, label: "Tema & Rasio", badge: "Tema" },
-              { id: "brand" as StudioTab, label: "Branding", badge: "Profil" },
+              { id: "content" as StudioTab, label: isEn ? "Slide Text" : "Teks Slide", badge: `#${currentIdx + 1}` },
+              { id: "design" as StudioTab, label: isEn ? "Theme & Ratio" : "Tema & Rasio", badge: isEn ? "Theme" : "Tema" },
+              { id: "brand" as StudioTab, label: "Branding", badge: isEn ? "Profile" : "Profil" },
               { id: "ai" as StudioTab, label: "AI Generator", badge: "Auto" },
             ].map((tab) => (
               <button
@@ -1182,7 +1243,7 @@ export function CarouselGenerator({
                 <div className="flex items-center gap-2">
                   <span className="size-2 rounded-full bg-ember animate-pulse" />
                   <span className="font-display text-xs font-bold text-ink">
-                    Slide #{currentIdx + 1} dari {slides.length}
+                    Slide #{currentIdx + 1} {isEn ? "of" : "dari"} {slides.length}
                   </span>
                   <span className="rounded-md border border-ember/30 bg-ember/10 px-1.5 py-0.2 text-[10px] font-bold text-ember uppercase">
                     {slides[currentIdx]?.type || "point"}
@@ -1195,7 +1256,7 @@ export function CarouselGenerator({
                     onClick={() => handleDuplicateSlide(currentIdx)}
                     className="rounded-lg border border-hairline bg-[#09090b] px-2 py-0.5 text-micro font-semibold text-muted hover:text-ink cursor-pointer"
                   >
-                    Duplikat
+                    {isEn ? "Duplicate" : "Duplikat"}
                   </button>
 
                   <button
@@ -1203,7 +1264,7 @@ export function CarouselGenerator({
                     onClick={() => handleDeleteSlide(currentIdx)}
                     className="rounded-lg border border-hairline bg-[#09090b] px-2 py-0.5 text-micro font-semibold text-danger/80 hover:text-danger cursor-pointer"
                   >
-                    Hapus
+                    {isEn ? "Delete" : "Hapus"}
                   </button>
 
                   <button
@@ -1244,8 +1305,8 @@ export function CarouselGenerator({
                   <div className="grid grid-cols-4 gap-1">
                     {[
                       { id: "cover", label: "Cover Hook" },
-                      { id: "point", label: "Poin" },
-                      { id: "stat", label: "Fakta/Stat" },
+                      { id: "point", label: isEn ? "Point" : "Poin" },
+                      { id: "stat", label: isEn ? "Fact/Stat" : "Fakta/Stat" },
                       { id: "cta", label: "CTA" },
                     ].map((st) => (
                       <button
@@ -1267,13 +1328,13 @@ export function CarouselGenerator({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <label className="block text-[10px] font-semibold text-muted mb-0.5">
-                        Label Pill Badge Atas
+                        {isEn ? "Top Badge Pill Label" : "Label Pill Badge Atas"}
                       </label>
                       <input
                         type="text"
                         value={slides[currentIdx].badge || ""}
                         onChange={(e) => handleUpdateSlide("badge", e.target.value)}
-                        placeholder="Contoh: STRATEGI KONTEN"
+                        placeholder={isEn ? "Example: CONTENT STRATEGY" : "Contoh: STRATEGI KONTEN"}
                         className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
                       />
                     </div>
@@ -1281,26 +1342,26 @@ export function CarouselGenerator({
                     {slides[currentIdx].type === "stat" ? (
                       <div>
                         <label className="block text-[10px] font-bold text-ember mb-0.5">
-                          Angka Statistik
+                          {isEn ? "Statistic Number" : "Angka Statistik"}
                         </label>
                         <input
                           type="text"
                           value={slides[currentIdx].stat_number || ""}
                           onChange={(e) => handleUpdateSlide("stat_number", e.target.value)}
-                          placeholder="87%, 10x, dll"
+                          placeholder={isEn ? "87%, 10x, etc" : "87%, 10x, dll"}
                           className="w-full rounded-lg border border-ember/30 bg-obsidian px-2.5 py-1.5 text-xs font-bold text-ink focus:border-ember focus:outline-none"
                         />
                       </div>
                     ) : (
                       <div>
                         <label className="block text-[10px] font-semibold text-muted mb-0.5">
-                          Footer Callout (Bawah)
+                          {isEn ? "Footer Callout (Bottom)" : "Footer Callout (Bawah)"}
                         </label>
                         <input
                           type="text"
                           value={slides[currentIdx].footer || ""}
                           onChange={(e) => handleUpdateSlide("footer", e.target.value)}
-                          placeholder="Geser ke samping ➔"
+                          placeholder={isEn ? "Swipe right ➔" : "Geser ke samping ➔"}
                           className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none"
                         />
                       </div>
@@ -1310,13 +1371,13 @@ export function CarouselGenerator({
                   {/* Headline */}
                   <div>
                     <label className="block text-[10px] font-semibold text-muted mb-0.5">
-                      Judul Utama Slide
+                      {isEn ? "Slide Main Title" : "Judul Utama Slide"}
                     </label>
                     <textarea
                       rows={2}
                       value={slides[currentIdx].title || ""}
                       onChange={(e) => handleUpdateSlide("title", e.target.value)}
-                      placeholder="Judul pokok slide..."
+                      placeholder={isEn ? "Main slide headline..." : "Judul pokok slide..."}
                       className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs sm:text-sm font-bold text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
                     />
                   </div>
@@ -1324,13 +1385,13 @@ export function CarouselGenerator({
                   {/* Body Text */}
                   <div>
                     <label className="block text-[10px] font-semibold text-muted mb-0.5">
-                      Isi Penjelasan Poin
+                      {isEn ? "Point Explanation Body" : "Isi Penjelasan Poin"}
                     </label>
                     <textarea
                       rows={2}
                       value={slides[currentIdx].body || ""}
                       onChange={(e) => handleUpdateSlide("body", e.target.value)}
-                      placeholder="Penjelasan ringkas 2-3 kalimat..."
+                      placeholder={isEn ? "Concise 2-3 sentence explanation..." : "Penjelasan ringkas 2-3 kalimat..."}
                       className="w-full rounded-lg border border-hairline bg-[#09090b] px-2.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
                     />
                   </div>
@@ -1344,7 +1405,7 @@ export function CarouselGenerator({
             <div className="rounded-2xl border border-hairline bg-surface p-3.5 sm:p-4 space-y-3 shadow-xs animate-in fade-in duration-150">
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1.5">
-                  Pilih Tema Desain ({THEMES.find((t) => t.id === theme)?.name})
+                  {isEn ? "Select Design Theme" : "Pilih Tema Desain"} ({THEMES.find((t) => t.id === theme)?.name})
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {THEMES.map((t) => (
@@ -1371,7 +1432,7 @@ export function CarouselGenerator({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-hairline">
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
-                    Format Rasio
+                    {isEn ? "Ratio Format" : "Format Rasio"}
                   </label>
                   <div className="grid grid-cols-3 gap-1">
                     {[
@@ -1398,7 +1459,7 @@ export function CarouselGenerator({
 
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
-                    Tipografi
+                    {isEn ? "Typography" : "Tipografi"}
                   </label>
                   <div className="grid grid-cols-2 gap-1">
                     {[
@@ -1432,20 +1493,20 @@ export function CarouselGenerator({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
                   <label className="block text-[10px] font-semibold text-muted mb-0.5">
-                    Nama Kreator / Brand
+                    {isEn ? "Creator / Brand Name" : "Nama Kreator / Brand"}
                   </label>
                   <input
                     type="text"
                     value={authorName}
                     onChange={(e) => setAuthorName(e.target.value)}
-                    placeholder="Nama Akun"
+                    placeholder={isEn ? "Account Name" : "Nama Akun"}
                     className="w-full rounded-lg border border-hairline bg-[#09090b] px-3 py-1.5 text-xs text-ink focus:border-ember focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-semibold text-muted mb-0.5">
-                    Username / Handle Sosmed
+                    {isEn ? "Username / Social Handle" : "Username / Handle Sosmed"}
                   </label>
                   <input
                     type="text"
@@ -1465,7 +1526,7 @@ export function CarouselGenerator({
                     onChange={(e) => setShowVerified(e.target.checked)}
                     className="size-4 rounded accent-ember"
                   />
-                  <span>Tampilkan Badge Verified Kreator</span>
+                  <span>{isEn ? "Show Verified Creator Badge" : "Tampilkan Badge Verified Kreator"}</span>
                 </label>
 
                 <label className="inline-flex items-center gap-2 text-xs text-muted cursor-pointer">
@@ -1475,7 +1536,7 @@ export function CarouselGenerator({
                     onChange={(e) => setShowSwipePrompt(e.target.checked)}
                     className="size-4 rounded accent-ember"
                   />
-                  <span>Tampilkan Petunjuk Geser (Swipe)</span>
+                  <span>{isEn ? "Show Swipe Indicator" : "Tampilkan Petunjuk Geser (Swipe)"}</span>
                 </label>
               </div>
             </div>
@@ -1490,7 +1551,7 @@ export function CarouselGenerator({
                   1-Click AI Carousel Generator
                 </h3>
                 <span className="rounded-md bg-surface px-2 py-0.5 font-mono text-[10px] font-bold text-ember border border-hairline">
-                  {cost} Kredit
+                  {cost} {isEn ? "Credits" : "Kredit"}
                 </span>
               </div>
 
@@ -1499,12 +1560,12 @@ export function CarouselGenerator({
                   rows={2}
                   value={aiTopic}
                   onChange={(e) => setAiTopic(e.target.value)}
-                  placeholder="Ketik topik: contoh 3 kesalahan fatal pemula saat jualan..."
+                  placeholder={isEn ? "Type topic: e.g. 3 fatal beginner mistakes when selling..." : "Ketik topik: contoh 3 kesalahan fatal pemula saat jualan..."}
                   className="w-full rounded-xl border border-white/[0.1] bg-obsidian px-3 py-2 text-xs text-ink placeholder:text-muted/60 focus:border-ember focus:outline-none resize-none"
                 />
 
                 <div className="flex flex-wrap items-center gap-1">
-                  {PROMPT_SUGGESTIONS.map((sug) => (
+                  {(isEn ? PROMPT_SUGGESTIONS_EN : PROMPT_SUGGESTIONS).map((sug) => (
                     <button
                       key={sug}
                       type="button"
@@ -1543,10 +1604,10 @@ export function CarouselGenerator({
                   className="inline-flex h-8 items-center justify-center gap-1.5 rounded-xl bg-ember px-4 font-display text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo disabled:opacity-50 cursor-pointer"
                 >
                   {isGenerating ? (
-                    <span>{generationProgress || "Memproses..."}</span>
+                    <span>{generationProgress || (isEn ? "Processing..." : "Memproses...")}</span>
                   ) : (
                     <span className="flex items-center gap-1">
-                      <span>Bikin Otomatis ({cost} Kredit)</span>
+                      <span>{isEn ? `Generate Auto (${cost} Credits)` : `Bikin Otomatis (${cost} Kredit)`}</span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                     </span>
                   )}
@@ -1616,22 +1677,22 @@ export function CarouselGenerator({
               type="button"
               onClick={handleExportSingle}
               className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-ember/40 bg-ember/10 px-2.5 text-xs font-bold text-ember hover:bg-ember/20 cursor-pointer"
-              title="Download slide aktif ini"
+              title={isEn ? "Download active slide" : "Download slide aktif ini"}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" x2="12" y1="15" y2="3" />
               </svg>
-              <span>Unduh Slide</span>
+              <span>{isEn ? "Download Slide" : "Unduh Slide"}</span>
             </button>
           </div>
 
           {/* ULTRA-COMPACT FILMSTRIP RAIL */}
           <div className="w-full max-w-[275px] sm:max-w-[290px] rounded-xl border border-hairline bg-surface p-2 space-y-1 shadow-xs">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-muted">
-              <span>Alur Urutan Slide</span>
-              <span>{slides.length} Kartu</span>
+              <span>{isEn ? "Slide Sequence Flow" : "Alur Urutan Slide"}</span>
+              <span>{slides.length} {isEn ? "Cards" : "Kartu"}</span>
             </div>
 
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 custom-scrollbar">

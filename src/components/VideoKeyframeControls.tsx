@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import type { ManualKeyframe } from "@/lib/video/keyframe-engine";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface VideoKeyframeControlsProps {
   currentTime: number;
@@ -49,6 +50,8 @@ export function VideoKeyframeControls({
   onRunAITrack,
   isAITracking,
 }: VideoKeyframeControlsProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [panInput, setPanInput] = useState(currentPanX);
   const [zoomInput, setZoomInput] = useState(currentZoom);
 
@@ -87,10 +90,14 @@ export function VideoKeyframeControls({
           </div>
           <div>
             <h4 className="font-display text-sm font-bold text-white tracking-wide flex items-center gap-1.5">
-              <span>Kamera Pintar AI</span>
+              <span>{isEn ? "AI Smart Camera" : "Kamera Pintar AI"}</span>
               <span className="rounded-full bg-ember/20 px-2 py-0.5 text-[10px] font-bold text-ember border border-ember/30">Smart Framing</span>
             </h4>
-            <p className="text-[11px] text-mist">Atur posisi kamera & sudut pandang agar wajah pembicara presisi</p>
+            <p className="text-[11px] text-mist">
+              {isEn
+                ? "Adjust camera framing and angle for precise speaker alignment"
+                : "Atur posisi kamera & sudut pandang agar wajah pembicara presisi"}
+            </p>
           </div>
         </div>
 
@@ -159,7 +166,9 @@ export function VideoKeyframeControls({
         <div className="space-y-4 pt-1">
           {/* Quick Preset Buttons */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-mist whitespace-nowrap">Sudut Cepat:</span>
+            <span className="text-[11px] font-bold text-mist whitespace-nowrap">
+              {isEn ? "Quick Angles:" : "Sudut Cepat:"}
+            </span>
             <div className="grid grid-cols-3 gap-1.5 flex-1">
               <button
                 type="button"
@@ -176,7 +185,7 @@ export function VideoKeyframeControls({
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
                 </svg>
-                <span>Kiri (Host)</span>
+                <span>{isEn ? "Left (Host)" : "Kiri (Host)"}</span>
               </button>
               <button
                 type="button"
@@ -194,7 +203,7 @@ export function VideoKeyframeControls({
                   <circle cx="12" cy="12" r="9" />
                   <circle cx="12" cy="12" r="3" fill="currentColor" />
                 </svg>
-                <span>Tengah</span>
+                <span>{isEn ? "Center" : "Tengah"}</span>
               </button>
               <button
                 type="button"
@@ -208,7 +217,7 @@ export function VideoKeyframeControls({
                     : "border-white/10 bg-white/5 text-mist hover:text-white"
                 }`}
               >
-                <span>Kanan (Tamu)</span>
+                <span>{isEn ? "Right (Guest)" : "Kanan (Tamu)"}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
@@ -220,10 +229,10 @@ export function VideoKeyframeControls({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <label htmlFor="pan-horizontal-slider" className="font-bold text-white/90 flex items-center gap-1.5">
-                <span>Geser Kamera Horizontal (Pan X)</span>
+                <span>{isEn ? "Horizontal Camera Pan (Pan X)" : "Geser Kamera Horizontal (Pan X)"}</span>
               </label>
               <span className="font-mono text-ember font-bold">
-                {panInput < 0.45 ? `Kiri (${Math.round((0.5 - panInput) * 200)}%)` : panInput > 0.55 ? `Kanan (${Math.round((panInput - 0.5) * 200)}%)` : "Tengah (0%)"}
+                {panInput < 0.45 ? `${isEn ? "Left" : "Kiri"} (${Math.round((0.5 - panInput) * 200)}%)` : panInput > 0.55 ? `${isEn ? "Right" : "Kanan"} (${Math.round((panInput - 0.5) * 200)}%)` : `${isEn ? "Center" : "Tengah"} (0%)`}
               </span>
             </div>
             <input
@@ -234,20 +243,20 @@ export function VideoKeyframeControls({
               step="0.01"
               value={panInput}
               onChange={(e) => handlePan(parseFloat(e.target.value))}
-              aria-label="Geser Kamera Horizontal"
+              aria-label={isEn ? "Horizontal Camera Pan" : "Geser Kamera Horizontal"}
               className="w-full accent-ember cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-mist px-0.5">
-              <span>Host / Kiri Penuh</span>
-              <span>Center</span>
-              <span>Tamu / Kanan Penuh</span>
+              <span>{isEn ? "Host / Full Left" : "Host / Kiri Penuh"}</span>
+              <span>{isEn ? "Center" : "Tengah"}</span>
+              <span>{isEn ? "Guest / Full Right" : "Tamu / Kanan Penuh"}</span>
             </div>
           </div>
 
           {/* Zoom Slider */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <label htmlFor="zoom-scale-slider" className="font-bold text-white/90">Zoom Skala Kamera</label>
+              <label htmlFor="zoom-scale-slider" className="font-bold text-white/90">{isEn ? "Camera Zoom Scale" : "Zoom Skala Kamera"}</label>
               <span className="font-mono text-ember font-bold">{zoomInput.toFixed(2)}x</span>
             </div>
             <input
@@ -258,7 +267,7 @@ export function VideoKeyframeControls({
               step="0.05"
               value={zoomInput}
               onChange={(e) => handleZoom(parseFloat(e.target.value))}
-              aria-label="Zoom Skala Kamera"
+              aria-label={isEn ? "Camera Zoom Scale" : "Zoom Skala Kamera"}
               className="w-full accent-ember cursor-pointer"
             />
           </div>
@@ -273,7 +282,7 @@ export function VideoKeyframeControls({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
-              <span>{activeKeyframe ? "Perbarui Keyframe di Detik Ini" : `Kunci Keyframe di ${formatTime(currentTime)}`}</span>
+              <span>{activeKeyframe ? (isEn ? "Update Keyframe at Current Time" : "Perbarui Keyframe di Detik Ini") : (isEn ? `Lock Keyframe at ${formatTime(currentTime)}` : `Kunci Keyframe di ${formatTime(currentTime)}`)}</span>
             </button>
 
             {activeKeyframe && (
@@ -282,7 +291,7 @@ export function VideoKeyframeControls({
                 onClick={() => onRemoveKeyframe(activeKeyframe.id)}
                 className="py-2 px-3 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 font-bold text-xs transition-all active:scale-95"
               >
-                Hapus Keyframe
+                {isEn ? "Delete Keyframe" : "Hapus Keyframe"}
               </button>
             )}
           </div>
@@ -290,7 +299,7 @@ export function VideoKeyframeControls({
           {/* Keyframes Timeline List */}
           {keyframes.length > 0 && (
             <div className="space-y-1.5 pt-2">
-              <span className="text-[11px] font-bold text-mist">Keyframe Tersimpan ({keyframes.length}):</span>
+              <span className="text-[11px] font-bold text-mist">{isEn ? `Saved Keyframes (${keyframes.length}):` : `Keyframe Tersimpan (${keyframes.length}):`}</span>
               <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto custom-scrollbar p-1">
                 {keyframes.map((kf) => (
                   <button
@@ -312,7 +321,7 @@ export function VideoKeyframeControls({
                       <polyline points="12 6 12 12 16 14"/>
                     </svg>
                     <span>{formatTime(kf.time)}</span>
-                    <span className="text-[10px] text-white/50">({kf.panX < 0.45 ? "Kiri" : kf.panX > 0.55 ? "Kanan" : "Tgh"})</span>
+                    <span className="text-[10px] text-white/50">({kf.panX < 0.45 ? (isEn ? "Left" : "Kiri") : kf.panX > 0.55 ? (isEn ? "Right" : "Kanan") : (isEn ? "Ctr" : "Tgh")})</span>
                   </button>
                 ))}
               </div>
@@ -328,7 +337,7 @@ export function VideoKeyframeControls({
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
             </svg>
-            <span>Kamu bisa geser langsung frame video atas &amp; bawah di layar preview untuk sudut presisi.</span>
+            <span>{isEn ? "You can drag the top & bottom video frames directly on the preview screen for precise framing." : "Kamu bisa geser langsung frame video atas & bawah di layar preview untuk sudut presisi."}</span>
           </div>
 
           {/* Top Speaker (Host) Pan */}
@@ -336,7 +345,7 @@ export function VideoKeyframeControls({
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-white flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-blue-400" />
-                <span>Kamera Atas (Host / Pembicara 1)</span>
+                <span>{isEn ? "Top Camera (Host / Speaker 1)" : "Kamera Atas (Host / Pembicara 1)"}</span>
               </span>
               <span className="font-mono text-ember font-bold">
                 {Math.round((splitTopPanX ?? 0.25) * 100)}%
@@ -352,9 +361,9 @@ export function VideoKeyframeControls({
               className="w-full accent-ember cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-mist">
-              <span>Kiri (0%)</span>
-              <span>Tengah (50%)</span>
-              <span>Kanan (100%)</span>
+              <span>{isEn ? "Left (0%)" : "Kiri (0%)"}</span>
+              <span>{isEn ? "Center (50%)" : "Tengah (50%)"}</span>
+              <span>{isEn ? "Right (100%)" : "Kanan (100%)"}</span>
             </div>
           </div>
 
@@ -363,7 +372,7 @@ export function VideoKeyframeControls({
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-white flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-emerald-400" />
-                <span>Kamera Bawah (Tamu / Pembicara 2)</span>
+                <span>{isEn ? "Bottom Camera (Guest / Speaker 2)" : "Kamera Bawah (Tamu / Pembicara 2)"}</span>
               </span>
               <span className="font-mono text-ember font-bold">
                 {Math.round((splitBottomPanX ?? 0.75) * 100)}%
@@ -379,9 +388,9 @@ export function VideoKeyframeControls({
               className="w-full accent-ember cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-mist">
-              <span>Kiri (0%)</span>
-              <span>Tengah (50%)</span>
-              <span>Kanan (100%)</span>
+              <span>{isEn ? "Left (0%)" : "Kiri (0%)"}</span>
+              <span>{isEn ? "Center (50%)" : "Tengah (50%)"}</span>
+              <span>{isEn ? "Right (100%)" : "Kanan (100%)"}</span>
             </div>
           </div>
         </div>
@@ -393,7 +402,7 @@ export function VideoKeyframeControls({
           <div className="flex items-center gap-2">
             <span className={`size-2 rounded-full bg-ember ${isAITracking ? "animate-ping" : ""}`} />
             <span className="text-white/90">
-              {isAITracking ? "AI sedang menganalisis & mengunci wajah pembicara..." : "AI Auto Tracking Aktif (Wajah pembicara otomatis diikuti)"}
+              {isAITracking ? (isEn ? "AI is analyzing & locking onto speaker face..." : "AI sedang menganalisis & mengunci wajah pembicara...") : (isEn ? "AI Auto Tracking Active (Speaker face automatically followed)" : "AI Auto Tracking Aktif (Wajah pembicara otomatis diikuti)")}
             </span>
           </div>
           <button
@@ -402,7 +411,7 @@ export function VideoKeyframeControls({
             disabled={isAITracking}
             className="py-1 px-2.5 rounded-lg bg-ember text-obsidian font-bold text-[11px] hover:bg-ember/90 transition-all disabled:opacity-50"
           >
-            {isAITracking ? "Memindai..." : "Pindai Ulang"}
+            {isAITracking ? (isEn ? "Scanning..." : "Memindai...") : (isEn ? "Rescan" : "Pindai Ulang")}
           </button>
         </div>
       )}

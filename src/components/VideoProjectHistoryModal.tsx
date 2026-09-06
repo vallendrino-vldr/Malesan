@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { listVideoProjects, deleteVideoProject, clearAllVideoProjects, type VideoProject } from "@/lib/video/project-history";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface VideoProjectHistoryModalProps {
   isOpen: boolean;
@@ -9,9 +10,9 @@ interface VideoProjectHistoryModalProps {
   onSelectProject: (project: VideoProject) => void;
 }
 
-function formatDate(timestamp: number): string {
+function formatDate(timestamp: number, isEn = false): string {
   const date = new Date(timestamp);
-  return date.toLocaleDateString("id-ID", {
+  return date.toLocaleDateString(isEn ? "en-US" : "id-ID", {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -31,6 +32,9 @@ export function VideoProjectHistoryModal({
   onClose,
   onSelectProject,
 }: VideoProjectHistoryModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [projects, setProjects] = useState<VideoProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -66,7 +70,7 @@ export function VideoProjectHistoryModal({
   };
 
   const handleClearAll = async () => {
-    if (!window.confirm("Apakah kamu yakin ingin menghapus semua riwayat proyek video?")) return;
+    if (!window.confirm(isEn ? "Are you sure you want to delete all video project history?" : "Apakah kamu yakin ingin menghapus semua riwayat proyek video?")) return;
     await clearAllVideoProjects();
     setProjects([]);
   };
@@ -86,16 +90,18 @@ export function VideoProjectHistoryModal({
             </div>
             <div>
               <h3 className="font-display text-sm sm:text-base font-bold text-white tracking-wide leading-tight">
-                Draf & Riwayat Proyek Video
+                {isEn ? "Drafts & Video Project History" : "Draf & Riwayat Proyek Video"}
               </h3>
-              <p className="text-[11px] sm:text-xs text-mist mt-0.5">Progres edit tersimpan otomatis di perangkat kamu</p>
+              <p className="text-[11px] sm:text-xs text-mist mt-0.5">
+                {isEn ? "Editing progress is saved automatically on your device" : "Progres edit tersimpan otomatis di perangkat kamu"}
+              </p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup modal"
+            aria-label={isEn ? "Close modal" : "Tutup modal"}
             className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white/5 text-mist hover:text-white hover:bg-white/10 transition-all cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
@@ -109,7 +115,7 @@ export function VideoProjectHistoryModal({
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-mist space-y-2">
               <span className="size-5 border-2 border-ember border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs">Memuat riwayat proyek...</p>
+              <p className="text-xs">{isEn ? "Loading project history..." : "Memuat riwayat proyek..."}</p>
             </div>
           ) : projects.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center text-mist space-y-3">
@@ -119,9 +125,11 @@ export function VideoProjectHistoryModal({
                 </svg>
               </div>
               <div>
-                <p className="font-bold text-white text-sm">Belum Ada Riwayat Proyek</p>
+                <p className="font-bold text-white text-sm">{isEn ? "No Project History Yet" : "Belum Ada Riwayat Proyek"}</p>
                 <p className="text-xs text-mist max-w-xs mt-0.5">
-                  Setiap kali kamu mengedit subtitle atau framing video, draf akan otomatis tersimpan di sini.
+                  {isEn
+                    ? "Whenever you edit subtitles or frame videos, drafts are automatically saved here."
+                    : "Setiap kali kamu mengedit subtitle atau framing video, draf akan otomatis tersimpan di sini."}
                 </p>
               </div>
             </div>
@@ -144,7 +152,7 @@ export function VideoProjectHistoryModal({
                       </svg>
                     </div>
                     <h4 className="font-bold text-xs text-white truncate group-hover:text-ember transition-colors">
-                      {project.title || "Video Proyek Tanpa Judul"}
+                      {project.title || (isEn ? "Untitled Video Project" : "Video Proyek Tanpa Judul")}
                     </h4>
                   </div>
 
@@ -158,7 +166,7 @@ export function VideoProjectHistoryModal({
                       }}
                       className="flex h-7 cursor-pointer items-center gap-1 px-2.5 rounded-lg bg-ember/20 text-ember font-bold text-[11px] border border-ember/30 hover:bg-ember hover:text-obsidian transition-all active:scale-95 shadow-xs"
                     >
-                      <span>Buka</span>
+                      <span>{isEn ? "Open" : "Buka"}</span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" className="size-2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
                       </svg>
@@ -167,7 +175,7 @@ export function VideoProjectHistoryModal({
                       type="button"
                       onClick={(e) => handleDelete(project.id, e)}
                       disabled={deletingId === project.id}
-                      aria-label={`Hapus proyek ${project.title || "tanpa judul"}`}
+                      aria-label={isEn ? `Delete project ${project.title || "untitled"}` : `Hapus proyek ${project.title || "tanpa judul"}`}
                       className="flex size-7 items-center justify-center rounded-lg text-mist hover:text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
@@ -192,12 +200,12 @@ export function VideoProjectHistoryModal({
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-mist">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                       </svg>
-                      <span>{project.words.length} Kata</span>
+                      <span>{project.words.length} {isEn ? "Words" : "Kata"}</span>
                     </span>
                   </div>
 
                   <span className="text-[10px] text-mist/80 shrink-0 font-medium">
-                    {formatDate(project.updatedAt)}
+                    {formatDate(project.updatedAt, isEn)}
                   </span>
                 </div>
               </div>
@@ -213,14 +221,14 @@ export function VideoProjectHistoryModal({
               onClick={handleClearAll}
               className="h-8.5 flex items-center text-xs text-red-400 hover:text-red-300 font-semibold transition-colors cursor-pointer"
             >
-              Hapus Semua Riwayat
+              {isEn ? "Delete All History" : "Hapus Semua Riwayat"}
             </button>
             <button
               type="button"
               onClick={onClose}
               className="h-8.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs text-white font-bold transition-all cursor-pointer"
             >
-              Tutup
+              {isEn ? "Close" : "Tutup"}
             </button>
           </div>
         )}

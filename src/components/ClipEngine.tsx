@@ -5,25 +5,7 @@ import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 import { GenerationProgress } from "./GenerationProgress";
 import { RateResult } from "./RateResult";
-
-/**
- * Clip Engine — a stream moment turned into a shootable short.
- *
- * Not a variant of Script Builder, even though the output rhymes with it. A
- * script is written before anything is filmed; a clip is cut out of footage
- * that already exists, so the useful artefact is not prose — it is a shot list
- * an editor can work down without asking questions.
- *
- * That is why `edit_note` gets its own treated block rather than a third grey
- * line. Everything else on a beat describes what happened; the edit note is the
- * only field that is an instruction, and burying it next to the footage
- * description is how it gets skipped.
- *
- * The run loop is deliberately the same shape as IdeaEngine and ModuleRunner —
- * fetch, `readSSE`, terminal frame wins — because the SSE bugs this app has
- * already paid for all live in that block, and a second dialect of it is a
- * second place for them to come back.
- */
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type ClipBeat = {
   timestamp?: string;
@@ -53,7 +35,7 @@ function hashtagLine(tags: string[]) {
     .join(" ");
 }
 
-function buildPlainText(c: ClipOutput) {
+function buildPlainText(c: ClipOutput, isEn = false) {
   const out: string[] = [];
   if (c.title) out.push(c.title, "");
   if (c.hook_line) out.push(`HOOK: ${c.hook_line}`);
@@ -61,9 +43,9 @@ function buildPlainText(c: ClipOutput) {
   out.push("");
   (c.beats ?? []).forEach((b, i) => {
     out.push(`${i + 1}. ${b.timestamp ?? ""}`.trim());
-    if (b.spoken) out.push(`   Diucapkan: ${b.spoken}`);
-    if (b.on_screen_text) out.push(`   Teks layar: ${b.on_screen_text}`);
-    if (b.visual) out.push(`   Gambar: ${b.visual}`);
+    if (b.spoken) out.push(`   ${isEn ? "Spoken" : "Diucapkan"}: ${b.spoken}`);
+    if (b.on_screen_text) out.push(`   ${isEn ? "On-screen text" : "Teks layar"}: ${b.on_screen_text}`);
+    if (b.visual) out.push(`   ${isEn ? "Visual" : "Gambar"}: ${b.visual}`);
     if (b.edit_note) out.push(`   Edit: ${b.edit_note}`);
     out.push("");
   });
@@ -74,6 +56,9 @@ function buildPlainText(c: ClipOutput) {
 }
 
 export function ClipEngine({ cost }: { cost: number }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const router = useRouter();
   const [moment, setMoment] = useState("");
   const [platform, setPlatform] = useState<string>("tiktok");
@@ -87,7 +72,7 @@ export function ClipEngine({ cost }: { cost: number }) {
 
   const run = async () => {
     if (!moment.trim()) {
-      setError("Ceritain dulu momennya, baru gue bisa potongin.");
+      setError(isEn ? "Tell me the moment first, then I can clip it." : "Ceritain dulu momennya, baru gue bisa potongin.");
       return;
     }
     setBusy(true);
@@ -95,7 +80,7 @@ export function ClipEngine({ cost }: { cost: number }) {
     setOut(null);
     setGenId(null);
     setChars(0);
-    setStatus("Lagi siapin bahan lo...");
+    setStatus(isEn ? "Preparing your material..." : "Lagi siapin bahan lo...");
 
     try {
       const res = await fetch("/api/generate", {
@@ -108,7 +93,7 @@ export function ClipEngine({ cost }: { cost: number }) {
         }),
       });
 
-      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal bikin klip."));
+      if (!res.ok) throw new Error(await readErrorBody(res, isEn ? "Failed to create clip." : "Gagal bikin klip."));
 
       let acc = "";
       let streamError: string | null = null;
@@ -139,7 +124,7 @@ export function ClipEngine({ cost }: { cost: number }) {
 
       if (streamError) throw new Error(streamError);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Ada yang error.");
+      setError(e instanceof Error ? e.message : (isEn ? "Something went wrong." : "Ada yang error."));
     } finally {
       setBusy(false);
     }
@@ -151,20 +136,23 @@ export function ClipEngine({ cost }: { cost: number }) {
     <div className="space-y-4">
       <section className="surface-card rounded-2xl p-5">
         <h2 className="font-display text-xl font-bold tracking-display-sm text-ink">
-          Potong Momen Live
+          {isEn ? "Live Clip Engine" : "Potong Momen Live"}
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Buat streamer. Ceritain momen yang kejadian pas live, balik jadi shot
-          list siap potong — lengkap sama catatan editnya.
+          {isEn
+            ? "For streamers. Describe what happened on stream, get back a shootable shot list complete with editing notes."
+            : "Buat streamer. Ceritain momen yang kejadian pas live, balik jadi shot list siap potong — lengkap sama catatan editnya."}
         </p>
 
         <div className="mt-4 space-y-3.5">
           <div>
             <label htmlFor="clip-moment" className="block text-sm font-semibold text-ink">
-              Momennya gimana?
+              {isEn ? "What was the moment?" : "Momennya gimana?"}
             </label>
             <p className="mt-0.5 text-micro text-muted">
-              Tulis apa adanya. Gak usah rapi — gue yang cari beat-nya.
+              {isEn
+                ? "Write it as is. No need to polish — I'll find the beat."
+                : "Tulis apa adanya. Gak usah rapi — gue yang cari beat-nya."}
             </p>
             <textarea
               id="clip-moment"
@@ -172,7 +160,11 @@ export function ClipEngine({ cost }: { cost: number }) {
               value={moment}
               onChange={(e) => setMoment(e.target.value)}
               disabled={busy}
-              placeholder="Lagi clutch 1v4, tinggal 20 HP, terus mati gara-gara kena granat sendiri. Chat langsung rusuh."
+              placeholder={
+                isEn
+                  ? "Clutching 1v4 with 20 HP left, then died to my own grenade. Chat exploded."
+                  : "Lagi clutch 1v4, tinggal 20 HP, terus mati gara-gara kena granat sendiri. Chat langsung rusuh."
+              }
               className="skeu-inset mt-2 w-full resize-none rounded-xl border border-hairline bg-obsidian p-3.5 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
             />
           </div>
@@ -189,11 +181,11 @@ export function ClipEngine({ cost }: { cost: number }) {
           </div>
 
           <div>
-            <span className="block text-sm font-semibold text-ink">Durasi</span>
+            <span className="block text-sm font-semibold text-ink">{isEn ? "Duration" : "Durasi"}</span>
             <div className="mt-2 flex flex-wrap gap-2">
               {DURATIONS.map((d) => (
                 <Pill key={d} on={duration === d} onClick={() => setDuration(d)}>
-                  {d}
+                  {isEn ? d.replace("detik", "seconds") : d}
                 </Pill>
               ))}
             </div>
@@ -213,31 +205,42 @@ export function ClipEngine({ cost }: { cost: number }) {
             busy ? "glow-ember" : ""
           }`}
         >
-          {busy ? "Lagi motong klipnya..." : `Bikin klip · ${cost} kredit`}
+          {busy
+            ? isEn
+              ? "Cutting the clip..."
+              : "Lagi motong klipnya..."
+            : isEn
+              ? `Create clip · ${cost} credits`
+              : `Bikin klip · ${cost} kredit`}
         </button>
       </section>
 
       {busy && (
-        <GenerationProgress moduleKey="clip" chars={chars} label="Lagi motong klipnya" status={status} />
+        <GenerationProgress
+          moduleKey="clip"
+          chars={chars}
+          label={isEn ? "Cutting the clip" : "Lagi motong klipnya"}
+          status={status}
+        />
       )}
 
       {out && (
         <div className="space-y-3">
           <section className="surface-card rounded-2xl p-4">
-            <p className="eyebrow text-muted">Judul klip</p>
+            <p className="eyebrow text-muted">{isEn ? "Clip title" : "Judul klip"}</p>
             <h3 className="mt-1 font-display text-lg font-bold leading-snug tracking-display-sm text-ink">
               {out.title || "—"}
             </h3>
 
             {(out.hook_line || out.hook_visual) && (
               <div className="mt-3 rounded-xl border border-hairline bg-obsidian p-3">
-                <p className="eyebrow text-ember">Dua detik pertama</p>
+                <p className="eyebrow text-ember">{isEn ? "First two seconds" : "Dua detik pertama"}</p>
                 {out.hook_line && (
                   <p className="mt-1.5 text-sm leading-relaxed text-ink">{out.hook_line}</p>
                 )}
                 {out.hook_visual && (
                   <p className="mt-1.5 text-micro leading-relaxed text-muted">
-                    Yang keliatan: {out.hook_visual}
+                    {isEn ? "Visuals:" : "Yang keliatan:"} {out.hook_visual}
                   </p>
                 )}
               </div>
@@ -247,8 +250,10 @@ export function ClipEngine({ cost }: { cost: number }) {
           {beats.length > 0 && (
             <section className="rounded-2xl border border-hairline bg-obsidian">
               <div className="flex items-center justify-between border-b border-hairline px-4 py-2.5">
-                <p className="eyebrow text-muted">Shot list · {beats.length} beat</p>
-                <CopyBtn text={buildPlainText(out)} label="Salin semua" inline />
+                <p className="eyebrow text-muted">
+                  {isEn ? `Shot list · ${beats.length} beats` : `Shot list · ${beats.length} beat`}
+                </p>
+                <CopyBtn text={buildPlainText(out, isEn)} label={isEn ? "Copy all" : "Salin semua"} inline />
               </div>
 
               <ol className="space-y-2.5 p-3">
@@ -264,13 +269,13 @@ export function ClipEngine({ cost }: { cost: number }) {
 
                     {b.on_screen_text && (
                       <p className="mt-2 rounded bg-obsidian px-2 py-1 text-micro leading-relaxed text-ink/70">
-                        Teks layar: {b.on_screen_text}
+                        {isEn ? "On-screen text:" : "Teks layar:"} {b.on_screen_text}
                       </p>
                     )}
 
                     {b.visual && (
                       <p className="mt-1.5 text-micro leading-relaxed text-muted">
-                        Gambar: {b.visual}
+                        {isEn ? "Visual:" : "Gambar:"} {b.visual}
                       </p>
                     )}
 
@@ -294,7 +299,7 @@ export function ClipEngine({ cost }: { cost: number }) {
               <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-ink/90">
                 {out.caption}
               </p>
-              <CopyBtn text={out.caption} />
+              <CopyBtn text={out.caption} label={isEn ? "Copy" : "Salin"} />
             </section>
           )}
 
@@ -311,13 +316,13 @@ export function ClipEngine({ cost }: { cost: number }) {
                   </span>
                 ))}
               </div>
-              <CopyBtn text={hashtagLine(out.hashtags)} />
+              <CopyBtn text={hashtagLine(out.hashtags)} label={isEn ? "Copy" : "Salin"} />
             </section>
           )}
 
           {out.thumbnail_idea && (
             <section className="surface-card rounded-2xl p-4">
-              <p className="eyebrow text-muted">Ide cover</p>
+              <p className="eyebrow text-muted">{isEn ? "Cover idea" : "Ide cover"}</p>
               <p className="mt-1.5 text-sm leading-relaxed text-ink/90">{out.thumbnail_idea}</p>
             </section>
           )}
@@ -372,7 +377,13 @@ export function CopyBtn({
   label?: string;
   inline?: boolean;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [done, setDone] = useState(false);
+  const displayLabel = done
+    ? isEn ? "Copied!" : "Kesalin!"
+    : label === "Salin" && isEn ? "Copy" : label;
+
   return (
     <button
       type="button"
@@ -389,7 +400,7 @@ export function CopyBtn({
         inline ? "h-7.5 inline-flex items-center" : "mt-2.5 h-7.5 inline-flex items-center"
       }`}
     >
-      {done ? "Kesalin!" : label}
+      {displayLabel}
     </button>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type PlayerState = "loading" | "ready" | "playing" | "paused" | "error";
 
@@ -55,15 +56,13 @@ type Props = {
 let iframeApiPromise: Promise<YouTubeNamespace> | null = null;
 
 function loadIframeApi(): Promise<YouTubeNamespace> {
-  if (typeof window === "undefined") return Promise.reject(new Error("SSR"));
+  if (typeof window === "undefined") return Promise.reject(new Error("window is undefined"));
   if (window.YT?.Player) return Promise.resolve(window.YT);
   if (iframeApiPromise) return iframeApiPromise;
 
   iframeApiPromise = new Promise((resolve, reject) => {
-    let resolved = false;
     const checkExisting = () => {
       if (window.YT?.Player) {
-        resolved = true;
         resolve(window.YT);
         return true;
       }
@@ -72,41 +71,30 @@ function loadIframeApi(): Promise<YouTubeNamespace> {
 
     if (checkExisting()) return;
 
-    const previousReady = window.onYouTubeIframeAPIReady;
+    const prevCallback = window.onYouTubeIframeAPIReady;
     window.onYouTubeIframeAPIReady = () => {
-      previousReady?.();
-      if (checkExisting()) return;
-      setTimeout(() => {
-        if (!checkExisting() && !resolved) {
-          iframeApiPromise = null;
-          reject(new Error("YouTube Player API gagal terhubung."));
-        }
-      }, 100);
+      prevCallback?.();
+      if (window.YT?.Player) resolve(window.YT);
     };
 
-    const existing = document.querySelector<HTMLScriptElement>(
-      'script[src="https://www.youtube.com/iframe_api"]',
-    );
-    if (!existing) {
-      const script = document.createElement("script");
-      script.src = "https://www.youtube.com/iframe_api";
-      script.async = true;
-      script.onerror = () => {
+    const existingScript = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (!existingScript) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      tag.async = true;
+      tag.onerror = () => {
         iframeApiPromise = null;
-        reject(new Error("Player YouTube gagal dimuat. Cek koneksi lalu coba lagi."));
+        reject(new Error("Gagal memuat YouTube Player API."));
       };
-      document.head.appendChild(script);
+      document.head.appendChild(tag);
     }
 
-    // Polling fallback in case onYouTubeIframeAPIReady already triggered
-    const poll = setInterval(() => {
-      if (checkExisting()) {
-        clearInterval(poll);
-      }
-    }, 100);
-
+    // Safety timeout: don't hang indefinitely if script loads but callback doesn't fire
     setTimeout(() => {
-      clearInterval(poll);
+      let resolved = false;
+      try {
+        resolved = checkExisting();
+      } catch {}
       if (!resolved && !checkExisting()) {
         // Resolve with window.YT if available, else reject gracefully
         if (window.YT?.Player) resolve(window.YT);
@@ -121,11 +109,22 @@ function loadIframeApi(): Promise<YouTubeNamespace> {
   return iframeApiPromise;
 }
 
-function playerError(code: number) {
-  if (code === 101 || code === 150) return "Pemilik video melarang preview di luar YouTube.";
-  if (code === 100) return "Videonya sudah dihapus atau tidak tersedia.";
-  if (code === 153) return "YouTube gak bisa memverifikasi halaman ini. Muat ulang lalu coba lagi.";
-  return "Preview YouTube gagal diputar. Pilih momen lain atau coba lagi.";
+function playerError(code: number, isEn: boolean) {
+  if (code === 101 || code === 150)
+    return isEn
+      ? "Video owner restricts embedding outside YouTube."
+      : "Pemilik video melarang preview di luar YouTube.";
+  if (code === 100)
+    return isEn
+      ? "The video has been deleted or is unavailable."
+      : "Videonya sudah dihapus atau tidak tersedia.";
+  if (code === 153)
+    return isEn
+      ? "YouTube could not verify this page. Please reload and try again."
+      : "YouTube gak bisa memverifikasi halaman ini. Muat ulang lalu coba lagi.";
+  return isEn
+    ? "YouTube preview failed to play. Choose another moment or try again."
+    : "Preview YouTube gagal diputar. Pilih momen lain atau coba lagi.";
 }
 
 export function YouTubeClipPlayer({
@@ -139,6 +138,8 @@ export function YouTubeClipPlayer({
   onDuration,
   onState,
 }: Props) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [range, setRange] = useState<{ start: number; end: number }>({
     start: initialStart,
@@ -225,7 +226,7 @@ export function YouTubeClipPlayer({
             },
             onError: ({ data }) => {
               callbacksRef.current.onState("error");
-              callbacksRef.current.onError(playerError(data));
+              callbacksRef.current.onError(playerError(data, isEn));
             },
           },
         });
@@ -240,7 +241,7 @@ export function YouTubeClipPlayer({
       callbacksRef.current.onController(null);
       player?.destroy();
     };
-  }, [videoId]);
+  }, [videoId, isEn]);
 
   const origin = typeof window === "undefined" ? "" : `&origin=${encodeURIComponent(window.location.origin)}`;
 

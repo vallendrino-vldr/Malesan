@@ -641,7 +641,7 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
           tagline: "Word-level animated captions & music",
         },
         hook: {
-          label: "Hook Lab",
+          label: "Hook Generator",
           tagline: "10 scroll-stopping opening hooks",
         },
         clip: {
@@ -649,11 +649,11 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
           tagline: "Extract viral hooks from long videos",
         },
         repurpose: {
-          label: "Omnichannel Repurpose",
-          tagline: "Turn 1 long video into multi-platform assets",
+          label: "Adapt Format",
+          tagline: "Turn 1 content into multi-platform assets",
         },
         idea: {
-          label: "Idea Engine",
+          label: "Idea Polish",
           tagline: "Flesh out rough concepts into gold",
         },
         thread: {
@@ -948,10 +948,10 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       historyModules: {
         ide: "Daily Idea",
         ide_hari_ini: "Daily Idea",
-        idea: "Idea Refiner",
-        hook: "Hook Lab",
+        idea: "Idea Polish",
+        hook: "Hook Generator",
         script: "Video Script",
-        repurpose: "Repurpose",
+        repurpose: "Adapt Format",
         clip: "Auto-Clip",
         thread: "Thread Builder",
         auto_clip: "YouTube Auto-Clip",

@@ -5,6 +5,7 @@ import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 import { saveToPipeline } from "@/app/actions/pipeline";
 import { GenerationProgress } from "./GenerationProgress";
 import { VoicePreview } from "./VoicePreview";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type AffiliateScene = {
   scene: number;
@@ -31,6 +32,9 @@ type AffiliateOutput = {
 };
 
 export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [productName, setProductName] = useState("");
   const [sellingPoints, setSellingPoints] = useState("");
   const [style, setStyle] = useState("Campuran");
@@ -52,7 +56,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
     setOutput(null);
     setSavedToPipeline(false);
     setChars(0);
-    setStatusMsg("Meracik 3 varian naskah affiliate...");
+    setStatusMsg(isEn ? "Crafting 3 affiliate script variants..." : "Meracik 3 varian naskah affiliate...");
 
     try {
       const res = await fetch("/api/generate", {
@@ -69,7 +73,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
       });
 
       if (!res.ok) {
-        const err = await readErrorBody(res, "Gagal meracik naskah affiliate.");
+        const err = await readErrorBody(res, isEn ? "Failed to craft affiliate scripts." : "Gagal meracik naskah affiliate.");
         throw new Error(err);
       }
 
@@ -100,7 +104,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
 
       if (streamError) throw new Error(streamError);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal meracik naskah affiliate.");
+      setError(err instanceof Error ? err.message : (isEn ? "Failed to craft affiliate scripts." : "Gagal meracik naskah affiliate."));
     } finally {
       setBusy(false);
       setStatusMsg("");
@@ -157,7 +161,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
       setSavedToPipeline(true);
     } catch (err) {
       console.error(err);
-      alert("Gagal menyimpan ke alur Kanban.");
+      alert(isEn ? "Failed to save to Kanban pipeline." : "Gagal menyimpan ke alur Kanban.");
     }
   };
 
@@ -174,15 +178,17 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
             </span>
             <div>
               <h2 className="font-display text-base font-bold text-ink">
-                Naskah Affiliate Video Pendek
+                {isEn ? "Short Video Affiliate Scripts" : "Naskah Affiliate Video Pendek"}
               </h2>
               <p className="text-micro text-muted">
-                Bikin 3 naskah video racun belanja berkonversi tinggi untuk TikTok Shop &amp; Shopee
+                {isEn
+                  ? "Generate 3 high-converting product promotion scripts for TikTok Shop & Shopee"
+                  : "Bikin 3 naskah video racun belanja berkonversi tinggi untuk TikTok Shop & Shopee"}
               </p>
             </div>
           </div>
           <span className="rounded-md bg-surface-raised px-2.5 py-0.5 font-mono text-micro font-bold text-ember border border-hairline">
-            {cost} kredit
+            {cost} {isEn ? "credits" : "kredit"}
           </span>
         </div>
 
@@ -190,40 +196,44 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
         <form onSubmit={handleGenerate} className="mt-4 space-y-3.5">
           <div>
             <label className="block text-micro font-bold text-muted uppercase tracking-wider mb-1">
-              Nama Produk &amp; Kategori
+              {isEn ? "Product Name & Category" : "Nama Produk & Kategori"}
             </label>
             <input
               type="text"
               required
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
-              placeholder="Contoh: Mic Wireless Clip-On K8 Anti Bising"
+              placeholder={isEn ? "e.g. Wireless Clip-On Mic K8 Noise Cancelling" : "Contoh: Mic Wireless Clip-On K8 Anti Bising"}
               className="w-full rounded-xl border border-hairline bg-obsidian px-3.5 py-2.5 text-xs text-ink placeholder:text-muted/40 focus:border-ember focus:outline-none"
             />
           </div>
 
           <div>
             <label className="block text-micro font-bold text-muted uppercase tracking-wider mb-1">
-              Keunggulan Utama / Harga Promo (Spill Racun)
+              {isEn ? "Key Selling Points / Promo Price (Product Appeal)" : "Keunggulan Utama / Harga Promo (Spill Racun)"}
             </label>
             <textarea
               rows={2}
               value={sellingPoints}
               onChange={(e) => setSellingPoints(e.target.value)}
-              placeholder="Contoh: Cuma 39 ribuan, batre awet 10 jam, suara jernih tanpa noise, colok langsung nyala"
+              placeholder={
+                isEn
+                  ? "e.g. Only $5, 10-hour battery life, crystal clear noise reduction, plug & play"
+                  : "Contoh: Cuma 39 ribuan, batre awet 10 jam, suara jernih tanpa noise, colok langsung nyala"
+              }
               className="w-full rounded-xl border border-hairline bg-obsidian p-3 text-xs leading-relaxed text-ink placeholder:text-muted/40 focus:border-ember focus:outline-none resize-y"
             />
           </div>
 
           <div>
             <label className="block text-micro font-bold text-muted uppercase tracking-wider mb-1.5">
-              Gaya Pendekatan
+              {isEn ? "Approach Style" : "Gaya Pendekatan"}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: "Campuran", label: "3 Varian Campuran" },
-                { id: "Problem-Solution", label: "Keresahan & Solusi" },
-                { id: "Flash-Sale-FOMO", label: "Promo & Keranjang Kuning" },
+                { id: "Campuran", label: isEn ? "3 Mixed Angles" : "3 Varian Campuran" },
+                { id: "Problem-Solution", label: isEn ? "Problem & Solution" : "Keresahan & Solusi" },
+                { id: "Flash-Sale-FOMO", label: isEn ? "Promo & Yellow Cart" : "Promo & Keranjang Kuning" },
               ].map((opt) => (
                 <button
                   key={opt.id}
@@ -246,7 +256,13 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
             disabled={busy || !productName.trim()}
             className="btn-ember mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-xl px-5 font-display text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50"
           >
-            {busy ? "Meracik Naskah Jualan..." : `Racik 3 Naskah Affiliate · ${cost} kredit`}
+            {busy
+              ? isEn
+                ? "Crafting Sales Scripts..."
+                : "Meracik Naskah Jualan..."
+              : isEn
+                ? `Craft 3 Affiliate Scripts · ${cost} credits`
+                : `Racik 3 Naskah Affiliate · ${cost} kredit`}
           </button>
         </form>
       </div>
@@ -255,7 +271,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
         <GenerationProgress
           moduleKey="affiliate"
           chars={chars}
-          label="Lagi meracik 3 naskah affiliate"
+          label={isEn ? "Crafting 3 affiliate scripts" : "Lagi meracik 3 naskah affiliate"}
           status={statusMsg}
         />
       )}
@@ -271,7 +287,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
         <div className="surface-card rounded-2xl border border-hairline p-4 sm:p-5 space-y-4 shadow-sm">
           {/* Variant Tab Switcher */}
           <div className="flex items-center justify-between gap-2 border-b border-hairline pb-3">
-            <span className="eyebrow text-ember font-bold">Pilih Varian Naskah:</span>
+            <span className="eyebrow text-ember font-bold">{isEn ? "Select Script Variant:" : "Pilih Varian Naskah:"}</span>
             <div className="flex items-center gap-1.5 flex-wrap">
               {output.variants.map((v, idx) => (
                 <button
@@ -287,7 +303,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
                       : "border-hairline bg-surface-raised text-muted hover:text-ink"
                   }`}
                 >
-                  Varian #{idx + 1}: {v.angle_name.split("/")[0]}
+                  {isEn ? `Variant #${idx + 1}` : `Varian #${idx + 1}`}: {v.angle_name.split("/")[0]}
                 </button>
               ))}
             </div>
@@ -298,15 +314,15 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 eyebrow text-ember font-bold">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-                <span>Hook Pembuka (0-3 Detik Pertama)</span>
+                <span>{isEn ? "Opening Hook (First 0-3 Seconds)" : "Hook Pembuka (0-3 Detik Pertama)"}</span>
               </div>
-              <span className="text-[10px] font-mono text-muted">Daya Henti FYP</span>
+              <span className="text-[10px] font-mono text-muted">{isEn ? "FYP Stopping Power" : "Daya Henti FYP"}</span>
             </div>
             <p className="font-display text-sm font-bold text-ink">
               &ldquo;{currentVariant.hook_spoken}&rdquo;
             </p>
             <p className="text-micro text-muted">
-              <strong className="text-ink/80">Arahan Visual:</strong> {currentVariant.hook_visual}
+              <strong className="text-ink/80">{isEn ? "Visual Direction:" : "Arahan Visual:"}</strong> {currentVariant.hook_visual}
             </p>
           </div>
 
@@ -314,7 +330,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
           <div className="space-y-2.5">
             <div className="flex items-center gap-1.5 eyebrow text-muted">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><rect width="20" height="20" x="2" y="2" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
-              <span>Alur Scene Naskah:</span>
+              <span>{isEn ? "Script Scene Breakdown:" : "Alur Scene Naskah:"}</span>
             </div>
             <div className="space-y-2">
               {currentVariant.scenes.map((s) => (
@@ -335,7 +351,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
                     </span>
                     {s.on_screen_text && (
                       <span>
-                        • <strong className="text-ember">Teks Layar:</strong> &ldquo;{s.on_screen_text}&rdquo;
+                        • <strong className="text-ember">{isEn ? "On-Screen Text:" : "Teks Layar:"}</strong> &ldquo;{s.on_screen_text}&rdquo;
                       </span>
                     )}
                   </div>
@@ -349,7 +365,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 eyebrow text-emerald-400 font-bold">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-                <span>Call to Action (Keranjang Kuning)</span>
+                <span>{isEn ? "Call to Action (Yellow Cart)" : "Call to Action (Keranjang Kuning)"}</span>
               </div>
             </div>
             <p className="text-xs font-semibold text-emerald-300">
@@ -360,7 +376,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
           {/* Audio Rehearsal / Voice Preview */}
           <VoicePreview
             text={buildVariantReadThrough(currentVariant)}
-            title={`Naskah Affiliate ${output.product_name}`}
+            title={`${isEn ? "Affiliate Script" : "Naskah Affiliate"} ${output.product_name}`}
           />
 
           {/* Action Buttons */}
@@ -375,7 +391,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
                   <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 text-emerald-400">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  <span>Tersalin ke Clipboard!</span>
+                  <span>{isEn ? "Copied to Clipboard!" : "Tersalin ke Clipboard!"}</span>
                 </>
               ) : (
                 <>
@@ -383,7 +399,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                   </svg>
-                  <span>Salin Naskah</span>
+                  <span>{isEn ? "Copy Script" : "Salin Naskah"}</span>
                 </>
               )}
             </button>
@@ -403,7 +419,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
                   <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
-                  <span>Tersimpan di Alur Kanban</span>
+                  <span>{isEn ? "Saved in Kanban Pipeline" : "Tersimpan di Alur Kanban"}</span>
                 </>
               ) : (
                 <>
@@ -411,7 +427,7 @@ export function AffiliateEngine({ cost = 3 }: { cost?: number }) {
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <path d="M9 3v18M15 3v18" />
                   </svg>
-                  <span>Simpan ke Alur Kanban</span>
+                  <span>{isEn ? "Save to Kanban Pipeline" : "Simpan ke Alur Kanban"}</span>
                 </>
               )}
             </button>

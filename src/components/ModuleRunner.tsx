@@ -9,6 +9,7 @@ import { GenerationProgress } from "./GenerationProgress";
 import { RateResult } from "./RateResult";
 import { OfferAfterWin } from "./CreditNudge";
 import { ScriptView, type ScriptOutput } from "./ScriptView";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Hook Lab, Script Builder and Repurpose.
@@ -105,6 +106,71 @@ export const MODULE_SPECS: Record<ModuleSpec["key"], ModuleSpec> = {
         rows: 6,
         required: true,
         placeholder: "Tempel di sini...",
+      },
+    ],
+  },
+};
+
+export const MODULE_SPECS_EN: Record<ModuleSpec["key"], ModuleSpec> = {
+  hook: {
+    key: "hook",
+    title: "Hook Generator",
+    blurb: "The crucial first 3 seconds that decide if viewers watch or scroll. Give an idea, get 10 hooks.",
+    cost: 2,
+    cta: "Generate hooks",
+    busy: "Brainstorming hooks...",
+    platformPicker: true,
+    fields: [
+      {
+        name: "idea",
+        label: "What's the idea?",
+        placeholder: "Uncovering simple habits that quietly ruin your car engine",
+        rows: 3,
+        required: true,
+      },
+    ],
+  },
+  script: {
+    key: "script",
+    title: "Generate Script",
+    blurb: "From hook to complete video script: scene-by-scene, on-screen text, and footage direction.",
+    cost: 4,
+    cta: "Generate script",
+    busy: "Writing script...",
+    platformPicker: true,
+    fields: [
+      { name: "idea", label: "What's the idea?", rows: 2, required: true, placeholder: "Honest review of budget motor oil" },
+      {
+        name: "hook",
+        label: "The Hook",
+        rows: 2,
+        required: true,
+        hint: "The opening sentence to hook viewers.",
+        placeholder: "Don't be shocked if your engine breaks down because of this",
+      },
+      {
+        name: "duration",
+        label: "Duration",
+        required: true,
+        options: ["30s", "45s", "60s", "90s"],
+      },
+    ],
+  },
+  repurpose: {
+    key: "repurpose",
+    title: "Adapt Format",
+    blurb: "One content into 5 platform formats. Tailored for each platform, not copy-paste.",
+    cost: 1,
+    cta: "Adapt into 5 formats",
+    busy: "Adapting across platforms...",
+    fields: [
+      {
+        name: "source_content",
+        label: "Content",
+        hint: "Paste your existing caption, script, or transcript.",
+        rows: 6,
+        required: true,
+        placeholder: "Paste here...",
       },
     ],
   },
@@ -305,6 +371,8 @@ export function GenerationExtras({
   extras: GenerationExtrasState;
   disabled?: boolean;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const selectId = useId();
   const used = extras.reference.length;
   const hasRef = used > 0;
@@ -322,7 +390,7 @@ export function GenerationExtras({
       {extras.personas.length > 0 && (
         <div>
           <label htmlFor={selectId} className="block text-sm font-semibold text-ink">
-            Profil konten
+            {isEn ? "Content profile" : "Profil konten"}
           </label>
           <select
             id={selectId}
@@ -331,7 +399,7 @@ export function GenerationExtras({
             disabled={disabled}
             className="mt-2 h-9 w-full cursor-pointer rounded-xl border border-hairline bg-obsidian px-3 text-xs text-ink focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
           >
-            <option value="">Profil utama</option>
+            <option value="">{isEn ? "Main profile" : "Profil utama"}</option>
             {extras.personas.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -347,32 +415,40 @@ export function GenerationExtras({
         className="rounded-xl border border-hairline bg-obsidian/40"
       >
         <summary className="flex h-9 cursor-pointer items-center justify-between gap-3 rounded-xl px-3.5 text-xs font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
-          <span>Pakai bahan sendiri</span>
+          <span>{isEn ? "Use own reference" : "Pakai bahan sendiri"}</span>
           <span className={`tabular text-micro font-normal ${hasRef ? "text-ember" : "text-muted"}`}>
-            {hasRef ? `${used.toLocaleString("id-ID")} karakter nempel` : "Opsional"}
+            {hasRef
+              ? isEn
+                ? `${used.toLocaleString("en-US")} characters attached`
+                : `${used.toLocaleString("id-ID")} karakter nempel`
+              : isEn
+                ? "Optional"
+                : "Opsional"}
           </span>
         </summary>
 
         <div className="border-t border-hairline px-3.5 pb-3.5 pt-3">
           <label htmlFor="module-reference-input" className="text-micro leading-relaxed text-muted block">
-            Punya artikel, data, atau catatan yang harus dipakai? Tempel di sini.
-            Kalau gak ada, lewatin aja — Malesan tetap mikir dari profil lo.
+            {isEn
+              ? "Have an article, data, or notes that must be used? Paste them here. If not, feel free to skip — Malesan will still generate based on your profile."
+              : "Punya artikel, data, atau catatan yang harus dipakai? Tempel di sini. Kalau gak ada, lewatin aja — Malesan tetap mikir dari profil lo."}
           </label>
           <textarea
             id="module-reference-input"
             name="module_reference"
-            aria-label="Catatan atau referensi konten"
+            aria-label={isEn ? "Content notes or reference material" : "Catatan atau referensi konten"}
             rows={6}
             value={extras.reference}
             onChange={(e) => extras.setReference(e.target.value)}
             maxLength={REFERENCE_MAX}
             disabled={disabled}
-            placeholder="Tempel di sini..."
+            placeholder={isEn ? "Paste here..." : "Tempel di sini..."}
             className="mt-2 w-full resize-none skeu-inset rounded-xl border border-hairline bg-obsidian p-3.5 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
           />
           <p className={`mt-1.5 tabular text-micro ${near ? "text-ember" : "text-muted"}`}>
-            {used.toLocaleString("id-ID")} / {REFERENCE_MAX.toLocaleString("id-ID")} karakter
-            {near ? " · lebihnya bakal kepotong" : ""}
+            {used.toLocaleString(isEn ? "en-US" : "id-ID")} / {REFERENCE_MAX.toLocaleString(isEn ? "en-US" : "id-ID")}{" "}
+            {isEn ? "characters" : "karakter"}
+            {near ? (isEn ? " · excess will be truncated" : " · lebihnya bakal kepotong") : ""}
           </p>
         </div>
       </details>
@@ -405,7 +481,9 @@ export function ModuleRunner({
   /** Current balance. Only used to decide whether an offer is worth showing. */
   credits: number;
 }) {
-  const base = MODULE_SPECS[moduleKey];
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const base = (isEn ? MODULE_SPECS_EN : MODULE_SPECS)[moduleKey];
   const spec: ModuleSpec | null = base ? { ...base, cost } : null;
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -431,7 +509,11 @@ export function ModuleRunner({
 
   const run = async () => {
     if (missing.length) {
-      setError(`Isi dulu: ${missing.map((f) => f.label).join(", ")}.`);
+      setError(
+        isEn
+          ? `Please fill in: ${missing.map((f) => f.label).join(", ")}.`
+          : `Isi dulu: ${missing.map((f) => f.label).join(", ")}.`
+      );
       return;
     }
     if (!spec) return;
@@ -440,7 +522,7 @@ export function ModuleRunner({
     setOut(null);
     setGenId(null);
     setChars(0);
-    setStatus("Lagi siapin bahan lo...");
+    setStatus(isEn ? "Preparing your material..." : "Lagi siapin bahan lo...");
     setRated(null);
 
     try {
@@ -454,7 +536,11 @@ export function ModuleRunner({
         }),
       });
 
-      if (!res.ok) throw new Error(await readErrorBody(res, "Kontennya belum berhasil dibikin."));
+      if (!res.ok) {
+        throw new Error(
+          await readErrorBody(res, isEn ? "Failed to generate content." : "Kontennya belum berhasil dibikin.")
+        );
+      }
 
       let acc = "";
       let streamError: string | null = null;
@@ -485,7 +571,7 @@ export function ModuleRunner({
 
       if (streamError) throw new Error(streamError);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Ada yang error.");
+      setError(e instanceof Error ? e.message : (isEn ? "An error occurred." : "Ada yang error."));
     } finally {
       setBusy(false);
     }
@@ -494,7 +580,7 @@ export function ModuleRunner({
   if (!spec) {
     return (
       <p className="rounded-xl border border-hairline bg-surface px-4 py-6 text-center text-sm text-muted">
-        Modul ini gak ada. Balik ke Studio ya.
+        {isEn ? "This module does not exist. Please return to Studio." : "Modul ini gak ada. Balik ke Studio ya."}
       </p>
     );
   }
@@ -536,7 +622,7 @@ export function ModuleRunner({
                 {spec.key === "script" ? "AI Script Engine" : spec.key === "hook" ? "Hook Generator" : "Content Repurpose"}
               </span>
               <span className="font-mono text-[10px] font-bold text-muted border border-hairline/80 px-2 py-0.5 rounded-md">
-                {spec.cost} Kredit
+                {spec.cost} {isEn ? "credits" : "Kredit"}
               </span>
             </div>
             <h2 className="mt-1.5 font-display text-xl sm:text-2xl font-bold tracking-tight text-ink">
@@ -555,12 +641,20 @@ export function ModuleRunner({
                 <div className="flex items-center justify-between">
                   <label className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-1.5">
                     <span>{f.label}</span>
-                    {f.required && <span className="text-[10px] font-mono text-ember font-bold">*Pilih satu</span>}
+                    {f.required && (
+                      <span className="text-[10px] font-mono text-ember font-bold">
+                        {isEn ? "*Choose one" : "*Pilih satu"}
+                      </span>
+                    )}
                   </label>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {f.options.map((o) => {
-                    const on = values[f.name] === o;
+                    const on =
+                      values[f.name] === o ||
+                      (f.name === "duration" &&
+                        Boolean(values[f.name]) &&
+                        values[f.name].replace(/\D/g, "") === o.replace(/\D/g, ""));
                     return (
                       <button
                         key={o}
@@ -588,7 +682,11 @@ export function ModuleRunner({
                 <div className="flex items-center justify-between">
                   <label htmlFor={`module-field-${f.name}`} className="text-xs sm:text-sm font-semibold text-ink flex items-center gap-1.5">
                     <span>{f.label}</span>
-                    {f.required && <span className="text-[10px] font-mono text-ember font-bold">*Wajib</span>}
+                    {f.required && (
+                      <span className="text-[10px] font-mono text-ember font-bold">
+                        {isEn ? "*Required" : "*Wajib"}
+                      </span>
+                    )}
                   </label>
                   {f.hint && (
                     <span className="text-[11px] text-muted hidden sm:inline">{f.hint}</span>
@@ -598,12 +696,20 @@ export function ModuleRunner({
                 {/* Quick starter suggestions */}
                 {spec.key === "script" && f.name === "idea" && (
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {[
-                      "Review Produk Jujur",
-                      "Storytelling Viral",
-                      "Tips Praktis 3 Langkah",
-                      "Bongkar Rahasia Industri",
-                    ].map((chip) => (
+                    {(isEn
+                      ? [
+                          "Honest Product Review",
+                          "Viral Storytelling",
+                          "Practical 3-Step Tips",
+                          "Industry Secrets Exposed",
+                        ]
+                      : [
+                          "Review Produk Jujur",
+                          "Storytelling Viral",
+                          "Tips Praktis 3 Langkah",
+                          "Bongkar Rahasia Industri",
+                        ]
+                    ).map((chip) => (
                       <button
                         key={chip}
                         type="button"
@@ -618,12 +724,20 @@ export function ModuleRunner({
 
                 {spec.key === "script" && f.name === "hook" && (
                   <div className="flex flex-wrap gap-1.5 pt-0.5">
-                    {[
-                      "Jangan kaget kalau...",
-                      "Hati-hati, banyak yang ketipu...",
-                      "Gue nyesel baru tahu sekarang...",
-                      "Stop lakuin ini kalau gamau rugi...",
-                    ].map((chip) => (
+                    {(isEn
+                      ? [
+                          "Don't be surprised if...",
+                          "Watch out, many get fooled by...",
+                          "I wish I knew this earlier...",
+                          "Stop doing this if you want to avoid losses...",
+                        ]
+                      : [
+                          "Jangan kaget kalau...",
+                          "Hati-hati, banyak yang ketipu...",
+                          "Gue nyesel baru tahu sekarang...",
+                          "Stop lakuin ini kalau gamau rugi...",
+                        ]
+                    ).map((chip) => (
                       <button
                         key={chip}
                         type="button"
@@ -654,8 +768,12 @@ export function ModuleRunner({
           {spec.platformPicker && (
             <div className="rounded-xl border border-hairline/70 bg-surface-raised/40 p-3.5 sm:p-4 space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-semibold text-ink">Target Platform</label>
-                <span className="text-[11px] font-mono text-muted">Format disesuaikan</span>
+                <label className="text-xs sm:text-sm font-semibold text-ink">
+                  {isEn ? "Target Platform" : "Target Platform"}
+                </label>
+                <span className="text-[11px] font-mono text-muted">
+                  {isEn ? "Format adapted" : "Format disesuaikan"}
+                </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {PLATFORMS.map((p) => {
@@ -712,7 +830,7 @@ export function ModuleRunner({
               </svg>
               <span>{spec.cta}</span>
               <span className="ml-1 px-2 py-0.5 rounded-md bg-obsidian/20 text-obsidian text-xs font-mono font-black">
-                {spec.cost} Kredit
+                {spec.cost} {isEn ? "Credits" : "Kredit"}
               </span>
             </>
           )}
@@ -758,6 +876,9 @@ function ModuleOutput({
   busy: boolean;
   platform: string;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   if (moduleKey === "script") {
     return <ScriptView script={out as ScriptOutput} title="Script" platform={platform} />;
   }
@@ -771,7 +892,11 @@ function ModuleOutput({
 
     return (
       <div className="space-y-2">
-        <h3 className="eyebrow ml-1 text-muted">Hasil · {hooks.length} hook</h3>
+        <h3 className="eyebrow ml-1 text-muted">
+          {isEn
+            ? `Results · ${hooks.length} ${hooks.length === 1 ? "hook" : "hooks"}`
+            : `Hasil · ${hooks.length} hook`}
+        </h3>
         {hooks.map((h, i) => (
           <div key={i} className="surface-card rounded-xl p-4">
             <div className="flex items-start justify-between gap-3">
@@ -798,7 +923,7 @@ function ModuleOutput({
 
   return (
     <div className="space-y-2">
-      <h3 className="eyebrow ml-1 text-muted">Hasil</h3>
+      <h3 className="eyebrow ml-1 text-muted">{isEn ? "Results" : "Hasil"}</h3>
       {versions.map(([platform, text]) => (
         <div key={platform} className="surface-card rounded-xl p-4">
           <p className="eyebrow text-ember capitalize">{platform}</p>
@@ -820,6 +945,8 @@ function Pending() {
 }
 
 function CopyBtn({ text }: { text: string }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [done, setDone] = useState(false);
   return (
     <button
@@ -834,7 +961,7 @@ function CopyBtn({ text }: { text: string }) {
       }}
       className="mt-3 cursor-pointer text-micro font-semibold text-muted underline-offset-2 hover:text-ember hover:underline"
     >
-      {done ? "Kesalin!" : "Salin"}
+      {done ? (isEn ? "Copied!" : "Kesalin!") : isEn ? "Copy" : "Salin"}
     </button>
   );
 }
@@ -865,6 +992,8 @@ function SaveToPipeline({
   values: Record<string, string>;
   platform: string;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [state, setState] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState("");
   const router = useRouter();
@@ -872,11 +1001,10 @@ function SaveToPipeline({
   if (moduleKey !== "hook" && moduleKey !== "script" && moduleKey !== "repurpose") return null;
 
   const idea = (values.idea || values.topic || values.content || "").trim();
-  const title =
-    idea.split(/\r?\n/)[0].slice(0, 90) ||
-    ({ hook: "Hook tanpa judul", script: "Script tanpa judul", repurpose: "Konten tanpa judul" } as const)[
-      moduleKey
-    ];
+  const defaultTitles = isEn
+    ? { hook: "Untitled hook", script: "Untitled script", repurpose: "Untitled content" }
+    : { hook: "Hook tanpa judul", script: "Script tanpa judul", repurpose: "Konten tanpa judul" };
+  const title = idea.split(/\r?\n/)[0].slice(0, 90) || defaultTitles[moduleKey];
 
   const save = async () => {
     setState("saving");
@@ -897,7 +1025,7 @@ function SaveToPipeline({
       router.refresh();
     } catch (e: unknown) {
       setState("idle");
-      setError(e instanceof Error ? e.message : "Gagal nyimpen ke pipeline.");
+      setError(e instanceof Error ? e.message : isEn ? "Failed to save to pipeline." : "Gagal nyimpen ke pipeline.");
     }
   };
 
@@ -905,20 +1033,23 @@ function SaveToPipeline({
     <div className="surface-card rounded-xl p-4">
       {state === "saved" ? (
         <p className="text-mini leading-relaxed text-success">
-          Kesimpen di pipeline. Buka tab Pipeline buat lanjutin.
+          {isEn
+            ? "Saved to pipeline. Open the Pipeline tab to continue."
+            : "Kesimpen di pipeline. Buka tab Pipeline buat lanjutin."}
         </p>
       ) : (
         <>
           <p className="text-mini leading-relaxed text-muted">
-            Simpen ke pipeline biar gak ilang, dan bisa dilanjutin jadi konten
-            jadi.
+            {isEn
+              ? "Save to pipeline to keep your progress and turn it into finished content."
+              : "Simpen ke pipeline biar gak ilang, dan bisa dilanjutin jadi konten jadi."}
           </p>
           <button
             onClick={save}
             disabled={state === "saving"}
             className="mt-2.5 h-9 w-full cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-4 font-display text-xs font-bold text-ember disabled:opacity-50 shadow-xs"
           >
-            {state === "saving" ? "Nyimpen..." : "Simpan ke pipeline"}
+            {state === "saving" ? (isEn ? "Saving..." : "Nyimpen...") : isEn ? "Save to pipeline" : "Simpan ke pipeline"}
           </button>
         </>
       )}

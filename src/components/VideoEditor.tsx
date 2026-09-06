@@ -26,6 +26,7 @@ import { VideoProjectHistoryModal } from "./VideoProjectHistoryModal";
 import { saveVideoProject, getVideoProject, type VideoProject } from "@/lib/video/project-history";
 import { interpolateKeyframes, manualKeyframesToTrajectory, type ManualKeyframe } from "@/lib/video/keyframe-engine";
 import { BGM_PRESETS, createProceduralBgmBlob, playBgmAudition, stopBgmAudition, getProceduralBgmUrl } from "@/lib/video/bgm";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 /**
  * Video Auto-CC editor.
  *
@@ -164,6 +165,8 @@ export function VideoEditor({
   mode?: "auto_clip" | "subtitle";
 }) {
   const router = useRouter();
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [file, setFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string>("");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -355,7 +358,7 @@ export function VideoEditor({
         setFile(restoredFile);
         setVideoUrl(URL.createObjectURL(restoredFile));
         setPhase("ready");
-        setDoneMsg(`Draf proyek "${fullProject.title}" berhasil dimuat.`);
+        setDoneMsg(isEn ? `Draft project "${fullProject.title}" loaded successfully.` : `Draf proyek "${fullProject.title}" berhasil dimuat.`);
       } else {
         // For drafts without cached blob, create a standby file so the editor opens immediately
         const standbyFile = new File([new Blob([])], fullProject.title, {
@@ -366,19 +369,19 @@ export function VideoEditor({
         setFile(standbyFile);
         setVideoUrl("");
         setPhase("ready");
-        setDoneMsg(`Draf subtitle "${fullProject.title}" berhasil dibuka.`);
+        setDoneMsg(isEn ? `Subtitle draft "${fullProject.title}" opened successfully.` : `Draf subtitle "${fullProject.title}" berhasil dibuka.`);
       }
       setError(null);
     } catch (err) {
       console.error("Gagal membuka proyek:", err);
-      setError("Gagal memuat draf proyek.");
+      setError(isEn ? "Failed to load project draft." : "Gagal memuat draf proyek.");
     }
   };
   const runFaceTrack = useCallback(async (mode: "face_track" | "podcast_dynamic" = "face_track") => {
     const video = videoRef.current;
     if (!video || trackingFace) return;
     setTrackingFace(true); setError(null);
-    setStatus(mode === "podcast_dynamic" ? "AI lagi menganalisis giliran bicara & posisi wajah..." : "AI lagi mengunci & melacak wajah pembicara...");
+    setStatus(mode === "podcast_dynamic" ? (isEn ? "AI is analyzing speaker turns & face positions..." : "AI lagi menganalisis giliran bicara & posisi wajah...") : (isEn ? "AI is locking & tracking speaker face..." : "AI lagi mengunci & melacak wajah pembicara..."));
     try {
       const { detectFaceTrajectory } = await import("@/lib/video/detect-faces");
       const trajectory = await detectFaceTrajectory(video, {
@@ -393,17 +396,17 @@ export function VideoEditor({
       }));
       setStatus(
         mode === "podcast_dynamic"
-          ? "Auto AI Framing & Speaker Switch aktif."
+          ? (isEn ? "Auto AI Framing & Speaker Switch active." : "Auto AI Framing & Speaker Switch aktif.")
           : trajectory.some((keyframe) => keyframe.confidence > 0)
-          ? "Kunci Wajah AI (Face Lock) aktif."
-          : "Wajah fokus tengah aktif."
+          ? (isEn ? "AI Face Lock active." : "Kunci Wajah AI (Face Lock) aktif.")
+          : (isEn ? "Center focus active." : "Wajah fokus tengah aktif.")
       );
     } catch {
-      setStatus("Wajah fokus tengah aktif.");
+      setStatus(isEn ? "Center focus active." : "Wajah fokus tengah aktif.");
     } finally {
       setTrackingFace(false);
     }
-  }, [trackingFace]);
+  }, [trackingFace, isEn]);
 
   const preset = SOCIAL_PRESETS.find((item) => item.id === presetId) ?? SOCIAL_PRESETS[0];
   const lines = useMemo(
@@ -475,18 +478,18 @@ export function VideoEditor({
     const v = videoRef.current;
     const durationSec = v?.duration && isFinite(v.duration) ? v.duration : 0;
     if (!durationSec) {
-      setError("Durasi videonya belum kebaca. Tunggu sebentar lalu coba lagi.");
+      setError(isEn ? "Video duration could not be read yet. Wait a moment and try again." : "Durasi videonya belum kebaca. Tunggu sebentar lalu coba lagi.");
       return;
     }
     if (durationSec > 600) {
-      setError("Video maksimal 10 menit. Potong dulu, lalu upload ulang ya.");
+      setError(isEn ? "Video is limited to 10 minutes maximum. Please trim it and re-upload." : "Video maksimal 10 menit. Potong dulu, lalu upload ulang ya.");
       return;
     }
     setError(null);
     setProgress(0);
     try {
       setPhase("extracting");
-      setStatus("Ngambil audio dari video...");
+      setStatus(isEn ? "Extracting audio from video..." : "Ngambil audio dari video...");
       const { extractAudio } = await import("@/lib/video/ffmpeg");
       const { blob: audioBlob, filename: audioFilename } = await extractAudio(
         file,
@@ -495,7 +498,7 @@ export function VideoEditor({
 
       setPhase("transcribing");
       setProgress(0);
-      setStatus("AI lagi denger & nulis tiap kata...");
+      setStatus(isEn ? "AI is listening & transcribing every word..." : "AI lagi denger & nulis tiap kata...");
       const form = new FormData();
       form.append("audio", audioBlob, audioFilename);
       form.append("durationSec", String(durationSec));
@@ -506,7 +509,7 @@ export function VideoEditor({
         | { words?: Word[]; language?: string; error?: string }
         | null;
       if (!res.ok || !data?.words?.length) {
-        setError(data?.error ?? "Transkripsi gagal. Coba lagi bentar lagi.");
+        setError(data?.error ?? (isEn ? "Transcription failed. Please try again shortly." : "Transkripsi gagal. Coba lagi bentar lagi."));
         setPhase("idle");
         return;
       }
@@ -525,11 +528,13 @@ export function VideoEditor({
       router.refresh();
     } catch (e) {
       setError(
-        e instanceof Error ? `Gagal ngolah video: ${e.message}` : "Gagal ngolah video.",
+        e instanceof Error
+          ? (isEn ? `Failed to process video: ${e.message}` : `Gagal ngolah video: ${e.message}`)
+          : (isEn ? "Failed to process video." : "Gagal ngolah video."),
       );
       setPhase("idle");
     }
-  }, [file, router, runFaceTrack]);
+  }, [file, router, runFaceTrack, isEn]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -561,19 +566,19 @@ export function VideoEditor({
         }),
       });
       const data = (await res.json().catch(() => null)) as { lines?: string[]; error?: string } | null;
-      if (!res.ok || !data?.lines) throw new Error(data?.error ?? "Gagal menerjemahkan subtitle.");
+      if (!res.ok || !data?.lines) throw new Error(data?.error ?? (isEn ? "Failed to translate subtitles." : "Gagal menerjemahkan subtitle."));
       setWords(retimeTranslatedLines(sourceLines, data.lines));
       setCaptionLanguage(target);
     } catch (translationError) {
-      setError(translationError instanceof Error ? translationError.message : "Gagal menerjemahkan subtitle.");
+      setError(translationError instanceof Error ? translationError.message : (isEn ? "Failed to translate subtitles." : "Gagal menerjemahkan subtitle."));
     } finally {
       setTranslating(false);
     }
-  }, [captionLanguage, preset.maxGap, preset.maxWords, sourceLanguage, sourceWords, translating, words]);
+  }, [captionLanguage, preset.maxGap, preset.maxWords, sourceLanguage, sourceWords, translating, words, isEn]);
 
   const doExport = useCallback(async () => {
     if (!file || file.size === 0 || !videoUrl || !words.length) {
-      setError("Hubungkan file video aslinya terlebih dahulu sebelum mengekspor.");
+      setError(isEn ? "Please reconnect the original video file before exporting." : "Hubungkan file video aslinya terlebih dahulu sebelum mengekspor.");
       return;
     }
     const v = videoRef.current;
@@ -582,15 +587,15 @@ export function VideoEditor({
     setDoneMsg(null);
     setProgress(0);
     setExportPct(0);
-    setExportStage("Nyiapin");
+    setExportStage(isEn ? "Preparing" : "Nyiapin");
     setPhase("exporting");
-    setStatus("Nge-render caption ke video, jangan tutup tab...");
+    setStatus(isEn ? "Rendering captions into video, please don't close this tab..." : "Nge-render caption ke video, jangan tutup tab...");
     try {
       if (noWatermark) {
         const wm = await fetch("/api/video/no-watermark", { method: "POST" });
         if (!wm.ok) {
           const d = (await wm.json().catch(() => null)) as { error?: string } | null;
-          setError(d?.error ?? "Gagal motong kredit buat hapus watermark.");
+          setError(d?.error ?? (isEn ? "Failed to deduct credits to remove watermark." : "Gagal motong kredit buat hapus watermark."));
           setPhase("ready");
           return;
         }
@@ -600,7 +605,7 @@ export function VideoEditor({
       if (bgmTrack === "custom" && customBgmFile) {
         bgmBlob = customBgmFile;
       } else if (bgmTrack !== "none") {
-        setExportStage("Menyiapkan musik latar...");
+        setExportStage(isEn ? "Preparing background music..." : "Menyiapkan musik latar...");
         bgmBlob = await createProceduralBgmBlob(bgmTrack, (trimEnd > trimStart ? trimEnd - trimStart : videoDuration) || 30);
       }
 
@@ -636,7 +641,7 @@ export function VideoEditor({
       // Safe native stream write: never let bridge error fail or crash the user's export!
       if ((isDesktopShell || isAndroidShell) && typeof window !== "undefined" && Boolean(window.MalesanNative)) {
         try {
-          setExportStage(isDesktopShell ? "Menyimpan ke folder Videos/Malesan..." : "Menyiapkan Galeri Android...");
+          setExportStage(isDesktopShell ? (isEn ? "Saving to Videos/Malesan folder..." : "Menyimpan ke folder Videos/Malesan...") : (isEn ? "Preparing Android Gallery..." : "Menyiapkan Galeri Android..."));
           const prepared = await requestNative({
             type: "GALLERY_PREPARE",
             name: `Malesan_${base}.${ext}`,
@@ -692,11 +697,15 @@ export function VideoEditor({
       setShowCompletionModal(true);
       setDoneMsg(
         noWatermark
-          ? `Video kesimpen. ${noWatermarkCost} kredit kepotong buat hapus watermark.`
-          : "Video kesimpen (watermark nempel, gratis).",
+          ? isEn
+            ? `Video saved. ${noWatermarkCost} credits deducted to remove watermark.`
+            : `Video kesimpen. ${noWatermarkCost} kredit kepotong buat hapus watermark.`
+          : isEn
+            ? "Video saved (subtle watermark attached, free)."
+            : "Video kesimpen (watermark nempel, gratis).",
       );
     } catch (e) {
-      setError(e instanceof Error ? `Export gagal: ${e.message}` : "Export gagal.");
+      setError(e instanceof Error ? (isEn ? `Export failed: ${e.message}` : `Export gagal: ${e.message}`) : (isEn ? "Export failed." : "Export gagal."));
       setPhase("ready");
     }
   }, [
@@ -717,6 +726,7 @@ export function VideoEditor({
     bgmVolume,
     customBgmFile,
     subtitleOffset,
+    isEn,
   ]);
 
   return (
@@ -729,18 +739,18 @@ export function VideoEditor({
           <header className="flex items-center justify-between gap-2">
             <div>
               <h2 className="font-display text-xl font-bold tracking-display-md text-ink">
-                {mode === "auto_clip" ? "Auto Clip Video" : "Subtitle Video (Auto Caption)"}
+                {mode === "auto_clip" ? "Auto Clip Video" : (isEn ? "Video Subtitles (Auto Caption)" : "Subtitle Video (Auto Caption)")}
               </h2>
               <p className="mt-1 text-sm leading-relaxed text-muted">
                 {mode === "auto_clip" ? (
                   <>
-                    Tempel link YouTube, pilih momen rekomendasi, lalu potong &amp; transkrip otomatis.
-                    <span className="text-ember font-bold"> {Math.max(10, cost * 2)} kredit sekali scan.</span>
+                    {isEn ? "Paste a YouTube link, pick recommended moments, then auto-clip & transcribe." : "Tempel link YouTube, pilih momen rekomendasi, lalu potong & transkrip otomatis."}
+                    <span className="text-ember font-bold"> {Math.max(10, cost * 2)} {isEn ? "credits per scan." : "kredit sekali scan."}</span>
                   </>
                 ) : (
                   <>
-                    Upload rekaman video kamu, AI otomatis transkrip &amp; pasang subtitle animasi siap tayang.
-                    <span className="text-ember"> Mulai dari {cost} kredit / menit.</span>
+                    {isEn ? "Upload your video recording, AI will automatically transcribe & apply animated subtitles ready to post." : "Upload rekaman video kamu, AI otomatis transkrip & pasang subtitle animasi siap tayang."}
+                    <span className="text-ember"> {isEn ? `Starting from ${cost} credits / min.` : `Mulai dari ${cost} kredit / menit.`}</span>
                   </>
                 )}
               </p>
@@ -752,7 +762,7 @@ export function VideoEditor({
               className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-hairline bg-surface-raised px-3 text-xs font-bold text-ink transition-all hover:border-ember/50 hover:bg-white/10 shrink-0 shadow-xs"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 text-ember"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-              <span>Draf &amp; Riwayat</span>
+              <span>{isEn ? "Drafts & History" : "Draf & Riwayat"}</span>
             </button>
           </header>
 
@@ -762,21 +772,23 @@ export function VideoEditor({
 
               <details className="group rounded-2xl border border-hairline bg-surface">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
-                  <span>Pakai file sendiri</span>
+                  <span>{isEn ? "Use own file" : "Pakai file sendiri"}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
                 </summary>
                 <div className="border-t border-hairline p-3">
-                  <p className="mb-3 text-micro leading-relaxed text-muted">Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari {cost} kredit / menit.</p>
-                  <UploadDrop onPick={onPick} />
+                  <p className="mb-3 text-micro leading-relaxed text-muted">
+                    {isEn ? `Fallback for existing videos on your device. AI subtitles starting from ${cost} credits / min.` : `Fallback buat video yang sudah ada di perangkat. Subtitle AI mulai dari ${cost} kredit / menit.`}
+                  </p>
+                  <UploadDrop onPick={onPick} isEn={isEn} />
                 </div>
               </details>
             </>
           ) : (
             <div className="space-y-4">
-              <UploadDrop onPick={onPick} />
+              <UploadDrop onPick={onPick} isEn={isEn} />
               <details className="group rounded-2xl border border-hairline bg-surface">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-mini font-semibold text-muted transition-colors hover:text-ink [&::-webkit-details-marker]:hidden">
-                  <span>Mau potong klip dari YouTube?</span>
+                  <span>{isEn ? "Want to clip from YouTube?" : "Mau potong klip dari YouTube?"}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 transition-transform group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
                 </summary>
                 <div className="border-t border-hairline p-3">
@@ -804,7 +816,7 @@ export function VideoEditor({
                 className="flex h-7.5 cursor-pointer items-center gap-1 rounded-lg border border-hairline bg-surface-raised px-2 text-xs font-semibold text-muted transition-all hover:border-ember/50 hover:text-ink shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><path d="m15 18-6-6 6-6"/></svg>
-                <span>Ganti</span>
+                <span>{isEn ? "Change" : "Ganti"}</span>
               </button>
 
               <button
@@ -813,7 +825,7 @@ export function VideoEditor({
                 className="flex h-7.5 cursor-pointer items-center gap-1 rounded-lg border border-hairline bg-surface-raised px-2 text-xs font-bold text-ink transition-all hover:border-ember/50 hover:bg-white/10 shrink-0"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-                <span>Draf</span>
+                <span>{isEn ? "Drafts" : "Draf"}</span>
               </button>
 
               <span className="truncate text-xs font-bold text-ink max-w-[110px] sm:max-w-[240px]" title={file.name}>{file.name}</span>
@@ -875,7 +887,7 @@ export function VideoEditor({
                     setVideoUrl(URL.createObjectURL(picked));
                     setTrimStart(0);
                     setTrimEnd(0);
-                    setDoneMsg(`Video "${picked.name}" berhasil terhubung ke draf.`);
+                    setDoneMsg(isEn ? `Video "${picked.name}" successfully linked to draft.` : `Video "${picked.name}" berhasil terhubung ke draf.`);
                   }}
                   onResetStudio={() => {
                     setFile(null);
@@ -898,7 +910,6 @@ export function VideoEditor({
                 </label>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-[10px] text-ember font-bold bg-surface-raised px-2 py-0.5 rounded border border-hairline uppercase">{layout.ratio}</span>
-                  <span className="text-micro text-mist/80">{presetId}</span>
                 </div>
               </div>
 
@@ -917,7 +928,7 @@ export function VideoEditor({
                     }`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-                    <span>Bingkai</span>
+                    <span>{isEn ? "Frame" : "Bingkai"}</span>
                   </button>
                   <button
                     type="button"
@@ -927,7 +938,7 @@ export function VideoEditor({
                     }`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                    <span>Teks</span>
+                    <span>{isEn ? "Text" : "Teks"}</span>
                   </button>
                   <button
                     type="button"
@@ -947,7 +958,7 @@ export function VideoEditor({
                     }`}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
-                    <span>Gaya</span>
+                    <span>{isEn ? "Style" : "Gaya"}</span>
                   </button>
                   <button
                     type="button"
@@ -968,11 +979,11 @@ export function VideoEditor({
               <div className="grid grid-cols-5 border-b border-hairline bg-surface-raised p-1 gap-1">
                 <button type="button" onClick={() => setEditorTab("frame")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "frame" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-                  <span>Bingkai</span>
+                  <span>{isEn ? "Frame" : "Bingkai"}</span>
                 </button>
                 <button type="button" onClick={() => setEditorTab("subtitles")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "subtitles" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-                  <span>Teks</span>
+                  <span>{isEn ? "Text" : "Teks"}</span>
                 </button>
                 <button type="button" onClick={() => setEditorTab("audio")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "audio" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -980,7 +991,7 @@ export function VideoEditor({
                 </button>
                 <button type="button" onClick={() => setEditorTab("style")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "style" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/></svg>
-                  <span>Gaya</span>
+                  <span>{isEn ? "Style" : "Gaya"}</span>
                 </button>
                 <button type="button" onClick={() => setEditorTab("export")} className={`flex h-8.5 items-center justify-center gap-1 rounded-lg px-1 text-xs font-bold transition-all ${editorTab === "export" ? "bg-ember text-obsidian shadow-xs" : "text-muted hover:text-ink hover:bg-surface-raised"}`}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -1087,8 +1098,8 @@ export function VideoEditor({
                     <div className="rounded-xl border border-hairline bg-surface-raised/50 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-mini font-semibold text-ink">Bahasa Subtitle</p>
-                          <p className="text-micro text-muted">Timing suara tetap dikunci.</p>
+                          <p className="text-mini font-semibold text-ink">{isEn ? "Subtitle Language" : "Bahasa Subtitle"}</p>
+                          <p className="text-micro text-muted">{isEn ? "Audio timing remains locked." : "Timing suara tetap dikunci."}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-1 rounded-lg bg-obsidian/60 p-1">
                           {(["id", "en"] as const).map((language) => (
@@ -1107,7 +1118,7 @@ export function VideoEditor({
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
                             <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                           </svg>
-                          <span className="text-xs font-bold text-ink">Sinkronisasi Suara &amp; Teks (Lip-Sync)</span>
+                          <span className="text-xs font-bold text-ink">{isEn ? "Voice & Text Lip-Sync Calibration" : "Sinkronisasi Suara & Teks (Lip-Sync)"}</span>
                         </div>
                         <span className="font-mono text-[10px] font-bold text-ember bg-ember/15 px-2 py-0.5 rounded border border-ember/30">
                           {subtitleOffset >= 0 ? `+${subtitleOffset.toFixed(2)}s` : `${subtitleOffset.toFixed(2)}s`}
@@ -1115,7 +1126,9 @@ export function VideoEditor({
                       </div>
 
                       <p className="text-[11px] text-muted leading-tight">
-                        Jika teks subtitle muncul sedikit terlambat dibanding suara bicara, geser ke kiri (lebih cepat).
+                        {isEn
+                          ? "If subtitles appear slightly delayed compared to speech, nudge left (faster)."
+                          : "Jika teks subtitle muncul sedikit terlambat dibanding suara bicara, geser ke kiri (lebih cepat)."}
                       </p>
 
                       <div className="flex items-center gap-2">
@@ -1127,7 +1140,7 @@ export function VideoEditor({
                           }}
                           className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
                         >
-                          <span>◀ 0.1s Lebih Cepat</span>
+                          <span>{isEn ? "◀ 0.1s Faster" : "◀ 0.1s Lebih Cepat"}</span>
                         </button>
                         <button
                           type="button"
@@ -1136,7 +1149,7 @@ export function VideoEditor({
                             triggerHaptic(8);
                           }}
                           className="px-2.5 h-8 rounded-lg bg-surface border border-white/10 text-[10px] text-muted hover:text-ink active:scale-95"
-                          title="Reset ke setelan optimal (-0.12s)"
+                          title={isEn ? "Reset to optimal setting (-0.12s)" : "Reset ke setelan optimal (-0.12s)"}
                         >
                           Reset
                         </button>
@@ -1148,7 +1161,7 @@ export function VideoEditor({
                           }}
                           className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
                         >
-                          <span>0.1s Lebih Lambat ▶</span>
+                          <span>{isEn ? "0.1s Slower ▶" : "0.1s Lebih Lambat ▶"}</span>
                         </button>
                       </div>
                     </div>
@@ -1169,8 +1182,8 @@ export function VideoEditor({
                       />
                     ) : (
                       <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
-                        <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
-                        <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">Buat Subtitle AI Sekarang</button>
+                        <p className="text-mini text-muted font-medium">{isEn ? "No subtitles yet." : "Belum ada subtitle."}</p>
+                        <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">{isEn ? "Generate AI Subtitles Now" : "Buat Subtitle AI Sekarang"}</button>
                       </div>
                     )}
                   </div>
@@ -1182,97 +1195,124 @@ export function VideoEditor({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                          <span className="text-xs font-bold text-ink">Musik Latar Bebas Hak Cipta</span>
+                          <span className="text-xs font-bold text-ink">{isEn ? "Royalty-Free Background Music" : "Musik Latar Bebas Hak Cipta"}</span>
                         </div>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">100% Aman Medsos</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">{isEn ? "100% Social-Safe" : "100% Aman Medsos"}</span>
                       </div>
                       <p className="text-[11px] text-muted">
-                        Koleksi musik rekaman studio bebas royalti. 100% aman monetisasi & bebas copyright strike di TikTok, Reels, Shorts, dan YouTube.
+                        {isEn
+                          ? "Studio-grade royalty-free background music. 100% safe for monetization and zero copyright strikes across TikTok, Reels, Shorts, and YouTube."
+                          : "Koleksi musik rekaman studio bebas royalti. 100% aman monetisasi & bebas copyright strike di TikTok, Reels, Shorts, dan YouTube."}
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {BGM_PRESETS.map((preset) => (
-                          <div
-                            key={preset.id}
-                            onClick={() => {
-                              setBgmTrack(preset.id);
-                              triggerHaptic(8);
-                              if (preset.id !== "none" && preset.id !== "custom") {
-                                setAuditioningPreset(preset.id);
-                                void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
-                              } else {
-                                stopBgmAudition();
-                                setAuditioningPreset(null);
-                              }
-                            }}
-                            className={`min-h-[3.75rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
-                              bgmTrack === preset.id
-                                ? "border-ember bg-ember/20 text-white shadow-xs"
-                                : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
-                            }`}
-                          >
-                            <div className="flex-1 min-w-0 pr-2">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
-                                  {preset.label}
-                                </span>
-                                <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase shrink-0">{preset.mood}</span>
-                              </div>
-                              <span className="text-[9px] text-muted line-clamp-1">
-                                {preset.trackName && preset.artist ? (
-                                  <span className="font-medium text-mist/90">{preset.trackName} <span className="text-muted/60">•</span> {preset.artist}</span>
-                                ) : (
-                                  preset.desc
-                                )}
-                              </span>
-                            </div>
+                        {BGM_PRESETS.map((preset) => {
+                          const presetLabel = isEn
+                            ? ({
+                                none: "No Music",
+                                lofi: "Chill Lofi",
+                                inspiratif: "Inspiring & Story",
+                                upbeat: "Upbeat Reels / TikTok",
+                                suspense: "Suspense & Mystery",
+                                komedi: "Comedy & Playful",
+                                custom: "Upload Own Audio",
+                              }[preset.id] || preset.label)
+                            : preset.label;
+                          const presetDesc = isEn
+                            ? ({
+                                none: "Original video audio only without background instruments",
+                                lofi: "Warm Rhodes piano & beats for chill chats",
+                                inspiratif: "Uplifting piano for storytelling & motivation",
+                                upbeat: "Energetic rhythm for fast tips, vlogs & product demos",
+                                suspense: "Cinematic tension for hooks and facts",
+                                komedi: "Playful melodies for memes and fun moments",
+                                custom: "Use your own MP3 / WAV audio file",
+                              }[preset.id] || preset.desc)
+                            : preset.desc;
 
-                            {preset.id !== "none" && preset.id !== "custom" && (
-                              <div className="shrink-0 flex items-center">
-                                {currentPlayingPreset === preset.id ? (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      stopBgmAudition();
-                                      setAuditioningPreset(null);
-                                    }}
-                                    className="h-6.5 px-2 rounded-lg bg-ember text-obsidian text-[9px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
-                                    title="Hentikan contoh musik"
-                                  >
-                                    <span className="flex items-center gap-0.5">
-                                      <span className="w-0.5 h-2 bg-obsidian animate-pulse" />
-                                      <span className="w-0.5 h-3 bg-obsidian animate-pulse delay-75" />
-                                      <span className="w-0.5 h-1.5 bg-obsidian animate-pulse delay-150" />
-                                    </span>
-                                    <span>Stop</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setBgmTrack(preset.id);
-                                      setAuditioningPreset(preset.id);
-                                      void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
-                                    }}
-                                    className="h-6.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-ink text-[9px] font-bold flex items-center gap-1 border border-white/15 cursor-pointer transition-all active:scale-95"
-                                    title="Dengarkan sampel musik latar ini"
-                                  >
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5 text-ember">
-                                      <polygon points="5 3 19 12 5 21 5 3" />
-                                    </svg>
-                                    <span>Dengar</span>
-                                  </button>
-                                )}
+                          return (
+                            <div
+                              key={preset.id}
+                              onClick={() => {
+                                setBgmTrack(preset.id);
+                                triggerHaptic(8);
+                                if (preset.id !== "none" && preset.id !== "custom") {
+                                  setAuditioningPreset(preset.id);
+                                  void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                                } else {
+                                  stopBgmAudition();
+                                  setAuditioningPreset(null);
+                                }
+                              }}
+                              className={`min-h-[3.75rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
+                                bgmTrack === preset.id
+                                  ? "border-ember bg-ember/20 text-white shadow-xs"
+                                  : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 pr-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
+                                    {presetLabel}
+                                  </span>
+                                  <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase shrink-0">{preset.mood}</span>
+                                </div>
+                                <span className="text-[9px] text-muted line-clamp-1">
+                                  {preset.trackName && preset.artist ? (
+                                    <span className="font-medium text-mist/90">{preset.trackName} <span className="text-muted/60">•</span> {preset.artist}</span>
+                                  ) : (
+                                    presetDesc
+                                  )}
+                                </span>
                               </div>
-                            )}
-                          </div>
-                        ))}
+
+                              {preset.id !== "none" && preset.id !== "custom" && (
+                                <div className="shrink-0 flex items-center">
+                                  {currentPlayingPreset === preset.id ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        stopBgmAudition();
+                                        setAuditioningPreset(null);
+                                      }}
+                                      className="h-6.5 px-2 rounded-lg bg-ember text-obsidian text-[9px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                      title={isEn ? "Stop audio preview" : "Hentikan contoh musik"}
+                                    >
+                                      <span className="flex items-center gap-0.5">
+                                        <span className="w-0.5 h-2 bg-obsidian animate-pulse" />
+                                        <span className="w-0.5 h-3 bg-obsidian animate-pulse delay-75" />
+                                        <span className="w-0.5 h-1.5 bg-obsidian animate-pulse delay-150" />
+                                      </span>
+                                      <span>Stop</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setBgmTrack(preset.id);
+                                        setAuditioningPreset(preset.id);
+                                        void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                                      }}
+                                      className="h-6.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-ink text-[9px] font-bold flex items-center gap-1 border border-white/15 cursor-pointer transition-all active:scale-95"
+                                      title={isEn ? "Listen to music sample" : "Dengarkan sampel musik latar ini"}
+                                    >
+                                      <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5 text-ember">
+                                        <polygon points="5 3 19 12 5 21 5 3" />
+                                      </svg>
+                                      <span>{isEn ? "Listen" : "Dengar"}</span>
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                       <div className="flex items-center justify-between text-[9px] text-mist/70 pt-1 px-0.5 border-t border-hairline/40">
                         <span className="flex items-center gap-1">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-emerald-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                          <span>Lisensi Creative Commons (CC-BY). Bebas monetisasi konten tanpa klaim royalti.</span>
+                          <span>{isEn ? "Creative Commons License (CC-BY). 100% monetization-safe with zero copyright claims." : "Lisensi Creative Commons (CC-BY). Bebas monetisasi konten tanpa klaim royalti."}</span>
                         </span>
                       </div>
 
@@ -1282,9 +1322,9 @@ export function VideoEditor({
                           <label className="flex flex-col items-center justify-center p-3 rounded-lg border border-dashed border-ember/40 bg-ember/5 cursor-pointer hover:bg-ember/10 transition-all text-center">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-ember mb-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                             <span className="text-xs font-bold text-ink">
-                              {customBgmFile ? customBgmFile.name : "Pilih File Audio (.mp3, .wav)"}
+                              {customBgmFile ? customBgmFile.name : (isEn ? "Choose Audio File (.mp3, .wav)" : "Pilih File Audio (.mp3, .wav)")}
                             </span>
-                            <span className="text-[10px] text-muted">Maksimal 25MB</span>
+                            <span className="text-[10px] text-muted">{isEn ? "Max 25MB" : "Maksimal 25MB"}</span>
                             <input
                               type="file"
                               accept="audio/mp3,audio/wav,audio/mpeg,audio/aac,audio/m4a"
@@ -1303,7 +1343,7 @@ export function VideoEditor({
                     {bgmTrack !== "none" && (
                       <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-ink">Volume Musik Latar</span>
+                          <span className="text-xs font-bold text-ink">{isEn ? "Background Music Volume" : "Volume Musik Latar"}</span>
                           <span className="font-mono text-xs font-bold text-ember">{Math.round(bgmVolume * 100)}%</span>
                         </div>
                         <input
@@ -1316,7 +1356,7 @@ export function VideoEditor({
                           className="w-full accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
                         />
                         <p className="text-[10px] text-muted">
-                          Rekomendasi 10% - 20% agar vokal pembicara tetap terdengar jernih dan mendominasi.
+                          {isEn ? "Recommended 10% - 20% to keep voiceover clear and prominent." : "Rekomendasi 10% - 20% agar vokal pembicara tetap terdengar jernih dan mendominasi."}
                         </p>
                       </div>
                     )}
@@ -1330,22 +1370,24 @@ export function VideoEditor({
                     <label className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-raised/40 p-3.5 text-mini text-ink cursor-pointer hover:border-ember/40 transition-colors">
                       <input type="checkbox" checked={noWatermark} onChange={(e) => setNoWatermark(e.target.checked)} className="mt-0.5 size-4 accent-ember rounded" />
                       <div>
-                        <span className="font-semibold">Hapus watermark malesan.my.id</span>{" "}
-                        <span className="text-ember font-bold">(+{noWatermarkCost} kredit)</span>
-                        <span className="block mt-0.5 text-micro text-muted">Kalau gak dicentang, watermark tetap nempel halus (gratis).</span>
+                        <span className="font-semibold">{isEn ? "Remove malesan.my.id watermark" : "Hapus watermark malesan.my.id"}</span>{" "}
+                        <span className="text-ember font-bold">(+{noWatermarkCost} {isEn ? "credits" : "kredit"})</span>
+                        <span className="block mt-0.5 text-micro text-muted">
+                          {isEn ? "If unchecked, a subtle watermark remains attached (free)." : "Kalau gak dicentang, watermark tetap nempel halus (gratis)."}
+                        </span>
                       </div>
                     </label>
                     <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 text-micro text-muted space-y-1">
-                      <div className="flex justify-between font-mono"><span>Kualitas Render:</span><span className="text-ink font-semibold">1080p HD (1080x1920)</span></div>
-                      <div className="flex justify-between font-mono"><span>Bitrate Video:</span><span className="text-ink font-semibold">{bitrate} Mbps (Ukuran Ringan)</span></div>
+                      <div className="flex justify-between font-mono"><span>{isEn ? "Render Quality:" : "Kualitas Render:"}</span><span className="text-ink font-semibold">1080p HD (1080x1920)</span></div>
+                      <div className="flex justify-between font-mono"><span>{isEn ? "Video Bitrate:" : "Bitrate Video:"}</span><span className="text-ink font-semibold">{bitrate} Mbps ({isEn ? "Lightweight" : "Ukuran Ringan"})</span></div>
                     </div>
                     <button onClick={doExport} disabled={busy || words.length === 0} className="btn-ember flex items-center justify-center gap-2 w-full cursor-pointer rounded-xl py-3.5 text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                       </svg>
-                      <span>{phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}</span>
+                      <span>{phase === "exporting" ? (isEn ? `Rendering... ${progress}%` : `Lagi render... ${progress}%`) : (isEn ? "Export Finished Video" : "Export Video Mateng")}</span>
                     </button>
-                    <p className="text-micro leading-snug text-muted text-center">Tiap frame digambar satu-satu di browser kamu. Kualitas 1080p HD jernih tanpa beban ukuran berlebih.</p>
+                    <p className="text-micro leading-snug text-muted text-center">{isEn ? "Each frame is rendered locally in your browser. Crisp 1080p HD quality with optimized file size." : "Tiap frame digambar satu-satu di browser kamu. Kualitas 1080p HD jernih tanpa beban ukuran berlebih."}</p>
                   </div>
                 )}
               </div>
@@ -1365,19 +1407,19 @@ export function VideoEditor({
                     <span className="size-2 rounded-full bg-ember animate-pulse" />
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                       {activeDrawer === "frame"
-                        ? "Pengaturan Bingkai & Sudut"
+                        ? (isEn ? "Frame & Ratio Settings" : "Pengaturan Bingkai & Sudut")
                         : activeDrawer === "subtitles"
-                        ? "Pengaturan Teks & Subtitle"
+                        ? (isEn ? "Text & Subtitle Settings" : "Pengaturan Teks & Subtitle")
                         : activeDrawer === "audio"
-                        ? "Musik Latar & Audio"
+                        ? (isEn ? "Background Music & Audio" : "Musik Latar & Audio")
                         : activeDrawer === "style"
-                        ? "Gaya Tampilan Subtitle"
-                        : "Export Video Mateng"}
+                        ? (isEn ? "Subtitle Display Style" : "Gaya Tampilan Subtitle")
+                        : (isEn ? "Export Finished Video" : "Export Video Mateng")}
                     </h4>
                   </div>
                   <button
                     type="button"
-                    aria-label="Tutup Pengaturan"
+                    aria-label={isEn ? "Close Settings" : "Tutup Pengaturan"}
                     onClick={() => setActiveDrawer(null)}
                     className="flex size-7 items-center justify-center rounded-full bg-white/10 text-mist hover:text-white"
                   >
@@ -1389,7 +1431,7 @@ export function VideoEditor({
                 <div className="space-y-4">
                   <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-ink">Rasio Video</span>
+                      <span className="text-xs font-bold text-ink">{isEn ? "Video Ratio" : "Rasio Video"}</span>
                       <span className="text-[11px] font-mono text-ember font-bold">{layout.ratio}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-1.5">
@@ -1417,19 +1459,19 @@ export function VideoEditor({
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
                           <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
                         </svg>
-                        <span className="text-xs font-bold text-ink">Kejernihan &amp; Filter Visual</span>
+                        <span className="text-xs font-bold text-ink">{isEn ? "Clarity & Visual Filters" : "Kejernihan & Filter Visual"}</span>
                       </div>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">Studio Grade</span>
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
-                        { id: "original", label: "Natural Original", desc: "Warna asli 100% alami (Default)" },
-                        { id: "wink_hd", label: "Ultra Clarity 4K", desc: "Ketajaman ultra 4K & unblur detail mikro" },
-                        { id: "clean_pro", label: "Studio Clean Pro", desc: "Kontras mikro jernih & bersih" },
-                        { id: "warm_creator", label: "Warm Creator", desc: "Warna kulit hangat & glowing" },
-                        { id: "cinematic", label: "Cinematic Moody", desc: "Tone film elegan & dramatis" },
-                        { id: "fyp_pop", label: "Viral Color Pop", desc: "Warna cerah feed medsos" },
-                        { id: "clean_denoise", label: "Smooth Soft", desc: "Halus bebas noise" },
+                        { id: "original", label: isEn ? "Natural Original" : "Natural Original", desc: isEn ? "100% natural colors (Default)" : "Warna asli 100% alami (Default)" },
+                        { id: "wink_hd", label: isEn ? "Ultra Clarity 4K" : "Ultra Clarity 4K", desc: isEn ? "Ultra 4K sharpness & unblur" : "Ketajaman ultra 4K & unblur detail mikro" },
+                        { id: "clean_pro", label: isEn ? "Studio Clean Pro" : "Studio Clean Pro", desc: isEn ? "Clean micro contrast & depth" : "Kontras mikro jernih & bersih" },
+                        { id: "warm_creator", label: isEn ? "Warm Creator" : "Warm Creator", desc: isEn ? "Warm skin tones & glow" : "Warna kulit hangat & glowing" },
+                        { id: "cinematic", label: isEn ? "Cinematic Moody" : "Cinematic Moody", desc: isEn ? "Dramatic cinematic film tone" : "Tone film elegan & dramatis" },
+                        { id: "fyp_pop", label: isEn ? "Viral Color Pop" : "Viral Color Pop", desc: isEn ? "Vibrant pop for social feeds" : "Warna cerah feed medsos" },
+                        { id: "clean_denoise", label: isEn ? "Smooth Soft" : "Smooth Soft", desc: isEn ? "Smooth noise-free skin" : "Halus bebas noise" },
                       ].map((opt) => (
                         <button
                           key={opt.id}
@@ -1483,8 +1525,8 @@ export function VideoEditor({
                   <div className="rounded-xl border border-hairline bg-surface-raised/50 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-mini font-semibold text-ink">Bahasa Subtitle</p>
-                        <p className="text-micro text-muted">Timing suara tetap dikunci.</p>
+                        <p className="text-mini font-semibold text-ink">{isEn ? "Subtitle Language" : "Bahasa Subtitle"}</p>
+                        <p className="text-micro text-muted">{isEn ? "Audio timing remains locked." : "Timing suara tetap dikunci."}</p>
                       </div>
                       <div className="grid grid-cols-2 gap-1 rounded-lg bg-obsidian/60 p-1">
                         {(["id", "en"] as const).map((language) => (
@@ -1503,7 +1545,7 @@ export function VideoEditor({
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
                           <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
                         </svg>
-                        <span className="text-xs font-bold text-ink">Sinkronisasi Suara &amp; Teks (Lip-Sync)</span>
+                        <span className="text-xs font-bold text-ink">{isEn ? "Voice & Text Lip-Sync Calibration" : "Sinkronisasi Suara & Teks (Lip-Sync)"}</span>
                       </div>
                       <span className="font-mono text-[10px] font-bold text-ember bg-ember/15 px-2 py-0.5 rounded border border-ember/30">
                         {subtitleOffset >= 0 ? `+${subtitleOffset.toFixed(2)}s` : `${subtitleOffset.toFixed(2)}s`}
@@ -1511,7 +1553,9 @@ export function VideoEditor({
                     </div>
 
                     <p className="text-[11px] text-muted leading-tight">
-                      Jika teks subtitle muncul sedikit terlambat dibanding suara bicara, geser ke kiri (lebih cepat).
+                      {isEn
+                        ? "If subtitles appear slightly delayed compared to speech, nudge left (faster)."
+                        : "Jika teks subtitle muncul sedikit terlambat dibanding suara bicara, geser ke kiri (lebih cepat)."}
                     </p>
 
                     <div className="flex items-center gap-2">
@@ -1523,7 +1567,7 @@ export function VideoEditor({
                         }}
                         className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
                       >
-                        <span>◀ 0.1s Lebih Cepat</span>
+                        <span>{isEn ? "◀ 0.1s Faster" : "◀ 0.1s Lebih Cepat"}</span>
                       </button>
                       <button
                         type="button"
@@ -1532,7 +1576,7 @@ export function VideoEditor({
                           triggerHaptic(8);
                         }}
                         className="px-2.5 h-8 rounded-lg bg-surface border border-white/10 text-[10px] text-muted hover:text-ink active:scale-95"
-                        title="Reset ke setelan optimal (-0.12s)"
+                        title={isEn ? "Reset to optimal setting (-0.12s)" : "Reset ke setelan optimal (-0.12s)"}
                       >
                         Reset
                       </button>
@@ -1544,7 +1588,7 @@ export function VideoEditor({
                         }}
                         className="flex-1 h-8 rounded-lg bg-surface-raised border border-white/10 text-xs font-bold text-ink hover:text-ember hover:border-ember/40 active:scale-95 transition-all flex items-center justify-center gap-1"
                       >
-                        <span>0.1s Lebih Lambat ▶</span>
+                        <span>{isEn ? "0.1s Slower ▶" : "0.1s Lebih Lambat ▶"}</span>
                       </button>
                     </div>
                   </div>
@@ -1565,8 +1609,8 @@ export function VideoEditor({
                     />
                   ) : (
                     <div className="rounded-xl border border-hairline bg-surface-raised/30 p-6 text-center space-y-2">
-                      <p className="text-mini text-muted font-medium">Belum ada subtitle.</p>
-                      <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">Buat Subtitle AI Sekarang</button>
+                      <p className="text-mini text-muted font-medium">{isEn ? "No subtitles yet." : "Belum ada subtitle."}</p>
+                      <button type="button" onClick={generate} className="btn-ember inline-flex h-9 items-center justify-center rounded-lg px-4 text-xs font-bold text-obsidian">{isEn ? "Generate AI Subtitles Now" : "Buat Subtitle AI Sekarang"}</button>
                     </div>
                   )}
                 </div>
@@ -1579,97 +1623,124 @@ export function VideoEditor({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                        <span className="text-xs font-bold text-ink">Musik Latar Bebas Hak Cipta</span>
+                        <span className="text-xs font-bold text-ink">{isEn ? "Royalty-Free Background Music" : "Musik Latar Bebas Hak Cipta"}</span>
                       </div>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">100% Aman Medsos</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">{isEn ? "100% Social-Safe" : "100% Aman Medsos"}</span>
                     </div>
                     <p className="text-[11px] text-muted">
-                      Koleksi musik rekaman studio bebas royalti. 100% aman monetisasi & bebas copyright strike di TikTok, Reels, Shorts, dan YouTube.
+                      {isEn
+                        ? "Studio-grade royalty-free background music. 100% safe for monetization and zero copyright strikes across TikTok, Reels, Shorts, and YouTube."
+                        : "Koleksi musik rekaman studio bebas royalti. 100% aman monetisasi & bebas copyright strike di TikTok, Reels, Shorts, dan YouTube."}
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {BGM_PRESETS.map((preset) => (
-                        <div
-                          key={preset.id}
-                          onClick={() => {
-                            setBgmTrack(preset.id);
-                            triggerHaptic(8);
-                            if (preset.id !== "none" && preset.id !== "custom") {
-                              setAuditioningPreset(preset.id);
-                              void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
-                            } else {
-                              stopBgmAudition();
-                              setAuditioningPreset(null);
-                            }
-                          }}
-                          className={`min-h-[3.75rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
-                            bgmTrack === preset.id
-                              ? "border-ember bg-ember/20 text-white shadow-xs"
-                              : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
-                                {preset.label}
-                              </span>
-                              <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase shrink-0">{preset.mood}</span>
-                            </div>
-                            <span className="text-[9px] text-muted line-clamp-1">
-                              {preset.trackName && preset.artist ? (
-                                <span className="font-medium text-mist/90">{preset.trackName} <span className="text-muted/60">•</span> {preset.artist}</span>
-                              ) : (
-                                preset.desc
-                              )}
-                            </span>
-                          </div>
+                      {BGM_PRESETS.map((preset) => {
+                        const presetLabel = isEn
+                          ? ({
+                              none: "No Music",
+                              lofi: "Chill Lofi",
+                              inspiratif: "Inspiring & Story",
+                              upbeat: "Upbeat Reels / TikTok",
+                              suspense: "Suspense & Mystery",
+                              komedi: "Comedy & Playful",
+                              custom: "Upload Own Audio",
+                            }[preset.id] || preset.label)
+                          : preset.label;
+                        const presetDesc = isEn
+                          ? ({
+                              none: "Original video audio only without background instruments",
+                              lofi: "Warm Rhodes piano & beats for chill chats",
+                              inspiratif: "Uplifting piano for storytelling & motivation",
+                              upbeat: "Energetic rhythm for fast tips, vlogs & product demos",
+                              suspense: "Cinematic tension for hooks and facts",
+                              komedi: "Playful melodies for memes and fun moments",
+                              custom: "Use your own MP3 / WAV audio file",
+                            }[preset.id] || preset.desc)
+                          : preset.desc;
 
-                          {preset.id !== "none" && preset.id !== "custom" && (
-                            <div className="shrink-0 flex items-center">
-                              {currentPlayingPreset === preset.id ? (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    stopBgmAudition();
-                                    setAuditioningPreset(null);
-                                  }}
-                                  className="h-6.5 px-2 rounded-lg bg-ember text-obsidian text-[9px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
-                                  title="Hentikan contoh musik"
-                                >
-                                  <span className="flex items-center gap-0.5">
-                                    <span className="w-0.5 h-2 bg-obsidian animate-pulse" />
-                                    <span className="w-0.5 h-3 bg-obsidian animate-pulse delay-75" />
-                                    <span className="w-0.5 h-1.5 bg-obsidian animate-pulse delay-150" />
-                                  </span>
-                                  <span>Stop</span>
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setBgmTrack(preset.id);
-                                    setAuditioningPreset(preset.id);
-                                    void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
-                                  }}
-                                  className="h-6.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-ink text-[9px] font-bold flex items-center gap-1 border border-white/15 cursor-pointer transition-all active:scale-95"
-                                  title="Dengarkan sampel musik latar ini"
-                                >
-                                  <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5 text-ember">
-                                    <polygon points="5 3 19 12 5 21 5 3" />
-                                  </svg>
-                                  <span>Dengar</span>
-                                </button>
-                              )}
+                        return (
+                          <div
+                            key={preset.id}
+                            onClick={() => {
+                              setBgmTrack(preset.id);
+                              triggerHaptic(8);
+                              if (preset.id !== "none" && preset.id !== "custom") {
+                                setAuditioningPreset(preset.id);
+                                void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                              } else {
+                                stopBgmAudition();
+                                setAuditioningPreset(null);
+                              }
+                            }}
+                            className={`min-h-[3.75rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
+                              bgmTrack === preset.id
+                                ? "border-ember bg-ember/20 text-white shadow-xs"
+                                : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0 pr-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
+                                  {presetLabel}
+                                </span>
+                                <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase shrink-0">{preset.mood}</span>
+                              </div>
+                              <span className="text-[9px] text-muted line-clamp-1">
+                                {preset.trackName && preset.artist ? (
+                                  <span className="font-medium text-mist/90">{preset.trackName} <span className="text-muted/60">•</span> {preset.artist}</span>
+                                ) : (
+                                  presetDesc
+                                )}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                      ))}
+
+                            {preset.id !== "none" && preset.id !== "custom" && (
+                              <div className="shrink-0 flex items-center">
+                                {currentPlayingPreset === preset.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      stopBgmAudition();
+                                      setAuditioningPreset(null);
+                                    }}
+                                    className="h-6.5 px-2 rounded-lg bg-ember text-obsidian text-[9px] font-bold flex items-center gap-1 shadow-xs transition-all active:scale-95 cursor-pointer"
+                                    title={isEn ? "Stop music preview" : "Hentikan contoh musik"}
+                                  >
+                                    <span className="flex items-center gap-0.5">
+                                      <span className="w-0.5 h-2 bg-obsidian animate-pulse" />
+                                      <span className="w-0.5 h-3 bg-obsidian animate-pulse delay-75" />
+                                      <span className="w-0.5 h-1.5 bg-obsidian animate-pulse delay-150" />
+                                    </span>
+                                    <span>Stop</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setBgmTrack(preset.id);
+                                      setAuditioningPreset(preset.id);
+                                      void playBgmAudition(preset.id, bgmVolume, customBgmFile, () => setAuditioningPreset(null));
+                                    }}
+                                    className="h-6.5 px-2 rounded-lg bg-white/10 hover:bg-white/20 text-ink text-[9px] font-bold flex items-center gap-1 border border-white/15 cursor-pointer transition-all active:scale-95"
+                                    title={isEn ? "Listen to music sample" : "Dengarkan sampel musik latar ini"}
+                                  >
+                                    <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5 text-ember">
+                                      <polygon points="5 3 19 12 5 21 5 3" />
+                                    </svg>
+                                    <span>{isEn ? "Listen" : "Dengar"}</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                     <div className="flex items-center justify-between text-[9px] text-mist/70 pt-1 px-0.5 border-t border-hairline/40">
                       <span className="flex items-center gap-1">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-emerald-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        <span>Lisensi Creative Commons (CC-BY). Bebas monetisasi konten tanpa klaim royalti.</span>
+                        <span>{isEn ? "Creative Commons License (CC-BY). 100% monetization-safe with zero copyright claims." : "Lisensi Creative Commons (CC-BY). Bebas monetisasi konten tanpa klaim royalti."}</span>
                       </span>
                     </div>
 
@@ -1679,9 +1750,9 @@ export function VideoEditor({
                         <label className="flex flex-col items-center justify-center p-3 rounded-lg border border-dashed border-ember/40 bg-ember/5 cursor-pointer hover:bg-ember/10 transition-all text-center">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-ember mb-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
                           <span className="text-xs font-bold text-ink">
-                            {customBgmFile ? customBgmFile.name : "Pilih File Audio (.mp3, .wav)"}
+                            {customBgmFile ? customBgmFile.name : (isEn ? "Choose Audio File (.mp3, .wav)" : "Pilih File Audio (.mp3, .wav)")}
                           </span>
-                          <span className="text-[10px] text-muted">Maksimal 25MB</span>
+                          <span className="text-[10px] text-muted">{isEn ? "Max 25MB" : "Maksimal 25MB"}</span>
                           <input
                             type="file"
                             accept="audio/mp3,audio/wav,audio/mpeg,audio/aac,audio/m4a"
@@ -1700,7 +1771,7 @@ export function VideoEditor({
                   {bgmTrack !== "none" && (
                     <div className="rounded-xl border border-hairline bg-surface-raised/40 p-3 space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-ink">Volume Musik Latar</span>
+                        <span className="text-xs font-bold text-ink">{isEn ? "Background Music Volume" : "Volume Musik Latar"}</span>
                         <span className="font-mono text-xs font-bold text-ember">{Math.round(bgmVolume * 100)}%</span>
                       </div>
                       <input
@@ -1713,7 +1784,7 @@ export function VideoEditor({
                         className="w-full accent-ember cursor-pointer h-1.5 bg-white/20 rounded-lg"
                       />
                       <p className="text-[10px] text-muted">
-                        Rekomendasi 10% - 20% agar vokal pembicara tetap terdengar jernih dan mendominasi.
+                        {isEn ? "Recommended 10% - 20% to keep voiceover clear and prominent." : "Rekomendasi 10% - 20% agar vokal pembicara tetap terdengar jernih dan mendominasi."}
                       </p>
                     </div>
                   )}
@@ -1729,20 +1800,22 @@ export function VideoEditor({
                   <label className="flex items-start gap-2.5 rounded-xl border border-hairline bg-surface-raised/40 p-3.5 text-mini text-ink cursor-pointer hover:border-ember/40 transition-colors">
                     <input type="checkbox" checked={noWatermark} onChange={(e) => setNoWatermark(e.target.checked)} className="mt-0.5 size-4 accent-ember rounded" />
                     <div>
-                      <span className="font-semibold">Hapus watermark malesan.my.id</span>{" "}
-                      <span className="text-ember font-bold">(+{noWatermarkCost} kredit)</span>
-                      <span className="block mt-0.5 text-micro text-muted">Kalau gak dicentang, watermark tetap nempel halus (gratis).</span>
+                      <span className="font-semibold">{isEn ? "Remove malesan.my.id watermark" : "Hapus watermark malesan.my.id"}</span>{" "}
+                      <span className="text-ember font-bold">(+{noWatermarkCost} {isEn ? "credits" : "kredit"})</span>
+                      <span className="block mt-0.5 text-micro text-muted">
+                        {isEn ? "If unchecked, a subtle watermark remains attached (free)." : "Kalau gak dicentang, watermark tetap nempel halus (gratis)."}
+                      </span>
                     </div>
                   </label>
                   <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 text-micro text-muted space-y-1">
-                    <div className="flex justify-between font-mono"><span>Kualitas Render:</span><span className="text-ink font-semibold">1080p HD (1080x1920)</span></div>
-                    <div className="flex justify-between font-mono"><span>Bitrate Video:</span><span className="text-ink font-semibold">{bitrate} Mbps (Ukuran Ringan)</span></div>
+                    <div className="flex justify-between font-mono"><span>{isEn ? "Render Quality:" : "Kualitas Render:"}</span><span className="text-ink font-semibold">1080p HD (1080x1920)</span></div>
+                    <div className="flex justify-between font-mono"><span>{isEn ? "Video Bitrate:" : "Bitrate Video:"}</span><span className="text-ink font-semibold">{bitrate} Mbps ({isEn ? "Lightweight" : "Ukuran Ringan"})</span></div>
                   </div>
                   <button onClick={doExport} disabled={busy || words.length === 0} className="btn-ember flex items-center justify-center gap-2 w-full cursor-pointer rounded-xl py-3.5 text-sm font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] disabled:opacity-50">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                     </svg>
-                    <span>{phase === "exporting" ? `Lagi render... ${progress}%` : "Export Video Mateng"}</span>
+                    <span>{phase === "exporting" ? (isEn ? `Rendering... ${progress}%` : `Lagi render... ${progress}%`) : (isEn ? "Export Finished Video" : "Export Video Mateng")}</span>
                   </button>
                 </div>
               )}
@@ -1775,15 +1848,19 @@ export function VideoEditor({
   );
 }
 
-function UploadDrop({ onPick }: { onPick: (f: File | null) => void }) {
+function UploadDrop({ onPick, isEn = false }: { onPick: (f: File | null) => void; isEn?: boolean }) {
   return (
     <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-hairline bg-surface px-6 py-14 text-center transition-colors hover:border-ember/50">
       <svg viewBox="0 0 24 24" className="size-10 fill-ember" aria-hidden="true">
         <path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z" />
       </svg>
-      <span className="text-sm font-semibold text-ink">Tap buat pilih video (MP4)</span>
+      <span className="text-sm font-semibold text-ink">
+        {isEn ? "Tap to select video (MP4)" : "Tap buat pilih video (MP4)"}
+      </span>
       <span className="text-mini text-muted">
-        Maksimal ~10 menit. Video tetap diproses di HP atau laptop lo, jadi filenya gak dikirim ke mana-mana.
+        {isEn
+          ? "Max ~10 minutes. Video is processed locally on your device, your file is never uploaded anywhere else."
+          : "Maksimal ~10 menit. Video tetap diproses di HP atau laptop lo, jadi filenya gak dikirim ke mana-mana."}
       </span>
       <input
         type="file"
@@ -1796,6 +1873,9 @@ function UploadDrop({ onPick }: { onPick: (f: File | null) => void }) {
 }
 
 function SafeZones() {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   return (
     <div className="pointer-events-none absolute inset-0" aria-hidden="true">
       {/* Right button area guide */}
@@ -1804,7 +1884,7 @@ function SafeZones() {
       <div className="absolute inset-x-0 bottom-0 h-[18%] border-t border-dashed border-white/20" />
       <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 border-y border-dashed border-white/20" />
       <span className="absolute bottom-2 left-2 rounded bg-obsidian/80 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
-        area caption aman
+        {isEn ? "safe caption zone" : "area caption aman"}
       </span>
     </div>
   );
@@ -1867,6 +1947,8 @@ function VideoPreviewPlayer({
   onAttachVideo?: (file: File) => void;
   onResetStudio?: () => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [now, setNow] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -2271,7 +2353,7 @@ function VideoPreviewPlayer({
         {/* Interactive Drag Hint */}
         <div className="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2.5 py-0.5 text-[9px] font-semibold text-white/90 backdrop-blur-md shadow-md">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-          <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
+          <span>{isPodcastSplit ? (isEn ? "Drag camera top / bottom" : "Geser kamera atas / bawah") : (isEn ? "Drag camera angle" : "Geser sudut kamera")}</span>
         </div>
 
         {/* If videoUrl is missing (standby draft), show clean dedicated obsidian reconnect canvas */}
@@ -2289,17 +2371,19 @@ function VideoPreviewPlayer({
 
             <div className="space-y-1 max-w-[240px]">
               <h3 className="font-display text-xs font-bold text-white tracking-wide">
-                Hubungkan File Video
+                {isEn ? "Connect Video File" : "Hubungkan File Video"}
               </h3>
               <p className="text-mist text-[11px] leading-relaxed">
-                Subtitle draf ({lines.length} baris) sudah termuat. Hubungkan file videonya dari HP kamu untuk memutar preview &amp; ekspor.
+                {isEn
+                  ? `Draft subtitles (${lines.length} lines) loaded. Connect the video file from your device to preview & export.`
+                  : `Subtitle draf (${lines.length} baris) sudah termuat. Hubungkan file videonya dari HP kamu untuk memutar preview & ekspor.`}
               </p>
             </div>
 
             <div className="flex flex-col items-center gap-2 pt-0.5">
               <label className="btn-ember flex h-9.5 px-4 items-center justify-center gap-1.5 rounded-xl font-bold text-obsidian text-xs cursor-pointer shadow-lg shadow-ember/25 hover:brightness-110 active:scale-95 transition-all">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5"><path d="M12 3 8 7h3v7h2V7h3l-4-4Zm-7 12v4h14v-4h2v6H3v-6h2Z"/></svg>
-                <span>Pilih Video dari HP</span>
+                <span>{isEn ? "Select Video from Device" : "Pilih Video dari HP"}</span>
                 <input
                   type="file"
                   accept="video/mp4,video/quicktime,video/webm"
@@ -2317,7 +2401,7 @@ function VideoPreviewPlayer({
                   onClick={onResetStudio}
                   className="text-[11px] font-semibold text-mist hover:text-ember transition-colors py-1 cursor-pointer flex items-center gap-1 active:scale-95"
                 >
-                  <span>Atau Mulai Klip Baru</span>
+                  <span>{isEn ? "Or Start New Clip" : "Atau Mulai Klip Baru"}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </button>
               )}
@@ -2325,7 +2409,7 @@ function VideoPreviewPlayer({
 
             <p className="text-[10px] text-muted max-w-[210px] leading-tight flex items-center gap-1.5">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember shrink-0"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
-              <span>Tersimpan di album Galeri atau folder Download / DCIM Malesan.</span>
+              <span>{isEn ? "Saved in your Gallery album or Download / DCIM Malesan folder." : "Tersimpan di album Galeri atau folder Download / DCIM Malesan."}</span>
             </p>
           </div>
         ) : (
@@ -2333,7 +2417,7 @@ function VideoPreviewPlayer({
             {/* Interactive Drag Hint */}
             <div className="pointer-events-none absolute bottom-2.5 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-black/70 px-2.5 py-0.5 text-[9px] font-semibold text-white/90 backdrop-blur-md shadow-md">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5 text-ember"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3"/></svg>
-              <span>{isPodcastSplit ? "Geser kamera atas / bawah" : "Geser sudut kamera"}</span>
+              <span>{isPodcastSplit ? (isEn ? "Drag camera top / bottom" : "Geser kamera atas / bawah") : (isEn ? "Drag camera angle" : "Geser sudut kamera")}</span>
             </div>
 
             {/* Minimalist Hold to Compare (Before / After) Button */}
@@ -2598,10 +2682,10 @@ function VideoPreviewPlayer({
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-amber-300">
                     <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>
                   </svg>
-                  <span>Potong Video</span>
+                  <span>{isEn ? "Trim Video" : "Potong Video"}</span>
                 </span>
                 <span className="font-mono text-[10px] text-amber-300 font-bold">
-                  Durasi: {formatMinSec(Math.max(0, (trimEnd || duration) - trimStart))}
+                  {isEn ? "Duration: " : "Durasi: "}{formatMinSec(Math.max(0, (trimEnd || duration) - trimStart))}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -2613,7 +2697,7 @@ function VideoPreviewPlayer({
                   }}
                   className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-amber-300 active:scale-95 transition-all cursor-pointer"
                 >
-                  Set Mulai: {formatMinSec(trimStart)}
+                  {isEn ? "Set Start: " : "Set Mulai: "}{formatMinSec(trimStart)}
                 </button>
                 <button
                   type="button"
@@ -2623,7 +2707,7 @@ function VideoPreviewPlayer({
                   }}
                   className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-amber-300 active:scale-95 transition-all cursor-pointer"
                 >
-                  Set Selesai: {formatMinSec(trimEnd || duration)}
+                  {isEn ? "Set End: " : "Set Selesai: "}{formatMinSec(trimEnd || duration)}
                 </button>
                 <button
                   type="button"
@@ -2633,7 +2717,7 @@ function VideoPreviewPlayer({
                     triggerHaptic(8);
                   }}
                   className="px-2 h-7 rounded-lg bg-surface border border-white/10 text-[10px] text-muted hover:text-ink active:scale-95 transition-all cursor-pointer"
-                  title="Kembalikan durasi penuh"
+                  title={isEn ? "Restore full duration" : "Kembalikan durasi penuh"}
                 >
                   Reset
                 </button>
@@ -2681,12 +2765,12 @@ function VideoPreviewPlayer({
                   triggerHaptic(8);
                 }}
                 className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                title="Geser Kamera ke Kiri (Host)"
+                title={isEn ? "Pan camera left (Host)" : "Geser Kamera ke Kiri (Host)"}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
-                <span>Kiri</span>
+                <span>{isEn ? "Left" : "Kiri"}</span>
               </button>
               <button
                 type="button"
@@ -2695,14 +2779,14 @@ function VideoPreviewPlayer({
                   triggerHaptic(8);
                 }}
                 className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                title="Pusatkan Kamera"
+                title={isEn ? "Center camera" : "Pusatkan Kamera"}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
                   <circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/>
                   <line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/>
                   <line x1="12" x2="12" y1="22" y2="18"/>
                 </svg>
-                <span>Tengah</span>
+                <span>{isEn ? "Center" : "Tengah"}</span>
               </button>
               <button
                 type="button"
@@ -2711,9 +2795,9 @@ function VideoPreviewPlayer({
                   triggerHaptic(8);
                 }}
                 className="flex-1 h-7 rounded-lg bg-surface-raised border border-white/10 text-[10px] font-bold text-ink hover:text-white active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                title="Geser Kamera ke Kanan (Tamu)"
+                title={isEn ? "Pan camera right (Guest)" : "Geser Kamera ke Kanan (Tamu)"}
               >
-                <span>Kanan</span>
+                <span>{isEn ? "Right" : "Kanan"}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 shrink-0">
                   <polyline points="9 18 15 12 9 6" />
                 </svg>
@@ -2736,12 +2820,12 @@ function VideoPreviewPlayer({
                         triggerHaptic(10);
                       }}
                       className="flex-1 h-7.5 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 text-[11px] font-bold flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-                      title="Hapus Keyframe pada Titik Ini"
+                      title={isEn ? "Delete keyframe at this point" : "Hapus Keyframe pada Titik Ini"}
                     >
                       <svg viewBox="0 0 24 24" fill="currentColor" className="size-3 text-red-400 shrink-0">
                         <path d="M12 2L22 12L12 22L2 12Z"/>
                       </svg>
-                      <span>Hapus Kunci ({formatMinSec(now)})</span>
+                      <span>{isEn ? `Delete Key (${formatMinSec(now)})` : `Hapus Kunci (${formatMinSec(now)})`}</span>
                     </button>
                   );
                 }
@@ -2753,14 +2837,14 @@ function VideoPreviewPlayer({
                       triggerHaptic(10);
                     }}
                     className="flex-1 h-7.5 rounded-lg bg-ember text-obsidian text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-xs hover:bg-ember/90 active:scale-95 transition-all cursor-pointer"
-                    title="Kunci Posisi Kamera (Keyframe)"
+                    title={isEn ? "Lock camera position (Keyframe)" : "Kunci Posisi Kamera (Keyframe)"}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-obsidian shrink-0">
                       <path d="M12 2L22 12L12 22L2 12Z"/>
                       <line x1="12" y1="8" x2="12" y2="16" strokeWidth="2.5"/>
                       <line x1="8" y1="12" x2="16" y2="12" strokeWidth="2.5"/>
                     </svg>
-                    <span>+ Kunci Posisi ({formatMinSec(now)})</span>
+                    <span>{isEn ? `+ Lock Position (${formatMinSec(now)})` : `+ Kunci Posisi (${formatMinSec(now)})`}</span>
                   </button>
                 );
               })()}
@@ -2781,14 +2865,14 @@ function VideoPreviewPlayer({
                       }
                     }}
                     className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-muted hover:text-ink active:scale-95 cursor-pointer"
-                    title="Keyframe Sebelumnya"
+                    title={isEn ? "Previous keyframe" : "Keyframe Sebelumnya"}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
                       <polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>
                     </svg>
                   </button>
                   <span className="text-[9px] font-mono font-bold text-mist px-1">
-                    {manualKeyframes.length} titik
+                    {isEn ? `${manualKeyframes.length} keys` : `${manualKeyframes.length} titik`}
                   </span>
                   <button
                     type="button"
@@ -2803,7 +2887,7 @@ function VideoPreviewPlayer({
                       }
                     }}
                     className="size-7.5 rounded-lg bg-surface-raised border border-white/10 flex items-center justify-center text-muted hover:text-ink active:scale-95 cursor-pointer"
-                    title="Keyframe Berikutnya"
+                    title={isEn ? "Next keyframe" : "Keyframe Berikutnya"}
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
                       <polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>
@@ -2826,7 +2910,7 @@ function VideoPreviewPlayer({
                     ? "bg-amber-400/20 text-amber-300 border-amber-400/40 shadow-xs"
                     : "bg-surface-raised text-muted hover:text-ink border-white/10"
                 }`}
-                title="Buka Pengaturan Restorasi AI & Unblur 4K"
+                title={isEn ? "Open AI Restoration & 4K Unblur Settings" : "Buka Pengaturan Restorasi AI & Unblur 4K"}
               >
                 <div className="flex items-center gap-1.5 min-w-0">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3 text-amber-300 shrink-0">
@@ -2836,10 +2920,10 @@ function VideoPreviewPlayer({
                     {layout.filter === "wink_hd" || layout.filter === "ultra_hd"
                       ? `AI UHD 4K (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
                       : layout.filter === "face_restore"
-                      ? `Wajah & Detail (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
+                      ? (isEn ? `Face & Detail (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)` : `Wajah & Detail (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`)
                       : layout.filter === "clean_pro"
                       ? `Studio HD (${Math.round((layout.filterIntensity ?? 0.8) * 100)}%)`
-                      : "AI Unblur 4K: Nonaktif"}
+                      : (isEn ? "AI Unblur 4K: Off" : "AI Unblur 4K: Nonaktif")}
                   </span>
                 </div>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className={`size-3 shrink-0 transition-transform ${showClarityPanel ? "rotate-180" : ""}`}>
@@ -2862,13 +2946,13 @@ function VideoPreviewPlayer({
                     ? "bg-white text-obsidian border-white shadow-md scale-95"
                     : "bg-surface-raised text-muted hover:text-ink border-white/10 active:scale-95"
                 }`}
-                title="Tahan tombol ini untuk melihat video asli sebelum diperbaiki"
+                title={isEn ? "Hold to preview original video before AI enhancement" : "Tahan tombol ini untuk melihat video asli sebelum diperbaiki"}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3">
                   <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
-                <span>{isHoldingOriginal ? "Asli" : "Bandingkan"}</span>
+                <span>{isHoldingOriginal ? (isEn ? "Raw" : "Asli") : (isEn ? "Compare" : "Bandingkan")}</span>
               </button>
             </div>
 
@@ -2880,20 +2964,20 @@ function VideoPreviewPlayer({
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-amber-300">
                       <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z" />
                     </svg>
-                    <span>Mode AI Unblur &amp; Super-Resolution</span>
+                    <span>{isEn ? "AI Unblur & Super-Resolution Mode" : "Mode AI Unblur & Super-Resolution"}</span>
                   </span>
                   <span className="font-mono text-[10px] text-amber-300 font-bold">
-                    {Math.round((layout.filterIntensity ?? 0.8) * 100)}% Ketajaman
+                    {Math.round((layout.filterIntensity ?? 0.8) * 100)}% {isEn ? "Sharpness" : "Ketajaman"}
                   </span>
                 </div>
 
                 {/* 4 Super-Resolution Modes */}
                 <div className="grid grid-cols-2 gap-1.5">
                   {[
-                    { id: "wink_hd", label: "AI UHD (4K)", desc: "Super-Resolution & Unblur" },
-                    { id: "face_restore", label: "Wajah & Detail", desc: "Pertahankan kulit & rambut" },
-                    { id: "clean_pro", label: "Studio HD (1080p)", desc: "Bersih & bebas noise" },
-                    { id: "original", label: "Original Kamera", desc: "Warna asli tanpa proses" },
+                    { id: "wink_hd", label: "AI UHD (4K)", desc: isEn ? "Super-Resolution & Unblur" : "Super-Resolution & Unblur" },
+                    { id: "face_restore", label: isEn ? "Face & Detail" : "Wajah & Detail", desc: isEn ? "Preserve skin & hair" : "Pertahankan kulit & rambut" },
+                    { id: "clean_pro", label: "Studio HD (1080p)", desc: isEn ? "Clean & noise-free" : "Bersih & bebas noise" },
+                    { id: "original", label: isEn ? "Camera Original" : "Original Kamera", desc: isEn ? "Untouched camera raw" : "Warna asli tanpa proses" },
                   ].map((m) => {
                     const isSelected = (layout.filter ?? "original") === m.id;
                     return (
@@ -2923,7 +3007,7 @@ function VideoPreviewPlayer({
                 {(layout.filter ?? "original") !== "original" && (
                   <div className="pt-1 space-y-1">
                     <div className="flex items-center justify-between text-[10px] text-mist font-semibold">
-                      <span>Intensitas Restorasi &amp; Ketajaman</span>
+                      <span>{isEn ? "Restoration & Sharpness Intensity" : "Intensitas Restorasi & Ketajaman"}</span>
                       <span className="font-mono text-amber-300 font-bold">
                         {Math.round((layout.filterIntensity ?? 0.8) * 100)}%
                       </span>
@@ -2939,7 +3023,7 @@ function VideoPreviewPlayer({
                         onFilterIntensityChange?.(val);
                       }}
                       className="w-full accent-amber-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
-                      aria-label="Intensitas Ketajaman AI"
+                      aria-label={isEn ? "AI Sharpness Intensity" : "Intensitas Ketajaman AI"}
                     />
                   </div>
                 )}
@@ -2954,7 +3038,7 @@ function VideoPreviewPlayer({
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span className="text-[11px]">Hubungkan video untuk memutar preview</span>
+          <span className="text-[11px]">{isEn ? "Connect video to play preview" : "Hubungkan video untuk memutar preview"}</span>
         </div>
       )}
     </div>
@@ -3238,13 +3322,17 @@ function StylePanel({
   presetId: (typeof SOCIAL_PRESETS)[number]["id"];
   onPreset: (id: (typeof SOCIAL_PRESETS)[number]["id"]) => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const set = (p: Partial<CaptionStyle>) => onChange({ ...style, ...p });
   return (
     <div className="space-y-3 rounded-xl border border-hairline bg-surface p-3">
       <div>
-        <p className="text-mini font-semibold text-ink">Pilih gaya videonya</p>
+        <p className="text-mini font-semibold text-ink">{isEn ? "Choose video style" : "Pilih gaya videonya"}</p>
         <p className="mt-0.5 text-micro leading-relaxed text-muted">
-          Presetnya udah ngatur ukuran, posisi, dan ritme subtitle. Tinggal pilih.
+          {isEn
+            ? "Presets configure subtitle size, position, and rhythm automatically. Just pick one."
+            : "Presetnya udah ngatur ukuran, posisi, dan ritme subtitle. Tinggal pilih."}
         </p>
       </div>
 
@@ -3273,21 +3361,21 @@ function StylePanel({
 
       <details className="overflow-hidden rounded-xl border border-hairline bg-obsidian/35">
         <summary className="flex h-8.5 sm:h-9 cursor-pointer items-center justify-between gap-3 px-3.5 text-mini font-semibold text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ember">
-          <span>Atur sendiri</span>
-          <span className="text-micro font-normal text-muted">Opsional</span>
+          <span>{isEn ? "Manual settings" : "Atur sendiri"}</span>
+          <span className="text-micro font-normal text-muted">{isEn ? "Optional" : "Opsional"}</span>
         </summary>
         <div className="space-y-3 border-t border-hairline p-3.5">
           <div className="grid grid-cols-2 gap-2">
-            <ColorField label="Warna teks" value={style.textColor} onChange={(v) => set({ textColor: v })} />
+            <ColorField label={isEn ? "Text color" : "Warna teks"} value={style.textColor} onChange={(v) => set({ textColor: v })} />
             <ColorField
-              label="Warna highlight"
+              label={isEn ? "Highlight color" : "Warna highlight"}
               value={style.highlightColor}
               onChange={(v) => set({ highlightColor: v })}
             />
           </div>
 
           <div>
-            <span className="text-micro font-medium text-muted">Munculnya Teks</span>
+            <span className="text-micro font-medium text-muted">{isEn ? "Text Timing Mode" : "Munculnya Teks"}</span>
             <div className="mt-1.5 grid grid-cols-2 gap-2">
               {(["word", "line"] as const).map((m) => (
                 <button
@@ -3300,14 +3388,14 @@ function StylePanel({
                       : "border-hairline bg-surface-raised/40 text-muted hover:text-ink"
                   }`}
                 >
-                  {m === "word" ? "Per kata" : "Per kalimat"}
+                  {m === "word" ? (isEn ? "Per word" : "Per kata") : (isEn ? "Per sentence" : "Per kalimat")}
                 </button>
               ))}
             </div>
           </div>
 
           <label className="block">
-            <span className="text-micro font-medium text-muted">Font Tulisan</span>
+            <span className="text-micro font-medium text-muted">{isEn ? "Text Font" : "Font Tulisan"}</span>
             <select
               value={style.fontFamily}
               onChange={(e) => set({ fontFamily: e.target.value })}
@@ -3322,7 +3410,7 @@ function StylePanel({
           </label>
 
           <div>
-            <span className="text-micro font-medium text-muted">Gaya Teks</span>
+            <span className="text-micro font-medium text-muted">{isEn ? "Text Style" : "Gaya Teks"}</span>
             <div className="mt-1.5 grid grid-cols-3 gap-2">
               {(["box", "outline", "plain"] as const).map((captionStyle) => (
                 <button
@@ -3342,7 +3430,7 @@ function StylePanel({
           </div>
 
           <div>
-            <span className="text-micro font-medium text-muted">Animasi Masuk</span>
+            <span className="text-micro font-medium text-muted">{isEn ? "Entrance Animation" : "Animasi Masuk"}</span>
             <div className="mt-1.5 grid grid-cols-3 gap-2">
               {(["none", "pop", "fade"] as const).map((animation) => (
                 <button
@@ -3355,7 +3443,7 @@ function StylePanel({
                       : "border-hairline bg-surface-raised/40 text-muted hover:text-ink"
                   }`}
                 >
-                  {animation === "none" ? "Tanpa" : animation}
+                  {animation === "none" ? (isEn ? "None" : "Tanpa") : animation}
                 </button>
               ))}
             </div>
@@ -3368,22 +3456,22 @@ function StylePanel({
               onChange={(e) => set({ bold: e.target.checked })}
               className="size-4 accent-ember rounded"
             />
-            <span className="font-semibold">Huruf ekstra tebal (Extra Bold)</span>
+            <span className="font-semibold">{isEn ? "Extra Bold" : "Huruf ekstra tebal (Extra Bold)"}</span>
           </label>
 
           <div className="rounded-xl border border-hairline bg-surface-raised/30 p-3 space-y-2">
             <div className="flex justify-between items-center text-micro">
-              <span className="font-medium text-muted">Posisi Vertikal Subtitle</span>
+              <span className="font-medium text-muted">{isEn ? "Vertical Subtitle Position" : "Posisi Vertikal Subtitle"}</span>
               <span className="font-mono text-ember font-bold">{Math.round(style.position * 100)}%</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "Atas", pct: "30%", val: 0.30 },
-                { label: "Tengah", pct: "50%", val: 0.50 },
-                { label: "Bawah", pct: "65%", val: 0.65 },
+                { label: isEn ? "Top" : "Atas", pct: "30%", val: 0.30 },
+                { label: isEn ? "Center" : "Tengah", pct: "50%", val: 0.50 },
+                { label: isEn ? "Bottom" : "Bawah", pct: "65%", val: 0.65 },
               ].map((pos) => (
                 <button
-                  key={pos.label}
+                  key={pos.val}
                   type="button"
                   onClick={() => set({ position: pos.val })}
                   className={`flex h-11 flex-col items-center justify-center rounded-xl border px-2 py-1 transition-all ${
@@ -3409,7 +3497,7 @@ function StylePanel({
           </div>
 
           <label className="block">
-            <span className="text-micro text-muted">Ukuran teks ({Math.round(style.fontScale * 100)}%)</span>
+            <span className="text-micro text-muted">{isEn ? "Text size" : "Ukuran teks"} ({Math.round(style.fontScale * 100)}%)</span>
             <input
               type="range"
               min={0.7}
@@ -3422,13 +3510,15 @@ function StylePanel({
           </label>
 
           <p className="text-[10px] leading-snug text-muted">
-            Detail kualitas: {bitrate} Mbps. File dibuat cukup tajam sebelum sosmed mengompres ulang.
+            {isEn
+              ? `Quality detail: ${bitrate} Mbps. Crisp export before social compression.`
+              : `Detail kualitas: ${bitrate} Mbps. File dibuat cukup tajam sebelum sosmed mengompres ulang.`}
           </p>
         </div>
       </details>
 
       <p className="text-[10px] leading-snug text-muted">
-        Kualitas ekspor otomatis disesuaikan biar hasilnya tetap tajam.
+        {isEn ? "Export quality is auto-tuned to keep footage sharp and clean." : "Kualitas ekspor otomatis disesuaikan biar hasilnya tetap tajam."}
       </p>
     </div>
   );

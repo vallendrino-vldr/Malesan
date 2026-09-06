@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Mascot } from "./Mascot";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Liquid lava loader for small inline panels.
@@ -33,12 +34,26 @@ export function LavaLoader({
  * Full-viewport Premium AI Creative Companion Splash Screen for route-level loading.
  */
 export function MascotSplashScreen({
-  title = "Malesan sedang menyiapkan workspace kreatif kamu.",
-  subtitle = "AI Creative Companion siap nemenin lo bikin ide, hook, dan naskah viral.",
+  title,
+  subtitle,
 }: {
   title?: string;
   subtitle?: string;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
+  const resolvedTitle =
+    title ||
+    (isEn
+      ? "Malesan is preparing your creative workspace."
+      : "Malesan sedang menyiapkan workspace kreatif kamu.");
+  const resolvedSubtitle =
+    subtitle ||
+    (isEn
+      ? "AI Creative Companion is ready to craft ideas, hooks, and viral scripts with you."
+      : "AI Creative Companion siap nemenin lo bikin ide, hook, dan naskah viral.");
+
   return (
     <div
       role="status"
@@ -87,8 +102,12 @@ export function MascotSplashScreen({
               </svg>
             </div>
             <div>
-              <p className="font-mono text-[9px] font-bold text-ember uppercase tracking-wider">Hook 3 Detik</p>
-              <p className="text-[11px] font-medium text-ink">Stop scrolling, tonton ini!</p>
+              <p className="font-mono text-[9px] font-bold text-ember uppercase tracking-wider">
+                {isEn ? "3-Second Hook" : "Hook 3 Detik"}
+              </p>
+              <p className="text-[11px] font-medium text-ink">
+                {isEn ? "Stop scrolling, watch this!" : "Stop scrolling, tonton ini!"}
+              </p>
             </div>
           </div>
 
@@ -101,8 +120,12 @@ export function MascotSplashScreen({
               </svg>
             </div>
             <div>
-              <p className="font-mono text-[9px] font-bold text-ember uppercase tracking-wider">Naskah Video</p>
-              <p className="text-[11px] font-medium text-ink">Format 45s · Santai &amp; Rapi</p>
+              <p className="font-mono text-[9px] font-bold text-ember uppercase tracking-wider">
+                {isEn ? "Video Script" : "Naskah Video"}
+              </p>
+              <p className="text-[11px] font-medium text-ink">
+                {isEn ? "45s Format · Casual & Sharp" : "Format 45s · Santai & Rapi"}
+              </p>
             </div>
           </div>
 
@@ -121,11 +144,11 @@ export function MascotSplashScreen({
         {/* Text & Status Copy */}
         <div className="mt-8 text-center max-w-sm sm:max-w-md px-4">
           <h2 className="font-display text-base sm:text-lg lg:text-xl font-bold text-ink tracking-display-sm leading-snug">
-            {title}
+            {resolvedTitle}
           </h2>
-          {subtitle && (
+          {resolvedSubtitle && (
             <p className="mt-1.5 text-xs sm:text-sm text-muted leading-relaxed">
-              {subtitle}
+              {resolvedSubtitle}
             </p>
           )}
 

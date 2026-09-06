@@ -109,7 +109,7 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
     setError(null);
     setKit(null);
     setStep(null);
-    setStatus("Nyambungin...");
+    setStatus(isEn ? "Connecting..." : "Nyambungin...");
 
     try {
       const res = await fetch("/api/vibe", {
@@ -120,10 +120,10 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
 
       if (!res.ok && res.headers.get("Content-Type")?.includes("json")) {
         const j = await res.json();
-        throw new Error(j.error ?? "Gagal.");
+        throw new Error(j.error ?? (isEn ? "Failed." : "Gagal."));
       }
       const reader = res.body?.getReader();
-      if (!reader) throw new Error("Gak ada respons dari server.");
+      if (!reader) throw new Error(isEn ? "No response from server." : "Gak ada respons dari server.");
 
       const decoder = new TextDecoder();
       let buffer = "";

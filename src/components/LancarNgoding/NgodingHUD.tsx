@@ -2,6 +2,7 @@
 
 import React from "react";
 import { NgodingProgress } from "@/lib/ngoding-progress";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface TrackMeta {
   id: string;
@@ -91,7 +92,10 @@ export default function NgodingHUD({
   totalLevels,
   onOpenGlossary,
 }: Props) {
-  const currentTrack = TRACKS.find((t) => t.id === activeTrackId) || TRACKS[0];
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const tracks = getTracks(isEn ? "en" : "id");
+  const currentTrack = tracks.find((t) => t.id === activeTrackId) || tracks[0];
   const completedCount = progress.completedLevelIds.length;
   const progressPercent = Math.round((completedCount / totalLevels) * 100);
 
@@ -113,7 +117,9 @@ export default function NgodingHUD({
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5 text-orange-400">
               <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
             </svg>
-            <span>{progress.streak} Hari Streak</span>
+            <span>
+              {progress.streak} {isEn ? (progress.streak === 1 ? "Day Streak" : "Days Streak") : "Hari Streak"}
+            </span>
           </div>
 
           {/* XP Counter */}
@@ -130,7 +136,7 @@ export default function NgodingHUD({
           {/* Progress Indicator */}
           <div className="flex items-center gap-2">
             <span className="text-micro font-mono text-muted">
-              {completedCount}/{totalLevels} Selesai ({progressPercent}%)
+              {completedCount}/{totalLevels} {isEn ? "Completed" : "Selesai"} ({progressPercent}%)
             </span>
             <div className="w-16 sm:w-24 h-2 rounded-full bg-surface-raised border border-hairline/60 overflow-hidden">
               <div
@@ -145,20 +151,20 @@ export default function NgodingHUD({
             type="button"
             onClick={onOpenGlossary}
             className="flex h-7.5 items-center gap-1.5 rounded-lg border border-hairline bg-surface-raised/70 px-2.5 text-xs font-semibold text-muted hover:text-ink hover:border-ember/40 transition-colors shrink-0"
-            title="Kamus istilah coding"
+            title={isEn ? "Coding terms glossary" : "Kamus istilah coding"}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
               <path d="M6 6h10" />
             </svg>
-            <span>Kamus</span>
+            <span>{isEn ? "Glossary" : "Kamus"}</span>
           </button>
         </div>
       </div>
 
       {/* Track Tabs Switcher */}
       <div className="grid grid-cols-3 h-8.5 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 w-full">
-        {TRACKS.map((t) => {
+        {tracks.map((t) => {
           const isActive = t.id === activeTrackId;
           return (
             <button
@@ -219,7 +225,7 @@ export default function NgodingHUD({
                   ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
                   : "bg-surface-raised/70 text-muted border border-hairline/60 hover:text-ink hover:border-hairline"
               }`}
-              title={`Level ${lvl} ${isCompleted ? "(Selesai)" : ""}`}
+              title={isEn ? `Level ${lvl} ${isCompleted ? "(Completed)" : ""}` : `Level ${lvl} ${isCompleted ? "(Selesai)" : ""}`}
             >
               {isCompleted ? "✓" : lvl}
             </button>

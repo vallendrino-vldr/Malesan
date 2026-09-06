@@ -295,6 +295,147 @@ export const MODULE_TIMELINE_CONFIGS: Record<string, ModuleTimelineConfig> = {
       5: "Siap! Daftar klip viral udah jadi.",
     },
   },
+
+  // 7. Thread Engine
+  thread: {
+    headerTitleDesktop: "LAGI MERANGKAI THREAD RETENSI TINGGI...",
+    headerTitleMobile: "LAGI BIKIN THREAD...",
+    phases: [
+      {
+        id: 1,
+        title: "Bedah argumen utama",
+        subtitle: "Ekstraksi poin-poin terkuat dari catatan mentah.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Racik tweet pembuka",
+        subtitle: "Bikin hook post 1 yang mengundang rasa ingin tahu.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Susun alur tiap post",
+        subtitle: "Pacing konsisten, 1 ide per cuitan tanpa filler.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Thread siap posting",
+        subtitle: "Rangkaian thread lengkap dengan tweet penutup & CTA.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue bedah dulu poin-poin lo...",
+      2: "Lagi racik cuitan pembuka yang nendang...",
+      3: "Oke, gue susun alur logis per post...",
+      4: "Tinggal finishing CTA penutup...",
+      5: "Siap! Thread udah jadi.",
+    },
+  },
+
+  // 8. Carousel Generator
+  carousel: {
+    headerTitleDesktop: "LAGI MENYUSUN SLIDE CAROUSEL...",
+    headerTitleMobile: "LAGI BIKIN CAROUSEL...",
+    phases: [
+      {
+        id: 1,
+        title: "Analisis format visual",
+        subtitle: "Menentukan ritme & kepadatan materi per slide.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Rancang slide pembuka",
+        subtitle: "Cover slide magnetik yang menghentikan jempol.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Distribusi poin inti",
+        subtitle: "Memecah wawasan utama menjadi slide mandiri.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Slide siap pakai",
+        subtitle: "Seluruh slide siap dipindah ke desain visual.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue pelajari dulu topik carousel lo...",
+      2: "Lagi rancang cover slide yang kuat...",
+      3: "Menyusun isi slide agar runtut...",
+      4: "Hampir selesai, memoles slide penutup...",
+      5: "Siap! Rangkaian slide udah beres.",
+    },
+  },
+
+  // 9. Affiliate Engine
+  affiliate: {
+    headerTitleDesktop: "LAGI MERACIK KONTEN AFFILIATE PERSUASIF...",
+    headerTitleMobile: "LAGI BIKIN KONTEN...",
+    phases: [
+      {
+        id: 1,
+        title: "Analisis produk & USP",
+        subtitle: "Menemukan keunggulan unik yang paling menjual.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Tentukan sudut soft-sell",
+        subtitle: "Pendekatan edukatif tanpa terkesan jualan kasar.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Susun naskah & CTA",
+        subtitle: "Kombinasi masalah penonton dan solusi produk.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Konten siap posting",
+        subtitle: "Naskah affiliate lengkap siap menghasilkan komisi.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Gue analisis dulu produk & target pembeli...",
+      2: "Lagi cari sudut soft-sell paling natural...",
+      3: "Merangkai hook masalah dan solusi produk...",
+      4: "Menyusun ajakan klik keranjang yang smooth...",
+      5: "Siap! Konten affiliate udah selesai.",
+    },
+  },
 };
 
 export const MODULE_TIMELINE_CONFIGS_EN: Record<string, ModuleTimelineConfig> = {
@@ -579,6 +720,147 @@ export const MODULE_TIMELINE_CONFIGS_EN: Record<string, ModuleTimelineConfig> = 
       5: "Done! Viral clips list is ready.",
     },
   },
+
+  // 7. Thread Engine
+  thread: {
+    headerTitleDesktop: "CRAFTING HIGH-RETENTION THREAD...",
+    headerTitleMobile: "WRITING THREAD...",
+    phases: [
+      {
+        id: 1,
+        title: "Core argument breakdown",
+        subtitle: "Extracting the sharpest insights from raw notes.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Drafting opening hook post",
+        subtitle: "Writing a magnetic first post that demands attention.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Structuring narrative pacing",
+        subtitle: "One actionable point per post with zero fluff.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Thread ready to publish",
+        subtitle: "Complete thread with closing takeaways and CTA.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Analyzing your core points...",
+      2: "Drafting an irresistible opening post...",
+      3: "Structuring smooth narrative flow...",
+      4: "Polishing takeaways and closing CTA...",
+      5: "Done! Thread is ready.",
+    },
+  },
+
+  // 8. Carousel Generator
+  carousel: {
+    headerTitleDesktop: "STRUCTURING HIGH-CONVERTING CAROUSEL...",
+    headerTitleMobile: "DRAFTING CAROUSEL...",
+    phases: [
+      {
+        id: 1,
+        title: "Visual format analysis",
+        subtitle: "Optimizing pacing and content density per slide.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Crafting thumb-stopping cover",
+        subtitle: "Designing the headline hook that stops scrolling.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Distributing key insights",
+        subtitle: "Breaking complex ideas into digestible slides.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Carousel ready to design",
+        subtitle: "Full slide sequence ready for visual templates.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Studying your topic structure...",
+      2: "Crafting a punchy cover slide...",
+      3: "Distributing slide-by-slide value...",
+      4: "Polishing call-to-action summary...",
+      5: "Done! Carousel slides are ready.",
+    },
+  },
+
+  // 9. Affiliate Engine
+  affiliate: {
+    headerTitleDesktop: "CRAFTING PERSUASIVE AFFILIATE SCRIPT...",
+    headerTitleMobile: "WRITING SCRIPT...",
+    phases: [
+      {
+        id: 1,
+        title: "Product USP analysis",
+        subtitle: "Highlighting unique angles that actually drive sales.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Soft-sell angle framing",
+        subtitle: "Building relatable stories that sell without feeling salesy.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Scripting & CTA placement",
+        subtitle: "Weaving problem setup with seamless product payoff.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Script ready to film",
+        subtitle: "Complete affiliate script ready for recording.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Analyzing product benefits and buyer intent...",
+      2: "Finding the most natural soft-sell angle...",
+      3: "Structuring emotional hook and solution...",
+      4: "Placing frictionless checkout CTAs...",
+      5: "Done! Affiliate script is ready.",
+    },
+  },
 };
 
 function resolveConfig(moduleKey?: string, lang: "id" | "en" = "id"): ModuleTimelineConfig {
@@ -590,6 +872,9 @@ function resolveConfig(moduleKey?: string, lang: "id" | "en" = "id"): ModuleTime
   if (key.includes("vibe") || key.includes("app")) return configs.vibe;
   if (key.includes("repurpose") || key.includes("recycle")) return configs.repurpose;
   if (key.includes("clip")) return configs.clip;
+  if (key.includes("thread")) return configs.thread || configs.ide;
+  if (key.includes("carousel")) return configs.carousel || configs.ide;
+  if (key.includes("affiliate")) return configs.affiliate || configs.ide;
   return configs.ide;
 }
 

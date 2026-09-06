@@ -3,12 +3,20 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mascot } from "@/components/Mascot";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export const DEFAULT_PHASE_MESSAGES: Record<number, string> = {
   1: "Gue baca dulu ide lo...",
   2: "Lagi cari angle yang bikin orang berhenti scroll...",
   3: "Oke, gue kurasi 3 ide terbaik...",
   4: "Hampir selesai. Tinggal gue rapihin...",
+};
+
+export const DEFAULT_PHASE_MESSAGES_EN: Record<number, string> = {
+  1: "Reading your idea...",
+  2: "Hunting for scroll-stopping angles...",
+  3: "Curating your top ideas...",
+  4: "Almost done, polishing up...",
 };
 
 interface LivingProcessingCompanionProps {
@@ -21,23 +29,26 @@ interface LivingProcessingCompanionProps {
 export function LivingProcessingCompanion({
   phase,
   progress,
-  messages = DEFAULT_PHASE_MESSAGES,
+  messages,
   isCompleted = false,
 }: LivingProcessingCompanionProps) {
-  const activeMessages = messages || DEFAULT_PHASE_MESSAGES;
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const defaultMessages = isEn ? DEFAULT_PHASE_MESSAGES_EN : DEFAULT_PHASE_MESSAGES;
+  const activeMessages = messages || defaultMessages;
 
   // Determine speech bubble text based on stage and completion
   let text = "";
   if (isCompleted || progress >= 100) {
-    text = activeMessages[5] || "Siap! Konten lo udah beres.";
+    text = activeMessages[5] || (isEn ? "Done! Your content is ready." : "Siap! Konten lo udah beres.");
   } else if (progress < 25) {
-    text = activeMessages[phase] || activeMessages[1] || DEFAULT_PHASE_MESSAGES[1];
+    text = activeMessages[phase] || activeMessages[1] || defaultMessages[1];
   } else if (progress < 55) {
-    text = activeMessages[phase] || activeMessages[2] || DEFAULT_PHASE_MESSAGES[2];
+    text = activeMessages[phase] || activeMessages[2] || defaultMessages[2];
   } else if (progress < 85) {
-    text = activeMessages[phase] || activeMessages[3] || DEFAULT_PHASE_MESSAGES[3];
+    text = activeMessages[phase] || activeMessages[3] || defaultMessages[3];
   } else {
-    text = activeMessages[phase] || activeMessages[4] || DEFAULT_PHASE_MESSAGES[4];
+    text = activeMessages[phase] || activeMessages[4] || defaultMessages[4];
   }
 
   // Determine mascot mood based on processing phase

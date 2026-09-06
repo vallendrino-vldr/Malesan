@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { VibeQuestion } from "@/lib/prompts/vibe";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * The clarifying-question step.
@@ -32,6 +33,8 @@ export function VibeQuestions({
   onSkipAll: () => void;
   busy: boolean;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [answers, setAnswers] = useState<Record<number, string[]>>({});
   const [custom, setCustom] = useState<Record<number, string>>({});
 
@@ -60,9 +63,13 @@ export function VibeQuestions({
       <div className="surface-card rounded-2xl p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="eyebrow text-ember">Biar hasilnya nggak generik</p>
+            <p className="eyebrow text-ember">
+              {isEn ? "Avoid generic results" : "Biar hasilnya nggak generik"}
+            </p>
             <h3 className="mt-1.5 font-display text-lg font-bold text-ink">
-              Jawab dulu, {questions.length} pertanyaan aja
+              {isEn
+                ? `Just ${questions.length} quick questions`
+                : `Jawab dulu, ${questions.length} pertanyaan aja`}
             </h3>
           </div>
           <span className="shrink-0 rounded-full bg-obsidian px-2.5 py-1 font-mono text-micro text-muted">
@@ -70,8 +77,9 @@ export function VibeQuestions({
           </span>
         </div>
         <p className="mt-2 text-mini leading-relaxed text-muted">
-          Tinggal tap jawabannya. Kalau dilewatin, AI-nya bakal nebak sendiri — dan
-          tebakan itu yang bikin hasilnya kerasa umum.
+          {isEn
+            ? "Tap the answers below. If skipped, AI will have to guess — and guessing produces generic outputs."
+            : "Tinggal tap jawabannya. Kalau dilewatin, AI-nya bakal nebak sendiri — dan tebakan itu yang bikin hasilnya kerasa umum."}
         </p>
       </div>
 
@@ -112,12 +120,22 @@ export function VibeQuestions({
             <input
               value={custom[i] ?? ""}
               onChange={(e) => setCustom((p) => ({ ...p, [i]: e.target.value }))}
-              placeholder={q.multi ? "Atau tulis sendiri..." : "Atau jawab pakai kata lo sendiri..."}
+              placeholder={
+                q.multi
+                  ? isEn
+                    ? "Or write your own..."
+                    : "Atau tulis sendiri..."
+                  : isEn
+                  ? "Or answer in your own words..."
+                  : "Atau jawab pakai kata lo sendiri..."
+              }
               className="skeu-inset mt-2.5 w-full rounded-lg border border-hairline bg-obsidian px-3 py-2 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none"
             />
 
             {q.multi && (
-              <p className="mt-1.5 text-micro text-muted">Boleh pilih lebih dari satu.</p>
+              <p className="mt-1.5 text-micro text-muted">
+                {isEn ? "You can select more than one." : "Boleh pilih lebih dari satu."}
+              </p>
             )}
           </div>
         );
@@ -130,7 +148,7 @@ export function VibeQuestions({
           disabled={busy}
           className="cursor-pointer rounded-xl border border-hairline px-4 py-3 text-sm font-semibold text-muted transition-colors hover:text-ink disabled:opacity-50"
         >
-          Lewatin
+          {isEn ? "Skip" : "Lewatin"}
         </button>
         <button
           type="button"
@@ -139,10 +157,16 @@ export function VibeQuestions({
           className="btn-ember flex-1 cursor-pointer rounded-xl px-5 py-3 font-display text-sm font-bold text-obsidian disabled:opacity-60"
         >
           {busy
-            ? "Bentar..."
+            ? isEn
+              ? "Hold on..."
+              : "Bentar..."
             : answered === 0
-              ? "Lanjut tanpa jawaban"
-              : `Lanjut pakai ${answered} jawaban`}
+            ? isEn
+              ? "Continue without answers"
+              : "Lanjut tanpa jawaban"
+            : isEn
+            ? `Continue with ${answered} ${answered === 1 ? "answer" : "answers"}`
+            : `Lanjut pakai ${answered} jawaban`}
         </button>
       </div>
     </div>

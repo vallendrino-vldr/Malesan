@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type TimelinePhase = {
   id: number;
@@ -46,6 +47,41 @@ export const DEFAULT_TIMELINE_PHASES: TimelinePhase[] = [
   },
 ];
 
+export const DEFAULT_TIMELINE_PHASES_EN: TimelinePhase[] = [
+  {
+    id: 1,
+    title: "Analyzing topic",
+    subtitle: "Finding high-retention angles from your topic.",
+    minProgress: 0,
+    maxProgress: 25,
+    label: "0%",
+  },
+  {
+    id: 2,
+    title: "Exploring angles",
+    subtitle: "Selecting hooks that fit your audience perfectly.",
+    minProgress: 25,
+    maxProgress: 55,
+    label: "25%",
+  },
+  {
+    id: 3,
+    title: "Curating top ideas",
+    subtitle: "Drafting catchy titles, hooks, and core formats.",
+    minProgress: 55,
+    maxProgress: 85,
+    label: "55%",
+  },
+  {
+    id: 4,
+    title: "Ready to use",
+    subtitle: "Your initial content ideas are finalized.",
+    minProgress: 85,
+    maxProgress: 100,
+    label: "85%",
+  },
+];
+
 interface ProcessingTimelineProps {
   currentPhase: number; // 1 to 4
   progress: number; // 0 to 100 (Single source of truth)
@@ -55,13 +91,16 @@ interface ProcessingTimelineProps {
 
 export function ProcessingTimeline({
   progress,
-  phases = DEFAULT_TIMELINE_PHASES,
+  phases,
   isCompleted = false,
 }: ProcessingTimelineProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const defaultPhases = isEn ? DEFAULT_TIMELINE_PHASES_EN : DEFAULT_TIMELINE_PHASES;
+  const activePhases = phases && phases.length === 4 ? phases : defaultPhases;
   // Clamped display progress (0 to 100)
   const displayProgress = Math.min(100, Math.max(0, isCompleted ? 100 : progress));
   const completedOr100 = isCompleted || displayProgress >= 100;
-  const activePhases = phases.length === 4 ? phases : DEFAULT_TIMELINE_PHASES;
 
   return (
     <div className="relative w-full space-y-4 px-1 sm:px-2">
@@ -235,7 +274,17 @@ export function ProcessingTimeline({
                         : "border border-white/[0.06] bg-white/[0.03] text-muted/40"
                     }`}
                   >
-                    {isDone ? "Selesai" : isActive ? "Proses..." : "Antre"}
+                    {isDone
+                      ? isEn
+                        ? "Done"
+                        : "Selesai"
+                      : isActive
+                      ? isEn
+                        ? "In Progress..."
+                        : "Proses..."
+                      : isEn
+                      ? "Queued"
+                      : "Antre"}
                   </span>
                 </div>
 

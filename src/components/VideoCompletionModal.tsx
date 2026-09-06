@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { getNativeShell, requestNative } from "@/lib/native/bridge";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface VideoCompletionModalProps {
   isOpen: boolean;
@@ -26,10 +27,10 @@ function formatTime(sec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function formatCleanTitle(raw: string): string {
+function formatCleanTitle(raw: string, isEn = false): string {
   const noExt = raw.replace(/\.[^.]+$/, "");
   const spaced = noExt.replace(/[-_]+/g, " ").trim();
-  if (!spaced) return "Konten Video Baru";
+  if (!spaced) return isEn ? "New Video Content" : "Konten Video Baru";
   return spaced
     .split(" ")
     .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ""))
@@ -70,6 +71,8 @@ function ResultVideoPlayerModal({
   onClose: () => void;
   onShare: () => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -131,7 +134,7 @@ function ResultVideoPlayerModal({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
           </svg>
-          <span>Kembali</span>
+          <span>{isEn ? "Back" : "Kembali"}</span>
         </button>
 
         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-emerald-500/30 text-[11px] font-bold text-emerald-400 shadow-lg">
@@ -143,7 +146,7 @@ function ResultVideoPlayerModal({
           type="button"
           onClick={onClose}
           className="flex size-8 items-center justify-center rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white/90 hover:text-white active:scale-95 transition-all cursor-pointer shadow-lg"
-          aria-label="Tutup"
+          aria-label={isEn ? "Close" : "Tutup"}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -227,7 +230,7 @@ function ResultVideoPlayerModal({
                 togglePlay();
               }}
               className="flex size-11 items-center justify-center rounded-full bg-ember text-obsidian shadow-lg shadow-ember/30 active:scale-90 transition-transform cursor-pointer"
-              title={isPlaying ? "Jeda" : "Putar"}
+              title={isEn ? (isPlaying ? "Pause" : "Play") : (isPlaying ? "Jeda" : "Putar")}
             >
               {isPlaying ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-5"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>
@@ -240,7 +243,7 @@ function ResultVideoPlayerModal({
               type="button"
               onClick={toggleMute}
               className="flex size-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md text-white active:scale-95 transition-all cursor-pointer hover:bg-white/25"
-              title={isMuted ? "Bunyikan" : "Bisukan"}
+              title={isEn ? (isMuted ? "Unmute" : "Mute") : (isMuted ? "Bunyikan" : "Bisukan")}
             >
               {isMuted ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5 text-red-400">
@@ -257,7 +260,7 @@ function ResultVideoPlayerModal({
               type="button"
               onClick={handleRestart}
               className="flex size-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-md text-white active:scale-95 transition-all cursor-pointer hover:bg-white/25"
-              title="Ulangi dari Awal"
+              title={isEn ? "Restart from Beginning" : "Ulangi dari Awal"}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -277,7 +280,7 @@ function ResultVideoPlayerModal({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
               </svg>
-              <span>Bagikan Video</span>
+              <span>{isEn ? "Share Video" : "Bagikan Video"}</span>
             </button>
           </div>
         </div>
@@ -297,6 +300,8 @@ function InlineCustomStudioPlayer({
   videoUrl: string;
   onExpandFullscreen: () => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -360,7 +365,7 @@ function InlineCustomStudioPlayer({
             onExpandFullscreen();
           }}
           className="absolute top-2.5 right-2.5 size-7 rounded-lg bg-black/60 hover:bg-black/90 border border-white/20 text-white flex items-center justify-center transition-colors cursor-pointer z-20 shadow-md active:scale-95"
-          title="Putar Layar Penuh (Cinema Mode)"
+          title={isEn ? "Play Fullscreen (Cinema Mode)" : "Putar Layar Penuh (Cinema Mode)"}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
@@ -415,8 +420,8 @@ function InlineCustomStudioPlayer({
               type="button"
               onClick={togglePlay}
               className="size-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
-              aria-label={isPlaying ? "Jeda" : "Putar"}
-              title={isPlaying ? "Jeda" : "Putar"}
+              aria-label={isEn ? (isPlaying ? "Pause" : "Play") : (isPlaying ? "Jeda" : "Putar")}
+              title={isEn ? (isPlaying ? "Pause" : "Play") : (isPlaying ? "Jeda" : "Putar")}
             >
               {isPlaying ? (
                 <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
@@ -429,8 +434,8 @@ function InlineCustomStudioPlayer({
               type="button"
               onClick={toggleMute}
               className="size-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
-              aria-label={isMuted ? "Bunyikan" : "Bisukan"}
-              title={isMuted ? "Bunyikan" : "Bisukan"}
+              aria-label={isEn ? (isMuted ? "Unmute" : "Mute") : (isMuted ? "Bunyikan" : "Bisukan")}
+              title={isEn ? (isMuted ? "Unmute" : "Mute") : (isMuted ? "Bunyikan" : "Bisukan")}
             >
               {isMuted ? (
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
@@ -450,7 +455,7 @@ function InlineCustomStudioPlayer({
                 }
               }}
               className="size-7 rounded-lg bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
-              title="Putar Ulang dari Awal"
+              title={isEn ? "Restart from Beginning" : "Putar Ulang dari Awal"}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -464,7 +469,7 @@ function InlineCustomStudioPlayer({
               type="button"
               onClick={onExpandFullscreen}
               className="flex items-center gap-1 px-2 h-6 rounded-md bg-white/10 hover:bg-white/20 text-[10px] text-white font-bold transition-all cursor-pointer active:scale-95"
-              title="Layar Penuh"
+              title={isEn ? "Fullscreen" : "Layar Penuh"}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
@@ -492,6 +497,9 @@ export function VideoCompletionModal({
   filePath,
   onShare,
 }: VideoCompletionModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [selectedStyle, setSelectedStyle] = useState<CaptionStylePreset>("viral");
   const [copied, setCopied] = useState(false);
   const [copiedPath, setCopiedPath] = useState(false);
@@ -528,10 +536,21 @@ export function VideoCompletionModal({
     };
   }, [isOpen]);
 
-  const cleanTitle = useMemo(() => formatCleanTitle(videoTitle), [videoTitle]);
+  const cleanTitle = useMemo(() => formatCleanTitle(videoTitle, isEn), [videoTitle, isEn]);
   const hashtags = useMemo(() => extractHashtags(videoTitle).join(" "), [videoTitle]);
 
   const activeCaption = useMemo(() => {
+    if (isEn) {
+      switch (selectedStyle) {
+        case "discuss":
+          return `What do you guys think, is this reasonable? 🤔\n\nWatch closely: "${cleanTitle}"\n\nDrop your thoughts in the comments, let's talk! 👇\n\n${hashtags}`;
+        case "short":
+          return `Moment "${cleanTitle}"... 🥺 Watch the full video!\n\n${hashtags}`;
+        case "viral":
+        default:
+          return `${cleanTitle} 🥺\n\nHonestly didn't expect this moment... What's your take? Watch till the end! 👇\n\nDrop your thoughts in the comments! 💬\n\n${hashtags}`;
+      }
+    }
     switch (selectedStyle) {
       case "discuss":
         return `Menurut kalian wajar gak sih kalau kayak gini? 🤔\n\nSimak baik-baik videonya: "${cleanTitle}"\n\nTulis tanggapan kalian di bawah ya, kita diskusi santai! 👇\n\n${hashtags}`;
@@ -541,7 +560,7 @@ export function VideoCompletionModal({
       default:
         return `${cleanTitle} 🥺\n\nBeneran gak nyangka sama momen ini... Menurut kalian gimana tanggapannya? Tonton sampai habis ya! 👇\n\nDrop pendapat kalian di kolom komentar! 💬\n\n${hashtags}`;
     }
-  }, [cleanTitle, hashtags, selectedStyle]);
+  }, [cleanTitle, hashtags, selectedStyle, isEn]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -557,7 +576,7 @@ export function VideoCompletionModal({
         if (typeof navigator.vibrate === "function") {
           try { navigator.vibrate(14); } catch {}
         }
-        showToast("Caption tersalin ke clipboard!");
+        showToast(isEn ? "Caption copied to clipboard!" : "Caption tersalin ke clipboard!");
         return true;
       } catch {}
     }
@@ -566,13 +585,13 @@ export function VideoCompletionModal({
 
   const openVideoFolder = async () => {
     try {
-      showToast("Membuka folder video di File Explorer...");
+      showToast(isEn ? "Opening video folder in File Explorer..." : "Membuka folder video di File Explorer...");
       await requestNative({ type: "SHOW_ITEM_IN_FOLDER", filePath }, 3_000);
     } catch {
       try {
         await requestNative({ type: "OPEN_VIDEOS_FOLDER" }, 3_000);
       } catch {
-        showToast("Buka File Explorer: Videos / Malesan");
+        showToast(isEn ? "Open File Explorer: Videos / Malesan" : "Buka File Explorer: Videos / Malesan");
       }
     }
   };
@@ -584,7 +603,7 @@ export function VideoCompletionModal({
         await navigator.clipboard.writeText(filePath || defaultPath);
         setCopiedPath(true);
         setTimeout(() => setCopiedPath(false), 2000);
-        showToast("Lokasi file tersalin ke clipboard!");
+        showToast(isEn ? "File location copied to clipboard!" : "Lokasi file tersalin ke clipboard!");
       } catch {}
     }
   };
@@ -602,7 +621,7 @@ export function VideoCompletionModal({
             target: "system",
             text: activeCaption,
           }, 3_000);
-          showToast("Membuka menu bagikan video...");
+          showToast(isEn ? "Opening video share menu..." : "Membuka menu bagikan video...");
           return;
         } catch (nativeErr) {
           console.warn("Native share request error", nativeErr);
@@ -623,7 +642,7 @@ export function VideoCompletionModal({
       }
 
       setShowShareSheet(true);
-      showToast("Caption tersalin! Pilih aplikasi di bawah untuk posting.");
+      showToast(isEn ? "Caption copied! Select an app below to post." : "Caption tersalin! Pilih aplikasi di bawah untuk posting.");
       if (onShare) onShare();
     } finally {
       setIsSharing(false);
@@ -667,7 +686,7 @@ export function VideoCompletionModal({
                 />
               ) : (
                 <div className="aspect-[9/16] max-h-[290px] w-full flex items-center justify-center rounded-2xl border border-white/10 bg-black/60 text-mist text-xs">
-                  <span>Pratinjau video siap</span>
+                  <span>{isEn ? "Video preview ready" : "Pratinjau video siap"}</span>
                 </div>
               )}
 
@@ -680,14 +699,14 @@ export function VideoCompletionModal({
                         <rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
                       </svg>
                     </span>
-                    <span>Lokasi di Komputer:</span>
+                    <span>{isEn ? "Location on Computer:" : "Lokasi di Komputer:"}</span>
                   </div>
                   <button
                     type="button"
                     onClick={copyFolderPath}
                     className="text-[10px] font-bold text-ember hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    {copiedPath ? "Tersalin!" : "Salin Lokasi"}
+                    {copiedPath ? (isEn ? "Copied!" : "Tersalin!") : (isEn ? "Copy Location" : "Salin Lokasi")}
                   </button>
                 </div>
 
@@ -696,7 +715,7 @@ export function VideoCompletionModal({
                     <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
                   </svg>
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-white text-[11px]">Folder Komputer (Videos / Malesan)</p>
+                    <p className="font-bold text-white text-[11px]">{isEn ? "Computer Folder (Videos / Malesan)" : "Folder Komputer (Videos / Malesan)"}</p>
                     <p className="text-[10px] text-mist truncate">Videos \ Malesan \ <span className="text-ember">{videoTitle}.mp4</span></p>
                   </div>
                 </div>
@@ -712,7 +731,7 @@ export function VideoCompletionModal({
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 0 0-1.883 2.542l.857 6a2.25 2.25 0 0 0 2.227 1.932H19.05a2.25 2.25 0 0 0 2.227-1.932l.857-6a2.25 2.25 0 0 0-1.883-2.542m-16.5 0V6A2.25 2.25 0 0 1 4.5 3.75h3.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 0 1.06.44H19.5A2.25 2.25 0 0 1 21.75 9v.776" />
                   </svg>
-                  <span>Buka di File Explorer</span>
+                  <span>{isEn ? "Open in File Explorer" : "Buka di File Explorer"}</span>
                 </button>
 
                 <div className="flex gap-2">
@@ -725,7 +744,7 @@ export function VideoCompletionModal({
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                       </svg>
-                      <span>Unduh Ulang MP4</span>
+                      <span>{isEn ? "Re-download MP4" : "Unduh Ulang MP4"}</span>
                     </a>
                   )}
 
@@ -734,7 +753,7 @@ export function VideoCompletionModal({
                     onClick={onClose}
                     className="flex-1 h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-mist hover:text-white font-bold text-[11px] transition-all cursor-pointer"
                   >
-                    Tutup &amp; Selesai
+                    {isEn ? "Close & Done" : "Tutup & Selesai"}
                   </button>
                 </div>
               </div>
@@ -752,10 +771,10 @@ export function VideoCompletionModal({
                   </div>
                   <div>
                     <h3 className="font-display text-lg lg:text-xl font-extrabold text-white tracking-wide">
-                      Video Berhasil Di-render
+                      {isEn ? "Video Rendered Successfully" : "Video Berhasil Di-render"}
                     </h3>
                     <p className="text-xs text-mist">
-                      Hasil video Full HD 1080p siap diputar &amp; diposting langsung ke medsos.
+                      {isEn ? "Full HD 1080p video ready to play & post directly to social media." : "Hasil video Full HD 1080p siap diputar & diposting langsung ke medsos."}
                     </p>
                   </div>
                 </div>
@@ -771,7 +790,7 @@ export function VideoCompletionModal({
                       <line x1="16" y1="13" x2="8" y2="13" />
                       <line x1="16" y1="17" x2="8" y2="17" />
                     </svg>
-                    <span className="font-display text-xs font-bold text-ink">Caption Siap Posting</span>
+                    <span className="font-display text-xs font-bold text-ink">{isEn ? "Ready-to-Post Caption" : "Caption Siap Posting"}</span>
                   </div>
 
                   <button
@@ -786,12 +805,12 @@ export function VideoCompletionModal({
                     {copied ? (
                       <>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><polyline points="20 6 9 17 4 12" /></svg>
-                        <span>Tersalin!</span>
+                        <span>{isEn ? "Copied!" : "Tersalin!"}</span>
                       </>
                     ) : (
                       <>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
-                        <span>Salin Caption</span>
+                        <span>{isEn ? "Copy Caption" : "Salin Caption"}</span>
                       </>
                     )}
                   </button>
@@ -806,7 +825,7 @@ export function VideoCompletionModal({
                       selectedStyle === "viral" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
-                    <span>Viral &amp; Hook</span>
+                    <span>{isEn ? "Viral & Hook" : "Viral & Hook"}</span>
                   </button>
                   <button
                     type="button"
@@ -815,7 +834,7 @@ export function VideoCompletionModal({
                       selectedStyle === "discuss" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
-                    <span>Diskusi Netizen</span>
+                    <span>{isEn ? "Discussion" : "Diskusi Netizen"}</span>
                   </button>
                   <button
                     type="button"
@@ -824,7 +843,7 @@ export function VideoCompletionModal({
                       selectedStyle === "short" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                     }`}
                   >
-                    <span>Singkat</span>
+                    <span>{isEn ? "Short" : "Singkat"}</span>
                   </button>
                 </div>
 
@@ -839,17 +858,21 @@ export function VideoCompletionModal({
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 shrink-0">
                     <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                   </svg>
-                  <span>Panduan Penggunaan Desktop:</span>
+                  <span>{isEn ? "Desktop Usage Guide:" : "Panduan Penggunaan Desktop:"}</span>
                 </div>
                 <ol className="text-xs text-mist space-y-1.5 pl-4 list-decimal leading-relaxed">
                   <li>
-                    <strong className="text-white">Video otomatis tersimpan</strong> di folder komputer kamu: <span className="text-ember font-mono">Videos \ Malesan</span>.
+                    <strong className="text-white">{isEn ? "Video automatically saved" : "Video otomatis tersimpan"}</strong> {isEn ? "in your computer folder:" : "di folder komputer kamu:"} <span className="text-ember font-mono">Videos \ Malesan</span>.
                   </li>
                   <li>
-                    <strong className="text-white">Salin caption</strong> di atas dengan 1 klik tombol untuk dipakai saat posting.
+                    <strong className="text-white">{isEn ? "Copy caption" : "Salin caption"}</strong> {isEn ? "above with 1 click to use when posting." : "di atas dengan 1 klik tombol untuk dipakai saat posting."}
                   </li>
                   <li>
-                    Klik tombol <strong className="text-white">Buka di File Explorer</strong> untuk langsung drag-and-drop file video ke browser (TikTok Web / Instagram Web) atau software editing favorit kamu (CapCut, Premiere, DaVinci).
+                    {isEn ? (
+                      <>Click <strong className="text-white">Open in File Explorer</strong> to drag and drop video files directly to browser (TikTok Web / Instagram Web) or your favorite editing software (CapCut, Premiere, DaVinci).</>
+                    ) : (
+                      <>Klik tombol <strong className="text-white">Buka di File Explorer</strong> untuk langsung drag-and-drop file video ke browser (TikTok Web / Instagram Web) atau software editing favorit kamu (CapCut, Premiere, DaVinci).</>
+                    )}
                   </li>
                 </ol>
               </div>
@@ -866,10 +889,10 @@ export function VideoCompletionModal({
                 </svg>
               </div>
               <h3 className="font-display text-lg sm:text-xl font-extrabold text-white tracking-wide">
-                Video Berhasil Di-render
+                {isEn ? "Video Rendered Successfully" : "Video Berhasil Di-render"}
               </h3>
               <p className="text-xs text-mist">
-                Hasil video Full HD 1080p siap diputar &amp; diposting langsung ke medsos.
+                {isEn ? "Full HD 1080p video ready to play & post directly to social media." : "Hasil video Full HD 1080p siap diputar & diposting langsung ke medsos."}
               </p>
             </div>
 
@@ -887,14 +910,14 @@ export function VideoCompletionModal({
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="font-display text-sm font-extrabold text-white group-hover:text-ember transition-colors">
-                        Lihat Hasil Video
+                        {isEn ? "View Video Result" : "Lihat Hasil Video"}
                       </span>
                       <span className="rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-300 border border-emerald-500/30">
-                        1080p Siap
+                        {isEn ? "1080p Ready" : "1080p Siap"}
                       </span>
                     </div>
                     <p className="text-[11px] text-mist">
-                      Tap untuk memutar video dengan custom player studio
+                      {isEn ? "Tap to play video with custom studio player" : "Tap untuk memutar video dengan custom player studio"}
                     </p>
                   </div>
                 </div>
@@ -915,7 +938,7 @@ export function VideoCompletionModal({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
                   </svg>
                 </span>
-                <span>Lokasi Penyimpanan File:</span>
+                <span>{isEn ? "File Storage Location:" : "Lokasi Penyimpanan File:"}</span>
               </div>
 
               <div className="rounded-xl bg-black/60 p-2.5 border border-white/10 font-mono text-xs text-ember break-all flex items-start gap-2">
@@ -923,8 +946,8 @@ export function VideoCompletionModal({
                   <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
                 </svg>
                 <div>
-                  <p className="font-bold text-white text-[11px]">Galeri HP Android (DCIM)</p>
-                  <p className="text-[10px] text-mist">Folder: <span className="text-ember">DCIM / Malesan / {videoTitle}.mp4</span></p>
+                  <p className="font-bold text-white text-[11px]">{isEn ? "Phone Gallery (DCIM)" : "Galeri HP Android (DCIM)"}</p>
+                  <p className="text-[10px] text-mist">{isEn ? "Folder:" : "Folder:"} <span className="text-ember">DCIM / Malesan / {videoTitle}.mp4</span></p>
                 </div>
               </div>
             </div>
@@ -939,7 +962,7 @@ export function VideoCompletionModal({
                     <line x1="16" y1="13" x2="8" y2="13" />
                     <line x1="16" y1="17" x2="8" y2="17" />
                   </svg>
-                  <span className="font-display text-xs font-bold text-ink">Caption Siap Posting</span>
+                  <span className="font-display text-xs font-bold text-ink">{isEn ? "Ready-to-Post Caption" : "Caption Siap Posting"}</span>
                 </div>
 
                 <button
@@ -954,12 +977,12 @@ export function VideoCompletionModal({
                   {copied ? (
                     <>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3"><polyline points="20 6 9 17 4 12" /></svg>
-                      <span>Tersalin!</span>
+                      <span>{isEn ? "Copied!" : "Tersalin!"}</span>
                     </>
                   ) : (
                     <>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>
-                      <span>Salin Caption</span>
+                      <span>{isEn ? "Copy Caption" : "Salin Caption"}</span>
                     </>
                   )}
                 </button>
@@ -974,7 +997,7 @@ export function VideoCompletionModal({
                     selectedStyle === "viral" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                   }`}
                 >
-                  <span>Viral &amp; Hook</span>
+                  <span>{isEn ? "Viral & Hook" : "Viral & Hook"}</span>
                 </button>
 
                 <button
@@ -984,7 +1007,7 @@ export function VideoCompletionModal({
                     selectedStyle === "discuss" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                   }`}
                 >
-                  <span>Diskusi Netizen</span>
+                  <span>{isEn ? "Discussion" : "Diskusi Netizen"}</span>
                 </button>
 
                 <button
@@ -994,7 +1017,7 @@ export function VideoCompletionModal({
                     selectedStyle === "short" ? "bg-ember text-obsidian shadow-sm" : "text-mist hover:text-white"
                   }`}
                 >
-                  <span>Singkat</span>
+                  <span>{isEn ? "Short" : "Singkat"}</span>
                 </button>
               </div>
 
@@ -1004,7 +1027,7 @@ export function VideoCompletionModal({
 
               <p className="text-[10px] text-muted flex items-center gap-1">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember shrink-0"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-                <span>Caption otomatis tersalin saat kamu tap tombol bagikan di bawah.</span>
+                <span>{isEn ? "Caption is automatically copied when you tap the share button below." : "Caption otomatis tersalin saat kamu tap tombol bagikan di bawah."}</span>
               </p>
             </div>
 
@@ -1014,17 +1037,21 @@ export function VideoCompletionModal({
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-4 shrink-0">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
                 </svg>
-                <span>Panduan Posting Mudah:</span>
+                <span>{isEn ? "Easy Posting Guide:" : "Panduan Posting Mudah:"}</span>
               </div>
               <ol className="text-[11px] text-mist space-y-1 pl-4 list-decimal leading-relaxed">
                 <li>
-                  <strong className="text-white">Caption otomatis tersalin</strong> ke clipboard saat kamu tap tombol di bawah.
+                  <strong className="text-white">{isEn ? "Caption automatically copied" : "Caption otomatis tersalin"}</strong> {isEn ? "to clipboard when you tap the button below." : "ke clipboard saat kamu tap tombol di bawah."}
                 </li>
                 <li>
-                  <strong className="text-white">Video sudah tersimpan di Galeri HP</strong> (<span className="text-ember font-mono">DCIM / Malesan</span>).
+                  <strong className="text-white">{isEn ? "Video is saved in Phone Gallery" : "Video sudah tersimpan di Galeri HP"}</strong> (<span className="text-ember font-mono">DCIM / Malesan</span>).
                 </li>
                 <li>
-                  Tap <strong className="text-white">Bagikan File Video ke Aplikasi Lain</strong> untuk langsung mengirim ke TikTok, Instagram, WhatsApp, atau medsos lainnya!
+                  {isEn ? (
+                    <>Tap <strong className="text-white">Share Video File to Another App</strong> to send directly to TikTok, Instagram, WhatsApp, or other social media!</>
+                  ) : (
+                    <>Tap <strong className="text-white">Bagikan File Video ke Aplikasi Lain</strong> untuk langsung mengirim ke TikTok, Instagram, WhatsApp, atau medsos lainnya!</>
+                  )}
                 </li>
               </ol>
             </div>
@@ -1037,7 +1064,7 @@ export function VideoCompletionModal({
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4 text-ember">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                     </svg>
-                    <span>Pilih Aplikasi untuk Posting:</span>
+                    <span>{isEn ? "Select App to Post:" : "Pilih Aplikasi untuk Posting:"}</span>
                   </div>
                   <button
                     type="button"
@@ -1049,14 +1076,18 @@ export function VideoCompletionModal({
                 </div>
 
                 <p className="text-[11px] text-mist leading-relaxed">
-                  Caption <span className="text-white font-semibold">sudah tersalin</span> ke clipboard. Video kamu sudah ada di folder <span className="text-ember font-mono font-bold">DCIM / Malesan</span> pada urutan teratas galeri.
+                  {isEn ? (
+                    <>Caption <span className="text-white font-semibold">is copied</span> to clipboard. Your video is in the <span className="text-ember font-mono font-bold">DCIM / Malesan</span> folder at the top of your gallery.</>
+                  ) : (
+                    <>Caption <span className="text-white font-semibold">sudah tersalin</span> ke clipboard. Video kamu sudah ada di folder <span className="text-ember font-mono font-bold">DCIM / Malesan</span> pada urutan teratas galeri.</>
+                  )}
                 </p>
 
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => {
-                      showToast("Caption tersalin! Buka TikTok dan pilih video paling atas.");
+                      showToast(isEn ? "Caption copied! Open TikTok and select the top video." : "Caption tersalin! Buka TikTok dan pilih video paling atas.");
                       window.open("https://www.tiktok.com", "_blank");
                     }}
                     className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border border-white/10 bg-black/50 hover:bg-black/80 text-white font-bold text-[11px] transition-all active:scale-95 text-center cursor-pointer shadow-sm"
@@ -1070,7 +1101,7 @@ export function VideoCompletionModal({
                   <button
                     type="button"
                     onClick={() => {
-                      showToast("Caption tersalin! Buka Instagram dan pilih video paling atas.");
+                      showToast(isEn ? "Caption copied! Open Instagram and select the top video." : "Caption tersalin! Buka Instagram dan pilih video paling atas.");
                       window.open("https://www.instagram.com", "_blank");
                     }}
                     className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border border-white/10 bg-black/50 hover:bg-black/80 text-white font-bold text-[11px] transition-all active:scale-95 text-center cursor-pointer shadow-sm"
@@ -1084,7 +1115,7 @@ export function VideoCompletionModal({
                   <button
                     type="button"
                     onClick={() => {
-                      showToast("Membuka WhatsApp dengan caption...");
+                      showToast(isEn ? "Opening WhatsApp with caption..." : "Membuka WhatsApp dengan caption...");
                       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(activeCaption)}`, "_blank");
                     }}
                     className="flex flex-col items-center justify-center gap-1.5 h-16 rounded-xl border border-white/10 bg-black/50 hover:bg-black/80 text-white font-bold text-[11px] transition-all active:scale-95 text-center cursor-pointer shadow-sm"
@@ -1099,7 +1130,7 @@ export function VideoCompletionModal({
                 {isAPK && !hasNativeShare && (
                   <div className="pt-1 flex items-center justify-between gap-2 rounded-xl bg-black/40 border border-white/5 p-2">
                     <span className="text-[10px] text-mist">
-                      Ingin menu share bawaan HP langsung 1-klik?
+                      {isEn ? "Want 1-click native phone share menu?" : "Ingin menu share bawaan HP langsung 1-klik?"}
                     </span>
                     <a
                       href="/malesan.apk"
@@ -1125,7 +1156,7 @@ export function VideoCompletionModal({
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" />
                 </svg>
-                <span>Bagikan File Video ke Aplikasi Lain</span>
+                <span>{isEn ? "Share Video File to Another App" : "Bagikan File Video ke Aplikasi Lain"}</span>
               </button>
 
               <div className="flex gap-2">
@@ -1138,7 +1169,7 @@ export function VideoCompletionModal({
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
-                    <span>Unduh Ulang MP4</span>
+                    <span>{isEn ? "Re-download MP4" : "Unduh Ulang MP4"}</span>
                   </a>
                 )}
 
@@ -1147,7 +1178,7 @@ export function VideoCompletionModal({
                   onClick={onClose}
                   className="flex-1 h-9 px-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-mist hover:text-white font-bold text-[11px] transition-all cursor-pointer"
                 >
-                  Tutup &amp; Selesai
+                  {isEn ? "Close & Done" : "Tutup & Selesai"}
                 </button>
               </div>
             </div>

@@ -92,27 +92,27 @@ export function ScriptFullViewModal({
   // Comprehensive Markdown export
   const markdownContent = useMemo(() => {
     const out: string[] = [
-      `# ${title || "Naskah Video"}`,
+      `# ${title || (isEn ? "Video Script" : "Naskah Video")}`,
       `Platform: ${platform}`,
       "",
       "---",
       "",
-      "## 🎙️ Voiceover (Teks Lisan)",
+      isEn ? "## 🎙️ Voiceover (Spoken Text)" : "## 🎙️ Voiceover (Teks Lisan)",
       "",
       pureVoiceoverText,
       "",
       "---",
       "",
-      "## 🎬 Rincian Shot & Scene",
+      isEn ? "## 🎬 Scene & Shot Details" : "## 🎬 Rincian Shot & Scene",
       "",
     ];
 
     scenes.forEach((sc, i) => {
       out.push(`### Scene #${i + 1} ${sc.timestamp ? `(${sc.timestamp})` : ""}`);
-      if (sc.spoken) out.push(`- **Suara/VO:** ${sc.spoken}`);
+      if (sc.spoken) out.push(`- **${isEn ? "Voice/VO" : "Suara/VO"}:** ${sc.spoken}`);
       if (sc.visual) out.push(`- **Visual:** ${sc.visual}`);
-      if (sc.on_screen_text) out.push(`- **Teks Layar:** ${sc.on_screen_text}`);
-      if (sc.user_footage_note) out.push(`- **Bahan Kreator:** ${sc.user_footage_note}`);
+      if (sc.on_screen_text) out.push(`- **${isEn ? "On-Screen Text" : "Teks Layar"}:** ${sc.on_screen_text}`);
+      if (sc.user_footage_note) out.push(`- **${isEn ? "Creator Footage" : "Bahan Kreator"}:** ${sc.user_footage_note}`);
       out.push("");
     });
 
@@ -127,7 +127,7 @@ export function ScriptFullViewModal({
     }
 
     return out.join("\n");
-  }, [title, platform, pureVoiceoverText, scenes, editableScript.cta, editableScript.caption, editableScript.hashtags]);
+  }, [title, platform, pureVoiceoverText, scenes, editableScript.cta, editableScript.caption, editableScript.hashtags, isEn]);
 
   // Handle Teleprompter Auto-scroll
   useEffect(() => {
@@ -162,7 +162,7 @@ export function ScriptFullViewModal({
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({
-          title: title || "Naskah Konten Malesan",
+          title: title || (isEn ? "Malesan Content Script" : "Naskah Konten Malesan"),
           text: pureVoiceoverText || markdownContent,
         });
         haptic.success();
@@ -175,7 +175,7 @@ export function ScriptFullViewModal({
     } else {
       handleCopy("vo", pureVoiceoverText);
     }
-  }, [title, pureVoiceoverText, markdownContent, handleCopy]);
+  }, [title, pureVoiceoverText, markdownContent, handleCopy, isEn]);
 
   const handleDownloadMd = useCallback(() => {
     haptic.tap();
@@ -183,10 +183,10 @@ export function ScriptFullViewModal({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "naskah"}.md`;
+    a.download = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || (isEn ? "script" : "naskah")}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [markdownContent, title]);
+  }, [markdownContent, title, isEn]);
 
   const handleUpdateSceneSpoken = (index: number, val: string) => {
     const updated = [...scenes];

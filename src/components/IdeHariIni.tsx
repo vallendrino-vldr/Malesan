@@ -12,8 +12,29 @@ import {
   type TodayGoal,
   type TodayPlatform,
 } from "@/lib/content-options";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
+const PLATFORM_HINTS_EN: Record<string, string> = {
+  tiktok_reels: "Short video",
+  youtube_shorts: "Searchable video",
+  x: "Post or thread",
+  threads: "Serial conversation",
+  facebook: "Relatable stories",
+  linkedin: "Professional insights",
+};
+
+const GOAL_LABELS_EN: Record<string, string> = {
+  views: "Get views",
+  sales: "Drive sales",
+  branding: "Build brand",
+  education: "Educate",
+  engagement: "Start discussion",
+};
 
 export function IdeHariIni({ cost = 1 }: { cost?: number }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [ideas, setIdeas] = useState<IdeaData[]>([]);
   // Shared with every other module — same pasted material, same picked voice,
   // so switching from here to Hook Lab does not throw the context away.
@@ -53,7 +74,7 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
   async function generate() {
     setIsGenerating(true);
     setChars(0);
-    setStatus("Lagi siapin profil dan pilihan lo...");
+    setStatus(isEn ? "Preparing your profile and preferences..." : "Lagi siapin profil dan pilihan lo...");
     setError("");
     setIdeas([]);
     setGenerationId(undefined);
@@ -109,7 +130,7 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
 
       if (streamError) throw new Error(streamError);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Idenya belum berhasil dibikin. Coba lagi ya.";
+      const message = err instanceof Error ? err.message : (isEn ? "Could not generate ideas yet. Please try again." : "Idenya belum berhasil dibikin. Coba lagi ya.");
       setError(message);
     } finally {
       setIsGenerating(false);
@@ -120,15 +141,18 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
     <div className="space-y-6">
       <div className="rounded-2xl border border-hairline bg-surface p-5 pb-24 sm:p-8">
         <h2 className="font-display text-2xl font-bold tracking-display-md text-ink">
-          Ide Hari Ini
+          {isEn ? "Ideas Today" : "Ide Hari Ini"}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Pilih mau posting di mana dan lagi ngejar apa. Gak perlu nulis ide —
-          bagian mikirnya biar Malesan yang pegang.
+          {isEn
+            ? "Pick your target platform and goal. No need to brainstorm from scratch — Malesan handles the thinking."
+            : "Pilih mau posting di mana dan lagi ngejar apa. Gak perlu nulis ide — bagian mikirnya biar Malesan yang pegang."}
         </p>
 
         <fieldset className="mt-6">
-          <legend className="text-sm font-semibold text-ink">Mau posting di mana?</legend>
+          <legend className="text-sm font-semibold text-ink">
+            {isEn ? "Where do you want to post?" : "Mau posting di mana?"}
+          </legend>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {TODAY_PLATFORMS.map((option) => {
               const active = platform === option.id;
@@ -148,7 +172,9 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
                   <span className={`block text-mini font-bold ${active ? "text-ember" : "text-ink"}`}>
                     {option.label}
                   </span>
-                  <span className="mt-0.5 block text-micro text-muted">{option.hint}</span>
+                  <span className="mt-0.5 block text-micro text-muted">
+                    {isEn ? PLATFORM_HINTS_EN[option.id] || option.hint : option.hint}
+                  </span>
                 </button>
               );
             })}
@@ -156,7 +182,9 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
         </fieldset>
 
         <fieldset className="mt-5">
-          <legend className="text-sm font-semibold text-ink">Lagi ngejar apa?</legend>
+          <legend className="text-sm font-semibold text-ink">
+            {isEn ? "What is your main goal?" : "Lagi ngejar apa?"}
+          </legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {TODAY_GOALS.map((option) => {
               const active = goal === option.id;
@@ -173,7 +201,7 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
                       : "border-hairline bg-surface/60 text-muted hover:border-ember/30 hover:text-ink"
                   }`}
                 >
-                  {option.label}
+                  {isEn ? GOAL_LABELS_EN[option.id] || option.label : option.label}
                 </button>
               );
             })}
@@ -209,7 +237,13 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
               isGenerating ? "glow-ember" : ""
             }`}
           >
-            {isGenerating ? "Lagi mikirin buat lo..." : `Kasih 3 ide · ${cost} kredit`}
+            {isGenerating
+              ? isEn
+                ? "Thinking for you..."
+                : "Lagi mikirin buat lo..."
+              : isEn
+                ? `Give me 3 ideas · ${cost} credits`
+                : `Kasih 3 ide · ${cost} kredit`}
           </button>
         </div>
       </div>
@@ -218,7 +252,7 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
         <GenerationProgress
           moduleKey="ide_hari_ini"
           chars={chars}
-          label="Lagi mikirin buat lo"
+          label={isEn ? "Thinking for you" : "Lagi mikirin buat lo"}
           status={status}
         />
       )}
@@ -226,7 +260,9 @@ export function IdeHariIni({ cost = 1 }: { cost?: number }) {
       {(ideas.length > 0 || isGenerating) && (
         <div ref={resultsRef} className="scroll-mt-4 space-y-4">
           <h3 className="font-mono text-micro uppercase tracking-[0.14em] text-muted ml-1">
-            3 ide buat {TODAY_PLATFORMS.find((option) => option.id === platform)?.label}
+            {isEn
+              ? `3 ideas for ${TODAY_PLATFORMS.find((option) => option.id === platform)?.label}`
+              : `3 ide buat ${TODAY_PLATFORMS.find((option) => option.id === platform)?.label}`}
           </h3>
           <div className="grid gap-4">
             {ideas.length > 0

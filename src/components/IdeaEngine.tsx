@@ -6,8 +6,12 @@ import { GenerationProgress } from "./GenerationProgress";
 import { useRouter } from "next/navigation";
 import { readErrorBody, readSSE, stripFence } from "@/lib/sse";
 import { GenerationExtras, useGenerationExtras } from "./ModuleRunner";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function IdeaEngine() {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [input, setInput] = useState("");
   // Reference material and the picked voice are shared with every other module,
   // so they are defined once next to ModuleRunner rather than copied per screen.
@@ -28,7 +32,7 @@ export function IdeaEngine() {
 
     setIsGenerating(true);
     setChars(0);
-    setStatus("Lagi siapin bahan lo...");
+    setStatus(isEn ? "Preparing your material..." : "Lagi siapin bahan lo...");
     setError("");
     setIdeas([]);
     setGenerationId(undefined);
@@ -47,7 +51,7 @@ export function IdeaEngine() {
       });
 
       if (!res.ok) {
-        throw new Error(await readErrorBody(res, "Gagal ngembangin ide."));
+        throw new Error(await readErrorBody(res, isEn ? "Failed to develop ideas." : "Gagal ngembangin ide."));
       }
 
       let acc = "";
@@ -82,7 +86,7 @@ export function IdeaEngine() {
 
       if (streamError) throw new Error(streamError);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Idenya belum berhasil dikembangin. Coba lagi ya.";
+      const message = err instanceof Error ? err.message : (isEn ? "Could not develop idea. Please try again." : "Idenya belum berhasil dikembangin. Coba lagi ya.");
       setError(message);
     } finally {
       setIsGenerating(false);
@@ -93,24 +97,26 @@ export function IdeaEngine() {
     <div className="space-y-6">
       <form onSubmit={generate} className="rounded-2xl border border-hairline bg-surface p-6 sm:p-8">
         <h2 className="font-display text-2xl font-bold tracking-display-md text-ink">
-          Matengin Ide
+          {isEn ? "Idea Polish" : "Matengin Ide"}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Punya ide kasar tapi bingung ngembanginnya? Tulis di sini, gue kembangin jadi 5 ide mateng.
+          {isEn
+            ? "Have a rough concept but unsure how to develop it? Write it here, I'll turn it into 5 developed ideas."
+            : "Punya ide kasar tapi bingung ngembanginnya? Tulis di sini, gue kembangin jadi 5 ide mateng."}
         </p>
 
         <div className="mt-6">
           <label htmlFor="idea-engine-input" className="sr-only">
-            Ide kasar konten
+            {isEn ? "Rough content concept" : "Ide kasar konten"}
           </label>
           <textarea
             id="idea-engine-input"
             name="idea_input"
-            aria-label="Ide kasar konten"
+            aria-label={isEn ? "Rough content concept" : "Ide kasar konten"}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isGenerating}
-            placeholder="Contoh: review mic wireless murah tapi suaranya bagus..."
+            placeholder={isEn ? "e.g. review affordable wireless mic with great sound..." : "Contoh: review mic wireless murah tapi suaranya bagus..."}
             className="w-full resize-none rounded-xl border border-hairline bg-obsidian p-4 text-sm text-ink placeholder:text-muted focus:border-ember focus:outline-none focus:ring-1 focus:ring-ember disabled:opacity-50"
             rows={4}
           />
@@ -134,21 +140,19 @@ export function IdeaEngine() {
               isGenerating ? "glow-ember" : ""
             }`}
           >
-            {isGenerating ? "Lagi ngulik..." : "Kembangin ide"}
+            {isGenerating ? (isEn ? "Brainstorming..." : "Lagi ngulik...") : (isEn ? "Develop ideas" : "Kembangin ide")}
           </button>
         </div>
       </form>
 
       {isGenerating && (
-
-        <GenerationProgress moduleKey="idea" chars={chars} label="Lagi ngembangin idenya" status={status} />
-
+        <GenerationProgress moduleKey="idea" chars={chars} label={isEn ? "Developing your idea" : "Lagi ngembangin idenya"} status={status} />
       )}
 
       {(ideas.length > 0 || isGenerating) && (
         <div className="space-y-4">
           <h3 className="font-mono text-micro uppercase tracking-[0.14em] text-muted ml-1">
-            Hasil
+            {isEn ? "Results" : "Hasil"}
           </h3>
           <div className="grid gap-4">
             {ideas.length > 0

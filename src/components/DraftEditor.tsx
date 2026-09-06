@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { readErrorBody } from "@/lib/sse";
 import type { Draft } from "@/lib/supabase/database.types";
 import { DraftReactions } from "./DraftReactions";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * The writing surface.
@@ -28,11 +29,18 @@ import { DraftReactions } from "./DraftReactions";
 
 type SaveState = "saved" | "dirty" | "saving" | "error";
 
-const SAVE_LABEL: Record<SaveState, string> = {
+const SAVE_LABEL_ID: Record<SaveState, string> = {
   saved: "Kesimpen",
   dirty: "Belum kesimpen",
   saving: "Nyimpen…",
   error: "Gagal nyimpen — coba lagi",
+};
+
+const SAVE_LABEL_EN: Record<SaveState, string> = {
+  saved: "Saved",
+  dirty: "Unsaved changes",
+  saving: "Saving…",
+  error: "Save failed — try again",
 };
 
 /** Keeps a trailing newline in the ghost mirror from collapsing. */
@@ -44,14 +52,14 @@ const AUTOSAVE_MS = 1_500;
 /** What the model gets to read. The route rejects anything longer. */
 const CONTEXT_CHARS = 4_000;
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, isEn = false): string {
   const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
-  if (mins < 1) return "barusan";
-  if (mins < 60) return `${mins} menit lalu`;
+  if (mins < 1) return isEn ? "just now" : "barusan";
+  if (mins < 60) return isEn ? `${mins}m ago` : `${mins} menit lalu`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} jam lalu`;
+  if (hours < 24) return isEn ? `${hours}h ago` : `${hours} jam lalu`;
   const days = Math.floor(hours / 24);
-  return days < 30 ? `${days} hari lalu` : new Date(iso).toLocaleDateString("id-ID");
+  return days < 30 ? (isEn ? `${days}d ago` : `${days} hari lalu`) : new Date(iso).toLocaleDateString(isEn ? "en-US" : "id-ID");
 }
 
 /* ------------------------------------------------------------------ editor */
@@ -68,6 +76,8 @@ export function DraftEditor({
   onSaved?: (patch: { title: string; content: string; updated_at: string }) => void;
   onClose: () => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const supabase = useMemo(() => createClient(), []);
 
   const [title, setTitle] = useState(() => {
@@ -223,7 +233,7 @@ export function DraftEditor({
   const askCompletion = async () => {
     const text = latest.current.content;
     if (!text.trim()) {
-      setGhostError("Tulis dulu satu kalimat, baru gue sambungin.");
+      setGhostError(isEn ? "Write at least one sentence first, then I'll complete it." : "Tulis dulu satu kalimat, baru gue sambungin.");
       return;
     }
 
@@ -244,18 +254,18 @@ export function DraftEditor({
         signal: ac.signal,
       });
 
-      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal nyambungin kalimat."));
+      if (!res.ok) throw new Error(await readErrorBody(res, isEn ? "Failed to complete sentence." : "Gagal nyambungin kalimat."));
 
       const json = (await res.json()) as { completion?: string };
       const completion = json.completion ?? "";
       if (!completion) {
-        setGhostError("Modelnya lagi mentok. Tambahin satu-dua kata dulu, terus coba lagi.");
+        setGhostError(isEn ? "The model is stuck. Add one or two words, then try again." : "Modelnya lagi mentok. Tambahin satu-dua kata dulu, terus coba lagi.");
         return;
       }
       setGhost(completion);
     } catch (e: unknown) {
       if (e instanceof DOMException && e.name === "AbortError") return;
-      setGhostError(e instanceof Error ? e.message : "Gagal nyambungin kalimat.");
+      setGhostError(e instanceof Error ? e.message : (isEn ? "Failed to complete sentence." : "Gagal nyambungin kalimat."));
     } finally {
       if (abortRef.current === ac) setGhostBusy(false);
     }
@@ -335,7 +345,7 @@ export function DraftEditor({
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
             <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
           </svg>
-          Semua draf
+          {isEn ? "All drafts" : "Semua draf"}
         </button>
 
         <span
@@ -346,7 +356,7 @@ export function DraftEditor({
             state === "error" ? "text-danger" : state === "saved" ? "text-success" : "text-muted"
           }`}
         >
-          {SAVE_LABEL[state]}
+          {(isEn ? SAVE_LABEL_EN : SAVE_LABEL_ID)[state]}
         </span>
 
         {state === "error" && (
@@ -354,32 +364,32 @@ export function DraftEditor({
             onClick={() => void save()}
             className="h-7.5 cursor-pointer rounded-lg border border-danger/40 px-3 text-xs font-semibold text-danger transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/10 shadow-xs"
           >
-            Simpen ulang
+            {isEn ? "Retry save" : "Simpen ulang"}
           </button>
         )}
       </div>
 
       <section className="surface-card rounded-2xl p-4 sm:p-5">
         <label htmlFor="draft-title" className="eyebrow block text-muted">
-          Judul
+          {isEn ? "Title" : "Judul"}
         </label>
         <input
           id="draft-title"
           name="draft_title"
-          aria-label="Judul draf"
+          aria-label={isEn ? "Draft title" : "Judul draf"}
           value={title}
           onChange={(e) => edit({ title: e.target.value })}
           onBlur={() => void save()}
-          placeholder="Judul draf"
+          placeholder={isEn ? "Draft title" : "Judul draf"}
           maxLength={200}
           className="mt-1.5 w-full rounded-xl border border-transparent bg-transparent px-0 py-1 font-display text-xl font-bold tracking-display-sm text-ink placeholder:text-muted focus:outline-none focus-visible:border-ember focus-visible:px-3 focus-visible:ring-1 focus-visible:ring-ember"
         />
 
         <div className="mt-3 flex items-center justify-between gap-2">
           <label htmlFor="draft-body" className="eyebrow text-muted">
-            Isi
+            {isEn ? "Body" : "Isi"}
           </label>
-          <span className="tabular text-micro text-muted">{content.length} karakter</span>
+          <span className="tabular text-micro text-muted">{content.length} {isEn ? "characters" : "karakter"}</span>
         </div>
 
         <div className="skeu-inset relative mt-1.5 rounded-xl border border-hairline bg-obsidian focus-within:border-ember focus-within:ring-1 focus-within:ring-ember">
@@ -398,7 +408,7 @@ export function DraftEditor({
           <textarea
             id="draft-body"
             name="draft_body"
-            aria-label="Isi draft naskah"
+            aria-label={isEn ? "Draft content" : "Isi draft naskah"}
             ref={taRef}
             value={content}
             onChange={(e) => {
@@ -407,7 +417,7 @@ export function DraftEditor({
             }}
             onKeyDown={onKeyDown}
             onBlur={() => void save()}
-            placeholder="Mulai nulis. Tab buat minta sambungan."
+            placeholder={isEn ? "Start writing. Press Tab to request completion." : "Mulai nulis. Tab buat minta sambungan."}
             className="absolute inset-0 h-full w-full resize-none overflow-hidden break-words rounded-xl bg-transparent p-3.5 text-sm leading-relaxed text-ink placeholder:text-muted focus:outline-none"
           />
         </div>
@@ -422,15 +432,17 @@ export function DraftEditor({
                 onClick={accept}
                 className="h-8 sm:h-8.5 cursor-pointer rounded-lg bg-ember px-3 font-display text-xs font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo shadow-xs"
               >
-                Pakai sambungannya
+                {isEn ? "Use suggestion" : "Pakai sambungannya"}
               </button>
               <button
                 onClick={() => setGhost("")}
                 className="h-8 sm:h-8.5 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-3 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink shadow-xs"
               >
-                Buang
+                {isEn ? "Discard" : "Buang"}
               </button>
-              <span className="text-micro text-muted">Tab atau Enter buat pakai, Escape buat buang.</span>
+              <span className="text-micro text-muted">
+                {isEn ? "Tab or Enter to accept, Escape to discard." : "Tab atau Enter buat pakai, Escape buat buang."}
+              </span>
             </>
           ) : (
             <>
@@ -439,10 +451,12 @@ export function DraftEditor({
                 disabled={ghostBusy || !content.trim()}
                 className="h-8 sm:h-8.5 cursor-pointer rounded-lg border border-ember/45 bg-ember/10 px-3 text-xs font-semibold text-ember transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember hover:bg-ember/15 disabled:cursor-not-allowed disabled:opacity-50 shadow-xs"
               >
-                {ghostBusy ? "Lagi mikirin buat lo..." : "Sambungin kalimat"}
+                {ghostBusy ? (isEn ? "Thinking for you..." : "Lagi mikirin buat lo...") : (isEn ? "Complete sentence" : "Sambungin kalimat")}
               </button>
               <span className="text-micro text-muted">
-                Atau tekan Tab di ujung tulisan. Escape terus Tab kalau mau pindah field.
+                {isEn
+                  ? "Or press Tab at the end of text. Escape then Tab to leave field."
+                  : "Atau tekan Tab di ujung tulisan. Escape terus Tab kalau mau pindah field."}
               </span>
             </>
           )}
@@ -451,7 +465,7 @@ export function DraftEditor({
         {/* The suggestion is rendered as colour, which a screen reader cannot
             see. This is the same text, announced once. */}
         <p aria-live="polite" className="sr-only">
-          {ghost ? `Sambungan: ${ghost}` : ""}
+          {ghost ? `${isEn ? "Completion" : "Sambungan"}: ${ghost}` : ""}
         </p>
 
         {ghostError && (
@@ -476,6 +490,8 @@ export function DraftWorkspace({
   initialDrafts: Draft[];
   userId: string;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const supabase = useMemo(() => createClient(), []);
   const [drafts, setDrafts] = useState<Draft[]>(initialDrafts);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -491,13 +507,13 @@ export function DraftWorkspace({
     setError("");
     const { data, error: insertError } = await supabase
       .from("drafts")
-      .insert({ user_id: userId, title: "Draf tanpa judul", content: "" })
+      .insert({ user_id: userId, title: isEn ? "Untitled draft" : "Draf tanpa judul", content: "" })
       .select()
       .single();
     setBusy(false);
 
     if (insertError || !data) {
-      setError("Gagal bikin draf baru. Coba lagi sebentar lagi ya.");
+      setError(isEn ? "Failed to create new draft. Please try again in a moment." : "Gagal bikin draf baru. Coba lagi sebentar lagi ya.");
       return;
     }
     setDrafts((list) => [data, ...list]);
@@ -518,7 +534,7 @@ export function DraftWorkspace({
       .maybeSingle();
 
     if (deleteError || !data) {
-      setError("Gagal ngehapus draf itu. Coba lagi.");
+      setError(isEn ? "Failed to delete that draft. Please try again." : "Gagal ngehapus draf itu. Coba lagi.");
       return;
     }
     setConfirming(null);
@@ -550,7 +566,7 @@ export function DraftWorkspace({
         disabled={busy}
         className="w-full cursor-pointer rounded-xl bg-ember px-5 py-3.5 font-display text-sm font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {busy ? "Lagi bikin..." : "Draf baru"}
+        {busy ? (isEn ? "Creating..." : "Lagi bikin...") : (isEn ? "New draft" : "Draf baru")}
       </button>
 
       {error && (
@@ -561,9 +577,9 @@ export function DraftWorkspace({
 
       {drafts.length === 0 ? (
         <div className="surface-card rounded-2xl px-5 py-10 text-center">
-          <p className="font-display text-lg font-bold text-ink">Belum ada draf.</p>
+          <p className="font-display text-lg font-bold text-ink">{isEn ? "No drafts yet." : "Belum ada draf."}</p>
           <p className="mx-auto mt-1.5 max-w-xs text-sm leading-relaxed text-muted">
-            Ya udah, mulai satu. Tulis seadanya, sisanya tinggal tekan Tab.
+            {isEn ? "Go ahead, start one. Write what comes to mind, press Tab for the rest." : "Ya udah, mulai satu. Tulis seadanya, sisanya tinggal tekan Tab."}
           </p>
         </div>
       ) : (
@@ -578,12 +594,12 @@ export function DraftWorkspace({
                 className="min-w-0 flex-1 cursor-pointer text-left"
               >
                 <span className="block truncate font-display text-sm font-bold text-ink">
-                  {d.title?.trim() || "Draf tanpa judul"}
+                  {d.title?.trim() || (isEn ? "Untitled draft" : "Draf tanpa judul")}
                 </span>
                 <span className="mt-0.5 block truncate text-mini text-muted">
                   {d.content.trim()
-                    ? `${d.content.trim().slice(0, 80)} · ${timeAgo(d.updated_at)}`
-                    : `Masih kosong · ${timeAgo(d.updated_at)}`}
+                    ? `${d.content.trim().slice(0, 80)} · ${timeAgo(d.updated_at, isEn)}`
+                    : `${isEn ? "Empty" : "Masih kosong"} · ${timeAgo(d.updated_at, isEn)}`}
                 </span>
               </button>
 
@@ -593,22 +609,22 @@ export function DraftWorkspace({
                     onClick={() => void remove(d.id)}
                     className="h-7.5 cursor-pointer rounded-lg border border-danger/40 bg-danger/10 px-2.5 text-xs font-semibold text-danger transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/20 shadow-xs"
                   >
-                    Yakin, hapus
+                    {isEn ? "Yes, delete" : "Yakin, hapus"}
                   </button>
                   <button
                     onClick={() => setConfirming(null)}
                     className="h-7.5 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-2.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink shadow-xs"
                   >
-                    Batal
+                    {isEn ? "Cancel" : "Batal"}
                   </button>
                 </span>
               ) : (
                 <button
                   onClick={() => setConfirming(d.id)}
-                  aria-label={`Hapus draf ${d.title?.trim() || "tanpa judul"}`}
+                  aria-label={isEn ? `Delete draft ${d.title?.trim() || "untitled"}` : `Hapus draf ${d.title?.trim() || "tanpa judul"}`}
                   className="flex h-7.5 shrink-0 cursor-pointer items-center rounded-lg border border-hairline bg-surface/60 px-2.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-danger/40 hover:text-danger shadow-xs"
                 >
-                  Hapus
+                  {isEn ? "Delete" : "Hapus"}
                 </button>
               )}
             </li>
