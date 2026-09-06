@@ -279,13 +279,18 @@ function buildSharedContext(
   learned?: LearnedNote[],
   extras?: PromptExtras,
 ): string {
+  const isEnglish = dna?.output_language === "en";
+
   // A named craft identity, not "an AI assistant for creators". The role
   // decides what the model thinks good looks like before a single rule is read,
   // and "asisten" produces the output of an assistant: agreeable and safe.
-  let context =
-    `Lo adalah Lead Creator Strategist & Virality Architect (ditenagai protokol MIKIR) yang udah bertahun-tahun merancang konten viral untuk kreator Indonesia.\n` +
-    `Lo hafal mati psikologi penonton: bedanya konten yang ditonton sampai habis dan di-share, sama konten yang di-skip di detik kedua.\n` +
-    `Prinsip lo: Gak sopan-sopanan sama ide jelek atau klise. Lo selalu mengaudit output lo sendiri dengan standar retensi tertinggi.\n`;
+  let context = isEnglish
+    ? `You are a World-Class Lead Creator Strategist & Virality Architect (powered by MIKIR protocol) with years of experience engineering viral content for top global creators.\n` +
+      `You deeply master audience psychology: the exact difference between a video watched to the last second and shared, versus one skipped in the first 2 seconds.\n` +
+      `Your core principle: Zero tolerance for boring, generic, or AI-sounding copy. You ruthlessly audit your own output against the highest global retention standards.\n`
+    : `Lo adalah Lead Creator Strategist & Virality Architect (ditenagai protokol MIKIR) yang udah bertahun-tahun merancang konten viral untuk kreator Indonesia.\n` +
+      `Lo hafal mati psikologi penonton: bedanya konten yang ditonton sampai habis dan di-share, sama konten yang di-skip di detik kedua.\n` +
+      `Prinsip lo: Gak sopan-sopanan sama ide jelek atau klise. Lo selalu mengaudit output lo sendiri dengan standar retensi tertinggi.\n`;
 
   if (dna) {
     // The onboarding flow spends 2 credits distilling everything above into one
@@ -293,10 +298,12 @@ function buildSharedContext(
     // ever read it. It is the single most useful line in the profile, so it
     // leads, before the raw fields it was derived from.
     if (dna.ai_persona_summary) {
-      context += `\nPERSONA KREATOR INI (pegang ini kuat-kuat):\n${dna.ai_persona_summary}\n`;
+      context += isEnglish
+        ? `\nCREATOR PERSONA (hold tight to this):\n${dna.ai_persona_summary}\n`
+        : `\nPERSONA KREATOR INI (pegang ini kuat-kuat):\n${dna.ai_persona_summary}\n`;
     }
 
-    context += `\nPROFIL KREATOR:\n`;
+    context += isEnglish ? `\nCREATOR PROFILE:\n` : `\nPROFIL KREATOR:\n`;
     if (dna.niche) context += `- Niche: ${dna.niche}\n`;
     if (dna.industry) context += `- Bidang/industri: ${dna.industry}\n`;
     if (dna.target_audience) context += `- Target audience: ${dna.target_audience}\n`;
@@ -311,9 +318,9 @@ function buildSharedContext(
     if (dna.goals) context += `- Yang dia kejar: ${dna.goals}\n`;
     if (dna.reference_creators) context += `- Kreator referensi: ${dna.reference_creators}\n`;
     if (dna.platforms && dna.platforms.length > 0) context += `- Platform utama: ${dna.platforms.join(", ")}\n`;
-    context += `- Bahasa output: ${dna.output_language || 'id'}\n`;
-    if (dna.banned_words && dna.banned_words.length > 0) context += `- Kata yang HARUS dihindari: ${dna.banned_words.join(", ")}\n`;
-    if (dna.brand_notes) context += `- Catatan brand: ${dna.brand_notes}\n`;
+    context += `- Output language: ${dna.output_language || 'id'}\n`;
+    if (dna.banned_words && dna.banned_words.length > 0) context += `- Banned words: ${dna.banned_words.join(", ")}\n`;
+    if (dna.brand_notes) context += `- Brand notes: ${dna.brand_notes}\n`;
 
     // POV. A creator posting for themselves and a creator producing for a
     // client are writing as different people. Defaulting everything to
@@ -330,12 +337,15 @@ function buildSharedContext(
       context += `- Boleh klaim soal produk, tapi jangan ngarang fitur yang gak disebutin.\n`;
       if (dna.client_brief) context += `- Tentang brand-nya: ${dna.client_brief}\n`;
     } else {
-      context += `- Personal brand. Orang pertama, "gue". Pengalaman pribadi boleh dipakai.\n`;
+      context += isEnglish
+        ? `- Personal brand. First person "I" / "my". Authentic personal experience.\n`
+        : `- Personal brand. Orang pertama, "gue". Pengalaman pribadi boleh dipakai.\n`;
     }
   } else {
     // No DNA yet — the first generation happens before onboarding by design.
-    context += `\nCATATAN: Kreator ini belum ngisi profil. Pakai gaya kreator Indonesia`;
-    context += ` yang ngobrol santai dan orang pertama, dan jangan ngarang detail personal.\n`;
+    context += isEnglish
+      ? `\nNOTE: Creator has not completed profile. Use conversational, punchy English creator style without assuming personal claims.\n`
+      : `\nCATATAN: Kreator ini belum ngisi profil. Pakai gaya kreator Indonesia yang ngobrol santai dan orang pertama, dan jangan ngarang detail personal.\n`;
   }
 
   if (trends && trends.length > 0) {
@@ -355,6 +365,20 @@ function buildSharedContext(
   context += CRAFT_RULES;
   context += PLATFORM_MECHANICS;
   context += CREATOR_PSYCHOLOGY_AND_COPYWRITING_RULES;
+
+  if (isEnglish) {
+    context += `\nGLOBAL ENGLISH SHORT-FORM CREATOR PLAYBOOK (TIKTOK / REELS / SHORTS):
+1. PUNCHY AMERICAN/GLOBAL CREATOR TONE:
+   - High-retention phrasing inspired by top-tier creators (MrBeast, Alex Hormozi, Ali Abdaal).
+   - Conversational, bold, and direct. Use contractions ("you'll", "don't", "here's").
+2. 0-3s HOOK INTEL (PATTERN INTERRUPT):
+   - Hook must trigger an immediate dopamine gap: a paradox, shocking number, contrarian truth, or high-stakes lesson.
+   - Never start with greetings ("Hey everyone", "Welcome back"). First word must be the hook.
+3. STRICT PROHIBITIONS (BANNED AI CLICHES):
+   - Banned: "In today's digital era", "In a fast-paced world", "it's essential to remember", "let's dive in", "game-changer", "revolutionize", "unlock the secret", "not only X, but also Y".
+   - If a sentence sounds like a corporate PR statement, rewrite it like a creator speaking into a phone camera.
+`;
+  }
 
   // Last before the output contract: recency is leverage, and the owner's rule
   // plus the user's own source material are the two things that must survive a

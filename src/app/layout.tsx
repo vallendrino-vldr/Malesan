@@ -5,7 +5,8 @@ import "./globals.css";
 // From a server-safe module, not from the "use client" components that own
 // these settings — importing them from there turned both scripts into a client
 // reference stub that threw, so neither ever ran. See src/lib/boot-scripts.ts.
-import { THEME_INIT_SCRIPT, TEXT_INIT_SCRIPT, HAPTIC_SCRIPT, SECURITY_SHIELD_SCRIPT } from "@/lib/boot-scripts";
+import { THEME_INIT_SCRIPT, TEXT_INIT_SCRIPT, HAPTIC_SCRIPT, SECURITY_SHIELD_SCRIPT, LANG_INIT_SCRIPT } from "@/lib/boot-scripts";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 // Display — industrial, engineered. Weights 600-800, tight negative tracking.
 const archivo = Archivo({
@@ -114,10 +115,12 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://hjdctzrvnhvarxoxixrn.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://hjdctzrvnhvarxoxixrn.supabase.co" />
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TEXT_INIT_SCRIPT + HAPTIC_SCRIPT + SECURITY_SHIELD_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + TEXT_INIT_SCRIPT + HAPTIC_SCRIPT + SECURITY_SHIELD_SCRIPT + LANG_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
         <PwaProvider />
       </body>
     </html>

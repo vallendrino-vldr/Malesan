@@ -18,6 +18,8 @@ import { CommandOmnibar } from "./CommandOmnibar";
 import { GlobalStudioProcessingOverlay } from "./studio/AIProcessingOverlay";
 import { InstallAppModal } from "./InstallAppModal";
 import { ApkUpdateModal } from "./ApkUpdateModal";
+import { LanguageToggle } from "./LanguageToggle";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type TabKey = "studio" | "vibe" | "pipeline" | "profil";
 const VALID_TABS: TabKey[] = ["studio", "vibe", "pipeline", "profil"];
@@ -76,6 +78,7 @@ export function AppShell({
   railRight?: ReactNode;
   children?: ReactNode;
 }) {
+  const { t, dict } = useLanguage();
   const [current, setCurrent] = useState<TabKey>(active);
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(() => {
@@ -260,7 +263,7 @@ export function AppShell({
             </Link>
           )}
 
-          {/* Center/Right Omnibar search trigger */}
+            {/* Center/Right Omnibar search trigger */}
           <button
             type="button"
             onClick={() => setIsOmnibarOpen(true)}
@@ -271,14 +274,14 @@ export function AppShell({
               <circle cx="11" cy="11" r="8" />
               <line x1="21" x2="16.65" y1="21" y2="16.65" />
             </svg>
-            <span className="font-medium">Cari alat & perintah...</span>
+            <span className="font-medium">{t("header.searchPlaceholder", "Cari alat & perintah...")}</span>
             <kbd className="rounded border border-white/10 bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-muted">
               ⌘K
             </kbd>
           </button>
 
           {/* Right utility & user cluster */}
-          <div className="flex min-w-0 items-center gap-2 sm:gap-2.5">
+          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
             {isDesktop ? (
               updateInfo?.hasUpdate ? (
                 <button
@@ -291,7 +294,7 @@ export function AppShell({
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-75" />
                     <span className="relative inline-flex size-2 rounded-full bg-ember" />
                   </span>
-                  <span className="hidden sm:inline">Update Studio v{updateInfo.latestVersion}</span>
+                  <span className="hidden sm:inline">{t("header.updateStudio", "Update Studio")} v{updateInfo.latestVersion}</span>
                   <span className="sm:hidden">Update v{updateInfo.latestVersion}</span>
                 </button>
               ) : (
@@ -304,7 +307,7 @@ export function AppShell({
                     <line x1="8" x2="16" y1="21" y2="21" />
                     <line x1="12" x2="12" y1="17" y2="21" />
                   </svg>
-                  <span className="hidden sm:inline">Desktop Studio</span>
+                  <span className="hidden sm:inline">{t("header.desktopStudio", "Desktop Studio")}</span>
                   <span className="sm:hidden">Studio</span>
                 </div>
               )
@@ -320,7 +323,7 @@ export function AppShell({
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ember opacity-75" />
                     <span className="relative inline-flex size-2 rounded-full bg-ember" />
                   </span>
-                  <span className="hidden sm:inline">Update v{updateInfo.latestVersion}</span>
+                  <span className="hidden sm:inline">{t("header.updateApp", "Update App")} v{updateInfo.latestVersion}</span>
                   <span className="sm:hidden">Update</span>
                 </button>
               ) : (
@@ -333,7 +336,7 @@ export function AppShell({
                     <rect width="6" height="6" x="9" y="9" rx="1" />
                     <path d="M15 2v2M9 2v2M15 20v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2" />
                   </svg>
-                  <span className="hidden sm:inline">Android Native</span>
+                  <span className="hidden sm:inline">{t("header.androidNative", "Android Native")}</span>
                   <span className="sm:hidden">Native</span>
                 </div>
               )
@@ -341,7 +344,7 @@ export function AppShell({
               <button
                 type="button"
                 onClick={() => setIsInstallModalOpen(true)}
-                aria-label="Pasang Aplikasi Malesan"
+                aria-label={t("header.downloadApp", "Pasang Aplikasi Malesan")}
                 className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/35 bg-ember/10 px-2.5 sm:px-3 text-xs font-bold text-ember hover:border-ember/60 hover:bg-ember/20 transition-all cursor-pointer shadow-xs"
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember shrink-0">
@@ -349,8 +352,8 @@ export function AppShell({
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span className="hidden sm:inline">Unduh App</span>
-                <span className="sm:hidden">App</span>
+                <span className="hidden sm:inline">{t("header.downloadApp", "Unduh App")}</span>
+                <span className="sm:hidden">{t("header.appShort", "App")}</span>
               </button>
             )}
 
@@ -368,7 +371,7 @@ export function AppShell({
                     ? `Panel admin — ${pendingTopups} topup nunggu di-approve`
                     : "Panel admin"
                 }
-                className={`relative flex h-11 sm:h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
+                className={`relative flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 sm:px-3 text-xs font-semibold transition-colors duration-[var(--duration-standard)] ease-heat ${
                   pendingTopups > 0
                     ? "border-ember bg-ember text-obsidian hover:bg-ember-lo"
                     : "border-ember/30 bg-surface/50 text-ember hover:border-ember hover:bg-surface-raised"
@@ -378,7 +381,7 @@ export function AppShell({
                   <path d="M12 2 4 5.5v5.9c0 4.6 3.2 8.4 8 10.6 4.8-2.2 8-6 8-10.6V5.5L12 2Zm0 2.2 6 2.6v4.6c0 3.6-2.4 6.6-6 8.4-3.6-1.8-6-4.8-6-8.4V6.8l6-2.6Z" />
                 </svg>
                 <span className="eyebrow hidden sm:inline">
-                  {pendingTopups > 0 ? `${pendingTopups} topup` : "Admin"}
+                  {pendingTopups > 0 ? `${pendingTopups} topup` : t("header.admin", "Admin")}
                 </span>
                 {pendingTopups > 0 && (
                   <span
@@ -391,6 +394,8 @@ export function AppShell({
               </Link>
             )}
 
+            <LanguageToggle />
+
             <CreditDisplay credits={credits} />
 
             {/* Avatar Profile Trigger (Instant Client Tab or Prefetched Link) */}
@@ -398,10 +403,10 @@ export function AppShell({
               <button
                 type="button"
                 onClick={() => go("profil")}
-                aria-label="Profil"
-                className="flex h-11 w-11 sm:h-10 sm:w-10 shrink-0 items-center justify-center cursor-pointer"
+                aria-label={t("header.profile", "Profil")}
+                className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center cursor-pointer"
               >
-                <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
+                <span className="block size-8 sm:size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
                   {avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -420,10 +425,10 @@ export function AppShell({
               <Link
                 href="/app?tab=profil"
                 prefetch={true}
-                aria-label="Profil"
-                className="flex h-11 w-11 sm:h-10 sm:w-10 shrink-0 items-center justify-center"
+                aria-label={t("header.profile", "Profil")}
+                className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center"
               >
-                <span className="block size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
+                <span className="block size-8 sm:size-9 overflow-hidden rounded-full border border-hairline/80 bg-surface transition-transform hover:scale-105 shadow-xs">
                   {avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -527,7 +532,7 @@ export function AppShell({
                         : "text-muted/75 font-medium group-hover:text-ink"
                     }`}
                   >
-                    {t.label}
+                    {dict.tabs[t.key] ?? t.label}
                   </span>
                 </div>
               </div>

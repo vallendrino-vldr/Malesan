@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { STUDIO_MODULES, type StudioModule as Mod } from "@/lib/studio-modules";
 import { haptic } from "@/lib/haptics";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 function StudioSkeleton({ label }: { label: string }) {
   return (
@@ -91,6 +92,7 @@ export function StudioPanel({
   credits: number;
   home: ReactNode;
 }) {
+  const { t } = useLanguage();
   const [mod, setMod] = useState<Mod | null>(initialMod);
   const [visitedMods, setVisitedMods] = useState<Set<Mod>>(() => new Set(initialMod ? [initialMod] : []));
 
@@ -158,7 +160,7 @@ export function StudioPanel({
         <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
           <path d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6 4.6-4.6Z" />
         </svg>
-        Balik ke Studio
+        {t("actions.backToStudio", "Balik ke Studio")}
       </button>
 
       {/* Keep-Alive Active Module Cache: Visited tools remain in memory for 0ms re-entry */}
@@ -187,6 +189,8 @@ export function StudioHeroCard({
   cost: number;
   mod?: Mod;
 }) {
+  const { t, language } = useLanguage();
+
   return (
     <div className="w-full rounded-2xl border border-ember/45 bg-gradient-to-br from-surface via-surface to-ember/10 p-4 sm:p-5 text-left shadow-sm transition-all hover:border-ember/65">
       <div className="flex items-center justify-between gap-2">
@@ -194,19 +198,21 @@ export function StudioHeroCard({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-ember">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
           </svg>
-          1-Click Instan
+          {language === "en" ? "1-Click Instant" : "1-Click Instan"}
         </span>
         <span className="rounded-md bg-surface-raised px-2.5 py-0.5 font-mono text-micro font-bold text-ember border border-hairline">
-          {cost} kredit
+          {cost} {t("header.credits", "kredit")}
         </span>
       </div>
 
       <div className="mt-2">
         <h2 className="font-display text-base sm:text-lg lg:text-xl font-bold text-ink">
-          Cari 3 Ide Konten Hari Ini
+          {language === "en" ? "Discover 3 Viral Ideas Today" : "Cari 3 Ide Konten Hari Ini"}
         </h2>
         <p className="mt-0.5 text-micro sm:text-xs text-muted leading-relaxed">
-          Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook &amp; naskah video.
+          {language === "en"
+            ? "No prompt engineering needed. Instantly get 3 production-ready viral ideas complete with hooks & video scripts."
+            : "Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook & naskah video."}
         </p>
       </div>
 
@@ -217,7 +223,7 @@ export function StudioHeroCard({
         }
         className="btn-ember mt-3.5 inline-flex min-h-11 sm:min-h-12 w-full items-center justify-center rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] hover:brightness-105"
       >
-        Kasih 3 Ide Sekarang →
+        {language === "en" ? "Generate 3 Ideas Now →" : "Kasih 3 Ide Sekarang →"}
       </button>
     </div>
   );
@@ -241,6 +247,17 @@ export function StudioTile({
   cost: number | string;
   icon: ReactNode;
 }) {
+  const { t, dict, language } = useLanguage();
+
+  const displayTitle = (mod && dict.studio?.modules?.[mod]?.label) || title;
+  const displaySubtitle = (mod && dict.studio?.modules?.[mod]?.tagline) || subtitle;
+  const displayCost =
+    typeof cost === "number"
+      ? `${cost} ${t("header.credits", "kredit")}`
+      : cost === "Gratis" && language === "en"
+      ? "Free"
+      : cost;
+
   const content = (
     <div className="flex h-full flex-col justify-between">
       <div className="flex items-center justify-between gap-2">
@@ -248,17 +265,17 @@ export function StudioTile({
           {icon}
         </span>
         <span className="shrink-0 font-mono text-[10px] sm:text-[11px] font-semibold text-muted bg-surface-raised px-2 py-0.5 rounded-md border border-hairline">
-          {typeof cost === "number" ? `${cost} kredit` : cost}
+          {displayCost}
         </span>
       </div>
 
       <div className="mt-2 min-w-0">
         <span className="block font-display text-xs sm:text-sm font-bold leading-tight text-ink group-hover:text-ember truncate">
-          {title}
+          {displayTitle}
         </span>
-        {subtitle && (
+        {displaySubtitle && (
           <span className="block mt-0.5 text-[11px] sm:text-xs text-muted truncate">
-            {subtitle}
+            {displaySubtitle}
           </span>
         )}
       </div>
@@ -301,6 +318,8 @@ export function StudioWideTile({
   mod?: Mod;
   cost?: number;
 }) {
+  const { t, language } = useLanguage();
+
   return (
     <div className="col-span-2 lg:col-span-5">
       <button
@@ -324,24 +343,26 @@ export function StudioWideTile({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="font-display text-xs sm:text-sm font-bold text-ink group-hover:text-ember transition-colors">
-                  Lancar Inggris
+                  {language === "en" ? "Fluent English AI" : "Lancar Inggris"}
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-ember uppercase tracking-wider">
                   AI Master
                 </span>
                 <span className="rounded-md bg-surface px-2 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold text-ember border border-hairline">
-                  {cost} kredit
+                  {cost} {t("header.credits", "kredit")}
                 </span>
               </div>
               <p className="mt-0.5 text-[11px] sm:text-xs text-muted leading-tight truncate sm:whitespace-normal">
-                Speaking AI native, roleplay skenario nyata, kuis interaktif &amp; evaluasi esai.
+                {language === "en"
+                  ? "Speaking AI native, real scenario roleplay, interactive quizzes & essay evaluation."
+                  : "Speaking AI native, roleplay skenario nyata, kuis interaktif & evaluasi esai."}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="text-micro font-bold text-muted group-hover:text-ember transition-colors hidden md:inline">
-              Buka Studio
+              {language === "en" ? "Open Studio" : "Buka Studio"}
             </span>
             <span className="inline-flex size-6 sm:size-7 items-center justify-center rounded-lg bg-surface border border-hairline text-muted group-hover:border-ember group-hover:bg-ember group-hover:text-obsidian transition-all">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3 sm:size-3.5">

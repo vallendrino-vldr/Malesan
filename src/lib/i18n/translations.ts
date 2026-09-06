@@ -1,0 +1,206 @@
+import { type Language, type TranslationDictionary } from "./types";
+
+export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
+  id: {
+    header: {
+      searchPlaceholder: "Cari alat & perintah...",
+      downloadApp: "Unduh App",
+      appShort: "App",
+      androidNative: "Android Native",
+      desktopStudio: "Desktop Studio",
+      updateStudio: "Update Studio",
+      updateApp: "Update App",
+      tutorial: "Cara pakai",
+      refresh: "Muat ulang",
+      admin: "Admin",
+      credits: "kredit",
+      profile: "Profil",
+      switchLang: "Ganti bahasa ke English",
+    },
+    tabs: {
+      studio: "Studio",
+      vibe: "Ngoding",
+      pipeline: "Alur",
+      profil: "Profil",
+    },
+    studio: {
+      heroTitle: "Studio Kreator Malesan",
+      heroSubtitle: "Ide, naskah, video klip, dan subtitle animasi dalam satu alur kerja cerdas.",
+      allModules: "Semua Modul Studio",
+      categoryIdeation: "Eksplorasi Ide",
+      categoryScripting: "Penulisan Naskah",
+      categoryRepurpose: "Daur Ulang Konten",
+      categoryVideo: "Produksi Video",
+      categorySkills: "Skill Khusus",
+      modules: {
+        ide: {
+          label: "Ide Hari Ini",
+          tagline: "3 ide konten siap posting lengkap",
+        },
+        idea: {
+          label: "Idea Engine",
+          tagline: "Eksplorasi ide liar & sudut pandang unik",
+        },
+        hook: {
+          label: "Hook Lab",
+          tagline: "Pembuka video anti-skip 3 detik pertama",
+        },
+        script: {
+          label: "Script Builder",
+          tagline: "Naskah video lengkap siap baca",
+        },
+        repurpose: {
+          label: "Repurpose",
+          tagline: "Ubah konten panjang jadi klip padat",
+        },
+        clip: {
+          label: "Clip Engine",
+          tagline: "Ekstrak klip penting dari video panjang",
+        },
+        thread: {
+          label: "Thread Engine",
+          tagline: "Utas X / Threads yang memikat",
+        },
+        video: {
+          label: "Video Subtitle Auto-CC",
+          tagline: "Subtitle otomatis sinkron per kata & BGM",
+        },
+        affiliate: {
+          label: "Affiliate Engine",
+          tagline: "Naskah video racun belanja berkonversi",
+        },
+        carousel: {
+          label: "Carousel Generator",
+          tagline: "Slide Instagram & TikTok otomatis",
+        },
+        lancar_bahasa: {
+          label: "Lancar Inggris",
+          tagline: "Speaking AI & roleplay native",
+          badge: "AI Master",
+        },
+        auto_clip: {
+          label: "Auto Clip 1080p",
+          tagline: "Pemotong YouTube Full HD native",
+        },
+      },
+    },
+    actions: {
+      generate: "Buat Sekarang",
+      generating: "Merancang ide...",
+      copy: "Salin",
+      copied: "Tersalin!",
+      save: "Simpan ke Draf",
+      saved: "Tersimpan",
+      export: "Export Video",
+      exporting: "Memproses Video...",
+      close: "Tutup",
+      cancel: "Batal",
+      retry: "Coba Lagi",
+      listen: "Dengar",
+      stop: "Stop",
+      download: "Download",
+      backToStudio: "Balik ke Studio",
+    },
+  },
+  en: {
+    header: {
+      searchPlaceholder: "Search tools & commands...",
+      downloadApp: "Download App",
+      appShort: "App",
+      androidNative: "Android Native",
+      desktopStudio: "Desktop Studio",
+      updateStudio: "Update Studio",
+      updateApp: "Update App",
+      tutorial: "Tutorial",
+      refresh: "Refresh",
+      admin: "Admin",
+      credits: "credits",
+      profile: "Profile",
+      switchLang: "Ganti bahasa ke Bahasa Indonesia",
+    },
+    tabs: {
+      studio: "Studio",
+      vibe: "Vibe Code",
+      pipeline: "Pipeline",
+      profil: "Profile",
+    },
+    studio: {
+      heroTitle: "Malesan Creator Studio",
+      heroSubtitle: "Viral ideas, retention-driven scripts, auto-clips, and animated subtitles in one flow.",
+      allModules: "All Studio Modules",
+      categoryIdeation: "Ideation & Angles",
+      categoryScripting: "Scripting & Hooks",
+      categoryRepurpose: "Omnichannel Repurpose",
+      categoryVideo: "Video Production",
+      categorySkills: "Specialized Skills",
+      modules: {
+        ide: {
+          label: "Today's Viral Radar",
+          tagline: "3 production-ready viral content ideas",
+        },
+        idea: {
+          label: "Idea Engine",
+          tagline: "Explore contrarian angles & high-dopamine hooks",
+        },
+        hook: {
+          label: "Hook Lab",
+          tagline: "Irresistible 3-second anti-skip video openers",
+        },
+        script: {
+          label: "Viral Script Engine",
+          tagline: "Full retention-engineered video scripts",
+        },
+        repurpose: {
+          label: "Omnichannel Repurpose",
+          tagline: "Transform long-form text & videos into shorts",
+        },
+        clip: {
+          label: "Auto-Clip Engine",
+          tagline: "Extract viral highlights from long videos",
+        },
+        thread: {
+          label: "Thread & Post Engine",
+          tagline: "Captivating X & Threads viral hooks",
+        },
+        video: {
+          label: "Video Auto-CC & BGM",
+          tagline: "Word-level animated captions & studio music",
+        },
+        affiliate: {
+          label: "Affiliate & Sales Script",
+          tagline: "High-converting product review hooks",
+        },
+        carousel: {
+          label: "Carousel Studio",
+          tagline: "Visual multi-slide Instagram & TikTok carousels",
+        },
+        lancar_bahasa: {
+          label: "Fluent English AI",
+          tagline: "Speaking partner & native creator roleplay",
+          badge: "AI Master",
+        },
+        auto_clip: {
+          label: "Auto Clip 1080p",
+          tagline: "Native Full HD YouTube clipper",
+        },
+      },
+    },
+    actions: {
+      generate: "Generate Now",
+      generating: "Crafting ideas...",
+      copy: "Copy",
+      copied: "Copied!",
+      save: "Save to Draft",
+      saved: "Saved",
+      export: "Export Video",
+      exporting: "Rendering Video...",
+      close: "Close",
+      cancel: "Cancel",
+      retry: "Retry",
+      listen: "Play Preview",
+      stop: "Stop",
+      download: "Download",
+      backToStudio: "Back to Studio",
+    },
+  },
+};

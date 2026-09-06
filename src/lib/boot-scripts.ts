@@ -39,6 +39,14 @@ export const TEXT_INIT_SCRIPT = `
 }catch(e){}})();
 `;
 
+/** Prevents language flash on first frame */
+export const LANG_INIT_SCRIPT = `
+(function(){try{
+  var l = localStorage.getItem("malesan-lang");
+  if (l && (l === "en" || l === "id")) document.documentElement.lang = l;
+}catch(e){}})();
+`;
+
 /**
  * High-End Multi-Profile Haptic Feedback Script.
  * Runs instantly at boot for zero-latency tactile feedback across all devices.
