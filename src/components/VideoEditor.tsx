@@ -200,14 +200,15 @@ export function VideoEditor({
   const [bgmVolume, setBgmVolume] = useState<number>(0.15);
   const [customBgmFile, setCustomBgmFile] = useState<File | null>(null);
   const [auditioningPreset, setAuditioningPreset] = useState<string | null>(null);
-  const currentPlayingPreset = activeDrawer === "audio" ? auditioningPreset : null;
+  const currentPlayingPreset = (activeDrawer === "audio" || editorTab === "audio") ? auditioningPreset : null;
 
-  // Stop BGM audition audio when switching away from audio drawer
+  // Stop BGM audition audio when switching away from audio drawer or tab
   useEffect(() => {
-    if (activeDrawer !== "audio") {
+    if (activeDrawer !== "audio" && editorTab !== "audio") {
       stopBgmAudition();
     }
-  }, [activeDrawer]);
+  }, [activeDrawer, editorTab]);
+
 
   // Advanced Framing, Keyframe & Project History States
   const [manualKeyframes, setManualKeyframes] = useState<ManualKeyframe[]>([]);
@@ -1186,7 +1187,7 @@ export function VideoEditor({
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">100% Aman Medsos</span>
                       </div>
                       <p className="text-[11px] text-muted">
-                        Musik instrumen yang di-generate langsung di browser. Bebas copyright strike di TikTok, Reels, dan Shorts.
+                        Koleksi musik rekaman studio bebas royalti. 100% aman monetisasi & bebas copyright strike di TikTok, Reels, Shorts, dan YouTube.
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {BGM_PRESETS.map((preset) => (
@@ -1203,20 +1204,26 @@ export function VideoEditor({
                                 setAuditioningPreset(null);
                               }
                             }}
-                            className={`min-h-[3.5rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
+                            className={`min-h-[3.75rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
                               bgmTrack === preset.id
                                 ? "border-ember bg-ember/20 text-white shadow-xs"
                                 : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
                             }`}
                           >
                             <div className="flex-1 min-w-0 pr-2">
-                              <div className="flex items-center gap-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
                                   {preset.label}
                                 </span>
-                                <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase">{preset.mood}</span>
+                                <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase shrink-0">{preset.mood}</span>
                               </div>
-                              <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
+                              <span className="text-[9px] text-muted line-clamp-1">
+                                {preset.trackName && preset.artist ? (
+                                  <span className="font-medium text-mist/90">{preset.trackName} <span className="text-muted/60">•</span> {preset.artist}</span>
+                                ) : (
+                                  preset.desc
+                                )}
+                              </span>
                             </div>
 
                             {preset.id !== "none" && preset.id !== "custom" && (
@@ -1261,6 +1268,12 @@ export function VideoEditor({
                             )}
                           </div>
                         ))}
+                      </div>
+                      <div className="flex items-center justify-between text-[9px] text-mist/70 pt-1 px-0.5 border-t border-hairline/40">
+                        <span className="flex items-center gap-1">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-emerald-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                          <span>Lisensi Creative Commons (CC-BY). Bebas monetisasi konten tanpa klaim royalti.</span>
+                        </span>
                       </div>
 
                       {/* Custom File Upload if "custom" selected */}
@@ -1571,7 +1584,7 @@ export function VideoEditor({
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 font-bold border border-emerald-500/30">100% Aman Medsos</span>
                     </div>
                     <p className="text-[11px] text-muted">
-                      Musik instrumen yang di-generate langsung di browser. Bebas copyright strike di TikTok, Reels, dan Shorts.
+                      Koleksi musik rekaman studio bebas royalti. 100% aman monetisasi & bebas copyright strike di TikTok, Reels, Shorts, dan YouTube.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {BGM_PRESETS.map((preset) => (
@@ -1588,20 +1601,26 @@ export function VideoEditor({
                               setAuditioningPreset(null);
                             }
                           }}
-                          className={`min-h-[3.5rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
+                          className={`min-h-[3.75rem] rounded-xl border p-2.5 flex items-center justify-between text-left transition-all cursor-pointer select-none ${
                             bgmTrack === preset.id
                               ? "border-ember bg-ember/20 text-white shadow-xs"
                               : "border-hairline bg-black/40 text-muted hover:text-ink hover:border-white/20"
                           }`}
                         >
                           <div className="flex-1 min-w-0 pr-2">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className={`text-[11px] font-bold truncate ${bgmTrack === preset.id ? "text-ember" : "text-ink"}`}>
                                 {preset.label}
                               </span>
-                              <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase">{preset.mood}</span>
+                              <span className="text-[8px] font-mono px-1 py-0.5 rounded bg-white/10 text-mist uppercase shrink-0">{preset.mood}</span>
                             </div>
-                            <span className="text-[9px] text-muted line-clamp-1">{preset.desc}</span>
+                            <span className="text-[9px] text-muted line-clamp-1">
+                              {preset.trackName && preset.artist ? (
+                                <span className="font-medium text-mist/90">{preset.trackName} <span className="text-muted/60">•</span> {preset.artist}</span>
+                              ) : (
+                                preset.desc
+                              )}
+                            </span>
                           </div>
 
                           {preset.id !== "none" && preset.id !== "custom" && (
@@ -1646,6 +1665,12 @@ export function VideoEditor({
                           )}
                         </div>
                       ))}
+                    </div>
+                    <div className="flex items-center justify-between text-[9px] text-mist/70 pt-1 px-0.5 border-t border-hairline/40">
+                      <span className="flex items-center gap-1">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-emerald-400"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Lisensi Creative Commons (CC-BY). Bebas monetisasi konten tanpa klaim royalti.</span>
+                      </span>
                     </div>
 
                     {/* Custom File Upload if "custom" selected */}

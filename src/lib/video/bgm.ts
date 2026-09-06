@@ -11,6 +11,9 @@ export type BgmPreset = {
   label: string;
   desc: string;
   mood: string;
+  artist?: string;
+  trackName?: string;
+  license?: string;
 };
 
 export const BGM_PRESETS: readonly BgmPreset[] = [
@@ -23,26 +26,47 @@ export const BGM_PRESETS: readonly BgmPreset[] = [
   {
     id: "lofi",
     label: "Lofi Santai & Chill",
-    desc: "Akord piano elektrik hangat untuk obrolan santai",
+    desc: "Rhodes piano & beat hangat untuk santai & obrolan",
     mood: "Relaxing",
+    artist: "Sappheiros",
+    trackName: "Perspective",
+    license: "CC-BY 3.0",
   },
   {
     id: "inspiratif",
     label: "Inspiratif & Cerita",
-    desc: "Melodi akustik lembut untuk konten motivasi & edukasi",
+    desc: "Melodi piano menyentuh untuk motivasi & storytelling",
     mood: "Uplifting",
+    artist: "Kevin MacLeod",
+    trackName: "Dreams Become Real",
+    license: "CC-BY 3.0",
   },
   {
     id: "upbeat",
     label: "Upbeat TikTok / Reels",
-    desc: "Ritme ceria & energetik untuk konten tips cepat",
+    desc: "Ritme ceria & energik untuk tips cepat, vlog & produk",
     mood: "Energetic",
+    artist: "Kevin MacLeod",
+    trackName: "Carefree",
+    license: "CC-BY 3.0",
   },
   {
     id: "suspense",
     label: "Misteri & Penasaran",
-    desc: "Drone sinematik tegang untuk hook podcast & storytelling",
+    desc: "Drone sinematik tegang untuk hook, misteri & fakta",
     mood: "Dramatic",
+    artist: "Kevin MacLeod",
+    trackName: "Hitman",
+    license: "CC-BY 3.0",
+  },
+  {
+    id: "komedi",
+    label: "Lucu & Komedi",
+    desc: "Melodi jenaka viral untuk konten prank, santai & meme",
+    mood: "Playful",
+    artist: "Kevin MacLeod",
+    trackName: "Monkeys Spinning Monkeys",
+    license: "CC-BY 3.0",
   },
   {
     id: "custom",
@@ -53,13 +77,52 @@ export const BGM_PRESETS: readonly BgmPreset[] = [
 ];
 
 /**
- * Generate a procedural royalty-free WAV Blob for the given BGM preset.
+ * In-memory cache of fetched BGM audio Blobs to prevent re-fetching during session.
+ */
+const bgmBlobCache = new Map<string, Blob>();
+
+/**
+ * Load high-fidelity royalty-free BGM MP3 blob with procedural synth fallback.
  */
 export async function createProceduralBgmBlob(
   presetId: string,
   durationSeconds: number = 30,
 ): Promise<Blob | null> {
   if (presetId === "none" || presetId === "custom") return null;
+
+  if (bgmBlobCache.has(presetId)) {
+    return bgmBlobCache.get(presetId)!;
+  }
+
+  // 1. Try to load studio-grade pre-rendered MP3 from /audio/bgm/
+  if (typeof window !== "undefined" && typeof window.fetch === "function") {
+    try {
+      const res = await fetch(`/audio/bgm/${presetId}.mp3`);
+      if (res.ok) {
+        const blob = await res.blob();
+        if (blob && blob.size > 1000) {
+          bgmBlobCache.set(presetId, blob);
+          return blob;
+        }
+      }
+    } catch (err) {
+      console.warn(`[BGM] Could not fetch /audio/bgm/${presetId}.mp3, using procedural fallback:`, err);
+    }
+  }
+
+  // 2. Procedural Web Audio fallback if network/asset is unreachable
+  return createProceduralSynthFallback(presetId, durationSeconds);
+}
+
+/**
+ * Procedural Web Audio oscillator fallback (used only if static MP3 assets are unreachable).
+ */
+export async function createProceduralSynthFallback(
+  presetId: string,
+  durationSeconds: number = 30,
+): Promise<Blob | null> {
+  if (presetId === "none" || presetId === "custom") return null;
+
 
   const OfflineCtx =
     window.OfflineAudioContext ??
@@ -299,6 +362,13 @@ export async function getProceduralBgmUrl(
   if (presetId === "custom" && customFile) {
     return URL.createObjectURL(customFile);
   }
+
+  // Built-in presets are served directly as static MP3 files for instant playback
+  const preset = BGM_PRESETS.find((p) => p.id === presetId);
+  if (preset && preset.id !== "custom" && preset.id !== "none") {
+    return `/audio/bgm/${preset.id}.mp3`;
+  }
+
   const cacheKey = `${presetId}_${durationSeconds}`;
   if (bgmUrlCache.has(cacheKey)) {
     return bgmUrlCache.get(cacheKey)!;
@@ -323,7 +393,6 @@ export async function playBgmAudition(
     return false;
   }
 
-  // Generate an 8-second quick preview for audition
   const audioUrl = await getProceduralBgmUrl(presetId, 12, customFile);
   if (!audioUrl) {
     onEnded?.();
@@ -338,6 +407,12 @@ export async function playBgmAudition(
     currentAuditionPresetId = presetId;
 
     audio.onended = () => {
+      stopBgmAudition();
+      onEnded?.();
+    };
+
+    audio.onerror = (e) => {
+      console.warn("BGM Audition audio playback error:", e);
       stopBgmAudition();
       onEnded?.();
     };

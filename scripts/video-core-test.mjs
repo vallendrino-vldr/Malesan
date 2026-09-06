@@ -144,13 +144,15 @@ assert.equal(tail[0].startTime, 580, "padding must not run past the end of the s
 // Studio enhancements verification: BGM presets, natural filters, and tracking dampening
 const bgmModule = await import(pathToFileURL(resolve("src/lib/video/bgm.ts")));
 assert.ok(Array.isArray(bgmModule.BGM_PRESETS), "BGM_PRESETS must be an array");
-assert.equal(bgmModule.BGM_PRESETS.length, 6, "Must provide 6 distinct BGM options");
+assert.equal(bgmModule.BGM_PRESETS.length, 7, "Must provide 7 distinct BGM options");
 assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "none"));
 assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "lofi"));
 assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "inspiratif"));
 assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "upbeat"));
 assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "suspense"));
+assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "komedi"));
 assert.ok(bgmModule.BGM_PRESETS.some((p) => p.id === "custom"));
+
 
 const faceTrackSource = readFileSync(resolve("src/lib/video/face-track.ts"), "utf8");
 assert.match(faceTrackSource, /DEADBAND_X\s*=\s*0\.09/, "Deadband X must be damped against minor twitching");
