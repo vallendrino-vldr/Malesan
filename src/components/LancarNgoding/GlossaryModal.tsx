@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import React from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface GlossaryItem {
   term: string;
@@ -9,7 +10,7 @@ interface GlossaryItem {
   example: string;
 }
 
-const GLOSSARY_ITEMS: GlossaryItem[] = [
+const GLOSSARY_ITEMS_ID: GlossaryItem[] = [
   {
     term: "Variabel (let / const)",
     pronunciation: "va-ri-a-bel",
@@ -66,12 +67,73 @@ const GLOSSARY_ITEMS: GlossaryItem[] = [
   },
 ];
 
+const GLOSSARY_ITEMS_EN: GlossaryItem[] = [
+  {
+    term: "Variable (let / const)",
+    pronunciation: "vair-ee-uh-buhl",
+    analogy: "A labeled container or drawer for storing data (numbers, text, or status) so it's easy to retrieve later.",
+    example: "let balance = 50; // drawer named balance stores 50",
+  },
+  {
+    term: "String (Text)",
+    pronunciation: "string",
+    analogy: "A sequence of letters/words always enclosed within quotation marks \"...\".",
+    example: "let name = \"Alex\"; // text must be enclosed in quotes",
+  },
+  {
+    term: "Boolean (True / False)",
+    pronunciation: "boo-lee-uhn",
+    analogy: "A light switch — only two possible states: on (true) or off (false).",
+    example: "let isLoggedIn = true; // only true or false",
+  },
+  {
+    term: "If / Else (Conditions)",
+    pronunciation: "if els",
+    analogy: "A ticket inspector: 'If you hold a ticket, enter. Otherwise, purchase one first.'",
+    example: "if (balance >= 10) { orderCoffee(); }",
+  },
+  {
+    term: "Array (Ordered List)",
+    pronunciation: "uh-ray",
+    analogy: "A shopping cart holding multiple items in sequential order, starting from index 0.",
+    example: "let cart = [\"Coffee\", \"Bagel\", \"Water\"];",
+  },
+  {
+    term: "Function (Recipe / Routine)",
+    pronunciation: "fuhngk-shn",
+    analogy: "A recipe or appliance button: pressed once, it runs a sequence of automated steps.",
+    example: "function makeCoffee() { boilWater(); pourCoffee(); }",
+  },
+  {
+    term: "DOM (Document Object Model)",
+    pronunciation: "dee-oh-em",
+    analogy: "JavaScript's bridge to the browser UI: how code modifies text, styles, or elements on a page.",
+    example: "document.querySelector(\"h1\").innerText = \"Hello World\";",
+  },
+  {
+    term: "API (Application Programming Interface)",
+    pronunciation: "ay-pee-eye",
+    analogy: "A restaurant server: takes your table's order, brings it to the kitchen (server), and returns with your food.",
+    example: "fetch(\"https://api.weather.com/forecast\")",
+  },
+  {
+    term: "Bug & Syntax Error",
+    pronunciation: "buhg / sin-taks",
+    analogy: "A typo or grammatical error that confuses the computer and prevents execution.",
+    example: "Missing closing bracket ')' or misspelling a variable identifier.",
+  },
+];
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
 export default function GlossaryModal({ isOpen, onClose }: Props) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const items = isEn ? GLOSSARY_ITEMS_EN : GLOSSARY_ITEMS_ID;
+
   if (!isOpen) return null;
 
   return (
@@ -88,15 +150,19 @@ export default function GlossaryModal({ isOpen, onClose }: Props) {
               </svg>
             </div>
             <div>
-              <h3 className="font-display text-sm font-bold text-ink">Kamus Istilah Ngoding</h3>
-              <p className="text-micro text-muted">Bahasa manusia untuk istilah komputer</p>
+              <h3 className="font-display text-sm font-bold text-ink">
+                {isEn ? "Coding Glossary" : "Kamus Istilah Ngoding"}
+              </h3>
+              <p className="text-micro text-muted">
+                {isEn ? "Human-friendly analogies for programming terms" : "Bahasa manusia untuk istilah komputer"}
+              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup kamus"
-            className="flex size-8 items-center justify-center rounded-lg border border-hairline bg-surface-raised/60 text-muted hover:text-ink hover:bg-surface-raised transition-colors"
+            aria-label={isEn ? "Close glossary" : "Tutup kamus"}
+            className="flex size-8 items-center justify-center rounded-lg border border-hairline bg-surface-raised/60 text-muted hover:text-ink hover:bg-surface-raised transition-colors cursor-pointer"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
               <path d="M18 6 6 18M6 6l12 12" />
@@ -106,7 +172,7 @@ export default function GlossaryModal({ isOpen, onClose }: Props) {
 
         {/* Scrollable Terms List */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 custom-scrollbar">
-          {GLOSSARY_ITEMS.map((item, idx) => (
+          {items.map((item, idx) => (
             <div
               key={idx}
               className="rounded-xl border border-hairline/60 bg-surface-raised/40 p-3.5 hover:border-ember/30 transition-colors"
@@ -117,9 +183,14 @@ export default function GlossaryModal({ isOpen, onClose }: Props) {
                   {item.pronunciation}
                 </span>
               </div>
-              <p className="text-xs text-ink/90 leading-relaxed mb-2">
-                💡 <span className="text-muted">{item.analogy}</span>
-              </p>
+              <div className="flex items-start gap-1.5 text-xs text-ink/90 leading-relaxed mb-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0 mt-0.5">
+                  <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+                  <path d="M9 18h6" />
+                  <path d="M10 22h4" />
+                </svg>
+                <span className="text-muted">{item.analogy}</span>
+              </div>
               <div className="rounded-lg bg-obsidian/90 border border-hairline/40 p-2 font-mono text-[11px] text-ember-lo overflow-x-auto">
                 <code>{item.example}</code>
               </div>
@@ -132,9 +203,9 @@ export default function GlossaryModal({ isOpen, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="h-8 px-4 rounded-lg bg-ember text-obsidian text-xs font-bold hover:bg-ember-lo transition-colors"
+            className="h-8 px-4 rounded-lg bg-ember text-obsidian text-xs font-bold hover:bg-ember-lo transition-colors cursor-pointer"
           >
-            Paham, Balik Belajar
+            {isEn ? "Got it, back to learning" : "Paham, Balik Belajar"}
           </button>
         </div>
       </div>

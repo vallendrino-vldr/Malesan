@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const root = process.cwd();
@@ -121,8 +121,12 @@ assert.doesNotMatch(
   /from\(["']generations["']\)[\s\S]{0,300}redirect\(["']\/app\/onboarding["']\)/,
   "the first generation must stay visible instead of forcing onboarding",
 );
-assert.match(appPage, /Profil konten lo/);
-assert.match(appPage, /profile\.onboarding_completed\s*\?\s*["']\/app\/profile["']\s*:\s*["']\/app\/onboarding["']/);
+const profileTab = existsSync(resolve(root, "src/components/ProfileTabClient.tsx"))
+  ? read("src/components/ProfileTabClient.tsx")
+  : appPage;
+const translations = read("src/lib/i18n/translations.ts");
+assert.match(translations, /Profil konten lo/);
+assert.match(profileTab, /profile\.onboarding_completed\s*\?\s*["']\/app\/profile["']\s*:\s*["']\/app\/onboarding["']/);
 
 const ideaCard = read("src/components/IdeaCard.tsx");
 assert.match(ideaCard, /navigator\.clipboard\.writeText/);

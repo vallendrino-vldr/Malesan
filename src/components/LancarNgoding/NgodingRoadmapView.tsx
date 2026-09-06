@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { LessonItem } from "./StepLearnView";
 import { NgodingProgress } from "@/lib/ngoding-progress";
-import { TRACKS } from "./NgodingHUD";
+import { getTracks } from "./NgodingHUD";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Props {
   curriculum: LessonItem[];
@@ -18,9 +19,11 @@ export default function NgodingRoadmapView({
   onSelectLevel,
   onOpenGlossary,
 }: Props) {
+  const { language, dict } = useLanguage();
+  const tracks = getTracks(language);
   const [activeTrackId, setActiveTrackId] = useState<string>("dasar");
 
-  const currentTrack = TRACKS.find((t) => t.id === activeTrackId) || TRACKS[0];
+  const currentTrack = tracks.find((t) => t.id === activeTrackId) || tracks[0];
   const completedCount = progress.completedLevelIds.length;
   const totalLevels = curriculum.length;
   const progressPercent = Math.round((completedCount / totalLevels) * 100);
@@ -57,14 +60,14 @@ export default function NgodingRoadmapView({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-orange-400">
                 <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" />
               </svg>
-              <span>{progress.streak} Hari Streak</span>
+              <span>{progress.streak} {dict.vibe.streakSuffix}</span>
             </div>
 
             <div className="inline-flex h-7.5 items-center gap-1.5 rounded-xl bg-ember/15 border border-ember/30 px-2.5 text-xs font-bold text-ember">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <span>{progress.xp} Total XP</span>
+              <span>{progress.xp} {dict.vibe.totalXp}</span>
             </div>
           </div>
 
@@ -78,15 +81,15 @@ export default function NgodingRoadmapView({
               <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z" />
               <path d="M6 6h10" />
             </svg>
-            <span>Kamus Istilah</span>
+            <span>{dict.vibe.glossaryBtn}</span>
           </button>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1 pt-0.5">
           <div className="flex items-center justify-between text-micro font-mono text-muted">
-            <span>Petualangan Belajar</span>
-            <span>{completedCount}/{totalLevels} Selesai ({progressPercent}%)</span>
+            <span>{dict.vibe.questProgress}</span>
+            <span>{completedCount}/{totalLevels} {dict.vibe.completed} ({progressPercent}%)</span>
           </div>
           <div className="w-full h-2 rounded-full bg-surface-raised border border-hairline/60 overflow-hidden">
             <div
@@ -99,7 +102,7 @@ export default function NgodingRoadmapView({
 
       {/* Track Selector Tabs */}
       <div className="grid grid-cols-3 h-9 items-center rounded-xl border border-hairline bg-surface/70 p-1 w-full gap-1 shadow-xs">
-        {TRACKS.map((t) => {
+        {tracks.map((t) => {
           const isActive = t.id === activeTrackId;
           return (
             <button
@@ -123,7 +126,7 @@ export default function NgodingRoadmapView({
         <div className="surface-card rounded-2xl border-2 border-ember bg-gradient-to-br from-ember/15 via-ember/5 to-transparent p-4 sm:p-5 space-y-3 shadow-lg shadow-ember/10">
           <div className="flex items-center justify-between">
             <span className="inline-flex h-5.5 items-center rounded-md bg-ember/20 px-2 font-mono text-[10px] font-bold text-ember border border-ember/40">
-              MISI UTAMA · LEVEL {activeTrackQuest.level}
+              {dict.vibe.mainMission} {activeTrackQuest.level}
             </span>
             <span className="text-micro font-mono text-muted bg-surface-raised/80 px-2 py-0.5 rounded border border-hairline/60">
               +{activeTrackQuest.xpReward} XP
@@ -143,14 +146,22 @@ export default function NgodingRoadmapView({
                 onClick={() => onSelectLevel(activeTrackQuest.level)}
                 className="w-full flex h-10 items-center justify-center gap-2 rounded-xl bg-ember px-4 font-display text-xs sm:text-sm font-bold text-obsidian hover:bg-ember-lo active:scale-[0.99] transition-all shadow-md shadow-ember/25"
               >
-                <span>{isActiveQuestDone ? "Ulangi Misi Ini 🔄" : "Mulai Misi Level " + activeTrackQuest.level + " 🚀"}</span>
+                <span>
+                  {isActiveQuestDone
+                    ? dict.vibe.replayMission
+                    : `${dict.vibe.startMission} ${activeTrackQuest.level}`}
+                </span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </button>
             ) : (
-              <div className="flex h-9 items-center justify-center rounded-xl bg-surface-raised text-xs text-muted font-medium border border-hairline">
-                🔒 Selesaikan level sebelumnya untuk membuka
+              <div className="flex h-9 items-center justify-center gap-1.5 rounded-xl bg-surface-raised text-xs text-muted font-medium border border-hairline">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-muted/80">
+                  <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+                <span>{dict.vibe.levelLocked}</span>
               </div>
             )}
           </div>
@@ -160,8 +171,8 @@ export default function NgodingRoadmapView({
       {/* Compact Track Level List (Zero-Clutter) */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between px-1 text-micro font-mono text-muted uppercase">
-          <span>Daftar Level ({currentTrack.name})</span>
-          <span>{trackLessons.filter((l) => isLevelDone(l.id)).length}/{trackLessons.length} Selesai</span>
+          <span>{dict.vibe.levelList} ({currentTrack.name})</span>
+          <span>{trackLessons.filter((l) => isLevelDone(l.id)).length}/{trackLessons.length} {dict.vibe.completed}</span>
         </div>
 
         <div className="space-y-1.5">
@@ -202,7 +213,19 @@ export default function NgodingRoadmapView({
                       <span className="font-display text-xs font-bold truncate text-ink">
                         {lesson.title}
                       </span>
-                      {completed && <span className="text-[10px] text-amber-400 shrink-0">⭐⭐⭐</span>}
+                      {completed && (
+                        <span className="flex items-center gap-0.5 text-amber-400 shrink-0">
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="size-2.5">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
                     <span className="text-[10px] font-mono text-muted truncate block">
                       {lesson.topic}
@@ -222,11 +245,15 @@ export default function NgodingRoadmapView({
                           : "bg-ember text-obsidian hover:bg-ember-lo"
                       }`}
                     >
-                      {completed ? "Ulangi" : "Mulai"}
+                      {completed ? dict.vibe.replay : dict.vibe.start}
                     </button>
                   ) : (
-                    <span className="text-micro font-mono text-muted/40 px-2 py-0.5">
-                      🔒 Terkunci
+                    <span className="inline-flex items-center gap-1 text-micro font-mono text-muted/50 px-2 py-0.5">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-muted/50">
+                        <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      <span>{dict.vibe.locked}</span>
                     </span>
                   )}
                 </div>

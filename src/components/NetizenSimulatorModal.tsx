@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
@@ -78,20 +79,36 @@ const ARCHETYPE_META: Record<
   },
 };
 
-const LOADING_STEPS = [
+const LOADING_STEPS_ID = [
   "Membaca naskah & hook utama...",
   "Mensimulasikan respon 6 karakter netizen...",
   "Menghitung proyeksi viralitas & daya debat...",
   "Merumuskan strategi pin komen terbaik...",
 ];
 
-const PERSONA_TAGS = [
+const LOADING_STEPS_EN = [
+  "Reading script & primary hook...",
+  "Simulating 6 netizen archetype responses...",
+  "Calculating virality projection & debate drive...",
+  "Formulating optimal pinned comment strategy...",
+];
+
+const PERSONA_TAGS_ID = [
   { label: "Skeptis / Debat", name: "@bayu_analis99" },
   { label: "FOMO / Emosi", name: "@siska_checkout_terus" },
   { label: "Top Komen Receh", name: "@rian_saldo_tipis" },
   { label: "Detail Police", name: "@dimas_pakar_dadakan" },
   { label: "Curhat Relate", name: "@nadiacurhat_id" },
   { label: "Pemburu Solusi", name: "@farhan_tips_id" },
+];
+
+const PERSONA_TAGS_EN = [
+  { label: "Skeptical / Debate", name: "@bayu_analyst99" },
+  { label: "FOMO / Emotional", name: "@siska_checkout_daily" },
+  { label: "Meme Comment", name: "@rian_chill_mode" },
+  { label: "Detail Police", name: "@dimas_fact_checker" },
+  { label: "Relatable Vent", name: "@nadia_relatable" },
+  { label: "Solution Hunter", name: "@farhan_tips_hub" },
 ];
 
 const netizenCache = new Map<
@@ -112,6 +129,12 @@ export function NetizenSimulatorModal({
   scriptContent,
   platform = "TikTok / Reels",
 }: NetizenSimulatorModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
+  const loadingSteps = isEn ? LOADING_STEPS_EN : LOADING_STEPS_ID;
+  const personaTags = isEn ? PERSONA_TAGS_EN : PERSONA_TAGS_ID;
+
   const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const cacheKey = `${title}_${scriptContent || ""}_${platform}`;
@@ -141,10 +164,10 @@ export function NetizenSimulatorModal({
   useEffect(() => {
     if (!isLoading) return;
     const timer = setInterval(() => {
-      setLoadingStepIdx((prev) => (prev + 1) % LOADING_STEPS.length);
+      setLoadingStepIdx((prev) => (prev + 1) % loadingSteps.length);
     }, 1100);
     return () => clearInterval(timer);
-  }, [isLoading]);
+  }, [isLoading, loadingSteps.length]);
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -177,15 +200,17 @@ export function NetizenSimulatorModal({
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Gagal memuat simulasi netizen.");
+        throw new Error(data.error || (isEn ? "Failed to load netizen simulation." : "Gagal memuat simulasi netizen."));
       }
 
-      const pViral = data.potensiViral || "8.8 / 10 (Tinggi)";
-      const dDebat = data.dayaDebat || "8.2 / 10 (Aktif)";
-      const rKonv = data.rasioKonversi || "Tinggi (Relate)";
+      const pViral = data.potensiViral || (isEn ? "8.8 / 10 (High)" : "8.8 / 10 (Tinggi)");
+      const dDebat = data.dayaDebat || (isEn ? "8.2 / 10 (Active)" : "8.2 / 10 (Aktif)");
+      const rKonv = data.rasioKonversi || (isEn ? "High (Relatable)" : "Tinggi (Relate)");
       const sPinned =
         data.suggestedPinnedComment ||
-        `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`;
+        (isEn
+          ? `From the topic "${title || "this video"}", which one resonated the most with you? Drop your thoughts in the comments! 👇`
+          : `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`);
 
       setPotensiViral(pViral);
       setDayaDebat(dDebat);
@@ -237,11 +262,11 @@ export function NetizenSimulatorModal({
       });
     } catch (err) {
       console.error("Netizen simulator fetch error:", err);
-      setError(err instanceof Error ? err.message : "Gagal memuat respon netizen.");
+      setError(err instanceof Error ? err.message : (isEn ? "Failed to load netizen response." : "Gagal memuat respon netizen."));
     } finally {
       setIsLoading(false);
     }
-  }, [title, scriptContent, platform, cacheKey]);
+  }, [title, scriptContent, platform, cacheKey, isEn]);
 
   // Load automatically on modal open (instant 0ms if cached)
   useEffect(() => {
@@ -263,14 +288,16 @@ export function NetizenSimulatorModal({
         });
         const data = await res.json();
         if (!isCurrent) return;
-        if (!res.ok) throw new Error(data.error || "Gagal memuat simulasi netizen.");
+        if (!res.ok) throw new Error(data.error || (isEn ? "Failed to load netizen simulation." : "Gagal memuat simulasi netizen."));
 
-        const pViral = data.potensiViral || "8.8 / 10 (Tinggi)";
-        const dDebat = data.dayaDebat || "8.2 / 10 (Aktif)";
-        const rKonv = data.rasioKonversi || "Tinggi (Relate)";
+        const pViral = data.potensiViral || (isEn ? "8.8 / 10 (High)" : "8.8 / 10 (Tinggi)");
+        const dDebat = data.dayaDebat || (isEn ? "8.2 / 10 (Active)" : "8.2 / 10 (Aktif)");
+        const rKonv = data.rasioKonversi || (isEn ? "High (Relatable)" : "Tinggi (Relate)");
         const sPinned =
           data.suggestedPinnedComment ||
-          `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`;
+          (isEn
+            ? `From the topic "${title || "this video"}", which one resonated the most with you? Drop your thoughts in the comments! 👇`
+            : `Menurut kalian dari pembahasan "${title || "video ini"}", mana yang paling relate? Drop di kolom komentar ya! 👇`);
 
         setPotensiViral(pViral);
         setDayaDebat(dDebat);
@@ -333,7 +360,7 @@ export function NetizenSimulatorModal({
     return () => {
       isCurrent = false;
     };
-  }, [isOpen, comments.length, title, scriptContent, platform, cacheKey]);
+  }, [isOpen, comments.length, title, scriptContent, platform, cacheKey, isEn]);
 
   const handleCopyPinned = useCallback(() => {
     if (!suggestedPinnedComment) return;
@@ -383,7 +410,7 @@ export function NetizenSimulatorModal({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 id="netizen-simulator-title" className="text-sm font-bold text-ink">
-                  Simulasi Respon Netizen
+                  {isEn ? "Netizen Response Simulator" : "Simulasi Respon Netizen"}
                 </h3>
                 <span className="rounded-full bg-ember/15 border border-ember/30 px-2 py-0.5 text-[10px] font-semibold text-ember flex items-center gap-1.5">
                   <span className="size-1.5 rounded-full bg-ember animate-pulse" />
@@ -391,7 +418,7 @@ export function NetizenSimulatorModal({
                 </span>
               </div>
               <p className="text-[11px] text-muted truncate max-w-[240px] sm:max-w-sm">
-                Naskah: {title || "Naskah Siap"} ({platform})
+                {isEn ? `Script: ${title || "Ready Script"} (${platform})` : `Naskah: ${title || "Naskah Siap"} (${platform})`}
               </p>
             </div>
           </div>
@@ -399,7 +426,7 @@ export function NetizenSimulatorModal({
           <button
             onClick={onClose}
             className="flex size-7 items-center justify-center rounded-lg text-muted hover:bg-white/10 hover:text-ink transition-colors cursor-pointer shrink-0"
-            aria-label="Tutup Modal"
+            aria-label={isEn ? "Close Modal" : "Tutup Modal"}
           >
             <svg
               viewBox="0 0 24 24"
@@ -425,12 +452,12 @@ export function NetizenSimulatorModal({
                 <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
                 <polyline points="16 7 22 7 22 13" />
               </svg>
-              <span>Potensi Viral</span>
+              <span>{isEn ? "Viral Potential" : "Potensi Viral"}</span>
             </div>
             {isLoading && !potensiViral ? (
               <div className="h-3.5 w-16 bg-white/[0.08] rounded animate-shimmer-sweep mx-auto mt-1" />
             ) : (
-              <div className="font-bold text-emerald-400 truncate mt-0.5">{potensiViral || "8.8 / 10 (Tinggi)"}</div>
+              <div className="font-bold text-emerald-400 truncate mt-0.5">{potensiViral || (isEn ? "8.8 / 10 (High)" : "8.8 / 10 (Tinggi)")}</div>
             )}
           </div>
 
@@ -439,12 +466,12 @@ export function NetizenSimulatorModal({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-ember" aria-hidden="true">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <span>Daya Debat</span>
+              <span>{isEn ? "Debate Drive" : "Daya Debat"}</span>
             </div>
             {isLoading && !dayaDebat ? (
               <div className="h-3.5 w-16 bg-white/[0.08] rounded animate-shimmer-sweep mx-auto mt-1" />
             ) : (
-              <div className="font-bold text-ember truncate mt-0.5">{dayaDebat || "8.0 / 10 (Aktif)"}</div>
+              <div className="font-bold text-ember truncate mt-0.5">{dayaDebat || (isEn ? "8.0 / 10 (Active)" : "8.0 / 10 (Aktif)")}</div>
             )}
           </div>
 
@@ -455,12 +482,12 @@ export function NetizenSimulatorModal({
                 <circle cx="12" cy="12" r="6" />
                 <circle cx="12" cy="12" r="2" />
               </svg>
-              <span>Rasio Konversi</span>
+              <span>{isEn ? "Conversion Ratio" : "Rasio Konversi"}</span>
             </div>
             {isLoading && !rasioKonversi ? (
               <div className="h-3.5 w-20 bg-white/[0.08] rounded animate-shimmer-sweep mx-auto mt-1" />
             ) : (
-              <div className="font-bold text-sky-400 truncate mt-0.5">{rasioKonversi || "Tinggi (Relate)"}</div>
+              <div className="font-bold text-sky-400 truncate mt-0.5">{rasioKonversi || (isEn ? "High (Relatable)" : "Tinggi (Relate)")}</div>
             )}
           </div>
         </div>
@@ -486,17 +513,17 @@ export function NetizenSimulatorModal({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-bold text-ink transition-all duration-300">
-                      {LOADING_STEPS[loadingStepIdx]}
+                      {loadingSteps[loadingStepIdx]}
                     </div>
                     <p className="text-[10px] text-muted truncate">
-                      Menganalisis topik &ldquo;{title || "konten lo"}&rdquo; secara kontekstual
+                      {isEn ? `Contextually analyzing topic “${title || "your content"}”` : `Menganalisis topik “${title || "konten lo"}” secara kontekstual`}
                     </p>
                   </div>
                 </div>
 
                 {/* Kinetic Persona Badges */}
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {PERSONA_TAGS.map((p, idx) => (
+                  {personaTags.map((p, idx) => (
                     <div
                       key={p.name}
                       style={{ animationDelay: `${idx * 180}ms` }}
@@ -553,7 +580,7 @@ export function NetizenSimulatorModal({
                   <path d="M3 22v-6h6" />
                   <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
                 </svg>
-                <span>Coba Lagi</span>
+                <span>{isEn ? "Try Again" : "Coba Lagi"}</span>
               </button>
             </div>
           ) : (
@@ -609,8 +636,8 @@ export function NetizenSimulatorModal({
                         </svg>
                         <span>{displayLikes}</span>
                       </button>
-                      <span className="hover:text-ink cursor-pointer">Balas</span>
-                      <span className="hover:text-ink cursor-pointer">Lihat terjemahan</span>
+                      <span className="hover:text-ink cursor-pointer">{isEn ? "Reply" : "Balas"}</span>
+                      <span className="hover:text-ink cursor-pointer">{isEn ? "See translation" : "Lihat terjemahan"}</span>
                     </div>
                   </div>
                 </div>
@@ -627,14 +654,14 @@ export function NetizenSimulatorModal({
                 <line x1="12" y1="17" x2="12" y2="22" />
                 <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6a3 3 0 0 0-6 0v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
               </svg>
-              <span>Rekomendasi Pin Komen Kreator:</span>
+              <span>{isEn ? "Creator Recommended Pinned Comment:" : "Rekomendasi Pin Komen Kreator:"}</span>
             </span>
             <button
               onClick={handleCopyPinned}
               disabled={isLoading || !suggestedPinnedComment}
               className="text-[10px] font-semibold text-ink bg-white/10 hover:bg-white/15 px-2 py-1 rounded transition-colors cursor-pointer active:scale-95 disabled:opacity-50"
             >
-              {copiedPinned ? "✓ Disalin!" : "Salin Komen"}
+              {copiedPinned ? (isEn ? "✓ Copied!" : "✓ Disalin!") : (isEn ? "Copy Comment" : "Salin Komen")}
             </button>
           </div>
           {isLoading && !suggestedPinnedComment ? (
@@ -671,14 +698,14 @@ export function NetizenSimulatorModal({
               <path d="M3 22v-6h6" />
               <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
             </svg>
-            <span>{isLoading ? "Memproses..." : "Acak Respon Baru"}</span>
+            <span>{isLoading ? (isEn ? "Processing..." : "Memproses...") : (isEn ? "Shuffle New Responses" : "Acak Respon Baru")}</span>
           </button>
 
           <button
             onClick={onClose}
             className="h-8 rounded-xl bg-ember px-4 text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center"
           >
-            Tutup & Siap Posting
+            {isEn ? "Close & Ready to Post" : "Tutup & Siap Posting"}
           </button>
         </div>
       </div>

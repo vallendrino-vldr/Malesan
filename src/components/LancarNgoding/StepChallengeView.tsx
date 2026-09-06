@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { LessonItem } from "./StepLearnView";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Props {
   lesson: LessonItem;
@@ -18,6 +19,9 @@ export default function StepChallengeView({
   onNextLevel,
   onPrevStep,
 }: Props) {
+  const { language, dict } = useLanguage();
+  const isEn = language === "en";
+
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -46,14 +50,14 @@ export default function StepChallengeView({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div>
-            <span className="text-micro font-mono text-ember font-bold">LANGKAH 3: TANTANGAN KUIS</span>
+            <span className="text-micro font-mono text-ember font-bold">{dict.vibe.step3Tab}</span>
             <h3 className="font-display text-sm sm:text-base font-bold text-ink">
-              Kunci Pemahaman Lo
+              {dict.vibe.quizTitle}
             </h3>
           </div>
           {isCompleted && (
             <span className="inline-flex h-5 items-center rounded bg-emerald-500/15 px-2 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
-              ✓ Selesai
+              ✓ {dict.vibe.completed}
             </span>
           )}
         </div>
@@ -79,7 +83,7 @@ export default function StepChallengeView({
       {/* Options List */}
       <div className="space-y-2">
         <span className="text-micro font-mono text-muted uppercase tracking-wider block px-1">
-          Pilih Jawaban yang Tepat:
+          {dict.vibe.quizDesc}
         </span>
         <div className="grid grid-cols-1 gap-2">
           {lesson.options.map((opt, idx) => {
@@ -127,7 +131,7 @@ export default function StepChallengeView({
             onClick={onPrevStep}
             className="h-8.5 px-3 rounded-xl border border-hairline text-xs font-semibold text-muted hover:text-ink transition-colors"
           >
-            ← Balik ke Sandbox
+            {isEn ? "← Back to Sandbox" : "← Balik ke Sandbox"}
           </button>
 
           <button
@@ -136,7 +140,7 @@ export default function StepChallengeView({
             disabled={!selectedOption}
             className="flex h-9 items-center justify-center gap-2 rounded-xl bg-ember px-6 font-display text-xs font-bold text-obsidian transition-all hover:bg-ember-lo disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-ember/20"
           >
-            <span>Periksa Jawaban</span>
+            <span>{dict.vibe.checkAnswer}</span>
           </button>
         </div>
       ) : (
@@ -145,7 +149,11 @@ export default function StepChallengeView({
           {isCorrect ? (
             <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 space-y-2 animate-fadeIn">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
-                <span>🎉 Benar Banget! (+{lesson.xpReward} XP)</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <span>{dict.vibe.correctAlert} (+{lesson.xpReward} XP)</span>
               </div>
               <p className="text-xs sm:text-[13px] text-ink/90 leading-relaxed">
                 {lesson.explanation}
@@ -154,14 +162,28 @@ export default function StepChallengeView({
           ) : (
             <div className="rounded-xl border border-danger/40 bg-danger/10 p-4 space-y-2 animate-fadeIn">
               <div className="flex items-center gap-2 text-danger font-bold text-sm">
-                <span>❌ Belum Tepat! Jangan Nyerah.</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-4.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                <span>{dict.vibe.wrongAlert}</span>
               </div>
               <p className="text-xs sm:text-[13px] text-muted leading-relaxed">
-                Coba ingat lagi konsep di materi sebelumnya atau gunakan hint di bawah.
+                {isEn
+                  ? "Review concepts from earlier steps or review the hint below."
+                  : "Coba ingat lagi konsep di materi sebelumnya atau gunakan hint di bawah."}
               </p>
               {showHint && (
-                <div className="rounded-lg bg-obsidian p-2.5 text-xs text-ember-lo border border-hairline/60">
-                  💡 <strong>Hint:</strong> {lesson.hint}
+                <div className="rounded-lg bg-obsidian p-2.5 text-xs text-ember-lo border border-hairline/60 flex items-start gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-ember mt-0.5">
+                    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+                    <path d="M9 18h6" />
+                    <path d="M10 22h4" />
+                  </svg>
+                  <div>
+                    <strong>Hint:</strong> {lesson.hint}
+                  </div>
                 </div>
               )}
             </div>
@@ -176,14 +198,20 @@ export default function StepChallengeView({
                   onClick={() => setShowHint(!showHint)}
                   className="h-8.5 px-3 rounded-xl border border-hairline text-xs font-semibold text-muted hover:text-ink transition-colors"
                 >
-                  {showHint ? "Sembunyikan Hint" : "Lihat Hint 💡"}
+                  {showHint ? dict.vibe.hideHint : dict.vibe.showHint}
                 </button>
                 <button
                   type="button"
                   onClick={handleRetry}
                   className="flex h-9 items-center justify-center gap-2 rounded-xl bg-surface-raised border border-ember/40 px-5 font-display text-xs font-bold text-ember hover:bg-ember/15 transition-all"
                 >
-                  <span>Coba Lagi 🔄</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M3 21v-5h5" />
+                  </svg>
+                  <span>{dict.vibe.retryQuiz}</span>
                 </button>
               </>
             ) : (
@@ -193,7 +221,10 @@ export default function StepChallengeView({
                   onClick={onNextLevel}
                   className="flex h-9 w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-6 font-display text-xs font-bold text-obsidian hover:brightness-110 shadow-lg shadow-emerald-500/20 transition-all"
                 >
-                  <span>Lanjut ke Level Berikutnya 🚀</span>
+                  <span>{dict.vibe.nextLevel}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-4">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
                 </button>
               </div>
             )}

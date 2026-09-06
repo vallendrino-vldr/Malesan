@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import type { ScriptOutput } from "./ScriptView";
 import { VoicePreview } from "./VoicePreview";
 import { haptic } from "@/lib/haptics";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const subscribe = () => () => {};
 const getSnapshot = () => true;
@@ -27,6 +28,9 @@ export function ScriptFullViewModal({
   script,
   onSaveScript,
 }: ScriptFullViewModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [activeTab, setActiveTab] = useState<"teleprompter" | "baca" | "scenes">("teleprompter");
   const [fontSizeLevel, setFontSizeLevel] = useState<number>(2); // 0=16px, 1=20px, 2=24px, 3=30px
@@ -242,14 +246,14 @@ export function ScriptFullViewModal({
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
               <h2 id="script-fullview-title" className="text-xs sm:text-base font-bold text-ink truncate">
-                {title || "Naskah Video"}
+                {title || (isEn ? "Video Script" : "Naskah Video")}
               </h2>
               <span className="rounded-full bg-surface border border-hairline px-2 py-0.5 text-[9px] sm:text-[10px] font-semibold text-muted shrink-0">
                 {platform}
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] text-muted truncate">
-              {scenes.length} Scene · Studio Reader & Prompter
+              {scenes.length} {isEn ? "Scenes · Studio Reader & Prompter" : "Scene · Studio Reader & Prompter"}
             </p>
           </div>
         </div>
@@ -265,7 +269,7 @@ export function ScriptFullViewModal({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="size-3" aria-hidden="true">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span>{isSaving ? "Simpan..." : "Simpan"}</span>
+              <span>{isSaving ? (isEn ? "Saving..." : "Simpan...") : (isEn ? "Save" : "Simpan")}</span>
             </button>
           )}
 
@@ -273,13 +277,13 @@ export function ScriptFullViewModal({
             type="button"
             onClick={onClose}
             className="h-7 sm:h-8 px-2.5 sm:px-3 rounded-xl bg-surface hover:bg-surface-raised text-muted hover:text-ink transition-colors cursor-pointer border border-hairline flex items-center gap-1 text-[11px] sm:text-xs font-bold"
-            aria-label="Tutup Layar Penuh"
+            aria-label={isEn ? "Close Full Screen" : "Tutup Layar Penuh"}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
-            <span className="hidden sm:inline">Tutup</span>
+            <span className="hidden sm:inline">{isEn ? "Close" : "Tutup"}</span>
           </button>
         </div>
       </header>
@@ -324,8 +328,8 @@ export function ScriptFullViewModal({
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            <span className="hidden sm:inline">Mode Baca</span>
-            <span className="sm:hidden">Baca</span>
+            <span className="hidden sm:inline">{isEn ? "Reading Mode" : "Mode Baca"}</span>
+            <span className="sm:hidden">{isEn ? "Read" : "Baca"}</span>
           </button>
 
           <button
@@ -350,7 +354,7 @@ export function ScriptFullViewModal({
               <path d="M17 7.5h4" />
               <path d="M17 16.5h4" />
             </svg>
-            <span className="hidden sm:inline">Detail Scene</span>
+            <span className="hidden sm:inline">{isEn ? "Scene Details" : "Detail Scene"}</span>
             <span className="sm:hidden">Scene</span>
           </button>
         </div>
@@ -375,7 +379,7 @@ export function ScriptFullViewModal({
                       <rect x="6" y="4" width="4" height="16" rx="1" />
                       <rect x="14" y="4" width="4" height="16" rx="1" />
                     </svg>
-                    <span>Jeda</span>
+                    <span>{isEn ? "Pause" : "Jeda"}</span>
                   </>
                 ) : (
                   <>
@@ -406,7 +410,9 @@ export function ScriptFullViewModal({
             </div>
           ) : (
             <div className="text-[10px] text-muted font-medium pl-1">
-              {activeTab === "baca" ? "Format naskah mengalir" : "Rincian shot per scene"}
+              {activeTab === "baca"
+                ? (isEn ? "Flowing script format" : "Format naskah mengalir")
+                : (isEn ? "Shot details per scene" : "Rincian shot per scene")}
             </div>
           )}
 
@@ -446,10 +452,10 @@ export function ScriptFullViewModal({
                     <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                   </svg>
-                  <span>Teks Voiceover Siap Baca</span>
+                  <span>{isEn ? "Voiceover Text Ready to Read" : "Teks Voiceover Siap Baca"}</span>
                 </span>
                 <span className="text-[10px] sm:text-[11px] text-muted">
-                  Bebas keterangan scene / footage · Fokus artikulasi
+                  {isEn ? "Clean flowing VO · Focus on articulation" : "Bebas keterangan scene / footage · Fokus artikulasi"}
                 </span>
               </div>
 
@@ -461,7 +467,9 @@ export function ScriptFullViewModal({
                     </p>
                   ))
                 ) : (
-                  <p className="text-muted italic text-sm">Belum ada naskah yang siap dibaca.</p>
+                  <p className="text-muted italic text-sm">
+                    {isEn ? "No script ready to read yet." : "Belum ada naskah yang siap dibaca."}
+                  </p>
                 )}
               </div>
             </div>
@@ -475,7 +483,9 @@ export function ScriptFullViewModal({
                 <div className="space-y-2 border-l-2 border-ember pl-4 py-1">
                   <div className="flex items-center gap-2">
                     <span className="rounded bg-ember/20 border border-ember/40 px-2 py-0.5 text-[10px] font-bold text-ember uppercase">
-                      {textMode ? "1. Pembuka / Hook" : "1. Hook (3 Detik Pertama)"}
+                      {textMode
+                        ? (isEn ? "1. Opening / Hook" : "1. Pembuka / Hook")
+                        : (isEn ? "1. Hook (First 3 Seconds)" : "1. Hook (3 Detik Pertama)")}
                     </span>
                     {scenes[0].timestamp && (
                       <span className="text-[11px] font-mono text-muted">{scenes[0].timestamp}</span>
@@ -491,7 +501,9 @@ export function ScriptFullViewModal({
               {scenes.slice(1).length > 0 && (
                 <div className="space-y-4 border-l-2 border-hairline pl-4 py-1">
                   <span className="rounded bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] font-bold text-muted uppercase">
-                    {textMode ? "2. Isi Konten" : "2. Isi Konten (Body Narasi)"}
+                    {textMode
+                      ? (isEn ? "2. Main Content" : "2. Isi Konten")
+                      : (isEn ? "2. Main Content (Body Narrative)" : "2. Isi Konten (Body Narasi)")}
                   </span>
                   <div className="space-y-4">
                     {scenes.slice(1).map((sc, i) => (
@@ -511,7 +523,7 @@ export function ScriptFullViewModal({
               {editableScript.cta?.text && (
                 <div className="space-y-2 border-l-2 border-success pl-4 py-1">
                   <span className="rounded bg-success/20 border border-success/40 px-2 py-0.5 text-[10px] font-bold text-success uppercase">
-                    3. Call To Action (Penutup)
+                    {isEn ? "3. Call To Action (Outro)" : "3. Call To Action (Penutup)"}
                   </span>
                   <p className={`font-semibold text-success ${fontSizes[fontSizeLevel]}`}>
                     {editableScript.cta.text}
@@ -552,7 +564,7 @@ export function ScriptFullViewModal({
                         <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
                         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                       </svg>
-                      <span>Voiceover / Teks Lisan:</span>
+                      <span>{isEn ? "Voiceover / Spoken Text:" : "Voiceover / Teks Lisan:"}</span>
                     </label>
                     <textarea
                       value={sc.spoken ?? ""}
@@ -569,7 +581,7 @@ export function ScriptFullViewModal({
                         <rect width="18" height="18" x="3" y="3" rx="2" />
                         <path d="M7 3v18" />
                       </svg>
-                      <span>Panduan Visual Shot:</span>
+                      <span>{isEn ? "Visual Shot Guide:" : "Panduan Visual Shot:"}</span>
                     </label>
                     <textarea
                       value={sc.visual ?? ""}
@@ -582,7 +594,9 @@ export function ScriptFullViewModal({
 
                 {sc.on_screen_text && (
                   <div className="rounded-lg bg-black/30 border border-hairline/40 p-2.5 text-[11px]">
-                    <span className="text-[10px] text-muted uppercase font-bold">Teks di Layar:</span>
+                    <span className="text-[10px] text-muted uppercase font-bold">
+                      {isEn ? "On-Screen Text:" : "Teks di Layar:"}
+                    </span>
                     <p className="font-mono text-ember text-[11px] font-bold mt-0.5">{sc.on_screen_text}</p>
                   </div>
                 )}
@@ -608,7 +622,7 @@ export function ScriptFullViewModal({
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
             </svg>
-            <span>{copiedType === "vo" ? "Disalin!" : "Salin VO"}</span>
+            <span>{copiedType === "vo" ? (isEn ? "Copied!" : "Disalin!") : (isEn ? "Copy VO" : "Salin VO")}</span>
           </button>
 
           <button
@@ -620,7 +634,7 @@ export function ScriptFullViewModal({
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
             </svg>
-            <span>{copiedType === "all" ? "Disalin!" : "Salin Lengkap"}</span>
+            <span>{copiedType === "all" ? (isEn ? "Copied!" : "Disalin!") : (isEn ? "Copy Full" : "Salin Lengkap")}</span>
           </button>
 
           <button
@@ -635,7 +649,7 @@ export function ScriptFullViewModal({
               <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
             </svg>
-            <span>Bagikan</span>
+            <span>{isEn ? "Share" : "Bagikan"}</span>
           </button>
 
           <button
@@ -648,7 +662,7 @@ export function ScriptFullViewModal({
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>Unduh .md</span>
+            <span>{isEn ? "Download .md" : "Unduh .md"}</span>
           </button>
 
           <button
@@ -656,7 +670,7 @@ export function ScriptFullViewModal({
             onClick={onClose}
             className="col-span-2 sm:col-span-1 h-8 rounded-xl bg-ember px-3.5 sm:px-5 text-[11px] sm:text-xs font-bold text-obsidian shadow-sm hover:bg-ember-lo active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-1"
           >
-            Tutup
+            {isEn ? "Close" : "Tutup"}
           </button>
         </div>
       </footer>

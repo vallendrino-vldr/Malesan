@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 import { cleanScriptForSpeech, normalizeIndonesianSpeech } from "@/lib/speech-cleaner";
 
@@ -13,6 +14,9 @@ interface VoicePreviewProps {
 }
 
 export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -71,7 +75,7 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
     try {
       const clean = normalizeIndonesianSpeech(text);
       if (!clean) {
-        throw new Error("Naskah belum memiliki teks voiceover.");
+        throw new Error(isEn ? "Script has no voiceover text yet." : "Naskah belum memiliki teks voiceover.");
       }
 
       const res = await fetch("/api/tts", {
@@ -82,7 +86,7 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Gagal memproses suara Bahasa Indonesia");
+        throw new Error(errJson.error || (isEn ? "Failed to generate speech audio" : "Gagal memproses suara Bahasa Indonesia"));
       }
 
       const blob = await res.blob();
@@ -108,7 +112,7 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
       audio.onerror = () => {
         setIsPlaying(false);
         setIsLoading(false);
-        setError("Gagal memutar audio preview.");
+        setError(isEn ? "Failed to play audio preview." : "Gagal memutar audio preview.");
       };
 
       audioRef.current = audio;
@@ -116,7 +120,7 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
       setIsPlaying(true);
     } catch (err: unknown) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Gagal memutar audio.");
+      setError(err instanceof Error ? err.message : (isEn ? "Failed to play audio." : "Gagal memutar audio."));
       setIsPlaying(false);
     } finally {
       setIsLoading(false);
@@ -156,7 +160,7 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
             type="button"
             onClick={handlePlayPause}
             disabled={isLoading || !text.trim()}
-            aria-label={isPlaying ? "Jeda Voice Preview" : "Putar Suara Bahasa Indonesia"}
+            aria-label={isPlaying ? (isEn ? "Pause Voice Preview" : "Jeda Voice Preview") : (isEn ? "Play Voice Preview" : "Putar Suara Bahasa Indonesia")}
             className={`flex size-10 items-center justify-center rounded-xl font-bold transition-all duration-200 active:scale-95 cursor-pointer ${
               isPlaying
                 ? "bg-ember text-obsidian shadow-[0_0_15px_rgba(255,138,61,0.4)]"
@@ -181,7 +185,7 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
             <button
               type="button"
               onClick={handleStop}
-              title="Berhenti & Ulang"
+              title={isEn ? "Stop & Replay" : "Berhenti & Ulang"}
               className="flex size-7 items-center justify-center rounded-lg border border-hairline bg-surface text-muted hover:text-danger hover:border-danger/30 transition-colors cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="size-3">
@@ -210,28 +214,37 @@ export function VoicePreview({ text, className = "" }: VoicePreviewProps) {
                 <span>AI Voice Preview</span>
               </span>
               <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.2 text-[9px] font-bold text-emerald-400">
-                100% Bahasa Indonesia
+                {isEn ? "Indonesian Voice" : "100% Bahasa Indonesia"}
               </span>
             </div>
             <p className="text-[10px] text-muted">
               {isLoading
-                ? "Menyiapkan suara Bahasa Indonesia natural..."
+                ? (isEn ? "Preparing natural voice..." : "Menyiapkan suara Bahasa Indonesia natural...")
                 : isPlaying
-                  ? `Memutar · ${formatTime(currentTime)} / ${formatTime(duration || 0)}`
-                  : "Uji artikulasi & ritme naskah lisan"}
+                  ? `${isEn ? "Playing" : "Memutar"} · ${formatTime(currentTime)} / ${formatTime(duration || 0)}`
+                  : (isEn ? "Test articulation & spoken rhythm" : "Uji artikulasi & ritme naskah lisan")}
             </p>
           </div>
         </div>
 
         {/* Speed Controls */}
         <div className="flex items-center justify-between gap-1 bg-black/40 rounded-xl p-1 border border-hairline/60 w-full sm:w-auto">
-          <span className="text-[10px] text-muted pl-1 font-medium shrink-0">Tempo:</span>
+          <span className="text-[10px] text-muted pl-1 font-medium shrink-0">
+            {isEn ? "Speed:" : "Tempo:"}
+          </span>
           <div className="flex items-center gap-1 flex-1 sm:flex-none justify-end">
-            {[
-              { label: "0.95x Santai", speed: 0.95 },
-              { label: "1.1x Kreator", speed: 1.1 },
-              { label: "1.25x Cepat", speed: 1.25 },
-            ].map((sp) => (
+            {(isEn
+              ? [
+                  { label: "0.95x Relaxed", speed: 0.95 },
+                  { label: "1.1x Creator", speed: 1.1 },
+                  { label: "1.25x Fast", speed: 1.25 },
+                ]
+              : [
+                  { label: "0.95x Santai", speed: 0.95 },
+                  { label: "1.1x Kreator", speed: 1.1 },
+                  { label: "1.25x Cepat", speed: 1.25 },
+                ]
+            ).map((sp) => (
               <button
                 key={sp.speed}
                 type="button"

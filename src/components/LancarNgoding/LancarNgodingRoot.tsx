@@ -1,28 +1,28 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
-import rawCurriculum from "@/data/lancar-ngoding-curriculum.json";
+import { getCurriculum } from "@/lib/curriculum";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import { getNgodingProgress, markLevelCompleted, NgodingProgress } from "@/lib/ngoding-progress";
-import { LessonItem } from "./StepLearnView";
 import NgodingRoadmapView from "./NgodingRoadmapView";
 import NgodingQuestPlayer from "./NgodingQuestPlayer";
 import GlossaryModal from "./GlossaryModal";
 
-const CURRICULUM = rawCurriculum as LessonItem[];
-
 export default function LancarNgodingRoot() {
+  const { language } = useLanguage();
+  const curriculum = getCurriculum(language);
   const [progress, setProgress] = useState<NgodingProgress>(() => getNgodingProgress());
   const [selectedLevelNum, setSelectedLevelNum] = useState<number | null>(null);
   const [isGlossaryOpen, setIsGlossaryOpen] = useState(false);
 
   // Find active lesson object if in Quest mode
   const activeLesson = selectedLevelNum
-    ? CURRICULUM.find((l) => l.level === selectedLevelNum) || CURRICULUM[0]
+    ? curriculum.find((l) => l.level === selectedLevelNum) || curriculum[0]
     : null;
 
   const handleLevelSuccess = (xpEarned: number) => {
     if (!activeLesson) return;
-    const nextLesson = CURRICULUM.find((l) => l.level === activeLesson.level + 1);
+    const nextLesson = curriculum.find((l) => l.level === activeLesson.level + 1);
     const updated = markLevelCompleted(
       activeLesson.id,
       xpEarned,
@@ -33,7 +33,7 @@ export default function LancarNgodingRoot() {
 
   const handleNextLevel = () => {
     if (!activeLesson) return;
-    const nextLesson = CURRICULUM.find((l) => l.level === activeLesson.level + 1);
+    const nextLesson = curriculum.find((l) => l.level === activeLesson.level + 1);
     if (nextLesson) {
       setSelectedLevelNum(nextLesson.level);
     } else {
@@ -45,7 +45,7 @@ export default function LancarNgodingRoot() {
     <div className="w-full">
       {selectedLevelNum === null || !activeLesson ? (
         <NgodingRoadmapView
-          curriculum={CURRICULUM}
+          curriculum={curriculum}
           progress={progress}
           onSelectLevel={(lvl) => setSelectedLevelNum(lvl)}
           onOpenGlossary={() => setIsGlossaryOpen(true)}

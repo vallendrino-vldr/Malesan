@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import type { PipelineCard } from "@/lib/supabase/database.types";
 import { updateCardScheduleDate } from "@/app/actions/pipeline";
 import { todayPlatformLabel, normalizeTodayPlatform } from "@/lib/content-options";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface PipelineCalendarViewProps {
   cards: PipelineCard[];
@@ -11,6 +12,8 @@ interface PipelineCalendarViewProps {
 }
 
 const INDO_DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const EN_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 const INDO_MONTHS = [
   "Jan",
   "Feb",
@@ -25,6 +28,20 @@ const INDO_MONTHS = [
   "Nov",
   "Des",
 ];
+const EN_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function toDateString(d: Date): string {
   const year = d.getFullYear();
@@ -37,6 +54,10 @@ export function PipelineCalendarView({
   cards,
   onOpenCard,
 }: PipelineCalendarViewProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const daysList = isEn ? EN_DAYS : INDO_DAYS;
+  const monthsList = isEn ? EN_MONTHS : INDO_MONTHS;
   // Current active reference date (starts at today)
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     const d = new Date();
@@ -133,8 +154,8 @@ export function PipelineCalendarView({
   const weekRangeLabel = useMemo(() => {
     const first = weekDays[0].date;
     const last = weekDays[6].date;
-    return `${first.getDate()} ${INDO_MONTHS[first.getMonth()]} — ${last.getDate()} ${INDO_MONTHS[last.getMonth()]} ${last.getFullYear()}`;
-  }, [weekDays]);
+    return `${first.getDate()} ${monthsList[first.getMonth()]} — ${last.getDate()} ${monthsList[last.getMonth()]} ${last.getFullYear()}`;
+  }, [weekDays, monthsList]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -151,7 +172,9 @@ export function PipelineCalendarView({
               </svg>
             </div>
             <div>
-              <h3 className="font-display text-sm font-bold text-ink">Jadwal Rencana Tayang</h3>
+              <h3 className="font-display text-sm font-bold text-ink">
+                {isEn ? "Publishing Schedule" : "Jadwal Rencana Tayang"}
+              </h3>
               <p className="text-micro text-muted">{weekRangeLabel}</p>
             </div>
           </div>
@@ -161,7 +184,7 @@ export function PipelineCalendarView({
             <button
               type="button"
               onClick={handlePrevWeek}
-              aria-label="Minggu Sebelumnya"
+              aria-label={isEn ? "Previous Week" : "Minggu Sebelumnya"}
               className="flex size-10 sm:size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
@@ -173,12 +196,12 @@ export function PipelineCalendarView({
               onClick={handleResetToday}
               className="flex h-10 sm:h-auto items-center px-3.5 sm:px-3 text-xs font-semibold text-ink transition-colors hover:text-ember whitespace-nowrap cursor-pointer"
             >
-              Minggu Ini
+              {isEn ? "This Week" : "Minggu Ini"}
             </button>
             <button
               type="button"
               onClick={handleNextWeek}
-              aria-label="Minggu Berikutnya"
+              aria-label={isEn ? "Next Week" : "Minggu Berikutnya"}
               className="flex size-10 sm:size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
@@ -206,15 +229,15 @@ export function PipelineCalendarView({
               <div className="mb-2.5 flex items-center justify-between border-b border-hairline/60 pb-2">
                 <div>
                   <p className="font-display text-xs font-semibold text-ink">
-                    {INDO_DAYS[day.date.getDay()]}
+                    {daysList[day.date.getDay()]}
                   </p>
                   <p className="text-micro text-muted">
-                    {day.date.getDate()} {INDO_MONTHS[day.date.getMonth()]}
+                    {day.date.getDate()} {monthsList[day.date.getMonth()]}
                   </p>
                 </div>
                 {day.isToday && (
                   <span className="rounded-md bg-ember/15 px-1.5 py-0.5 text-[10px] font-bold text-ember">
-                    Hari Ini
+                    {isEn ? "Today" : "Hari Ini"}
                   </span>
                 )}
               </div>
@@ -223,7 +246,9 @@ export function PipelineCalendarView({
               <div className="flex flex-1 flex-col gap-2">
                 {dayCards.length === 0 ? (
                   <div className="flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-hairline/60 p-3 text-center">
-                    <p className="text-micro text-muted/70">Belum ada konten</p>
+                    <p className="text-micro text-muted/70">
+                      {isEn ? "No content" : "Belum ada konten"}
+                    </p>
                   </div>
                 ) : (
                   dayCards.map((card) => (
@@ -269,10 +294,10 @@ export function PipelineCalendarView({
                   </div>
                   <div>
                     <h4 className="font-display text-xs font-semibold text-ink">
-                      {INDO_DAYS[day.date.getDay()]}
+                      {daysList[day.date.getDay()]}
                     </h4>
                     <p className="text-micro text-muted">
-                      {day.date.getDate()} {INDO_MONTHS[day.date.getMonth()]}{" "}
+                      {day.date.getDate()} {monthsList[day.date.getMonth()]}{" "}
                       {day.date.getFullYear()}
                     </p>
                   </div>
@@ -281,11 +306,11 @@ export function PipelineCalendarView({
                 <div className="flex items-center gap-1.5">
                   {day.isToday && (
                     <span className="rounded-md bg-ember/15 px-2 py-0.5 text-micro font-bold text-ember">
-                      Hari Ini
+                      {isEn ? "Today" : "Hari Ini"}
                     </span>
                   )}
                   <span className="rounded-full bg-surface-raised px-2 py-0.5 text-micro text-muted border border-hairline">
-                    {dayCards.length} konten
+                    {dayCards.length} {isEn ? "items" : "konten"}
                   </span>
                 </div>
               </div>
@@ -294,7 +319,9 @@ export function PipelineCalendarView({
               <div className="flex flex-col gap-2.5">
                 {dayCards.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-hairline/60 py-3 text-center">
-                    <p className="text-micro text-muted/70">Jadwal kosong untuk hari ini</p>
+                    <p className="text-micro text-muted/70">
+                      {isEn ? "No content scheduled for today" : "Jadwal kosong untuk hari ini"}
+                    </p>
                   </div>
                 ) : (
                   dayCards.map((card) => (
@@ -327,14 +354,16 @@ export function PipelineCalendarView({
                 </svg>
               </div>
               <h4 className="font-display text-xs font-bold text-ink">
-                Ide Belum Terjadwal
+                {isEn ? "Unscheduled Ideas" : "Ide Belum Terjadwal"}
               </h4>
               <span className="rounded-full bg-surface-raised px-2 py-0.5 font-mono text-micro font-semibold text-muted border border-hairline">
                 {unscheduledCards.length}
               </span>
             </div>
             <p className="text-micro text-muted">
-              Pilih tanggal tayang agar rapi di kalender mingguan
+              {isEn
+                ? "Set a publish date to organize in your weekly calendar"
+                : "Pilih tanggal tayang agar rapi di kalender mingguan"}
             </p>
           </div>
 
@@ -390,7 +419,7 @@ export function PipelineCalendarView({
                         <path d="M8 2v4" />
                         <path d="M3 10h18" />
                       </svg>
-                      <span>Atur Jadwal</span>
+                      <span>{isEn ? "Set Date" : "Atur Jadwal"}</span>
                     </button>
 
                     {onOpenCard && (
@@ -399,7 +428,7 @@ export function PipelineCalendarView({
                         onClick={() => onOpenCard(card)}
                         className="text-micro font-medium text-muted transition-colors hover:text-ink"
                       >
-                        Buka Detail →
+                        {isEn ? "View Details →" : "Buka Detail →"}
                       </button>
                     )}
                   </div>
@@ -408,7 +437,7 @@ export function PipelineCalendarView({
                   {selectedUnscheduledCard === card.id && (
                     <div className="mt-1 flex flex-col gap-2 rounded-xl border border-hairline bg-surface p-2.5 shadow-md">
                       <p className="text-[10px] font-semibold text-ink">
-                        Pilih Hari Minggu Ini:
+                        {isEn ? "Select a Day This Week:" : "Pilih Hari Minggu Ini:"}
                       </p>
                       <div className="grid grid-cols-4 gap-1 sm:grid-cols-7">
                         {weekDays.map((d) => (
@@ -424,7 +453,7 @@ export function PipelineCalendarView({
                             }`}
                           >
                             <p className="text-[9px] uppercase text-muted leading-none">
-                              {INDO_DAYS[d.date.getDay()].slice(0, 3)}
+                              {daysList[d.date.getDay()].slice(0, 3)}
                             </p>
                             <p className="font-mono text-xs font-bold mt-0.5 leading-none">
                               {d.date.getDate()}
@@ -455,19 +484,29 @@ function CalendarCardItem({
   onUnschedule?: () => void;
   isUpdating?: boolean;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const content = card.content as Record<string, unknown> | null;
   const pillar = typeof content?.content_pillar === "string" ? content.content_pillar : undefined;
 
   const pillarLabel =
     pillar === "edukasi"
-      ? "Edukasi"
+      ? isEn
+        ? "Education"
+        : "Edukasi"
       : pillar === "storytelling"
-        ? "Cerita"
-        : pillar === "engagement"
-          ? "Diskusi"
-          : pillar === "soft_selling"
-            ? "Konversi"
-            : null;
+      ? isEn
+        ? "Story"
+        : "Cerita"
+      : pillar === "engagement"
+      ? isEn
+        ? "Discussion"
+        : "Diskusi"
+      : pillar === "soft_selling"
+      ? isEn
+        ? "Conversion"
+        : "Konversi"
+      : null;
 
   return (
     <div
@@ -525,7 +564,7 @@ function CalendarCardItem({
             </>
           ) : (
             <span className="truncate text-micro text-muted/70">
-              {content?.est_duration ? String(content.est_duration) : card.schedule_label || "Rencana"}
+              {content?.est_duration ? String(content.est_duration) : card.schedule_label || (isEn ? "Planned" : "Rencana")}
             </span>
           )}
         </span>
@@ -539,9 +578,9 @@ function CalendarCardItem({
             }}
             disabled={isUpdating}
             className="text-[10px] text-muted/60 transition-colors hover:text-danger disabled:opacity-50"
-            title="Hapus dari jadwal tanggal ini"
+            title={isEn ? "Remove from this scheduled date" : "Hapus dari jadwal tanggal ini"}
           >
-            Lepas
+            {isEn ? "Unschedule" : "Lepas"}
           </button>
         )}
       </div>

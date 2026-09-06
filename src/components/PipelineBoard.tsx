@@ -27,6 +27,7 @@ import { PipelineCardModal } from "./PipelineCardModal";
 import { PipelineClearModal } from "./PipelineClearModal";
 import { checkScheduleReminders } from "@/lib/notifications";
 import { NetizenSimulatorModal } from "./NetizenSimulatorModal";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Pipeline.
@@ -72,41 +73,7 @@ const byOrder = (list: PipelineCard[]) =>
     (a, b) => a.sort_order - b.sort_order || (a.created_at < b.created_at ? 1 : -1),
   );
 
-const COLUMNS: {
-  id: Column;
-  label: string;
-  blurb: string;
-  empty: string;
-}[] = [
-  {
-    id: "ide",
-    label: "Ide",
-    blurb: "Ide mentah yang belum digarap.",
-    empty:
-      "Belum ada ide di sini. Bikin ide di tab Studio, terus tap “Simpan ke Alur” di kartu hasilnya.",
-  },
-  {
-    id: "draft",
-    label: "Draft",
-    blurb: "Udah punya hook, tinggal dibikinin script.",
-    empty: "Kosong. Kartu masuk sini otomatis begitu hook-nya jadi.",
-  },
-  {
-    id: "siap",
-    label: "Siap",
-    blurb: "Script kelar. Tinggal syuting dan posting.",
-    empty: "Kosong. Kartu masuk sini otomatis begitu script-nya jadi.",
-  },
-  {
-    id: "posted",
-    label: "Tayang",
-    blurb: "Udah tayang. Kasih rating biar ide berikutnya makin nyambung.",
-    empty: "Belum ada yang tayang. Geser kartu dari Siap kalau udah lo posting.",
-  },
-];
-
 const ORDER: Column[] = ["ide", "draft", "siap", "posted"];
-const labelOf = (c: Column) => COLUMNS.find((x) => x.id === c)?.label ?? c;
 
 /**
  * One hook as HOOK_LAB_SCHEMA actually returns it: `text`, not `script_segment`.
@@ -129,18 +96,24 @@ export function hookText(h: HookOption | undefined): string {
 }
 
 /** What this card is waiting on, in one line. Drives the guidance strip. */
-function nextStep(card: PipelineCard, hasHook: boolean): string {
+function nextStep(card: PipelineCard, hasHook: boolean, isEn: boolean): string {
   switch (card.status as Column) {
     case "ide":
-      return "Langkah 1 dari 3 — bikin hook dulu.";
+      return isEn ? "Step 1 of 3 — generate hooks first." : "Langkah 1 dari 3 — bikin hook dulu.";
     case "draft":
       return hasHook
-        ? "Langkah 2 dari 3 — hook udah ada, lanjut bikin script."
+        ? isEn
+          ? "Step 2 of 3 — hook ready, proceed to script writing."
+          : "Langkah 2 dari 3 — hook udah ada, lanjut bikin script."
+        : isEn
+        ? "Stage skipped: hook missing. Generate a hook first for script continuity."
         : "Kartu ini lompat tahap, hook-nya belum ada. Bikin hook dulu biar script-nya nyambung.";
     case "siap":
-      return "Langkah 3 dari 3 — syuting, posting, terus geser ke Tayang.";
+      return isEn
+        ? "Step 3 of 3 — record, publish, then move to Published."
+        : "Langkah 3 dari 3 — syuting, posting, terus geser ke Tayang.";
     case "posted":
-      return "Kasih rating performanya.";
+      return isEn ? "Rate its performance." : "Kasih rating performanya.";
     default:
       return "";
   }
@@ -167,6 +140,40 @@ function dropPoint(
 }
 
 export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }) {
+  const { language, dict } = useLanguage();
+  const isEn = language === "en";
+  const p = dict.pipeline;
+
+  const COLUMNS = useMemo(
+    () => [
+      {
+        id: "ide" as Column,
+        label: p.columns.ide.label,
+        blurb: p.columns.ide.blurb,
+        empty: p.columns.ide.empty,
+      },
+      {
+        id: "draft" as Column,
+        label: p.columns.draft.label,
+        blurb: p.columns.draft.blurb,
+        empty: p.columns.draft.empty,
+      },
+      {
+        id: "siap" as Column,
+        label: p.columns.siap.label,
+        blurb: p.columns.siap.blurb,
+        empty: p.columns.siap.empty,
+      },
+      {
+        id: "posted" as Column,
+        label: p.columns.posted.label,
+        blurb: p.columns.posted.blurb,
+        empty: p.columns.posted.empty,
+      },
+    ],
+    [p],
+  );
+
   const [prevInitialCards, setPrevInitialCards] = useState<PipelineCard[]>(initialCards);
   const [cards, setCards] = useState<PipelineCard[]>(initialCards);
   const [mobileStage, setMobileStage] = useState<Column>("ide");
@@ -230,14 +237,26 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
     setIsGeneratingStrategy(true);
     setBoardError("");
     setStrategySuccess("");
-    setStrategyStatus("Menganalisis Creator DNA dan 3 kemungkinan angle...");
+    setStrategyStatus(
+      isEn
+        ? "Analyzing Creator DNA and 3 angle possibilities..."
+        : "Menganalisis Creator DNA dan 3 kemungkinan angle...",
+    );
 
     const timer1 = setTimeout(() => {
-      setStrategyStatus("Mengecek relevansi dengan target audiens lo...");
+      setStrategyStatus(
+        isEn
+          ? "Checking relevance with your target audience..."
+          : "Mengecek relevansi dengan target audiens lo...",
+      );
     }, 1800);
 
     const timer2 = setTimeout(() => {
-      setStrategyStatus("Menyusun kalender strategi 7 hari...");
+      setStrategyStatus(
+        isEn
+          ? "Building 7-day strategy calendar..."
+          : "Menyusun kalender strategi 7 hari...",
+      );
     }, 3800);
 
     try {
@@ -248,7 +267,9 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       });
 
       if (!res.ok) {
-        throw new Error(await readErrorBody(res, "Gagal merancang strategi 7 hari."));
+        throw new Error(
+          await readErrorBody(res, isEn ? "Failed to design 7-day strategy." : "Gagal merancang strategi 7 hari."),
+        );
       }
 
       const json = (await res.json()) as {
@@ -259,13 +280,22 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       if (json.cards && Array.isArray(json.cards)) {
         setCards((prev) => [...json.cards!, ...prev]);
         setStrategySuccess(
-          json.overview || "Strategi 7 hari berhasil dirancang dan masuk ke kalender!",
+          json.overview ||
+            (isEn
+              ? "7-day strategy generated and added to your calendar!"
+              : "Strategi 7 hari berhasil dirancang dan masuk ke kalender!"),
         );
         setViewMode("calendar");
         router.refresh();
       }
     } catch (e) {
-      setBoardError(e instanceof Error ? e.message : "Gagal membuat strategi 7 hari.");
+      setBoardError(
+        e instanceof Error
+          ? e.message
+          : isEn
+          ? "Failed to generate 7-day strategy."
+          : "Gagal membuat strategi 7 hari.",
+      );
     } finally {
       clearTimeout(timer1);
       clearTimeout(timer2);
@@ -532,10 +562,10 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   <path d="M12 13v8" />
                   <path d="M12 3v3" />
                 </svg>
-                <span>Alur Kerja</span>
+                <span>{p.title}</span>
               </div>
               <span className="inline-flex h-7.5 items-center rounded-lg bg-surface-raised px-2 font-mono text-[11px] text-muted border border-hairline whitespace-nowrap shrink-0">
-                {total} aktif
+                {total} {isEn ? "active" : "aktif"}
               </span>
             </div>
 
@@ -545,29 +575,29 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                 <button
                   type="button"
                   onClick={() => setIsClearModalOpen(true)}
-                  className="flex h-7.5 items-center justify-center gap-1.5 rounded-lg border border-hairline bg-surface-raised/60 px-2.5 text-xs font-medium text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap"
-                  title="Kosongkan jadwal atau hapus kartu dari alur"
-                  aria-label="Bersihkan alur"
+                  className="flex h-7.5 items-center justify-center gap-1.5 rounded-lg border border-hairline bg-surface-raised/60 px-2.5 text-xs font-medium text-muted transition-colors hover:border-danger/40 hover:bg-danger/10 hover:text-danger whitespace-nowrap cursor-pointer"
+                  title={isEn ? "Clear schedule or remove cards" : "Kosongkan jadwal atau hapus kartu dari alur"}
+                  aria-label={p.clearBoardBtn}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0">
                     <path d="M3 6h18" />
                     <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                   </svg>
-                  <span className="hidden sm:inline">Bersihkan</span>
+                  <span className="hidden sm:inline">{p.clearBoardBtn}</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Controls Bar: Switcher + Rancang 7 Hari */}
+          {/* Controls Bar: Switcher + Auto Schedule */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {/* Segmented View Switcher */}
             <div className="grid grid-cols-2 h-8.5 items-center rounded-xl border border-hairline bg-surface/70 p-0.5 w-full sm:w-auto shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode("kanban")}
-                className={`flex h-7.5 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                className={`flex h-7.5 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === "kanban"
                     ? "bg-surface-raised text-ink shadow-xs"
                     : "text-muted hover:text-ink"
@@ -578,12 +608,12 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   <path d="M9 3v18" />
                   <path d="M15 3v18" />
                 </svg>
-                <span className="whitespace-nowrap">Papan Kanban</span>
+                <span className="whitespace-nowrap">{p.viewKanban}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("calendar")}
-                className={`flex h-7.5 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all ${
+                className={`flex h-7.5 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === "calendar"
                     ? "bg-surface-raised text-ink shadow-xs"
                     : "text-muted hover:text-ink"
@@ -595,21 +625,27 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   <path d="M8 2v4" />
                   <path d="M3 10h18" />
                 </svg>
-                <span className="whitespace-nowrap">Kalender</span>
+                <span className="whitespace-nowrap">{p.viewCalendar}</span>
               </button>
             </div>
 
-            {/* Rancang 7 Hari Action */}
+            {/* Auto Schedule 7 Day Strategy */}
             <button
               type="button"
               onClick={handleGenerate7DayStrategy}
               disabled={isGeneratingStrategy}
-              className="flex h-8.5 w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/15 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/25 disabled:opacity-50 whitespace-nowrap"
+              className="flex h-8.5 w-full sm:w-auto items-center justify-center gap-1.5 rounded-xl border border-ember/40 bg-ember/15 px-3.5 font-display text-xs font-bold text-ember transition-colors hover:bg-ember/25 disabled:opacity-50 whitespace-nowrap cursor-pointer"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 shrink-0">
                 <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
               </svg>
-              <span>{isGeneratingStrategy ? "Menyusun..." : "Rancang 7 Hari · 5 kredit"}</span>
+              <span>
+                {isGeneratingStrategy
+                  ? p.autoScheduling
+                  : isEn
+                  ? "Auto Schedule · 5 credits"
+                  : "Rancang 7 Hari · 5 kredit"}
+              </span>
             </button>
           </div>
 
@@ -624,11 +660,35 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
                   <>
                     <strong className="text-ink font-medium">AI Content Brain:</strong>{" "}
                     {listOf("siap").length > 0 ? (
-                      <>Lo punya <span className="font-semibold text-ink">{listOf("siap").length} konten siap produksi</span>. {cards.filter((c) => c.scheduled_date).length} konten sudah terjadwal di kalender mingguan.</>
+                      isEn ? (
+                        <>
+                          You have <span className="font-semibold text-ink">{listOf("siap").length} pieces of content ready to film</span>. {cards.filter((c) => c.scheduled_date).length} scheduled on your weekly calendar.
+                        </>
+                      ) : (
+                        <>
+                          Lo punya <span className="font-semibold text-ink">{listOf("siap").length} konten siap produksi</span>. {cards.filter((c) => c.scheduled_date).length} konten sudah terjadwal di kalender mingguan.
+                        </>
+                      )
                     ) : listOf("ide").length > 0 ? (
-                      <>Ada <span className="font-semibold text-ink">{listOf("ide").length} ide aktif</span>. Bikin hook atau rancang kalender 7 hari untuk eksekusi terstruktur.</>
+                      isEn ? (
+                        <>
+                          You have <span className="font-semibold text-ink">{listOf("ide").length} active ideas</span>. Generate hooks or plan a 7-day calendar for structured execution.
+                        </>
+                      ) : (
+                        <>
+                          Ada <span className="font-semibold text-ink">{listOf("ide").length} ide aktif</span>. Bikin hook atau rancang kalender 7 hari untuk eksekusi terstruktur.
+                        </>
+                      )
                     ) : (
-                      <>Alur kerja lo masih kosong. Klik tombol <span className="font-semibold text-ember">Rancang 7 Hari</span> di atas biar AI siapkan strategi seimbang buat lo!</>
+                      isEn ? (
+                        <>
+                          Your pipeline is currently empty. Click <span className="font-semibold text-ember">Auto Schedule</span> above to let AI prepare a balanced content strategy!
+                        </>
+                      ) : (
+                        <>
+                          Alur kerja lo masih kosong. Klik tombol <span className="font-semibold text-ember">Rancang 7 Hari</span> di atas biar AI siapkan strategi seimbang buat lo!
+                        </>
+                      )
                     )}
                   </>
                 )}
@@ -645,9 +705,9 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           <button
             type="button"
             onClick={() => setStrategySuccess("")}
-            className="text-xs font-bold hover:underline"
+            className="text-xs font-bold hover:underline cursor-pointer"
           >
-            Tutup
+            {isEn ? "Close" : "Tutup"}
           </button>
         </div>
       )}
@@ -775,9 +835,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         </>
       )}
 
-      {/* ---------- undo ----------
-          z-40 is the ambient tier in globals.css: above the chrome, below any
-          dialog. Sits clear of the bottom tab bar and the home indicator. */}
+      {/* ---------- undo ---------- */}
       {undoCard && (
         <div
           role="status"
@@ -787,14 +845,14 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           <div className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-xl border border-hairline bg-surface-raised shadow-lg">
             <div className="flex items-center gap-3 px-3.5 py-2.5">
               <p className="min-w-0 flex-1 text-xs leading-snug text-ink">
-                <span className="font-semibold">Kartu dihapus.</span>{" "}
+                <span className="font-semibold">{isEn ? "Card deleted." : "Kartu dihapus."}</span>{" "}
                 <span className="text-muted">{undoCard.title}</span>
               </p>
               <button
                 onClick={undoDelete}
                 className="h-7.5 shrink-0 cursor-pointer rounded-lg border border-ember/40 bg-ember/10 px-2.5 font-display text-xs font-bold text-ember shadow-xs"
               >
-                Balikin
+                {isEn ? "Undo" : "Balikin"}
               </button>
             </div>
             <div className="h-0.5 bg-hairline">
@@ -886,6 +944,9 @@ function PipelineCardItem({
   onDragStart?: () => void;
   onDragEnd?: (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const content = card.content as unknown as IdeaData & {
     generated_hook?: { hooks?: HookOption[] };
     generated_script?: ScriptOutput;
@@ -935,28 +996,40 @@ function PipelineCardItem({
     const hook = chosenHook || content.hook_seed?.trim() || "";
     const duration = content.est_duration?.trim() || "60s";
 
-    // Check locally what the route is about to check anyway. A 400 phrased as
-    // "Idea, hook, and duration inputs are required" is the server's contract
-    // leaking into the UI — it names fields the user never typed and offers no
-    // way out. Catch it here and say what to actually do.
     if (!idea) {
-      setError("Kartu ini gak punya judul, jadi gak ada yang bisa digarap. Hapus aja terus bikin ulang dari Studio.");
+      setError(
+        isEn
+          ? "This card has no title, so nothing can be processed. Delete it and create a new one from Studio."
+          : "Kartu ini gak punya judul, jadi gak ada yang bisa digarap. Hapus aja terus bikin ulang dari Studio."
+      );
       return;
     }
     if (module === "script" && !hook) {
-      setError("Hook-nya belum kepilih. Bikin hook dulu, nanti tombol ini kebuka sendiri.");
+      setError(
+        isEn
+          ? "Hook has not been selected yet. Generate a hook first, then this button will unlock."
+          : "Hook-nya belum kepilih. Bikin hook dulu, nanti tombol ini kebuka sendiri."
+      );
       return;
     }
 
     setIsGenerating(true);
     setGenerationModule(module);
     setGenerationChars(0);
-    setGenerationStatus(module === "hook" ? "Lagi meracik hook..." : "Lagi menyusun naskah...");
+    const initialProgressLabel =
+      module === "hook"
+        ? isEn
+          ? "Crafting hooks..."
+          : "Lagi meracik hook..."
+        : isEn
+        ? "Drafting script..."
+        : "Lagi menyusun naskah...";
+    setGenerationStatus(initialProgressLabel);
     setError("");
 
     startStudioProcessing({
       moduleKey: module,
-      label: module === "hook" ? "Lagi meracik hook..." : "Lagi menyusun naskah...",
+      label: initialProgressLabel,
     });
 
     try {
@@ -1057,7 +1130,7 @@ function PipelineCardItem({
         {draggable && (
           <span
             role="presentation"
-            title="Geser buat pindahin"
+            title={isEn ? "Drag to move" : "Geser buat pindahin"}
             onPointerDown={(e) => {
               e.preventDefault();
               dragControls.start(e);
@@ -1081,8 +1154,8 @@ function PipelineCardItem({
           type="button"
           onPointerDownCapture={(e) => e.stopPropagation()}
           onClick={() => onDelete(card)}
-          aria-label={`Hapus kartu ${card.title}`}
-          title="Hapus kartu"
+          aria-label={isEn ? `Delete card ${card.title}` : `Hapus kartu ${card.title}`}
+          title={isEn ? "Delete card" : "Hapus kartu"}
           className="-mr-2 -mt-2 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-danger/10 hover:text-danger"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
@@ -1105,12 +1178,12 @@ function PipelineCardItem({
         {aiScore && (
           <span
             className="inline-flex items-center gap-1 rounded-full border border-ember/30 bg-ember/10 px-2 py-0.5 font-mono text-[10px] font-bold text-ember"
-            title="Skor Potensi Konten AI"
+            title={isEn ? "AI Content Potential Score" : "Skor Potensi Konten AI"}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-2.5 text-ember">
               <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
             </svg>
-            Potensi {aiScore}
+            {isEn ? "Potential" : "Potensi"} {aiScore}
           </span>
         )}
         {card.scheduled_date && (
@@ -1138,7 +1211,9 @@ function PipelineCardItem({
           </span>
         )}
         {isScheduling && !card.schedule_label && (
-          <span className="text-micro text-muted">Lagi nyariin jam tayang...</span>
+          <span className="text-micro text-muted">
+            {isEn ? "Finding posting slot..." : "Lagi nyariin jam tayang..."}
+          </span>
         )}
       </div>
 
@@ -1153,9 +1228,11 @@ function PipelineCardItem({
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3 text-ember">
                 <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
               </svg>
-              Analisis Potensi AI
+              {isEn ? "AI Potential Analysis" : "Analisis Potensi AI"}
             </span>
-            <span className="text-[10px] text-muted">{showAnalysis ? "Tutup" : "Lihat Rincian"}</span>
+            <span className="text-[10px] text-muted">
+              {showAnalysis ? (isEn ? "Close" : "Tutup") : isEn ? "View Breakdown" : "Lihat Rincian"}
+            </span>
           </button>
 
           {showAnalysis && (
@@ -1165,19 +1242,19 @@ function PipelineCardItem({
               )}
               <div className="grid grid-cols-2 gap-1.5 text-[10px] text-muted">
                 <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
-                  <span>Daya Henti:</span>
+                  <span>{isEn ? "Stop Power:" : "Daya Henti:"}</span>
                   <span className="font-mono font-bold text-ink">{breakdown.pattern ?? "-"}/25</span>
                 </div>
                 <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
-                  <span>Penasaran:</span>
+                  <span>{isEn ? "Curiosity:" : "Penasaran:"}</span>
                   <span className="font-mono font-bold text-ink">{breakdown.curiosity ?? "-"}/20</span>
                 </div>
                 <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
-                  <span>Masalah Audiens:</span>
+                  <span>{isEn ? "Pain Point:" : "Masalah Audiens:"}</span>
                   <span className="font-mono font-bold text-ink">{breakdown.pain ?? "-"}/20</span>
                 </div>
                 <div className="flex items-center justify-between rounded bg-surface px-1.5 py-1">
-                  <span>Spesifik:</span>
+                  <span>{isEn ? "Specificity:" : "Spesifik:"}</span>
                   <span className="font-mono font-bold text-ink">{breakdown.specificity ?? "-"}/20</span>
                 </div>
               </div>
@@ -1192,7 +1269,7 @@ function PipelineCardItem({
 
       {/* The card always says what it is waiting on. */}
       <p className="mt-3 text-micro leading-relaxed text-ember-lo">
-        {nextStep(card, hasHook)}
+        {nextStep(card, hasHook, isEn)}
       </p>
 
       {error && (
@@ -1206,7 +1283,15 @@ function PipelineCardItem({
           <GenerationProgress
             moduleKey={generationModule}
             chars={generationChars}
-            label={generationModule === "hook" ? "Lagi meracik hook..." : "Lagi menyusun naskah..."}
+            label={
+              generationModule === "hook"
+                ? isEn
+                  ? "Crafting hooks..."
+                  : "Lagi meracik hook..."
+                : isEn
+                ? "Drafting script..."
+                : "Lagi menyusun naskah..."
+            }
             status={generationStatus}
           />
         </div>
@@ -1223,7 +1308,13 @@ function PipelineCardItem({
                 : "bg-ember text-obsidian shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo"
             }`}
           >
-            {isGenerating ? "Lagi mikirin hook..." : "Bikin hook · 2 kredit"}
+            {isGenerating
+              ? isEn
+                ? "Brainstorming hooks..."
+                : "Lagi mikirin hook..."
+              : isEn
+              ? "Create hook · 2 credits"
+              : "Bikin hook · 2 kredit"}
           </button>
         </div>
       )}
@@ -1234,7 +1325,11 @@ function PipelineCardItem({
       {hasHook && status === "draft" && (
         <div className="mt-3 space-y-1.5">
           <p className="eyebrow text-ember">
-            {hookList.length > 1 ? `Pilih hook · ${hookList.length} opsi` : "Hook"}
+            {hookList.length > 1
+              ? isEn
+                ? `Pick hook · ${hookList.length} options`
+                : `Pilih hook · ${hookList.length} opsi`
+              : "Hook"}
           </p>
           <div className="max-h-56 space-y-1.5 overflow-y-auto overscroll-contain pr-0.5">
           {hookList.map((h, i) => {
@@ -1270,7 +1365,13 @@ function PipelineCardItem({
                 : "bg-ember text-obsidian shadow-[0_0_20px_rgba(255,138,61,0.25)] hover:bg-ember-lo"
             }`}
           >
-            {isGenerating ? "Lagi nulis script..." : "Bikin script dari hook ini · 4 kredit"}
+            {isGenerating
+              ? isEn
+                ? "Writing script..."
+                : "Lagi nulis script..."
+              : isEn
+              ? "Generate script from this hook · 4 credits"
+              : "Bikin script dari hook ini · 4 kredit"}
           </button>
         </div>
       )}
@@ -1306,27 +1407,29 @@ function PipelineCardItem({
             >
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            <span>Simulasi Respon Netizen</span>
+            <span>{isEn ? "Netizen Reaction Simulator" : "Simulasi Respon Netizen"}</span>
           </button>
 
           <button
             onClick={() => onMove(card.id, "posted")}
             className="w-full cursor-pointer rounded-xl border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-xs font-bold text-ink transition-all duration-[var(--duration-standard)] ease-heat hover:border-ember/40 hover:bg-ember/10 hover:text-ember active:scale-[0.98]"
           >
-            Udah gue posting
+            {isEn ? "I've published this" : "Udah gue posting"}
           </button>
         </div>
       )}
 
       {status === "posted" && card.generation_id && !rated && (
         <div className="mt-3 border-t border-hairline pt-3">
-          <p className="mb-2 text-micro text-muted">Performanya gimana?</p>
+          <p className="mb-2 text-micro text-muted">
+            {isEn ? "How did it perform?" : "Performanya gimana?"}
+          </p>
           <div className="flex gap-1" onMouseLeave={() => setRatingHover(0)}>
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
                 disabled={isSubmittingRating}
-                aria-label={`Kasih ${star} bintang`}
+                aria-label={isEn ? `Rate ${star} stars` : `Kasih ${star} bintang`}
                 onMouseEnter={() => setRatingHover(star)}
                 onClick={() => handleRate(star)}
                 className={`text-lg transition-colors ${
@@ -1342,7 +1445,9 @@ function PipelineCardItem({
 
       {status === "posted" && rated && (
         <p className="mt-3 border-t border-hairline pt-3 text-micro text-success">
-          Makasih — ini kepake buat ide lo berikutnya.
+          {isEn
+            ? "Thank you — this trains your next recommendations."
+            : "Makasih — ini kepake buat ide lo berikutnya."}
         </p>
       )}
 
@@ -1404,6 +1509,10 @@ function StageMover({
   onMove: (to: Column) => void;
   onReorder: (delta: number) => void;
 }) {
+  const { language, dict } = useLanguage();
+  const isEn = language === "en";
+  const labelOf = (c: Column) => dict.pipeline.columns[c]?.label ?? c;
+
   const i = ORDER.indexOf(status);
   const back = i > 0 ? ORDER[i - 1] : null;
   const next = i < ORDER.length - 1 ? ORDER[i + 1] : null;
@@ -1420,8 +1529,8 @@ function StageMover({
           type="button"
           onClick={() => onReorder(-1)}
           disabled={index === 0}
-          aria-label="Naikin urutan kartu"
-          title="Naikin urutan"
+          aria-label={isEn ? "Move card up" : "Naikin urutan kartu"}
+          title={isEn ? "Move up" : "Naikin urutan"}
           className={arrow}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
@@ -1432,8 +1541,8 @@ function StageMover({
           type="button"
           onClick={() => onReorder(1)}
           disabled={index >= count - 1}
-          aria-label="Turunin urutan kartu"
-          title="Turunin urutan"
+          aria-label={isEn ? "Move card down" : "Turunin urutan kartu"}
+          title={isEn ? "Move down" : "Turunin urutan"}
           className={arrow}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">

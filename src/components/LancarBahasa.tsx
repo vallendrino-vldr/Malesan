@@ -3514,7 +3514,13 @@ export function LancarBahasa({ cost = 2, credits = 0 }: { cost?: number; credits
                             }}
                             className="h-10 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30 cursor-pointer transition-colors"
                           >
-                            🔄 Rekam Ulang
+                            <span className="inline-flex items-center justify-center gap-1.5 w-full">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3.5">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                                <path d="M3 3v5h5" />
+                              </svg>
+                              <span>Rekam Ulang</span>
+                            </span>
                           </button>
                         ) : (
                           <button

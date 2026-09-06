@@ -17,6 +17,7 @@ import { completeStudioProcessing } from "./studio/AIProcessingOverlay";
 import { NetizenSimulatorModal } from "./NetizenSimulatorModal";
 import { ScriptFullViewModal } from "./ScriptFullViewModal";
 import { haptic } from "@/lib/haptics";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Column = "ide" | "draft" | "siap" | "posted";
 
@@ -54,6 +55,9 @@ export function PipelineCardModal({
   onCardUpdated,
   onCardDeleted,
 }: PipelineCardModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+
   const isMounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingLabel, setGeneratingLabel] = useState("");
@@ -96,14 +100,22 @@ export function PipelineCardModal({
   const pillar = typeof content?.content_pillar === "string" ? content.content_pillar : undefined;
   const pillarLabel =
     pillar === "edukasi"
-      ? "Edukasi & Otoritas"
+      ? isEn
+        ? "Education & Authority"
+        : "Edukasi & Otoritas"
       : pillar === "storytelling"
-        ? "Storytelling & Relate"
-        : pillar === "engagement"
-          ? "Diskusi & Interaksi"
-          : pillar === "soft_selling"
-            ? "Soft Selling & Solusi"
-            : null;
+      ? isEn
+        ? "Storytelling & Relatable"
+        : "Storytelling & Relate"
+      : pillar === "engagement"
+      ? isEn
+        ? "Discussion & Interaction"
+        : "Diskusi & Interaksi"
+      : pillar === "soft_selling"
+      ? isEn
+        ? "Soft Selling & Solution"
+        : "Soft Selling & Solusi"
+      : null;
 
   const rawHooks = (content?.generated_hook as HookOutput | undefined)?.hooks ?? [];
   const hookList = rawHooks
@@ -120,7 +132,7 @@ export function PipelineCardModal({
     haptic.impact();
     setIsGenerating(true);
     setError("");
-    setGeneratingLabel("Meracik 10 opsi hook tajam...");
+    setGeneratingLabel(isEn ? "Crafting 10 high-impact hooks..." : "Meracik 10 opsi hook tajam...");
 
     try {
       const res = await fetch("/api/generate", {
@@ -137,7 +149,7 @@ export function PipelineCardModal({
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Gagal membuat hook.");
+        throw new Error(errJson.error || (isEn ? "Failed to generate hooks." : "Gagal membuat hook."));
       }
 
       const json = await res.json();
@@ -152,7 +164,7 @@ export function PipelineCardModal({
       onCardUpdated(updated);
     } catch (e) {
       haptic.error();
-      setError(e instanceof Error ? e.message : "Ada kendala saat membuat hook.");
+      setError(e instanceof Error ? e.message : (isEn ? "Error generating hooks." : "Ada kendala saat membuat hook."));
     } finally {
       setIsGenerating(false);
       setGeneratingLabel("");
@@ -179,7 +191,7 @@ export function PipelineCardModal({
     haptic.impact();
     setIsGenerating(true);
     setError("");
-    setGeneratingLabel("Menyusun naskah scene-by-scene...");
+    setGeneratingLabel(isEn ? "Crafting scene-by-scene script..." : "Menyusun naskah scene-by-scene...");
 
     try {
       const chosenText = hookList[pickedHookIndex]?.text || card.title;
@@ -198,7 +210,7 @@ export function PipelineCardModal({
 
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.error || "Gagal membuat naskah.");
+        throw new Error(errJson.error || (isEn ? "Failed to create script." : "Gagal membuat naskah."));
       }
 
       const json = await res.json();
@@ -212,7 +224,7 @@ export function PipelineCardModal({
       onCardUpdated(updated);
     } catch (e) {
       haptic.error();
-      setError(e instanceof Error ? e.message : "Ada kendala saat membuat naskah.");
+      setError(e instanceof Error ? e.message : (isEn ? "Issue encountered while creating script." : "Ada kendala saat membuat naskah."));
     } finally {
       setIsGenerating(false);
       setGeneratingLabel("");
@@ -227,7 +239,7 @@ export function PipelineCardModal({
       onCardUpdated(updated);
     } catch (e) {
       haptic.error();
-      setError(e instanceof Error ? e.message : "Gagal mengubah status.");
+      setError(e instanceof Error ? e.message : (isEn ? "Failed to update status." : "Gagal mengubah status."));
     }
   };
 
@@ -253,7 +265,7 @@ export function PipelineCardModal({
       onClose();
     } catch (e) {
       haptic.error();
-      setError(e instanceof Error ? e.message : "Gagal menghapus kartu.");
+      setError(e instanceof Error ? e.message : (isEn ? "Failed to delete card." : "Gagal menghapus kartu."));
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
@@ -292,7 +304,7 @@ export function PipelineCardModal({
                         : "bg-surface-raised text-muted border border-hairline"
                 }`}
               >
-                Tahap: {status}
+                {isEn ? "Stage: " : "Tahap: "}{status}
               </span>
 
               {/* Pillar Badge */}
@@ -315,7 +327,7 @@ export function PipelineCardModal({
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5 text-ember">
                     <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3.5z" />
                   </svg>
-                  Potensi {aiScore}/100
+                  {isEn ? "Potential " : "Potensi "}{aiScore}/100
                 </span>
               )}
             </div>
@@ -328,8 +340,8 @@ export function PipelineCardModal({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowDeleteConfirm((v) => !v)}
-              aria-label="Hapus kartu"
-              title="Hapus kartu ini"
+              aria-label={isEn ? "Delete card" : "Hapus kartu"}
+              title={isEn ? "Delete this card" : "Hapus kartu ini"}
               className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-danger/10 hover:text-danger"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
@@ -340,7 +352,7 @@ export function PipelineCardModal({
             </button>
             <button
               onClick={onClose}
-              aria-label="Tutup modal"
+              aria-label={isEn ? "Close modal" : "Tutup modal"}
               className="flex size-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
@@ -354,14 +366,14 @@ export function PipelineCardModal({
         {/* Delete Confirmation Banner */}
         {showDeleteConfirm && (
           <div className="flex items-center justify-between border-b border-danger/30 bg-danger/10 px-4 py-2.5 text-xs text-danger">
-            <span>Hapus kartu ini dari alur kerja?</span>
+            <span>{isEn ? "Delete this card from workflow?" : "Hapus kartu ini dari alur kerja?"}</span>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
                 className="font-medium text-muted hover:text-ink"
               >
-                Batal
+                {isEn ? "Cancel" : "Batal"}
               </button>
               <button
                 type="button"
@@ -369,7 +381,7 @@ export function PipelineCardModal({
                 disabled={isDeleting}
                 className="rounded bg-danger px-2.5 py-1 font-bold text-obsidian hover:opacity-90 disabled:opacity-50"
               >
-                {isDeleting ? "Menghapus..." : "Ya, Hapus"}
+                {isDeleting ? (isEn ? "Deleting..." : "Menghapus...") : (isEn ? "Yes, Delete" : "Ya, Hapus")}
               </button>
             </div>
           </div>
@@ -385,7 +397,7 @@ export function PipelineCardModal({
                 : "border-transparent text-muted hover:text-ink"
             }`}
           >
-            Konten & Eksekusi
+            {isEn ? "Content & Execution" : "Konten & Eksekusi"}
           </button>
           {Boolean(breakdown) && (
             <button
@@ -396,7 +408,7 @@ export function PipelineCardModal({
                   : "border-transparent text-muted hover:text-ink"
               }`}
             >
-              Analisis Potensi AI ({aiScore ?? "-"})
+              {isEn ? `AI Potential Analysis (${aiScore ?? "-"})` : `Analisis Potensi AI (${aiScore ?? "-"})`}
             </button>
           )}
         </div>
@@ -413,7 +425,7 @@ export function PipelineCardModal({
             <div className="space-y-4">
               {Boolean(scoreReason) && (
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3.5">
-                  <p className="eyebrow mb-1 text-ember">Alasan Sudut Pandang Ini Menang:</p>
+                  <p className="eyebrow mb-1 text-ember">{isEn ? "Why This Angle Wins:" : "Alasan Sudut Pandang Ini Menang:"}</p>
                   <p className="text-xs leading-relaxed text-ink/90">&ldquo;{scoreReason}&rdquo;</p>
                 </div>
               )}
@@ -421,42 +433,42 @@ export function PipelineCardModal({
               <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-ink">Daya Henti (Pattern Interrupt)</span>
+                    <span className="text-xs font-semibold text-ink">{isEn ? "Pattern Interrupt" : "Daya Henti (Pattern Interrupt)"}</span>
                     <span className="font-mono text-xs font-bold text-ember">{breakdown.pattern ?? "-"}/25</span>
                   </div>
-                  <p className="mt-1 text-micro text-muted">Kekuatan menahan jempol scrolling di 3 detik pertama.</p>
+                  <p className="mt-1 text-micro text-muted">{isEn ? "Thumb-stopping power in the first 3 seconds." : "Kekuatan menahan jempol scrolling di 3 detik pertama."}</p>
                 </div>
 
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-ink">Penasaran (Curiosity Gap)</span>
+                    <span className="text-xs font-semibold text-ink">{isEn ? "Curiosity Gap" : "Penasaran (Curiosity Gap)"}</span>
                     <span className="font-mono text-xs font-bold text-ember">{breakdown.curiosity ?? "-"}/20</span>
                   </div>
-                  <p className="mt-1 text-micro text-muted">Memicu rasa ingin tahu tanpa clickbait murahan.</p>
+                  <p className="mt-1 text-micro text-muted">{isEn ? "Sparks curiosity without cheap clickbait." : "Memicu rasa ingin tahu tanpa clickbait murahan."}</p>
                 </div>
 
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-ink">Masalah Audiens (Pain Match)</span>
+                    <span className="text-xs font-semibold text-ink">{isEn ? "Audience Pain Match" : "Masalah Audiens (Pain Match)"}</span>
                     <span className="font-mono text-xs font-bold text-ember">{breakdown.pain ?? "-"}/20</span>
                   </div>
-                  <p className="mt-1 text-micro text-muted">Keselarasan langsung dengan keresahan target audiens.</p>
+                  <p className="mt-1 text-micro text-muted">{isEn ? "Direct resonance with target audience struggles." : "Keselarasan langsung dengan keresahan target audiens."}</p>
                 </div>
 
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-ink">Spesifik & Konkret</span>
+                    <span className="text-xs font-semibold text-ink">{isEn ? "Specific & Concrete" : "Spesifik & Konkret"}</span>
                     <span className="font-mono text-xs font-bold text-ember">{breakdown.specificity ?? "-"}/20</span>
                   </div>
-                  <p className="mt-1 text-micro text-muted">Memakai angka, perbandingan, atau objek yang nyata.</p>
+                  <p className="mt-1 text-micro text-muted">{isEn ? "Uses concrete figures, comparisons, or tangible objects." : "Memakai angka, perbandingan, atau objek yang nyata."}</p>
                 </div>
 
                 <div className="rounded-xl border border-hairline bg-surface-raised p-3 sm:col-span-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-ink">Resonansi Emosi</span>
+                    <span className="text-xs font-semibold text-ink">{isEn ? "Emotional Resonance" : "Resonansi Emosi"}</span>
                     <span className="font-mono text-xs font-bold text-ember">{breakdown.emotion ?? "-"}/15</span>
                   </div>
-                  <p className="mt-1 text-micro text-muted">Menyentuh perasaan relate, tawa, atau validasi audiens.</p>
+                  <p className="mt-1 text-micro text-muted">{isEn ? "Touches relatable feelings, humor, or validation." : "Menyentuh perasaan relate, tawa, atau validasi audiens."}</p>
                 </div>
               </div>
             </div>
@@ -466,28 +478,28 @@ export function PipelineCardModal({
               <div className="grid grid-cols-1 gap-2.5 rounded-xl border border-hairline bg-surface-raised p-3.5 sm:grid-cols-2">
                 {content?.angle ? (
                   <div className="sm:col-span-2">
-                    <span className="eyebrow text-muted">Sudut Pandang (Angle):</span>
+                    <span className="eyebrow text-muted">{isEn ? "Angle:" : "Sudut Pandang (Angle):"}</span>
                     <p className="mt-0.5 text-xs leading-relaxed text-ink">{String(content.angle)}</p>
                   </div>
                 ) : null}
 
                 {content?.why_now ? (
                   <div className="sm:col-span-2 border-t border-hairline/60 pt-2">
-                    <span className="eyebrow text-muted">Kenapa Harus Sekarang (Why Now):</span>
+                    <span className="eyebrow text-muted">{isEn ? "Why Now:" : "Kenapa Harus Sekarang (Why Now):"}</span>
                     <p className="mt-0.5 text-xs leading-relaxed text-ink">{String(content.why_now)}</p>
                   </div>
                 ) : null}
 
                 {content?.format ? (
                   <div className="border-t border-hairline/60 pt-2">
-                    <span className="eyebrow text-muted">Format Konten:</span>
+                    <span className="eyebrow text-muted">{isEn ? "Content Format:" : "Format Konten:"}</span>
                     <p className="mt-0.5 text-xs font-medium text-ink">{String(content.format)}</p>
                   </div>
                 ) : null}
 
                 {content?.est_duration ? (
                   <div className="border-t border-hairline/60 pt-2">
-                    <span className="eyebrow text-muted">Estimasi Durasi:</span>
+                    <span className="eyebrow text-muted">{isEn ? "Estimated Duration:" : "Estimasi Durasi:"}</span>
                     <p className="mt-0.5 text-xs font-medium text-ink">{String(content.est_duration)}</p>
                   </div>
                 ) : null}
@@ -496,9 +508,13 @@ export function PipelineCardModal({
               {/* Action Stage 1: Generate Hook (If status is ide or no hook) */}
               {hookList.length === 0 && status === "ide" && (
                 <div className="rounded-xl border border-ember/30 bg-ember/[0.03] p-4 text-center">
-                  <p className="font-display text-xs font-bold text-ink">Langkah 1: Racik Hook Pembuka</p>
+                  <p className="font-display text-xs font-bold text-ink">
+                    {isEn ? "Step 1: Craft Opening Hook" : "Langkah 1: Racik Hook Pembuka"}
+                  </p>
                   <p className="mt-1 text-micro text-muted">
-                    Hook adalah 3 detik penentu apakah penonton bakal lanjut nonton atau scroll.
+                    {isEn
+                      ? "The hook is the crucial 3 seconds determining whether viewers stay or scroll."
+                      : "Hook adalah 3 detik penentu apakah penonton bakal lanjut nonton atau scroll."}
                   </p>
                   <button
                     onClick={handleGenerateHook}
@@ -508,7 +524,7 @@ export function PipelineCardModal({
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                       <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3z" />
                     </svg>
-                    <span>{isGenerating ? generatingLabel : "Bikin Hook · 2 kredit"}</span>
+                    <span>{isGenerating ? generatingLabel : (isEn ? "Create Hook · 2 credits" : "Bikin Hook · 2 kredit")}</span>
                   </button>
                 </div>
               )}
@@ -517,8 +533,12 @@ export function PipelineCardModal({
               {hookList.length > 0 && (
                 <div className="space-y-3 rounded-xl border border-hairline bg-surface-raised p-4">
                   <div className="flex items-center justify-between">
-                    <span className="eyebrow text-ember">Pilihan Hook ({hookList.length} opsi):</span>
-                    <span className="text-micro text-muted">Pilih satu untuk jadi acuan naskah</span>
+                    <span className="eyebrow text-ember">
+                      {isEn ? `Hook Options (${hookList.length} options):` : `Pilihan Hook (${hookList.length} opsi):`}
+                    </span>
+                    <span className="text-micro text-muted">
+                      {isEn ? "Select one as the script baseline" : "Pilih satu untuk jadi acuan naskah"}
+                    </span>
                   </div>
 
                   <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
@@ -533,8 +553,14 @@ export function PipelineCardModal({
                         }`}
                       >
                         <div className="mb-1 flex items-center justify-between text-[10px]">
-                          <span className="text-ember font-bold">Opsi #{idx + 1} {h.type ? `· ${h.type}` : ""}</span>
-                          {h.score > 0 && <span className="font-mono text-muted">Skor: {h.score}</span>}
+                          <span className="text-ember font-bold">
+                            {isEn ? `Option #${idx + 1}` : `Opsi #${idx + 1}`} {h.type ? `· ${h.type}` : ""}
+                          </span>
+                          {h.score > 0 && (
+                            <span className="font-mono text-muted">
+                              {isEn ? "Score:" : "Skor:"} {h.score}
+                            </span>
+                          )}
                         </div>
                         <p>{h.text}</p>
                       </button>
@@ -552,7 +578,7 @@ export function PipelineCardModal({
                           <path d="M12 20h9" />
                           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                         </svg>
-                        <span>{isGenerating ? generatingLabel : "Bikin Script · 3 kredit"}</span>
+                        <span>{isGenerating ? generatingLabel : (isEn ? "Create Script · 3 credits" : "Bikin Script · 3 kredit")}</span>
                       </button>
                     </div>
                   )}
@@ -563,7 +589,9 @@ export function PipelineCardModal({
               {generatedScript && (
                 <div className="space-y-3 rounded-xl border border-hairline bg-surface-raised p-4">
                   <div className="flex items-center justify-between">
-                    <span className="eyebrow text-success">Naskah Video Siap Syuting:</span>
+                    <span className="eyebrow text-success">
+                      {isEn ? "Video Script Ready to Film:" : "Naskah Video Siap Syuting:"}
+                    </span>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
@@ -582,7 +610,7 @@ export function PipelineCardModal({
                         >
                           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
                         </svg>
-                        <span>Layar Penuh</span>
+                        <span>{isEn ? "Full Screen" : "Layar Penuh"}</span>
                       </button>
                       <button
                         type="button"
@@ -601,10 +629,10 @@ export function PipelineCardModal({
                         >
                           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                         </svg>
-                        <span>Simulasi Netizen</span>
+                        <span>{isEn ? "Netizen Simulator" : "Simulasi Netizen"}</span>
                       </button>
                       <span className="text-micro text-muted">
-                        {generatedScript.scenes?.length ?? 0} Scene
+                        {generatedScript.scenes?.length ?? 0} {isEn ? "Scenes" : "Scene"}
                       </span>
                     </div>
                   </div>
@@ -624,7 +652,7 @@ export function PipelineCardModal({
                         )}
                         {sc.visual && (
                           <div className="border-t border-hairline/40 pt-1 text-micro text-muted">
-                            <span className="font-medium text-ink/70">Arahan Visual:</span> {sc.visual}
+                            <span className="font-medium text-ink/70">{isEn ? "Visual Direction:" : "Arahan Visual:"}</span> {sc.visual}
                           </div>
                         )}
                       </div>
@@ -640,7 +668,7 @@ export function PipelineCardModal({
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5">
                           <polyline points="20 6 9 17 4 12" />
                         </svg>
-                        <span>Tandai Sudah Tayang di Medsos</span>
+                        <span>{isEn ? "Mark as Published" : "Tandai Sudah Tayang di Medsos"}</span>
                       </button>
                     </div>
                   )}
@@ -657,7 +685,7 @@ export function PipelineCardModal({
               <div className="flex items-center gap-1.5">
                 <span className="flex items-center gap-1 text-micro font-bold text-muted">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  <span>Tanggal:</span>
+                  <span>{isEn ? "Date:" : "Tanggal:"}</span>
                 </span>
                 <input
                   type="date"
@@ -670,7 +698,7 @@ export function PipelineCardModal({
               <div className="flex items-center gap-1.5">
                 <span className="flex items-center gap-1 text-micro font-bold text-muted">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  <span>Jam Posting:</span>
+                  <span>{isEn ? "Post Time:" : "Jam Posting:"}</span>
                 </span>
                 <input
                   type="time"
@@ -685,9 +713,9 @@ export function PipelineCardModal({
                   type="button"
                   onClick={() => handleChangeSchedule(null, null)}
                   className="text-[11px] text-muted hover:text-danger underline decoration-dotted"
-                  title="Hapus dari jadwal"
+                  title={isEn ? "Remove from schedule" : "Hapus dari jadwal"}
                 >
-                  Lepas Jadwal
+                  {isEn ? "Unschedule" : "Lepas Jadwal"}
                 </button>
               )}
             </div>
@@ -697,19 +725,29 @@ export function PipelineCardModal({
               onClick={onClose}
               className="rounded-lg bg-surface-raised px-4 py-2 text-xs font-semibold text-ink border border-hairline hover:bg-surface"
             >
-              Tutup
+              {isEn ? "Close" : "Tutup"}
             </button>
           </div>
 
           {/* Quick Time Pills */}
           <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-white/[0.04]">
-            <span className="text-[10px] text-muted font-medium">Preset Cepat:</span>
-            {[
-              { label: "12:00 Siang", time: "12:00" },
-              { label: "17:00 Sore", time: "17:00" },
-              { label: "19:30 Prime Time", time: "19:30" },
-              { label: "21:00 Malam", time: "21:00" },
-            ].map((preset) => (
+            <span className="text-[10px] text-muted font-medium">
+              {isEn ? "Quick Presets:" : "Preset Cepat:"}
+            </span>
+            {(isEn
+              ? [
+                  { label: "12:00 PM Noon", time: "12:00" },
+                  { label: "05:00 PM Evening", time: "17:00" },
+                  { label: "07:30 PM Prime Time", time: "19:30" },
+                  { label: "09:00 PM Night", time: "21:00" },
+                ]
+              : [
+                  { label: "12:00 Siang", time: "12:00" },
+                  { label: "17:00 Sore", time: "17:00" },
+                  { label: "19:30 Prime Time", time: "19:30" },
+                  { label: "21:00 Malam", time: "21:00" },
+                ]
+            ).map((preset) => (
               <button
                 key={preset.time}
                 type="button"

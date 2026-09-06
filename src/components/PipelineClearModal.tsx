@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { clearPipelineCards } from "@/app/actions/pipeline";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface PipelineClearModalProps {
   isOpen: boolean;
@@ -22,6 +23,8 @@ export function PipelineClearModal({
   endDate,
   onCleared,
 }: PipelineClearModalProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [selectedScope, setSelectedScope] = useState<"week" | "all" | "unscheduled">("week");
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -51,7 +54,7 @@ export function PipelineClearModal({
       onCleared();
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menghapus kartu.");
+      setError(e instanceof Error ? e.message : (isEn ? "Failed to clear cards." : "Gagal menghapus kartu."));
     } finally {
       setIsDeleting(false);
       setShowConfirm(false);
@@ -90,12 +93,12 @@ export function PipelineClearModal({
               </svg>
             </div>
             <h3 id="clear-modal-title" className="font-display text-sm font-bold text-ink">
-              Bersihkan Alur Kerja
+              {isEn ? "Clear Pipeline Board" : "Bersihkan Alur Kerja"}
             </h3>
           </div>
           <button
             onClick={onClose}
-            aria-label="Tutup"
+            aria-label={isEn ? "Close" : "Tutup"}
             className="flex size-7 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-raised hover:text-ink"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
@@ -108,7 +111,9 @@ export function PipelineClearModal({
         {!showConfirm ? (
           <div className="space-y-4">
             <p className="text-xs leading-relaxed text-muted">
-              Pilih ruang lingkup kartu yang ingin lo kosongkan atau reset:
+              {isEn
+                ? "Select the scope of cards you want to clear or reset:"
+                : "Pilih ruang lingkup kartu yang ingin lo kosongkan atau reset:"}
             </p>
 
             <div className="space-y-2">
@@ -130,14 +135,16 @@ export function PipelineClearModal({
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-display text-xs font-semibold text-ink">
-                      Jadwal Minggu Ini Saja
+                      {isEn ? "Current Week Schedule Only" : "Jadwal Minggu Ini Saja"}
                     </span>
                     <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-bold text-muted">
-                      {weekCardsCount} kartu
+                      {weekCardsCount} {isEn ? "cards" : "kartu"}
                     </span>
                   </div>
                   <p className="mt-0.5 text-micro text-muted">
-                    Hanya hapus kartu yang dijadwalkan pada minggu aktif saat ini ({startDate} s/d {endDate}).
+                    {isEn
+                      ? `Only remove cards scheduled for the current active week (${startDate} to ${endDate}).`
+                      : `Hanya hapus kartu yang dijadwalkan pada minggu aktif saat ini (${startDate} s/d ${endDate}).`}
                   </p>
                 </div>
               </label>
@@ -160,14 +167,16 @@ export function PipelineClearModal({
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-display text-xs font-semibold text-ink">
-                      Semua Konten di Alur
+                      {isEn ? "All Cards in Pipeline" : "Semua Konten di Alur"}
                     </span>
                     <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-bold text-muted">
-                      {totalCards} kartu
+                      {totalCards} {isEn ? "cards" : "kartu"}
                     </span>
                   </div>
                   <p className="mt-0.5 text-micro text-muted">
-                    Kosongkan seluruh kartu dari semua kolom (Ide, Draft, Siap, dan Tayang).
+                    {isEn
+                      ? "Clear all cards across every column (Ideas, Draft, Ready, and Published)."
+                      : "Kosongkan seluruh kartu dari semua kolom (Ide, Draft, Siap, dan Tayang)."}
                   </p>
                 </div>
               </label>
@@ -190,14 +199,16 @@ export function PipelineClearModal({
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <span className="font-display text-xs font-semibold text-ink">
-                      Ide Belum Terjadwal Saja
+                      {isEn ? "Unscheduled Ideas Only" : "Ide Belum Terjadwal Saja"}
                     </span>
                     <span className="rounded bg-surface px-1.5 py-0.5 text-[10px] font-bold text-muted">
-                      {Math.max(0, totalCards - weekCardsCount)} kartu
+                      {Math.max(0, totalCards - weekCardsCount)} {isEn ? "cards" : "kartu"}
                     </span>
                   </div>
                   <p className="mt-0.5 text-micro text-muted">
-                    Hanya hapus kartu yang belum memiliki tanggal di kalender.
+                    {isEn
+                      ? "Only remove cards that have no date assigned on the calendar."
+                      : "Hanya hapus kartu yang belum memiliki tanggal di kalender."}
                   </p>
                 </div>
               </label>
@@ -209,7 +220,7 @@ export function PipelineClearModal({
                 onClick={onClose}
                 className="rounded-lg border border-hairline px-3.5 py-2 text-xs font-semibold text-muted transition-colors hover:text-ink"
               >
-                Batal
+                {isEn ? "Cancel" : "Batal"}
               </button>
               <button
                 type="button"
@@ -217,16 +228,24 @@ export function PipelineClearModal({
                 disabled={countForScope === 0}
                 className="rounded-lg bg-danger px-4 py-2 font-display text-xs font-bold text-obsidian transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                Lanjut Hapus ({countForScope})
+                {isEn ? `Proceed to Delete (${countForScope})` : `Lanjut Hapus (${countForScope})`}
               </button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-xs text-danger">
-              <p className="font-semibold">Konfirmasi Penghapusan</p>
+              <p className="font-semibold">{isEn ? "Confirm Deletion" : "Konfirmasi Penghapusan"}</p>
               <p className="mt-1 text-micro leading-relaxed text-danger/90">
-                Lo akan menghapus <strong>{countForScope} kartu</strong>. Tindakan ini permanen dan tidak dapat dibatalkan.
+                {isEn ? (
+                  <>
+                    You are about to delete <strong>{countForScope} cards</strong>. This action is permanent and cannot be undone.
+                  </>
+                ) : (
+                  <>
+                    Lo akan menghapus <strong>{countForScope} kartu</strong>. Tindakan ini permanen dan tidak dapat dibatalkan.
+                  </>
+                )}
               </p>
             </div>
 
@@ -241,7 +260,7 @@ export function PipelineClearModal({
                 disabled={isDeleting}
                 className="rounded-lg border border-hairline px-3.5 py-2 text-xs font-semibold text-muted transition-colors hover:text-ink"
               >
-                Kembali
+                {isEn ? "Back" : "Kembali"}
               </button>
               <button
                 type="button"
@@ -249,7 +268,13 @@ export function PipelineClearModal({
                 disabled={isDeleting}
                 className="flex items-center gap-1.5 rounded-lg bg-danger px-4 py-2 font-display text-xs font-bold text-obsidian transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {isDeleting ? "Menghapus..." : "Ya, Hapus Sekarang"}
+                {isDeleting
+                  ? isEn
+                    ? "Deleting..."
+                    : "Menghapus..."
+                  : isEn
+                  ? "Yes, Delete Now"
+                  : "Ya, Hapus Sekarang"}
               </button>
             </div>
           </div>

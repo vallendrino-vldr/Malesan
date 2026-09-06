@@ -70,7 +70,24 @@ export function LivingProcessingCompanion({
               isCompleted || progress >= 100 ? "text-emerald-300 font-semibold" : "text-[#F5F5F5]"
             }`}
           >
-            {isCompleted || progress >= 100 ? `✨ ${text}` : `“${text}”`}
+            {isCompleted || progress >= 100 ? (
+              <span className="inline-flex items-center gap-1.5">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="size-3.5 text-emerald-400 shrink-0 inline"
+                >
+                  <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+                </svg>
+                <span>{text}</span>
+              </span>
+            ) : (
+              `“${text}”`
+            )}
           </motion.p>
         </AnimatePresence>
 

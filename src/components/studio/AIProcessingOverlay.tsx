@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { LivingProcessingCompanion } from "./LivingProcessingCompanion";
 import { ProcessingTimeline, TimelinePhase } from "./ProcessingTimeline";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export type ModuleTimelineConfig = {
   headerTitleDesktop: string;
@@ -296,15 +297,300 @@ export const MODULE_TIMELINE_CONFIGS: Record<string, ModuleTimelineConfig> = {
   },
 };
 
-function resolveConfig(moduleKey?: string): ModuleTimelineConfig {
-  if (!moduleKey) return MODULE_TIMELINE_CONFIGS.ide;
+export const MODULE_TIMELINE_CONFIGS_EN: Record<string, ModuleTimelineConfig> = {
+  // 1. Daily Ideas / Brainstorm
+  ide: {
+    headerTitleDesktop: "FINDING BEST IDEAS & HOOK PATTERNS...",
+    headerTitleMobile: "BRAINSTORMING IDEAS...",
+    phases: [
+      {
+        id: 1,
+        title: "Analyzing your topic",
+        subtitle: "Uncovering the highest-retention angles.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Perspective research",
+        subtitle: "Selecting hooks that fit your audience perfectly.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Curating top 3 ideas",
+        subtitle: "Drafting catchy titles, hook formats, and core angles.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Ready to use",
+        subtitle: "Your top 3 content ideas are finalized.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Reading your topic and background...",
+      2: "Hunting for scroll-stopping angles...",
+      3: "Curating the 3 highest-potential angles...",
+      4: "Polishing headlines and hooks...",
+      5: "Done! 3 ideas ready for you.",
+    },
+  },
+
+  // 2. Hook Lab
+  hook: {
+    headerTitleDesktop: "CRAFTING 3-SECOND RETENTION HOOKS...",
+    headerTitleMobile: "GENERATING HOOKS...",
+    phases: [
+      {
+        id: 1,
+        title: "Core angle breakdown",
+        subtitle: "Identifying curiosity gaps and audience friction.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Drafting opening lines",
+        subtitle: "Crafting hypnotic 3-second openers.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Stress-testing retention",
+        subtitle: "Balancing emotion, visual cue, and intrigue.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Hooks ready to select",
+        subtitle: "Your best opening variations are prepared.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Analyzing the most striking core point...",
+      2: "Formulating brutal 3-second openers...",
+      3: "Stress-testing retention formulas...",
+      4: "Fine-tuning punchy hook variants...",
+      5: "Done! Your best hooks are ready.",
+    },
+  },
+
+  // 3. Script Engine
+  script: {
+    headerTitleDesktop: "WRITING FULL RETENTION SCRIPT...",
+    headerTitleMobile: "WRITING SCRIPT...",
+    phases: [
+      {
+        id: 1,
+        title: "Hook alignment",
+        subtitle: "Locking the opening thesis into the narrative.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Retention architecture",
+        subtitle: "Structuring pacing, idea bridges, and value drops.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "VO & visual scene direction",
+        subtitle: "Breaking down scenes, visual cues, and on-screen text.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Full script ready",
+        subtitle: "Complete script ready for shooting & teleprompter.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Locking your selected hook...",
+      2: "Building smooth pacing with zero fluff...",
+      3: "Drafting visual directions and voiceover...",
+      4: "Polishing call-to-action and punchlines...",
+      5: "Done! Complete script is ready.",
+    },
+  },
+
+  // 4. Vibe Coding
+  vibe: {
+    headerTitleDesktop: "ARCHITECTING & BUILDING APPLICATION...",
+    headerTitleMobile: "WRITING CODE...",
+    phases: [
+      {
+        id: 1,
+        title: "Prompt & specs analysis",
+        subtitle: "Parsing feature specs and user interaction flows.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "UI architecture design",
+        subtitle: "Structuring layout, component state, and event handling.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Generating code & logic",
+        subtitle: "Building interactive logic and Tailwind styling.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "App ready to preview",
+        subtitle: "Live preview ready to inspect and interact.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Studying your requirements and features...",
+      2: "Structuring components and state graph...",
+      3: "Compiling interactive code and logic...",
+      4: "Almost there, running preview verification...",
+      5: "Done! Application is ready to preview.",
+    },
+  },
+
+  // 5. Repurpose
+  repurpose: {
+    headerTitleDesktop: "REPURPOSING ACROSS MULTI-PLATFORMS...",
+    headerTitleMobile: "REPURPOSING...",
+    phases: [
+      {
+        id: 1,
+        title: "Parsing source transcript",
+        subtitle: "Extracting core insights and high-value nuggets.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Cross-platform adaptation",
+        subtitle: "Tailoring formats for X, LinkedIn, TikTok, and IG.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Tone & CTA optimization",
+        subtitle: "Refining platform tone and click-worthy CTAs.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Content ready to distribute",
+        subtitle: "Multi-platform drafts ready for publishing.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Mapping out your source material...",
+      2: "Reformatting for each platform audience...",
+      3: "Polishing tone, hook, and layout per channel...",
+      4: "Finalizing formatting and hooks...",
+      5: "Done! Multi-platform content is ready.",
+    },
+  },
+
+  // 6. Clip Engine
+  clip: {
+    headerTitleDesktop: "FINDING HIGH-VIRALITY VIDEO CLIPS...",
+    headerTitleMobile: "FINDING CLIPS...",
+    phases: [
+      {
+        id: 1,
+        title: "Scanning video transcript",
+        subtitle: "Detecting highest-density insights and spikes.",
+        minProgress: 0,
+        maxProgress: 25,
+        label: "0%",
+      },
+      {
+        id: 2,
+        title: "Identifying timestamps",
+        subtitle: "Locking optimal 30-60 second golden segments.",
+        minProgress: 25,
+        maxProgress: 55,
+        label: "25%",
+      },
+      {
+        id: 3,
+        title: "Crafting titles & framing",
+        subtitle: "Writing click-worthy headlines and visual cues.",
+        minProgress: 55,
+        maxProgress: 85,
+        label: "55%",
+      },
+      {
+        id: 4,
+        title: "Clips ready to export",
+        subtitle: "Timestamps and scripts ready for cutting.",
+        minProgress: 85,
+        maxProgress: 100,
+        label: "85%",
+      },
+    ],
+    messages: {
+      1: "Scanning video transcript and speech flow...",
+      2: "Highlighting 30-60s golden moments...",
+      3: "Writing headlines and framing prompts...",
+      4: "Verifying exact clip timestamps...",
+      5: "Done! Viral clips list is ready.",
+    },
+  },
+};
+
+function resolveConfig(moduleKey?: string, lang: "id" | "en" = "id"): ModuleTimelineConfig {
+  const configs = lang === "en" ? MODULE_TIMELINE_CONFIGS_EN : MODULE_TIMELINE_CONFIGS;
+  if (!moduleKey) return configs.ide;
   const key = moduleKey.toLowerCase();
-  if (key.includes("hook")) return MODULE_TIMELINE_CONFIGS.hook;
-  if (key.includes("script")) return MODULE_TIMELINE_CONFIGS.script;
-  if (key.includes("vibe") || key.includes("app")) return MODULE_TIMELINE_CONFIGS.vibe;
-  if (key.includes("repurpose") || key.includes("recycle")) return MODULE_TIMELINE_CONFIGS.repurpose;
-  if (key.includes("clip")) return MODULE_TIMELINE_CONFIGS.clip;
-  return MODULE_TIMELINE_CONFIGS.ide;
+  if (key.includes("hook")) return configs.hook;
+  if (key.includes("script")) return configs.script;
+  if (key.includes("vibe") || key.includes("app")) return configs.vibe;
+  if (key.includes("repurpose") || key.includes("recycle")) return configs.repurpose;
+  if (key.includes("clip")) return configs.clip;
+  return configs.ide;
 }
 
 type OverlayData = {
@@ -498,7 +784,9 @@ export function GlobalStudioProcessingOverlay() {
     };
   }, [data.isOpen, data.isCompleted]);
 
-  const config = resolveConfig(data.moduleKey);
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  const config = resolveConfig(data.moduleKey, isEn ? "en" : "id");
   const isCompleted = visualCompleted || progress >= 100;
   const currentPhase = isCompleted
     ? 4
@@ -542,7 +830,7 @@ export function GlobalStudioProcessingOverlay() {
             key="modal-window"
             role="dialog"
             aria-modal="true"
-            aria-label="Malesan sedang memproses"
+            aria-label={isEn ? "Malesan is processing" : "Malesan sedang memproses"}
             initial={{ opacity: 0, scale: 0.93, y: 28 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{
@@ -592,7 +880,7 @@ export function GlobalStudioProcessingOverlay() {
                   }`}
                 >
                   {isCompleted ? (
-                    "✨ SIAP DIPAKAI"
+                    isEn ? "READY TO USE" : "SIAP DIPAKAI"
                   ) : data.status ? (
                     data.status.toUpperCase()
                   ) : (
@@ -640,8 +928,8 @@ export function GlobalStudioProcessingOverlay() {
                 }`}
               >
                 {isCompleted
-                  ? "Konten siap di workspace lo!"
-                  : "Tetap di halaman ini sampai hasilnya muncul."}
+                  ? (isEn ? "Content is ready in your workspace!" : "Konten siap di workspace lo!")
+                  : (isEn ? "Stay on this page until results appear." : "Tetap di halaman ini sampai hasilnya muncul.")}
               </p>
             </div>
           </motion.div>

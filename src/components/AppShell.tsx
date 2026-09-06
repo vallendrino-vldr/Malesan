@@ -488,18 +488,18 @@ export function AppShell({
           {TABS.map((t) => {
             const on = t.key === shown;
             const inner = (
-              <div className="relative flex flex-col items-center justify-center w-full min-h-[48px] py-1">
+              <div className="relative flex flex-col items-center justify-center w-full min-h-[50px] py-1">
                 {/* Top Precision Laser Indicator */}
                 {on && (
                   <span
                     aria-hidden="true"
-                    className="kinetic-node pointer-events-none absolute -top-1 left-1/2 w-6 h-[2px] rounded-full bg-ember animate-tab-laser"
+                    className="kinetic-node pointer-events-none absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-[2px] rounded-full bg-ember animate-tab-laser"
                   />
                 )}
 
                 {/* Cyber-Glass Pill Capsule */}
                 <div
-                  className={`relative flex flex-col items-center justify-center gap-0.5 w-full max-w-[68px] sm:max-w-[80px] py-1 px-2 rounded-xl transition-all duration-200 ${
+                  className={`relative flex flex-col items-center justify-center gap-0.5 w-full max-w-[76px] sm:max-w-[84px] h-[44px] px-1.5 py-1 rounded-xl transition-all duration-200 ${
                     on
                       ? "kinetic-node bg-ember/[0.08] border border-ember/30 animate-tab-pill overflow-hidden"
                       : "hover:bg-white/[0.03]"
@@ -517,7 +517,7 @@ export function AppShell({
                   <svg
                     viewBox="0 0 24 24"
                     aria-hidden="true"
-                    className={`relative z-10 size-5 transition-all duration-[var(--duration-standard)] ease-heat ${
+                    className={`relative z-10 size-4.5 transition-all duration-[var(--duration-standard)] ease-heat ${
                       on ? "fill-ember scale-105" : "fill-muted/75 group-hover:fill-ink"
                     }`}
                   >
@@ -526,7 +526,7 @@ export function AppShell({
 
                   {/* Label */}
                   <span
-                    className={`relative z-10 text-[11px] leading-none transition-colors duration-[var(--duration-standard)] ease-heat ${
+                    className={`relative z-10 whitespace-nowrap select-none text-[10px] sm:text-[11px] leading-none transition-colors duration-[var(--duration-standard)] ease-heat ${
                       on
                         ? "text-ember font-bold tracking-tight"
                         : "text-muted/75 font-medium group-hover:text-ink"

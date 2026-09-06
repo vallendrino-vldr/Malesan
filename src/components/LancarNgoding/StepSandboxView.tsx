@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { runJavaScriptSandbox, SandboxResult } from "@/lib/code-sandbox";
 import { LessonItem } from "./StepLearnView";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface Props {
   lesson: LessonItem;
@@ -11,6 +12,9 @@ interface Props {
 }
 
 export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Props) {
+  const { language, dict } = useLanguage();
+  const isEn = language === "en";
+
   // Pre-fill starter code replacing ___ with the correct answer so it runs immediately
   const defaultStarterCode = lesson.codeSnippet.includes("___")
     ? lesson.codeSnippet.replace(/___/g, lesson.correctAnswer)
@@ -37,9 +41,9 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
       {/* Header */}
       <div className="flex items-center justify-between gap-2">
         <div>
-          <span className="text-micro font-mono text-ember font-bold">LANGKAH 2: EKSPERIMEN LIVE</span>
+          <span className="text-micro font-mono text-ember font-bold">{dict.vibe.step2Tab}</span>
           <h3 className="font-display text-sm sm:text-base font-bold text-ink">
-            Coba Sendiri di Sandbox
+            {dict.vibe.sandboxTitle}
           </h3>
         </div>
         <button
@@ -47,21 +51,23 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
           onClick={handleResetCode}
           className="text-micro font-mono text-muted hover:text-ink underline transition-colors"
         >
-          Reset Kode
+          {dict.vibe.resetCode}
         </button>
       </div>
 
       <p className="text-xs text-muted leading-relaxed">
-        Ubah nilai angka/teks di dalam editor di bawah, lalu klik tombol{" "}
-        <strong className="text-ember">Jalankan Kode ▶</strong> untuk melihat bagaimana komputer
-        mengeksekusi program lo secara nyata!
+        {dict.vibe.sandboxDesc}
       </p>
 
       {/* Interactive Code Editor */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className="text-micro font-mono text-muted/80">Editor JavaScript</span>
-          <span className="text-[10px] font-mono text-muted/60">Bisa lo edit langsung</span>
+          <span className="text-micro font-mono text-muted/80">
+            {isEn ? "JavaScript Editor" : "Editor JavaScript"}
+          </span>
+          <span className="text-[10px] font-mono text-muted/60">
+            {isEn ? "Editable in real-time" : "Bisa lo edit langsung"}
+          </span>
         </div>
         <div className="relative rounded-xl border border-hairline bg-obsidian p-3 font-mono text-xs shadow-inner">
           <textarea
@@ -84,7 +90,7 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
           <svg viewBox="0 0 24 24" fill="currentColor" className="size-3.5">
             <polygon points="5 3 19 12 5 21 5 3" />
           </svg>
-          <span>Jalankan Kode ▶</span>
+          <span>{dict.vibe.runCode}</span>
         </button>
       </div>
 
@@ -94,7 +100,7 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
           <div className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-micro font-mono font-bold text-muted uppercase">
-              Terminal Output
+              {dict.vibe.terminalOutput}
             </span>
           </div>
           {result && (
@@ -107,18 +113,23 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
         <div className="min-h-[60px] font-mono text-xs leading-relaxed">
           {!hasRun && (
             <p className="text-muted/60 italic">
-              Klik &quot;Jalankan Kode ▶&quot; di atas buat liat output console.log di sini...
+              {dict.vibe.terminalEmpty}
             </p>
           )}
 
           {hasRun && result?.error && (
             <div className="rounded-lg bg-danger/10 border border-danger/30 p-2.5 text-danger space-y-1">
-              <div className="font-bold flex items-center gap-1">
-                <span>⚠️ Syntax / Execution Error:</span>
+              <div className="font-bold flex items-center gap-1.5">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>{isEn ? "Syntax / Execution Error:" : "Syntax / Execution Error:"}</span>
               </div>
               <p className="text-xs">{result.error}</p>
               <p className="text-[11px] text-danger/80 italic">
-                Cek lagi tanda kurung, tanda petik, atau nama variabel yang mungkin typo.
+                {isEn ? "Check quotes, parentheses, or possible typo in variable names." : "Cek lagi tanda kurung, tanda petik, atau nama variabel yang mungkin typo."}
               </p>
             </div>
           )}
@@ -133,7 +144,9 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
                   </div>
                 ))
               ) : (
-                <p className="text-muted italic">Program sukses jalan tanpa ada pesan log.</p>
+                <p className="text-muted italic">
+                  {isEn ? "Program executed successfully without log messages." : "Program sukses jalan tanpa ada pesan log."}
+                </p>
               )}
             </div>
           )}
@@ -147,7 +160,7 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
           onClick={onPrevStep}
           className="h-8.5 px-3 rounded-xl border border-hairline text-xs font-semibold text-muted hover:text-ink transition-colors"
         >
-          ← Balik ke Materi
+          {isEn ? "← Back to Concept" : "← Balik ke Materi"}
         </button>
 
         <button
@@ -155,7 +168,7 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
           onClick={onNextStep}
           className="flex h-9 items-center justify-center gap-2 rounded-xl bg-ember px-5 font-display text-xs font-bold text-obsidian transition-all hover:bg-ember-lo active:scale-95 shadow-md shadow-ember/20"
         >
-          <span>Siap Ikut Tantangan Kuis!</span>
+          <span>{dict.vibe.continueToQuiz}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5">
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>

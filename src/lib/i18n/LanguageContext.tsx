@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react";
+import React, { createContext, useContext, useCallback, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import { type Language, type TranslationDictionary } from "./types";
 import { TRANSLATIONS } from "./translations";
 import { haptic } from "@/lib/haptics";
@@ -17,75 +17,68 @@ interface LanguageContextValue {
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
 const STORAGE_KEY = "malesan-lang";
+const LANG_EVENT = "malesan:lang-change";
 
-function getInitialLanguage(fallback: Language): Language {
-  if (typeof window !== "undefined") {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved === "en" || saved === "id") return saved;
-      const htmlLang = document.documentElement.lang;
-      if (htmlLang === "en" || htmlLang === "id") return htmlLang as Language;
-    } catch {}
-  }
-  return fallback;
-}
+const subscribe = (notify: () => void) => {
+  window.addEventListener(LANG_EVENT, notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    window.removeEventListener(LANG_EVENT, notify);
+    window.removeEventListener("storage", notify);
+  };
+};
+
+const getSnapshot = (): Language => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === "en" || saved === "id") return saved;
+  } catch {}
+  return "id";
+};
+
+const getServerSnapshot = (): Language => "id";
 
 export function LanguageProvider({
   children,
-  initialLanguage = "id",
 }: {
   children: ReactNode;
-  initialLanguage?: Language;
 }) {
-  const [language, setLanguageState] = useState<Language>(() => getInitialLanguage(initialLanguage));
+  const language = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const setLanguage = useCallback((newLang: Language) => {
-    setLanguageState((prev) => {
-      if (prev === newLang) return prev;
-      haptic.selection();
+    haptic.selection();
 
-      if (typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(STORAGE_KEY, newLang);
+        document.cookie = `${STORAGE_KEY}=${newLang}; path=/; max-age=31536000; SameSite=Lax`;
+        document.documentElement.lang = newLang;
+      } catch {}
+
+      window.dispatchEvent(new Event(LANG_EVENT));
+
+      // Optional background sync to creator_dna if logged in
+      void (async () => {
         try {
-          localStorage.setItem(STORAGE_KEY, newLang);
-          document.cookie = `${STORAGE_KEY}=${newLang}; path=/; max-age=31536000; SameSite=Lax`;
-          document.documentElement.lang = newLang;
-        } catch {}
-
-        // Optional background sync to creator_dna if logged in
-        void (async () => {
-          try {
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              await supabase
-                .from("creator_dna")
-                .update({ output_language: newLang })
-                .eq("user_id", user.id);
-            }
-          } catch {
-            // Non-critical background sync
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            await supabase
+              .from("creator_dna")
+              .update({ output_language: newLang })
+              .eq("user_id", user.id);
           }
-        })();
-      }
-
-      return newLang;
-    });
+        } catch {
+          // Non-critical background sync
+        }
+      })();
+    }
   }, []);
 
   const toggleLanguage = useCallback(() => {
-    setLanguageState((prev) => {
-      const next = prev === "id" ? "en" : "id";
-      haptic.selection();
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem(STORAGE_KEY, next);
-          document.cookie = `${STORAGE_KEY}=${next}; path=/; max-age=31536000; SameSite=Lax`;
-          document.documentElement.lang = next;
-        } catch {}
-      }
-      return next;
-    });
-  }, []);
+    const next: Language = language === "id" ? "en" : "id";
+    setLanguage(next);
+  }, [language, setLanguage]);
 
   const dict = useMemo(() => TRANSLATIONS[language] ?? TRANSLATIONS.id, [language]);
 

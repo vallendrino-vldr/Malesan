@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import { NgodingProgress } from "@/lib/ngoding-progress";
@@ -12,7 +12,7 @@ export interface TrackMeta {
   levelRange: [number, number];
 }
 
-export const TRACKS: TrackMeta[] = [
+export const TRACKS_ID: TrackMeta[] = [
   {
     id: "dasar",
     name: "Track 1: Fondasi Logika",
@@ -38,6 +38,39 @@ export const TRACKS: TrackMeta[] = [
     levelRange: [19, 24],
   },
 ];
+
+export const TRACKS_EN: TrackMeta[] = [
+  {
+    id: "dasar",
+    name: "Track 1: Logic Foundation",
+    shortName: "1. Logic",
+    iconType: "rocket",
+    desc: "Variables, Conditionals, Arrays, Loops & Computational Thinking",
+    levelRange: [1, 10],
+  },
+  {
+    id: "menengah",
+    name: "Track 2: Interactive Web & DOM",
+    shortName: "2. Interactive",
+    iconType: "layers",
+    desc: "Events, DOM Manipulation, State & Fetching Web APIs",
+    levelRange: [11, 18],
+  },
+  {
+    id: "mahir",
+    name: "Track 3: Fullstack & AI Builder",
+    shortName: "3. Fullstack",
+    iconType: "crown",
+    desc: "Databases, Server Architecture & Autonomous AI App Building",
+    levelRange: [19, 24],
+  },
+];
+
+export function getTracks(lang: "id" | "en" = "id"): TrackMeta[] {
+  return lang === "en" ? TRACKS_EN : TRACKS_ID;
+}
+
+export const TRACKS = TRACKS_ID;
 
 interface Props {
   progress: NgodingProgress;
