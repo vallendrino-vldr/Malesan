@@ -24,7 +24,7 @@ export function stripComments(code: string): string {
     .trim();
 }
 
-export function runJavaScriptSandbox(code: string): SandboxResult {
+export function runJavaScriptSandbox(code: string, lang: "id" | "en" = "id"): SandboxResult {
   const logs: string[] = [];
   const start = performance.now();
 
@@ -39,7 +39,10 @@ export function runJavaScriptSandbox(code: string): SandboxResult {
   ) {
     return {
       logs: [],
-      error: "Akses ke storage, network, atau window dibatasi demi keamanan sandbox.",
+      error:
+        lang === "en"
+          ? "Access to storage, network, or window is restricted for sandbox security."
+          : "Akses ke storage, network, atau window dibatasi demi keamanan sandbox.",
       returnValue: undefined,
       executionTimeMs: 0,
     };

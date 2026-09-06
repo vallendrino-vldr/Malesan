@@ -25,7 +25,7 @@ export default function StepSandboxView({ lesson, onNextStep, onPrevStep }: Prop
   const [hasRun, setHasRun] = useState(false);
 
   const handleRunCode = () => {
-    const res = runJavaScriptSandbox(userCode);
+    const res = runJavaScriptSandbox(userCode, language);
     setResult(res);
     setHasRun(true);
   };

@@ -350,11 +350,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ card_id: cardId }),
       });
-      if (!res.ok) throw new Error(await readErrorBody(res, "Gagal nyariin jam tayangnya."));
+      if (!res.ok) throw new Error(await readErrorBody(res, isEn ? "Failed to find posting slot." : "Gagal nyariin jam tayangnya."));
       const json = (await res.json()) as {
         card?: { schedule_label: string | null; schedule_reason: string | null };
       };
-      if (!json.card) throw new Error("Gagal nyariin jam tayangnya. Coba geser ulang kartunya.");
+      if (!json.card) throw new Error(isEn ? "Failed to find posting slot. Try moving the card again." : "Gagal nyariin jam tayangnya. Coba geser ulang kartunya.");
       setCards((prev) =>
         prev.map((c) =>
           c.id === cardId
@@ -368,7 +368,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       );
     } catch (err) {
       setBoardError(
-        err instanceof Error ? err.message : "Gagal nyariin jam tayangnya.",
+        err instanceof Error
+          ? err.message
+          : isEn
+          ? "Failed to find posting slot."
+          : "Gagal nyariin jam tayangnya.",
       );
     } finally {
       setScheduling((p) => p.filter((id) => id !== cardId));
@@ -423,7 +427,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
 
     if (results.some((r) => r.error)) {
       setCards(snapshot);
-      setBoardError("Kartunya gagal dipindah. Coba lagi bentar lagi.");
+      setBoardError(
+        isEn
+          ? "Failed to move card. Please try again shortly."
+          : "Kartunya gagal dipindah. Coba lagi bentar lagi.",
+      );
       return;
     }
 
@@ -463,7 +471,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       // Put it straight back: the board must never show a card as gone when
       // the database still has it.
       setCards((prev) => [...prev, card]);
-      setBoardError("Kartunya gagal dihapus. Coba lagi bentar lagi.");
+      setBoardError(
+        isEn
+          ? "Failed to delete card. Please try again shortly."
+          : "Kartunya gagal dihapus. Coba lagi bentar lagi.",
+      );
     }
   };
 
@@ -502,7 +514,11 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
       }
     } catch {
       setCards((prev) => prev.filter((c) => c.id !== card.id));
-      setBoardError("Gagal balikin kartunya. Kartu itu udah kehapus permanen.");
+      setBoardError(
+        isEn
+          ? "Failed to restore card. The card has been permanently deleted."
+          : "Gagal balikin kartunya. Kartu itu udah kehapus permanen.",
+      );
     }
   };
 
@@ -724,7 +740,7 @@ export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }
           <div className="md:hidden">
             <div
               role="tablist"
-              aria-label="Tahap pipeline"
+              aria-label={isEn ? "Pipeline stages" : "Tahap pipeline"}
               className="flex gap-1 rounded-xl border border-hairline bg-surface/60 p-1"
             >
               {COLUMNS.map((col) => {
@@ -1048,7 +1064,7 @@ function PipelineCardItem({
         }),
       });
 
-      if (!res.ok) throw new Error(await readErrorBody(res, "Kontennya belum berhasil dibikin."));
+      if (!res.ok) throw new Error(await readErrorBody(res, isEn ? "Failed to generate content." : "Kontennya belum berhasil dibikin."));
 
       let finalResult: unknown = null;
       let streamError: string | null = null;
@@ -1092,10 +1108,20 @@ function PipelineCardItem({
       } else {
         // A stream that ends without a terminal frame used to leave the card
         // sitting there with no explanation. Say so instead.
-        throw new Error("Prosesnya kepotong di tengah jalan. Coba lagi ya.");
+        throw new Error(
+          isEn
+            ? "Generation was cut short. Please try again."
+            : "Prosesnya kepotong di tengah jalan. Coba lagi ya.",
+        );
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Ada yang error.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : isEn
+          ? "An error occurred."
+          : "Ada yang error.",
+      );
     } finally {
       setIsGenerating(false);
       completeStudioProcessing();

@@ -172,7 +172,13 @@ export function VibeCodingStudio({ cost = 6 }: { cost?: number }) {
       buffer += decoder.decode();
       drain(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal bikin kit-nya.");
+      setError(
+        e instanceof Error
+          ? e.message
+          : isEn
+          ? "Failed to generate blueprint kit."
+          : "Gagal bikin kit-nya."
+      );
     } finally {
       setPending(false);
       setStatus(null);

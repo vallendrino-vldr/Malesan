@@ -48,7 +48,7 @@ export default function NgodingQuestPlayer({
 
   // Handle Run & Validate in Step 2
   const handleRunAndValidate = () => {
-    const sResult = runJavaScriptSandbox(userCode);
+    const sResult = runJavaScriptSandbox(userCode, language);
     setSandboxResult(sResult);
     const vResult = validateLessonCode(lesson.level, userCode, sResult, language);
     setValidationResult(vResult);
