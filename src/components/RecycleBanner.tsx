@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Dashboard nudge: the creator has posted content sitting untouched for over a
@@ -18,14 +19,20 @@ type Angle = { angle: string; hook: string; kenapa: string };
  *  here (client) so the dashboard server render stays pure — no Date.now(). */
 const RECYCLE_MIN_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
-function monthsAgo(iso: string): string {
+function formatAge(
+  iso: string,
+  rc: { monthsAgo: (m: number) => string; daysAgo: (d: number) => string }
+): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days >= 60) return `${Math.floor(days / 30)} bulan lalu`;
-  return `${days} hari lalu`;
+  if (days >= 60) return rc.monthsAgo(Math.floor(days / 30));
+  return rc.daysAgo(days);
 }
 
 export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
   const router = useRouter();
+  const { dict } = useLanguage();
+  const rc = dict.recycle;
+
   const [dismissed, setDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -54,17 +61,20 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
         | { angles?: Angle[]; error?: string }
         | null;
       if (!res.ok) {
-        setError(data?.error ?? "Gagal daur ulang. Coba lagi.");
+        setError(data?.error ?? rc.errFailed);
         return;
       }
       setAngles(data?.angles ?? []);
       router.refresh(); // a credit was spent — keep the header honest
     } catch {
-      setError("Koneksi bermasalah. Coba lagi ya.");
+      setError(rc.errConnection);
     } finally {
       setBusy(false);
     }
   };
+
+  const targetTitle = target.title?.trim() || rc.untitled;
+  const timeString = formatAge(target.created_at, rc);
 
   return (
     <section className="surface-card rounded-2xl border border-ember/25 p-4 sm:p-5">
@@ -80,12 +90,11 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
         <div className="min-w-0 flex-1">
           <h3 className="font-display text-base font-bold tracking-display-sm text-ink">
             {stale.length > 1
-              ? `${stale.length} konten lama sayang nganggur`
-              : "Ada konten lama yang sayang nganggur"}
+              ? rc.stalePlural(stale.length)
+              : rc.staleSingular}
           </h3>
           <p className="mt-0.5 text-mini text-muted">
-            {`"${target.title?.trim() || "Tanpa judul"}"`} udah lo posting {monthsAgo(target.created_at)}.
-            Daur ulang jadi angle baru, gak usah mikir dari nol.
+            {rc.description(targetTitle, timeString)}
           </p>
 
           {!angles && (
@@ -95,13 +104,13 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
                 disabled={busy}
                 className="h-8 sm:h-8.5 cursor-pointer rounded-lg bg-ember px-3.5 font-display text-xs font-bold text-obsidian transition-colors duration-[var(--duration-standard)] ease-heat hover:bg-ember-lo disabled:cursor-not-allowed disabled:opacity-50 shadow-xs"
               >
-                {busy ? "Lagi nyulap..." : "Daur ulang jadi ide baru"}
+                {busy ? rc.btnBusy : rc.btnAction}
               </button>
               <button
                 onClick={() => setDismissed(true)}
                 className="h-8 sm:h-8.5 cursor-pointer rounded-lg border border-hairline bg-surface/60 px-3.5 text-xs font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:text-ink shadow-xs"
               >
-                Nanti aja
+                {rc.btnDismiss}
               </button>
             </div>
           )}
@@ -125,7 +134,7 @@ export function RecycleBanner({ cards }: { cards: RecyclableCard[] }) {
                 onClick={() => setDismissed(true)}
                 className="h-7.5 cursor-pointer text-xs font-semibold text-muted underline-offset-2 hover:text-ink hover:underline"
               >
-                Tutup
+                {rc.btnClose}
               </button>
             </div>
           )}

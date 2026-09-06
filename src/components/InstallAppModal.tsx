@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { LATEST_APK_DISPLAY_SIZE, LATEST_ARM32_SIZE } from "@/lib/native/version";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -33,6 +34,8 @@ export function InstallAppModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null);
   const os = useSyncExternalStore(emptySubscribe, getOsSnapshot, () => "other");
   const isInstalled = useSyncExternalStore(emptySubscribe, getIsInstalledSnapshot, () => false);
@@ -58,9 +61,15 @@ export function InstallAppModal({
         onClose();
       }
     } else {
-      alert(
-        "Untuk memasang shortcut Malesan:\n1. Buka menu browser (ikon titik tiga ⫶ atau tombol Bagikan di Safari)\n2. Pilih 'Tambahkan ke Layar Utama' (Add to Home Screen / Install App)"
-      );
+      if (isEn) {
+        alert(
+          "To install Malesan shortcut:\n1. Open browser menu (three dots ⫶ or Share icon in Safari)\n2. Select 'Add to Home Screen' or 'Install App'"
+        );
+      } else {
+        alert(
+          "Untuk memasang shortcut Malesan:\n1. Buka menu browser (ikon titik tiga ⫶ atau tombol Bagikan di Safari)\n2. Pilih 'Tambahkan ke Layar Utama' (Add to Home Screen / Install App)"
+        );
+      }
     }
   };
 
@@ -97,10 +106,14 @@ export function InstallAppModal({
             </div>
             <div>
               <h2 id="install-app-title" className="font-display text-sm sm:text-base font-bold text-white tracking-tight">
-                Unduh &amp; Pasang Malesan
+                {isEn ? "Download & Install Malesan" : "Unduh & Pasang Malesan"}
               </h2>
               <p className="text-[11px] sm:text-xs text-muted">
-                {isAndroidHero ? "Aplikasi native 60fps untuk HP Android kamu" : isWindowsHero ? "Aplikasi desktop resmi untuk Windows kamu" : "Pilih format aplikasi yang sesuai perangkat kamu"}
+                {isAndroidHero
+                  ? (isEn ? "Native 60fps app for your Android phone" : "Aplikasi native 60fps untuk HP Android kamu")
+                  : isWindowsHero
+                  ? (isEn ? "Official desktop app for your Windows PC" : "Aplikasi desktop resmi untuk Windows kamu")
+                  : (isEn ? "Choose the app format matching your device" : "Pilih format aplikasi yang sesuai perangkat kamu")}
               </p>
             </div>
           </div>
@@ -108,7 +121,7 @@ export function InstallAppModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Tutup modal"
+            aria-label={isEn ? "Close modal" : "Tutup modal"}
             className="flex size-8 shrink-0 items-center justify-center rounded-xl border border-hairline bg-surface text-muted hover:border-ember/40 hover:text-white transition-all active:scale-95"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
@@ -143,7 +156,7 @@ export function InstallAppModal({
                 </div>
                 <div className="min-w-0">
                   <span className="font-display text-xs sm:text-sm font-bold text-white block truncate">
-                    Versi Android (APK)
+                    {isEn ? "Android Version (APK)" : "Versi Android (APK)"}
                   </span>
                   <span className="text-[10px] text-muted block">
                     Android 8.0+ • 60fps Native
@@ -156,17 +169,19 @@ export function InstallAppModal({
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
-                  Rekomendasi HP
+                  {isEn ? "Recommended for Mobile" : "Rekomendasi HP"}
                 </span>
               ) : (
                 <span className="shrink-0 rounded-full border border-hairline bg-surface px-2 py-0.5 text-[9.5px] font-bold text-muted">
-                  HP Android
+                  {isEn ? "Android Phone" : "HP Android"}
                 </span>
               )}
             </div>
 
             <p className="text-[11px] text-muted leading-relaxed">
-              Akselerasi 60fps tanpa batasan browser, simpan video langsung ke Galeri HP (DCIM/Malesan).
+              {isEn
+                ? "60fps hardware acceleration without browser limits, save videos directly to Gallery (DCIM/Malesan)."
+                : "Akselerasi 60fps tanpa batasan browser, simpan video langsung ke Galeri HP (DCIM/Malesan)."}
             </p>
 
             <div className="space-y-1.5 pt-0.5">
@@ -185,7 +200,7 @@ export function InstallAppModal({
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                <span>Unduh APK Resmi ({LATEST_APK_DISPLAY_SIZE})</span>
+                <span>{isEn ? `Download Official APK (${LATEST_APK_DISPLAY_SIZE})` : `Unduh APK Resmi (${LATEST_APK_DISPLAY_SIZE})`}</span>
               </a>
 
               <div className="flex justify-center">
@@ -195,7 +210,7 @@ export function InstallAppModal({
                   onClick={onClose}
                   className="text-[10px] text-muted/70 hover:text-ember transition-colors inline-flex items-center gap-1 py-0.5"
                 >
-                  <span>HP 32-bit spek lama? Unduh ARM32 ({LATEST_ARM32_SIZE})</span>
+                  <span>{isEn ? `Older 32-bit phone? Download ARM32 (${LATEST_ARM32_SIZE})` : `HP 32-bit spek lama? Unduh ARM32 (${LATEST_ARM32_SIZE})`}</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-2.5">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
@@ -227,7 +242,7 @@ export function InstallAppModal({
                 </div>
                 <div className="min-w-0">
                   <span className="font-display text-xs sm:text-sm font-bold text-white block truncate">
-                    Versi Windows (.EXE)
+                    {isEn ? "Windows Version (.EXE)" : "Versi Windows (.EXE)"}
                   </span>
                   <span className="text-[10px] text-muted block">
                     Windows 10 &amp; 11 (64-bit)
@@ -240,17 +255,19 @@ export function InstallAppModal({
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-2.5">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
-                  Rekomendasi PC
+                  {isEn ? "Recommended for PC" : "Rekomendasi PC"}
                 </span>
               ) : (
                 <span className="shrink-0 rounded-full border border-hairline bg-surface px-2 py-0.5 text-[9.5px] font-bold text-muted">
-                  PC / Laptop
+                  {isEn ? "PC / Laptop" : "PC / Laptop"}
                 </span>
               )}
             </div>
 
             <p className="text-[11px] text-muted leading-relaxed">
-              Performa desktop penuh dengan akselerasi GPU (Nvidia/AMD/Intel) dan mesin video offline.
+              {isEn
+                ? "Full desktop performance with native GPU acceleration (Nvidia/AMD/Intel) and offline video rendering."
+                : "Performa desktop penuh dengan akselerasi GPU (Nvidia/AMD/Intel) dan mesin video offline."}
             </p>
 
             <a
@@ -268,7 +285,7 @@ export function InstallAppModal({
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>Unduh Installer PC (~226 MB)</span>
+              <span>{isEn ? "Download PC Installer (~226 MB)" : "Unduh Installer PC (~226 MB)"}</span>
             </a>
           </div>
 
@@ -287,7 +304,7 @@ export function InstallAppModal({
                 </div>
                 <div className="min-w-0">
                   <span className="font-display text-xs sm:text-sm font-bold text-white block truncate">
-                    Shortcut Web App (PWA)
+                    {isEn ? "Web App Shortcut (PWA)" : "Shortcut Web App (PWA)"}
                   </span>
                   <span className="text-[10px] text-muted block">
                     Chrome, Safari, Edge, Brave
@@ -295,12 +312,14 @@ export function InstallAppModal({
                 </div>
               </div>
               <span className="shrink-0 rounded-full border border-hairline bg-surface px-2 py-0.5 text-[9.5px] font-bold text-muted">
-                0 MB / Instan
+                {isEn ? "0 MB / Instant" : "0 MB / Instan"}
               </span>
             </div>
 
             <p className="text-[11px] text-muted leading-relaxed">
-              Jalankan langsung di browser atau pasang shortcut ke layar utama tanpa makan memori HP/PC.
+              {isEn
+                ? "Run directly in browser or install shortcut to home screen without taking device storage."
+                : "Jalankan langsung di browser atau pasang shortcut ke layar utama tanpa makan memori HP/PC."}
             </p>
 
             <button
@@ -313,7 +332,11 @@ export function InstallAppModal({
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              <span>{isInstalled ? "Buka di Mode Shortcut" : "Pasang Shortcut ke Layar Utama"}</span>
+              <span>
+                {isInstalled
+                  ? (isEn ? "Open in Shortcut Mode" : "Buka di Mode Shortcut")
+                  : (isEn ? "Install Shortcut to Home Screen" : "Pasang Shortcut ke Layar Utama")}
+              </span>
             </button>
           </div>
         </div>

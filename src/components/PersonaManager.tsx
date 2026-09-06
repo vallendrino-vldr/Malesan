@@ -9,6 +9,7 @@ import {
   setDefaultPersona,
   saveCta,
 } from "@/app/actions/personas";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type Result = { ok: true } | { ok: false; error: string };
 
@@ -18,37 +19,13 @@ const LABEL_MAX = 60;
 
 const PLATFORMS = ["tiktok", "instagram", "youtube", "x", "threads"];
 
-const WORK_CONTEXTS = [
-  {
-    id: "sendiri",
-    label: "Buat Diri Sendiri",
-    hint: "Personal brand. Pakai sudut pandang 'gue', pengalaman pribadi.",
-  },
-  {
-    id: "klien",
-    label: "Buat Klien",
-    hint: "Lo di balik kamera. Sudut pandang objektif/profesional.",
-  },
-  {
-    id: "brand",
-    label: "Buat Bisnis / Brand",
-    hint: "Perwakilan bisnis / toko. Nada profesional & solutif.",
-  },
-];
-
-const PERSONA_STYLES = [
-  "Santai & humble",
-  "Blak-blakan",
-  "Edukatif tapi ringan",
-  "Sarkas / nyeleneh",
-  "Rapi & profesional",
-  "Hype & energik",
-];
-
 const inputCls =
   "w-full rounded-xl border border-white/[0.1] bg-[#09090b] px-4 py-3 text-sm text-ink placeholder:text-muted/60 transition-all focus:border-ember focus:bg-[#0c0c0e] focus:outline-none focus:ring-2 focus:ring-ember/20 disabled:opacity-60";
 
 export function PersonaManager({ personas }: { personas: Persona[] }) {
+  const { dict, language } = useLanguage();
+  const pr = dict.profile;
+
   const [editing, setEditing] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -75,10 +52,10 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
           </div>
           <div>
             <h2 className="font-display text-lg font-bold text-ink">
-              Profil Konten &amp; Persona Suara
+              {pr.personaTitle}
             </h2>
             <p className="text-xs sm:text-sm text-muted">
-              Simpan gaya bicara spesifik untuk akun pribadi, toko, affiliate, atau klien.
+              {pr.personaSubtitle}
             </p>
           </div>
         </div>
@@ -99,10 +76,10 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
             </svg>
           </div>
           <p className="mt-3 text-xs sm:text-sm font-medium text-ink">
-            Belum ada persona tambahan
+            {pr.personaEmptyTitle}
           </p>
           <p className="mt-1 text-xs text-muted max-w-sm">
-            Malesan otomatis menggunakan Profil Utama lo. Tambah persona jika ingin suara berbeda untuk tiap akun.
+            {pr.personaEmptyDesc}
           </p>
         </div>
       )}
@@ -121,10 +98,10 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                   initialName={p.name}
                   initialVoice={p.voice}
                   pending={pending}
-                  submitLabel="Simpan Perubahan"
+                  submitLabel={pr.personaSaveChange}
                   onCancel={() => setEditing(null)}
                   onSubmit={(name, voice) =>
-                    run(() => updatePersona(p.id, name, voice), () => setEditing(null))
+                    run(() => updatePersona(p.id, name, voice, language), () => setEditing(null))
                   }
                 />
               ) : (
@@ -137,7 +114,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                       {p.is_default && (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-micro font-bold text-emerald-400">
                           <span className="size-1.5 rounded-full bg-emerald-400" />
-                          Utama
+                          {pr.personaBadgePrimary}
                         </span>
                       )}
                     </div>
@@ -149,15 +126,15 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                   {confirming === p.id ? (
                     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/[0.06] pt-3">
                       <span className="text-xs font-semibold text-rose-400">
-                        Yakin hapus &quot;{p.name}&quot;?
+                        {pr.personaDeleteConfirm(p.name)}
                       </span>
                       <button
                         type="button"
                         disabled={pending}
-                        onClick={() => run(() => deletePersona(p.id), () => setConfirming(null))}
+                        onClick={() => run(() => deletePersona(p.id, language), () => setConfirming(null))}
                         className="inline-flex h-9 items-center justify-center rounded-lg border border-rose-500/40 bg-rose-950/60 px-3 text-xs font-bold text-rose-300 hover:bg-rose-900/60 cursor-pointer"
                       >
-                        {pending ? "Menghapus..." : "Iya, Hapus"}
+                        {pending ? pr.personaDeleting : pr.personaDeleteAction}
                       </button>
                       <button
                         type="button"
@@ -165,7 +142,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                         onClick={() => setConfirming(null)}
                         className="inline-flex h-9 items-center justify-center rounded-lg border border-white/[0.1] bg-surface px-3 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
                       >
-                        Batal
+                        {pr.personaCancel}
                       </button>
                     </div>
                   ) : (
@@ -183,20 +160,20 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                           <path d="M12 20h9" />
                           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                         </svg>
-                        <span>Edit</span>
+                        <span>{pr.personaEdit}</span>
                       </button>
 
                       {!p.is_default && (
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={() => run(() => setDefaultPersona(p.id))}
+                          onClick={() => run(() => setDefaultPersona(p.id, language))}
                           className="inline-flex h-8.5 items-center justify-center gap-1.5 rounded-lg border border-white/[0.1] bg-surface/80 px-3 text-xs font-semibold text-muted hover:border-emerald-500/40 hover:text-emerald-400 cursor-pointer transition-all"
                         >
                           <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
-                          <span>Jadikan Utama</span>
+                          <span>{pr.personaSetPrimary}</span>
                         </button>
                       )}
 
@@ -210,7 +187,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
                           <polyline points="3 6 5 6 21 6" />
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
-                        <span>Hapus</span>
+                        <span>{pr.personaDelete}</span>
                       </button>
                     </div>
                   )}
@@ -230,10 +207,10 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
               initialName=""
               initialVoice=""
               pending={pending}
-              submitLabel="Simpan Persona Baru"
+              submitLabel={pr.personaSaveNew}
               onCancel={() => setEditing(null)}
               onSubmit={(name, voice) =>
-                run(() => createPersona(name, voice), () => setEditing(null))
+                run(() => createPersona(name, voice, language), () => setEditing(null))
               }
             />
           </div>
@@ -251,7 +228,7 @@ export function PersonaManager({ personas }: { personas: Persona[] }) {
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            <span>{personas.length === 0 ? "Bikin Profil Tambahan" : "Tambah Persona Baru"}</span>
+            <span>{personas.length === 0 ? pr.personaCreateAdditional : pr.personaAddNew}</span>
           </button>
         )}
       </div>
@@ -280,7 +257,11 @@ function PersonaForm({
   onSubmit: (name: string, voice: string) => void;
   onCancel: () => void;
 }) {
-  const [mode, setMode] = useState<"wizard" | "manual">("wizard");
+  const { language, dict } = useLanguage();
+  const pr = dict.profile;
+  const isEn = language === "en";
+
+  const [mode, setMode] = useState<"wizard" | "manual">(() => (initialVoice ? "manual" : "wizard"));
   const [step, setStep] = useState(0);
 
   // Manual raw fields
@@ -296,9 +277,8 @@ function PersonaForm({
     client_brief: "",
     target_audience: "",
     goals: "",
-    persona_style: "Santai & humble",
+    persona_style_index: 0,
     humor_level: 5,
-    posting_frequency: "3-4x seminggu",
     content_pillars: "",
     banned_words: "",
     platforms: ["tiktok", "instagram"] as string[],
@@ -318,31 +298,35 @@ function PersonaForm({
   // Compile wizard structured fields into a coherent AI persona prompt
   const compileVoice = () => {
     const parts: string[] = [];
-    if (f.niche.trim()) parts.push(`Niche/Topik: ${f.niche.trim()}`);
-    if (f.industry.trim()) parts.push(`Industri: ${f.industry.trim()}`);
+    if (f.niche.trim()) parts.push(isEn ? `Niche/Topic: ${f.niche.trim()}` : `Niche/Topik: ${f.niche.trim()}`);
+    if (f.industry.trim()) parts.push(isEn ? `Industry: ${f.industry.trim()}` : `Industri: ${f.industry.trim()}`);
 
-    if (f.work_context === "klien") {
-      parts.push(`Konteks: Konten dibuat untuk klien (${f.client_brief.trim() || "klien bisnis"}). Sudut pandang profesional & objektif.`);
-    } else if (f.work_context === "brand") {
-      parts.push(`Konteks: Akun bisnis/brand (${f.client_brief.trim() || "brand"}). Nada perwakilan bisnis.`);
+    const isClientContext = f.work_context === "klien" || f.work_context === "client";
+    const isBrandContext = f.work_context === "brand" || f.work_context === "business";
+
+    if (isClientContext) {
+      parts.push(isEn ? `Context: Content created for client (${f.client_brief.trim() || "business client"}). Professional & objective perspective.` : `Konteks: Konten dibuat untuk klien (${f.client_brief.trim() || "klien bisnis"}). Sudut pandang profesional & objektif.`);
+    } else if (isBrandContext) {
+      parts.push(isEn ? `Context: Business/brand account (${f.client_brief.trim() || "brand"}). Company representative tone.` : `Konteks: Akun bisnis/brand (${f.client_brief.trim() || "brand"}). Nada perwakilan bisnis.`);
     } else {
-      parts.push(`Konteks: Personal brand kreator. Sudut pandang orang pertama ('gue').`);
+      parts.push(isEn ? `Context: Creator personal brand. First-person perspective ('I').` : `Konteks: Personal brand kreator. Sudut pandang orang pertama ('gue').`);
     }
 
-    if (f.target_audience.trim()) parts.push(`Target Audiens: ${f.target_audience.trim()}`);
-    if (f.persona_style) parts.push(`Gaya Bahasa: ${f.persona_style}`);
-    parts.push(`Tingkat Humor: ${f.humor_level}/10`);
-    if (f.goals.trim()) parts.push(`Tujuan Konten: ${f.goals.trim()}`);
-    if (f.platforms.length > 0) parts.push(`Platform Utama: ${f.platforms.join(", ")}`);
-    if (f.content_pillars.trim()) parts.push(`Pilar Konten: ${f.content_pillars.trim()}`);
-    if (f.banned_words.trim()) parts.push(`Kata Haram: ${f.banned_words.trim()}`);
+    if (f.target_audience.trim()) parts.push(isEn ? `Target Audience: ${f.target_audience.trim()}` : `Target Audiens: ${f.target_audience.trim()}`);
+    const selectedStyle = pr.personaStyles[f.persona_style_index ?? 0] || pr.personaStyles[0];
+    if (selectedStyle) parts.push(isEn ? `Tone/Style: ${selectedStyle}` : `Gaya Bahasa: ${selectedStyle}`);
+    parts.push(isEn ? `Humor Level: ${f.humor_level}/10` : `Tingkat Humor: ${f.humor_level}/10`);
+    if (f.goals.trim()) parts.push(isEn ? `Content Goal: ${f.goals.trim()}` : `Tujuan Konten: ${f.goals.trim()}`);
+    if (f.platforms.length > 0) parts.push(isEn ? `Primary Platforms: ${f.platforms.join(", ")}` : `Platform Utama: ${f.platforms.join(", ")}`);
+    if (f.content_pillars.trim()) parts.push(isEn ? `Content Pillars: ${f.content_pillars.trim()}` : `Pilar Konten: ${f.content_pillars.trim()}`);
+    if (f.banned_words.trim()) parts.push(isEn ? `Forbidden Words: ${f.banned_words.trim()}` : `Kata Haram: ${f.banned_words.trim()}`);
 
     return parts.join(" | ");
   };
 
   const handleWizardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalName = f.name.trim() || name.trim() || "Persona Baru";
+    const finalName = f.name.trim() || name.trim() || (isEn ? "New Persona" : "Persona Baru");
     const finalVoice = compileVoice();
     onSubmit(finalName, finalVoice);
   };
@@ -353,9 +337,9 @@ function PersonaForm({
   };
 
   const wizardSteps = [
-    { title: "1. Konteks Akun", desc: "Nama & Niche" },
-    { title: "2. Gaya & Karakter", desc: "Nada & Audiens" },
-    { title: "3. Detail & Platform", desc: "Pilar & Pantangan" },
+    { title: pr.personaStep1Title, desc: pr.personaStep1Desc },
+    { title: pr.personaStep2Title, desc: pr.personaStep2Desc },
+    { title: pr.personaStep3Title, desc: pr.personaStep3Desc },
   ];
 
   return (
@@ -374,7 +358,7 @@ function PersonaForm({
           >
             <span className="flex items-center gap-1.5 justify-center">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-              <span>Panduan 3 Langkah (Rekomendasi)</span>
+              <span>{pr.personaTabWizard}</span>
             </span>
           </button>
           <button
@@ -391,7 +375,7 @@ function PersonaForm({
                 : "text-muted hover:text-ink"
             }`}
           >
-            Tulis Bebas (Manual)
+            {pr.personaTabManual}
           </button>
         </div>
 
@@ -400,7 +384,7 @@ function PersonaForm({
           onClick={onCancel}
           className="text-xs text-muted hover:text-ink cursor-pointer"
         >
-          Tutup
+          {pr.personaClose}
         </button>
       </div>
 
@@ -430,13 +414,13 @@ function PersonaForm({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Nama Persona / Akun <span className="text-ember font-bold">*</span>
+                  {pr.personaFieldName} <span className="text-ember font-bold">*</span>
                 </label>
                 <input
                   value={f.name}
                   onChange={(e) => setField("name", e.target.value)}
                   maxLength={NAME_MAX}
-                  placeholder="Misal: Akun Affiliate Skincare / Klien Kedai Kopi"
+                  placeholder={pr.personaPlaceholderName}
                   className={`${inputCls} mt-1.5`}
                   required
                 />
@@ -444,12 +428,12 @@ function PersonaForm({
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Niche / Topik Utama Akun Ini <span className="text-ember font-bold">*</span>
+                  {pr.personaFieldNiche} <span className="text-ember font-bold">*</span>
                 </label>
                 <input
                   value={f.niche}
                   onChange={(e) => setField("niche", e.target.value)}
-                  placeholder="Misal: Edukasi investasi saham pemula, review gadget murah"
+                  placeholder={pr.personaPlaceholderNiche}
                   className={`${inputCls} mt-1.5`}
                   required
                 />
@@ -457,10 +441,10 @@ function PersonaForm({
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Konten Dibuat Untuk Siapa?
+                  {pr.personaFieldAudienceWho}
                 </label>
                 <div className="mt-2 grid gap-2.5 sm:grid-cols-3">
-                  {WORK_CONTEXTS.map((w) => {
+                  {pr.personaWorkContexts.map((w) => {
                     const on = f.work_context === w.id;
                     return (
                       <button
@@ -483,16 +467,16 @@ function PersonaForm({
                 </div>
               </div>
 
-              {f.work_context !== "sendiri" && (
+              {(f.work_context === "klien" || f.work_context === "client" || f.work_context === "brand" || f.work_context === "business") && (
                 <div>
                   <label className="block text-xs font-bold text-ink">
-                    Detail Klien / Bisnis
+                    {pr.personaFieldClientBrief}
                   </label>
                   <textarea
                     rows={2}
                     value={f.client_brief}
                     onChange={(e) => setField("client_brief", e.target.value)}
-                    placeholder="Contoh: Coffee shop di Jaksel, target anak nongkrong & WFC, menu andalan kopi susu gula aren."
+                    placeholder={pr.personaPlaceholderClientBrief}
                     className={`${inputCls} mt-1.5`}
                   />
                 </div>
@@ -500,12 +484,12 @@ function PersonaForm({
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Bidang / Industri Spesifik <span className="font-normal text-muted">(Opsional)</span>
+                  {pr.personaFieldIndustry} <span className="font-normal text-muted">{pr.personaOptional}</span>
                 </label>
                 <input
                   value={f.industry}
                   onChange={(e) => setField("industry", e.target.value)}
-                  placeholder="Misal: Kuliner, Fashion, Teknologi, Finansial"
+                  placeholder={pr.personaPlaceholderIndustry}
                   className={`${inputCls} mt-1.5`}
                 />
               </div>
@@ -517,28 +501,28 @@ function PersonaForm({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Target Audiens / Penonton Akun Ini
+                  {pr.personaFieldTargetAudience}
                 </label>
                 <input
                   value={f.target_audience}
                   onChange={(e) => setField("target_audience", e.target.value)}
-                  placeholder="Misal: Mahasiswa & first jobber umur 19-27 tahun"
+                  placeholder={pr.personaPlaceholderTargetAudience}
                   className={`${inputCls} mt-1.5`}
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Gaya Bahasa &amp; Karakter Utama
+                  {pr.personaFieldStyle}
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {PERSONA_STYLES.map((ps) => {
-                    const on = f.persona_style === ps;
+                  {pr.personaStyles.map((ps, idx) => {
+                    const on = (f.persona_style_index ?? 0) === idx;
                     return (
                       <button
                         key={ps}
                         type="button"
-                        onClick={() => setField("persona_style", ps)}
+                        onClick={() => setField("persona_style_index", idx)}
                         className={`rounded-xl border px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer ${
                           on
                             ? "border-ember bg-ember/15 text-ember shadow-xs font-bold"
@@ -554,7 +538,7 @@ function PersonaForm({
 
               <div>
                 <div className="flex items-center justify-between text-xs font-bold text-ink">
-                  <span>Tingkat Humor &amp; Candaan</span>
+                  <span>{pr.personaFieldHumor}</span>
                   <span className="font-mono text-ember">{f.humor_level} / 10</span>
                 </div>
                 <div className="mt-2 flex items-center gap-4 rounded-2xl border border-white/[0.08] bg-[#070709] p-3.5">
@@ -571,12 +555,12 @@ function PersonaForm({
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Tujuan Utama Konten <span className="font-normal text-muted">(Opsional)</span>
+                  {pr.personaFieldGoals} <span className="font-normal text-muted">{pr.personaOptional}</span>
                 </label>
                 <input
                   value={f.goals}
                   onChange={(e) => setField("goals", e.target.value)}
-                  placeholder="Misal: Direct selling affiliate TikTok Shop, bangun personal branding"
+                  placeholder={pr.personaPlaceholderGoals}
                   className={`${inputCls} mt-1.5`}
                 />
               </div>
@@ -588,7 +572,7 @@ function PersonaForm({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Platform Utama Akun
+                  {pr.personaFieldPlatforms}
                 </label>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {PLATFORMS.map((p) => {
@@ -613,24 +597,24 @@ function PersonaForm({
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Pilar Konten Utama <span className="font-normal text-muted">(Pisahkan koma)</span>
+                  {pr.personaFieldPillars} <span className="font-normal text-muted">{pr.personaCommaSeparated}</span>
                 </label>
                 <input
                   value={f.content_pillars}
                   onChange={(e) => setField("content_pillars", e.target.value)}
-                  placeholder="review jujur, tutorial praktis, studi kasus, tips hemat"
+                  placeholder={pr.personaPlaceholderPillars}
                   className={`${inputCls} mt-1.5`}
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-ink">
-                  Kata yang HARAM Dipakai <span className="font-normal text-muted">(Pisahkan koma)</span>
+                  {pr.personaFieldBannedWords} <span className="font-normal text-muted">{pr.personaCommaSeparated}</span>
                 </label>
                 <input
                   value={f.banned_words}
                   onChange={(e) => setField("banned_words", e.target.value)}
-                  placeholder="sobat, guys, di era digital ini, yuk simak"
+                  placeholder={pr.personaPlaceholderBannedWords}
                   className={`${inputCls} mt-1.5`}
                 />
               </div>
@@ -638,11 +622,11 @@ function PersonaForm({
               {/* Live Compiled Prompt Preview */}
               <div className="rounded-2xl border border-white/[0.08] bg-[#070709] p-3.5">
                 <div className="flex items-center justify-between text-micro font-bold uppercase tracking-wider text-muted">
-                  <span>Pratinjau Otomatis Persona AI</span>
-                  <span className="text-ember font-semibold">Tersusun Rapi</span>
+                  <span>{pr.personaPreviewTitle}</span>
+                  <span className="text-ember font-semibold">{pr.personaPreviewSubtitle}</span>
                 </div>
                 <p className="mt-2 text-xs leading-relaxed text-ink/85 italic">
-                  &ldquo;{compileVoice() || "Isi nama & niche di step 1 untuk melihat pratinjau..."}&rdquo;
+                  &ldquo;{compileVoice() || pr.personaPreviewPlaceholder}&rdquo;
                 </p>
               </div>
             </div>
@@ -656,7 +640,7 @@ function PersonaForm({
                 onClick={onCancel}
                 className="inline-flex h-10 items-center justify-center rounded-xl border border-white/[0.12] bg-surface px-4 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
               >
-                Batal
+                {pr.personaCancel}
               </button>
             ) : (
               <button
@@ -664,7 +648,7 @@ function PersonaForm({
                 onClick={() => setStep(step - 1)}
                 className="inline-flex h-10 items-center justify-center rounded-xl border border-white/[0.12] bg-surface px-4 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
               >
-                ← Balik
+                {pr.personaBtnBack}
               </button>
             )}
 
@@ -674,7 +658,7 @@ function PersonaForm({
                 onClick={() => setStep(step + 1)}
                 className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-ember px-5 font-display text-xs font-bold text-obsidian shadow-xs hover:bg-ember-lo active:scale-[0.98] cursor-pointer"
               >
-                <span>Lanjut ke Step {step + 2}</span>
+                <span>{pr.personaBtnNextStep(step + 2)}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
             ) : (
@@ -686,7 +670,7 @@ function PersonaForm({
                 {pending ? (
                   <>
                     <span className="size-3.5 rounded-full border-2 border-obsidian/30 border-t-obsidian animate-spin" />
-                    <span>Menyimpan Persona...</span>
+                    <span>{pr.personaSaving}</span>
                   </>
                 ) : (
                   <>
@@ -703,7 +687,7 @@ function PersonaForm({
         <form onSubmit={handleManualSubmit} className="space-y-4">
           <div>
             <label htmlFor={`${idPrefix}-name`} className="block text-xs font-bold text-ink">
-              Nama Persona / Akun <span className="text-ember font-bold">*</span>
+              {pr.personaFieldName} <span className="text-ember font-bold">*</span>
             </label>
             <input
               id={`${idPrefix}-name`}
@@ -711,7 +695,7 @@ function PersonaForm({
               onChange={(e) => setName(e.target.value)}
               maxLength={NAME_MAX}
               disabled={pending}
-              placeholder="Misal: Akun Affiliate Skincare / Klien Toko Kopi"
+              placeholder={pr.personaPlaceholderName}
               className={`${inputCls} mt-1.5`}
               required
             />
@@ -720,14 +704,14 @@ function PersonaForm({
           <div>
             <div className="flex items-center justify-between">
               <label htmlFor={`${idPrefix}-voice`} className="block text-xs font-bold text-ink">
-                Instruksi Gaya Bicara &amp; Karakter <span className="text-ember font-bold">*</span>
+                {pr.personaFieldManualVoice} <span className="text-ember font-bold">*</span>
               </label>
               <span className="font-mono text-micro text-muted">
                 {manualVoice.length} / {VOICE_MAX}
               </span>
             </div>
             <p className="mt-1 text-micro text-muted">
-              Ceritakan target audiens, bahasa santai/formal, platform utama, dan pantangan kata.
+              {pr.personaManualVoiceHint}
             </p>
             <textarea
               id={`${idPrefix}-voice`}
@@ -736,7 +720,7 @@ function PersonaForm({
               onChange={(e) => setManualVoice(e.target.value)}
               maxLength={VOICE_MAX}
               disabled={pending}
-              placeholder="Akun TikTok affiliate skincare untuk cewek 20-30. Gaya bahasa santai, kalimat singkat, gak pernah pakai kata 'sobat'."
+              placeholder={pr.personaPlaceholderManualVoice}
               className={`${inputCls} mt-1.5`}
               required
             />
@@ -751,7 +735,7 @@ function PersonaForm({
               {pending ? (
                 <>
                   <span className="size-3.5 rounded-full border-2 border-obsidian/30 border-t-obsidian animate-spin" />
-                  <span>Menyimpan...</span>
+                  <span>{pr.personaSaving}</span>
                 </>
               ) : (
                 <span>{submitLabel}</span>
@@ -763,7 +747,7 @@ function PersonaForm({
               onClick={onCancel}
               className="inline-flex h-10 items-center justify-center rounded-xl border border-white/[0.12] bg-surface px-4 text-xs font-semibold text-muted hover:text-ink cursor-pointer"
             >
-              Batal
+              {pr.personaCancel}
             </button>
           </div>
         </form>
@@ -780,6 +764,9 @@ export function CtaSettings({
 }: {
   initial: { url: string; label: string; enabled: boolean };
 }) {
+  const { dict, language } = useLanguage();
+  const pr = dict.profile;
+
   const [url, setUrl] = useState(initial.url);
   const [label, setLabel] = useState(initial.label);
   const [enabled, setEnabled] = useState(initial.enabled);
@@ -788,14 +775,14 @@ export function CtaSettings({
   const [pending, start] = useTransition();
 
   const dirty = url !== initial.url || label !== initial.label || enabled !== initial.enabled;
-  const shownLabel = label.trim() || "link gue";
-  const shownUrl = url.trim() || "https://tokogue.com";
+  const shownLabel = label.trim() || pr.ctaDefaultLabel;
+  const shownUrl = url.trim() || pr.ctaDefaultUrl;
 
   const submit = () =>
     start(async () => {
       setError(null);
       setSaved(false);
-      const result = await saveCta(url, label, enabled);
+      const result = await saveCta(url, label, enabled, language);
       if (result.ok) setSaved(true);
       else setError(result.error);
     });
@@ -813,10 +800,10 @@ export function CtaSettings({
           </div>
           <div>
             <h2 className="font-display text-lg font-bold text-ink">
-              Ajakan Penutup (Smart CTA Injection)
+              {pr.ctaTitle}
             </h2>
             <p className="text-xs sm:text-sm text-muted">
-              Malesan menyelipkan ajakan ke link promosi lo secara halus dan natural di akhir konten.
+              {pr.ctaSubtitle}
             </p>
           </div>
         </div>
@@ -832,7 +819,7 @@ export function CtaSettings({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="cta-url" className="block text-xs font-bold text-ink">
-              Link Tujuan (URL)
+              {pr.ctaUrlLabel}
             </label>
             <input
               id="cta-url"
@@ -844,14 +831,14 @@ export function CtaSettings({
                 setSaved(false);
               }}
               disabled={pending}
-              placeholder="https://tokogue.com"
+              placeholder={pr.ctaUrlPlaceholder}
               className={`${inputCls} mt-1.5`}
             />
           </div>
 
           <div>
             <label htmlFor="cta-label" className="block text-xs font-bold text-ink">
-              Nama Sebutan Link <span className="font-normal text-muted">(Opsional)</span>
+              {pr.ctaNameLabel} <span className="font-normal text-muted">{pr.personaOptional}</span>
             </label>
             <input
               id="cta-label"
@@ -862,7 +849,7 @@ export function CtaSettings({
               }}
               maxLength={LABEL_MAX}
               disabled={pending}
-              placeholder="Misal: toko gue / link di bio"
+              placeholder={pr.ctaNamePlaceholder}
               className={`${inputCls} mt-1.5`}
             />
           </div>
@@ -874,25 +861,26 @@ export function CtaSettings({
             <div className="flex items-center gap-2">
               <span className="flex size-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="font-display text-micro font-bold uppercase tracking-wider text-muted">
-                Simulasi Penutup Konten
+                {pr.ctaSimTitle}
               </span>
             </div>
             <span className="rounded-full border border-white/[0.08] bg-surface px-2 py-0.5 text-[10px] font-semibold text-muted">
-              Auto-Contextual
+              {pr.ctaSimBadge}
             </span>
           </div>
 
           <div className="p-4">
             <p className="text-xs sm:text-sm leading-relaxed text-ink/90">
-              &ldquo;...nah itu tadi tipsnya. Kalau mau langsung gas praktek, cek aja di{" "}
+              &ldquo;{pr.ctaSimExampleBefore}
               <strong className="text-white underline decoration-ember/60 underline-offset-2">
                 {shownLabel}
-              </strong>{" "}
-              — <span className="font-mono text-xs font-medium text-ember">{shownUrl}</span>&rdquo;
+              </strong>
+              {pr.ctaSimExampleAfter}
+              <span className="font-mono text-xs font-medium text-ember">{shownUrl}</span>&rdquo;
             </p>
             <p className="mt-2 text-[11px] leading-relaxed text-muted flex items-start gap-1.5">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember shrink-0 mt-0.5"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-              <span>Kalimat bervariasi mengikuti topik konten lo. Link hanya muncul 1 kali di bagian akhir tanpa kesan jualan agresif.</span>
+              <span>{pr.ctaSimNote}</span>
             </p>
           </div>
         </div>
@@ -911,12 +899,12 @@ export function CtaSettings({
         >
           <div>
             <span className="block font-display text-xs sm:text-sm font-bold text-ink">
-              Aktifkan Ajakan Penutup Otomatis
+              {pr.ctaToggleTitle}
             </span>
             <span className="block text-micro text-muted">
               {enabled
-                ? "Aktif — semua hasil generasi otomatis menyertakan link promosi lo."
-                : "Nonaktif — hasil generasi tidak akan menyertakan link luar."}
+                ? pr.ctaToggleActiveDesc
+                : pr.ctaToggleInactiveDesc}
             </span>
           </div>
 
@@ -951,16 +939,16 @@ export function CtaSettings({
             {pending ? (
               <>
                 <span className="size-3.5 rounded-full border-2 border-obsidian/30 border-t-obsidian animate-spin" />
-                <span>Menyimpan...</span>
+                <span>{pr.ctaSaving}</span>
               </>
             ) : (
-              <span>Simpan Pengaturan</span>
+              <span>{pr.ctaSaveBtn}</span>
             )}
           </button>
 
           {dirty && !pending && (
             <span className="text-xs font-semibold text-amber-400">
-              Ada perubahan belum disimpan
+              {pr.ctaUnsavedNotice}
             </span>
           )}
 
@@ -969,7 +957,7 @@ export function CtaSettings({
               <svg viewBox="0 0 20 20" fill="currentColor" className="size-4">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span>Pengaturan Berhasil Disimpan!</span>
+              <span>{pr.ctaSavedSuccess}</span>
             </span>
           )}
         </div>

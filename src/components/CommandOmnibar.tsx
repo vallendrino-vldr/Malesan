@@ -4,11 +4,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { TabKey } from "./AppShell";
 import { haptic } from "@/lib/haptics";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface CommandItem {
   id: string;
   title: string;
-  category: "Studio" | "Alur Kerja" | "Navigasi";
+  category: string;
   subtitle?: string;
   badge?: string;
   icon: React.ReactNode;
@@ -31,6 +32,8 @@ export function CommandOmnibar({
   isAdmin = false,
 }: CommandOmnibarProps) {
   const router = useRouter();
+  const { dict } = useLanguage();
+  const om = dict.omnibar;
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,10 +45,10 @@ export function CommandOmnibar({
       // Studio Tools
       {
         id: "studio-ide-hari-ini",
-        title: "Cari 3 Ide Konten Hari Ini",
-        category: "Studio",
-        subtitle: "1-Click instan dapat 3 ide segar siap posting",
-        badge: "1 Kredit",
+        title: om.commands.dailyIdeaTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.dailyIdeaSubtitle,
+        badge: om.commands.dailyIdeaBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
@@ -59,10 +62,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-naskah",
-        title: "Naskah Video (Script Builder)",
-        category: "Studio",
-        subtitle: "Bikin script video scene-by-scene lengkap",
-        badge: "4 Kredit",
+        title: om.commands.scriptTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.scriptSubtitle,
+        badge: om.commands.scriptBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -77,10 +80,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-hook-lab",
-        title: "Hook Lab (10 Pola Hook)",
-        category: "Studio",
-        subtitle: "Buat variasi hook pembuka anti-skip",
-        badge: "2 Kredit",
+        title: om.commands.hookTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.hookSubtitle,
+        badge: om.commands.hookBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16" />
@@ -94,10 +97,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-carousel",
-        title: "Slide Gambar (HD Generator)",
-        category: "Studio",
-        subtitle: "Bikin slide gambar estetik Instagram & LinkedIn",
-        badge: "Gratis Edit",
+        title: om.commands.carouselTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.carouselSubtitle,
+        badge: om.commands.carouselBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <rect width="18" height="18" x="3" y="3" rx="2" />
@@ -112,10 +115,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-lancar-bahasa",
-        title: "Lancar Inggris (Speaking, Kuis, Esai & Roleplay)",
-        category: "Studio",
-        subtitle: "Speaking AI native, simulasi skenario, kuis & evaluasi esai",
-        badge: "AI Master",
+        title: om.commands.lancarBahasaTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.lancarBahasaSubtitle,
+        badge: om.commands.lancarBahasaBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
@@ -131,10 +134,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-auto-clip",
-        title: "Auto Clip YouTube (Momen Viral & Face Track)",
-        category: "Studio",
-        subtitle: "Tempel link YouTube, potong momen viral, subtitle & face track 9:16",
-        badge: "AI Flagship",
+        title: om.commands.autoClipTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.autoClipSubtitle,
+        badge: om.commands.autoClipBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M2.5 17a24.12 24.12 0 0 1 0-10 2 2 0 0 1 1.4-1.4 49.56 49.56 0 0 1 16.2 0A2 2 0 0 1 21.5 7a24.12 24.12 0 0 1 0 10 2 2 0 0 1-1.4 1.4 49.55 49.55 0 0 1-16.2 0A2 2 0 0 1 2.5 17" />
@@ -149,10 +152,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-video-cc",
-        title: "Subtitle Video Otomatis (Auto-CC)",
-        category: "Studio",
-        subtitle: "Transkripsi suara & burn subtitle animasi",
-        badge: "2/mnt",
+        title: om.commands.videoCcTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.videoCcSubtitle,
+        badge: om.commands.videoCcBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <rect width="20" height="15" x="2" y="4" rx="2" />
@@ -167,10 +170,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-clip-engine",
-        title: "Mesin Klip Video (Clip Engine)",
-        category: "Studio",
-        subtitle: "Bikin rancangan scene-by-scene clip cepat",
-        badge: "4 Kredit",
+        title: om.commands.clipTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.clipSubtitle,
+        badge: om.commands.clipBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <polygon points="5 3 19 12 5 21 5 3" />
@@ -184,10 +187,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-affiliate",
-        title: "Affiliate & Review Engine",
-        category: "Studio",
-        subtitle: "Hook dan naskah jualan soft-selling berkonversi",
-        badge: "3 Kredit",
+        title: om.commands.affiliateTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.affiliateSubtitle,
+        badge: om.commands.affiliateBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7" />
@@ -203,10 +206,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-repurpose",
-        title: "Daur Ulang Konten (Repurpose)",
-        category: "Studio",
-        subtitle: "Ubah naskah jadi thread, carousel & short video",
-        badge: "3 Kredit",
+        title: om.commands.repurposeTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.repurposeSubtitle,
+        badge: om.commands.repurposeBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
@@ -222,10 +225,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-thread-engine",
-        title: "Mesin Utas (Thread Engine)",
-        category: "Studio",
-        subtitle: "Bikin rangkaian thread X / LinkedIn terstruktur",
-        badge: "3 Kredit",
+        title: om.commands.threadTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.threadSubtitle,
+        badge: om.commands.threadBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <line x1="4" x2="20" y1="9" y2="9" />
@@ -242,10 +245,10 @@ export function CommandOmnibar({
       },
       {
         id: "studio-vibe-coding",
-        title: "Ngoding (Lancar Ngoding & Bikin App)",
-        category: "Studio",
-        subtitle: "Rancang prototipe web app interaktif",
-        badge: "5 Kredit",
+        title: om.commands.vibeTitle,
+        category: om.categoryStudio,
+        subtitle: om.commands.vibeSubtitle,
+        badge: om.commands.vibeBadge,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <polyline points="16 18 22 12 16 6" />
@@ -261,9 +264,9 @@ export function CommandOmnibar({
       // Pipeline Stages
       {
         id: "pipeline-view",
-        title: "Papan Alur Kerja (Pipeline)",
-        category: "Alur Kerja",
-        subtitle: "Pantau konten dari ide, draft, siap, sampai tayang",
+        title: om.commands.pipelineTitle,
+        category: om.categoryPipeline,
+        subtitle: om.commands.pipelineSubtitle,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ink/80">
             <rect width="6" height="14" x="4" y="5" rx="1" />
@@ -279,9 +282,9 @@ export function CommandOmnibar({
       // Quick Actions & Navigation
       {
         id: "nav-topup",
-        title: "Isi Ulang Kredit",
-        category: "Navigasi",
-        subtitle: "Top up saldo kredit via QRIS otomatis",
+        title: om.commands.topupTitle,
+        category: om.categoryNav,
+        subtitle: om.commands.topupSubtitle,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-emerald-400">
             <circle cx="12" cy="12" r="10" />
@@ -296,9 +299,9 @@ export function CommandOmnibar({
       },
       {
         id: "nav-profil",
-        title: "Profil & Otak Kedua",
-        category: "Navigasi",
-        subtitle: "Pengaturan persona, suara kreator & akun",
+        title: om.commands.profileTitle,
+        category: om.categoryNav,
+        subtitle: om.commands.profileSubtitle,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ink/80">
             <circle cx="12" cy="8" r="5" />
@@ -315,9 +318,9 @@ export function CommandOmnibar({
     if (onOpenTutorial) {
       list.push({
         id: "nav-tutorial",
-        title: "Cara Pakai & Panduan Kreator",
-        category: "Navigasi",
-        subtitle: "Panduan praktis memaksimalkan Malesan",
+        title: om.commands.tutorialTitle,
+        category: om.categoryNav,
+        subtitle: om.commands.tutorialSubtitle,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ink/80">
             <circle cx="12" cy="12" r="10" />
@@ -335,9 +338,9 @@ export function CommandOmnibar({
     if (isAdmin) {
       list.push({
         id: "nav-admin",
-        title: "Dashboard Admin",
-        category: "Navigasi",
-        subtitle: "Monitoring kredit, AI models, routing & analitik",
+        title: om.commands.adminTitle,
+        category: om.categoryNav,
+        subtitle: om.commands.adminSubtitle,
         icon: (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
@@ -351,7 +354,7 @@ export function CommandOmnibar({
     }
 
     return list;
-  }, [onSelectTab, onOpenTutorial, isAdmin, onClose, router]);
+  }, [onSelectTab, onOpenTutorial, isAdmin, onClose, router, om]);
 
   // Filter commands by search query
   const filteredCommands = useMemo(() => {
@@ -454,10 +457,10 @@ export function CommandOmnibar({
             type="text"
             id="command-omnibar-input"
             name="omnibar_query"
-            aria-label="Cari alat atau perintah"
+            aria-label={om.ariaLabel}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ketik alat, modul, atau perintah... (Esc untuk tutup)"
+            placeholder={om.placeholder}
             className="flex-1 bg-transparent text-sm text-ink placeholder:text-muted/50 outline-none"
           />
           <kbd className="hidden sm:inline-flex items-center rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-mono text-muted">
@@ -473,7 +476,7 @@ export function CommandOmnibar({
         >
           {filteredCommands.length === 0 ? (
             <li className="p-6 text-center text-xs text-muted">
-              Tidak ada perintah atau alat yang cocok dengan &quot;{query}&quot;
+              {om.noResults(query)}
             </li>
           ) : (
             filteredCommands.map((cmd, idx) => {
@@ -526,11 +529,11 @@ export function CommandOmnibar({
         {/* Omnibar Footer Hints */}
         <div className="flex items-center justify-between border-t border-white/10 bg-black/40 px-4 py-2 text-[10px] font-medium text-muted/70">
           <div className="flex items-center gap-3">
-            <span><kbd className="font-mono text-ink/80">↑↓</kbd> Navigasi</span>
-            <span><kbd className="font-mono text-ink/80">↵</kbd> Pilih</span>
-            <span><kbd className="font-mono text-ink/80">Esc</kbd> Tutup</span>
+            <span><kbd className="font-mono text-ink/80">↑↓</kbd> {om.navHint}</span>
+            <span><kbd className="font-mono text-ink/80">↵</kbd> {om.selectHint}</span>
+            <span><kbd className="font-mono text-ink/80">Esc</kbd> {om.closeHint}</span>
           </div>
-          <span className="font-mono text-ember/80 font-bold">Malesan Omnibar</span>
+          <span className="font-mono text-ember/80 font-bold">{om.titleMalesanOmnibar}</span>
         </div>
       </div>
     </div>

@@ -71,7 +71,7 @@ const QUICK_STEPS_EN = [
   },
 ] as const;
 
-const SECTIONS: Section[] = [
+const SECTIONS_ID: Section[] = [
   {
     q: "Aplikasi ini buat apa sih?",
     a: (
@@ -198,6 +198,130 @@ const SECTIONS: Section[] = [
   },
 ];
 
+const SECTIONS_EN: Section[] = [
+  {
+    q: "What is this app for?",
+    a: (
+      <>
+        Help you create content without thinking from scratch. Share a brief concept — or even
+        nothing at all — and get fresh ideas, viral opening hooks, to complete video scripts
+        ready to film in front of the camera.
+      </>
+    ),
+  },
+  {
+    q: "What are credits? Why are they deducted?",
+    a: (
+      <>
+        Every time Malesan processes AI generations for you, compute resources are consumed. Credits measure that usage.
+        <br />
+        <br />
+        You receive <span className="text-ink">free daily credits</span>, reset
+        automatically at 00:00 WIB. Unused daily credits expire at reset.
+        Purchased credits <span className="text-ink">never expire</span>.
+        <br />
+        <br />
+        If any generation fails due to a system error, your credits are refunded automatically.
+      </>
+    ),
+  },
+  {
+    q: "Where do I start as a beginner?",
+    a: (
+      <>
+        Tap <span className="text-ember">Daily Idea</span> in the Studio tab. You don&apos;t
+        need to type anything — 3 fresh ideas are generated instantly for today.
+        <br />
+        <br />
+        If you already have a rough idea in mind, use{" "}
+        <span className="text-ember">Idea Refiner</span>: input your raw thought, get back
+        5 polished, actionable content angles.
+      </>
+    ),
+  },
+  {
+    q: "What is the difference between Studio modules?",
+    a: (
+      <ul className="space-y-2">
+        <li>
+          <span className="text-ink">Daily Idea</span> — no prompt engineering, get
+          3 fresh content angles.
+        </li>
+        <li>
+          <span className="text-ink">Idea Refiner</span> — have a rough thought, turn it
+          into polished angles.
+        </li>
+        <li>
+          <span className="text-ink">Hook Generator</span> — first 3 seconds of your video. This
+          determines whether viewers watch or keep scrolling.
+        </li>
+        <li>
+          <span className="text-ink">Video Script</span> — full scene-by-scene script with
+          on-screen text cues and b-roll directions.
+        </li>
+        <li>
+          <span className="text-ink">Adapt Format</span> — one core piece adapted into 5 tailored
+          versions for 5 platforms. Each tuned to its unique audience.
+        </li>
+      </ul>
+    ),
+  },
+  {
+    q: "What is the Content Pipeline for?",
+    a: (
+      <>
+        A visual Kanban board where your content moves from raw idea to published, so nothing slips through the cracks.
+        <br />
+        <br />
+        Workflow: <span className="text-ink">Idea</span> →{" "}
+        <span className="text-ink">Draft</span> (has hook) →{" "}
+        <span className="text-ink">Ready</span> (script completed) →{" "}
+        <span className="text-ink">Published</span>.
+        <br />
+        <br />
+        No need to memorize the steps. Each card displays its next recommended action.
+      </>
+    ),
+  },
+  {
+    q: "Why do outputs sometimes not match my tone?",
+    a: (
+      <>
+        Because your creator profile isn&apos;t fully filled yet. Complete your{" "}
+        <span className="text-ember">Content Profile &amp; Voice</span> in the Profile tab — niche,
+        speaking style, target audience, and most importantly:{" "}
+        <span className="text-ink">who the content is for</span> (yourself,
+        client, or your company brand).
+        <br />
+        <br />
+        The more complete it is, the more tailored the outputs become. Plus, every result you{" "}
+        <span className="text-ink">rate with stars</span> in History is utilized — high ratings
+        serve as examples, while low ratings are avoided in future generations.
+      </>
+    ),
+  },
+  {
+    q: "What is App Builder for? I'm not a developer.",
+    a: (
+      <>
+        For creators looking to build software applications using modern AI tools (Claude, Cursor, and similar).
+        Describe what you want to build, and it generates 6 architectural spec documents that AI reads before writing code.
+        <br />
+        <br />
+        If you don&apos;t plan to build software apps, you can simply skip this tab.
+      </>
+    ),
+  },
+  {
+    q: "Can I use generated outputs commercially?",
+    a: (
+      <>
+        Yes, all outputs belong to you. However, AI can make factual errors — always verify facts, figures, and claims before publishing.
+      </>
+    ),
+  },
+];
+
 export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" } = {}) {
   const { t, dict, language } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -234,6 +358,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
   const quickHeadingEyebrow = language === "en" ? "Fast track" : "Alur tercepat";
   const quickHeadingTitle = language === "en" ? "Master it in 1 minute" : "1 menit langsung ngerti";
   const faqEyebrow = language === "en" ? "Frequently asked questions" : "Kalau masih bingung";
+  const sections = language === "en" ? SECTIONS_EN : SECTIONS_ID;
   const footerHelp = language === "en"
     ? "Still have questions? Submit your questions or feedback via the Feedback menu."
     : "Masih bingung? Kirim pertanyaan atau saran melalui menu Laporan di dashboard Malesan.";
@@ -331,7 +456,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
               </section>
 
               <p className="eyebrow px-1 pt-1 text-muted">{faqEyebrow}</p>
-              {SECTIONS.map((s, i) => {
+              {sections.map((s, i) => {
                 const on = expanded === i;
                 return (
                   <div

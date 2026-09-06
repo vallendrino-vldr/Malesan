@@ -19,42 +19,70 @@ const NAME_MAX = 60;
 const VOICE_MAX = 2000;
 const LABEL_MAX = 60;
 
-const NO_SESSION = "Sesi lo abis. Masuk lagi dulu ya.";
-const GONE = "Profil itu udah gak ada di daftar lo. Muat ulang halamannya.";
-const WRITE_FAILED = "Gagal kesimpen ke server. Coba lagi sebentar lagi.";
+const NO_SESSION_ID = "Sesi lo abis. Masuk lagi dulu ya.";
+const NO_SESSION_EN = "Session expired. Please log in again.";
+const GONE_ID = "Profil itu udah gak ada di daftar lo. Muat ulang halamannya.";
+const GONE_EN = "This profile is no longer available. Please refresh the page.";
+const WRITE_FAILED_ID = "Gagal kesimpen ke server. Coba lagi sebentar lagi.";
+const WRITE_FAILED_EN = "Failed to save to server. Please try again in a moment.";
 
 /**
  * Duplicate-default is the one constraint a user can hit by racing themselves
  * (two tabs, both pressing "jadiin default"). 23505 is that partial unique
  * index talking; a raw Postgres string must never reach the screen.
  */
-function friendly(code: string | undefined): string {
-  return code === "23505" ? "Udah ada profil lain yang jadi default. Muat ulang dulu." : WRITE_FAILED;
+function friendly(code: string | undefined, lang: "id" | "en" = "id"): string {
+  if (code === "23505") {
+    return lang === "en"
+      ? "Another profile is already set as default. Please refresh."
+      : "Udah ada profil lain yang jadi default. Muat ulang dulu.";
+  }
+  return lang === "en" ? WRITE_FAILED_EN : WRITE_FAILED_ID;
 }
 
-function cleanName(raw: string): { ok: true; value: string } | { ok: false; error: string } {
+function cleanName(raw: string, lang: "id" | "en" = "id"): { ok: true; value: string } | { ok: false; error: string } {
   const value = raw.trim().replace(/\s+/g, " ");
-  if (!value) return { ok: false, error: "Kasih nama dulu, biar gampang dibedain nanti." };
-  if (value.length > NAME_MAX) return { ok: false, error: `Namanya kepanjangan. Maksimal ${NAME_MAX} karakter.` };
+  if (!value) {
+    return {
+      ok: false,
+      error: lang === "en" ? "Please provide a name to identify this persona." : "Kasih nama dulu, biar gampang dibedain nanti.",
+    };
+  }
+  if (value.length > NAME_MAX) {
+    return {
+      ok: false,
+      error: lang === "en" ? `Name too long. Maximum ${NAME_MAX} characters.` : `Namanya kepanjangan. Maksimal ${NAME_MAX} karakter.`,
+    };
+  }
   return { ok: true, value };
 }
 
-function cleanVoice(raw: string): { ok: true; value: string } | { ok: false; error: string } {
+function cleanVoice(raw: string, lang: "id" | "en" = "id"): { ok: true; value: string } | { ok: false; error: string } {
   const value = raw.trim();
-  if (!value) return { ok: false, error: "Ceritain dulu apa yang bikin profil ini beda." };
-  if (value.length > VOICE_MAX) return { ok: false, error: `Kepanjangan. Maksimal ${VOICE_MAX} karakter.` };
+  if (!value) {
+    return {
+      ok: false,
+      error: lang === "en" ? "Please describe what makes this profile unique." : "Ceritain dulu apa yang bikin profil ini beda.",
+    };
+  }
+  if (value.length > VOICE_MAX) {
+    return {
+      ok: false,
+      error: lang === "en" ? `Instructions too long. Maximum ${VOICE_MAX} characters.` : `Kepanjangan. Maksimal ${VOICE_MAX} karakter.`,
+    };
+  }
   return { ok: true, value };
 }
 
-export async function createPersona(name: string, voice: string): Promise<ActionResult> {
-  const n = cleanName(name);
+export async function createPersona(name: string, voice: string, lang: "id" | "en" = "id"): Promise<ActionResult> {
+  const n = cleanName(name, lang);
   if (!n.ok) return n;
-  const v = cleanVoice(voice);
+  const v = cleanVoice(voice, lang);
   if (!v.ok) return v;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: NO_SESSION };
+  if (!user) return { ok: false, error: lang === "en" ? NO_SESSION_EN : NO_SESSION_ID };
 
   // The first voice someone writes becomes their default, because a picker with
   // nothing preselected quietly generates in the old voice and looks broken.
@@ -64,7 +92,7 @@ export async function createPersona(name: string, voice: string): Promise<Action
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id);
 
-  if (countError) return { ok: false, error: WRITE_FAILED };
+  if (countError) return { ok: false, error: lang === "en" ? WRITE_FAILED_EN : WRITE_FAILED_ID };
 
   const { error } = await supabase
     .from("personas")
@@ -72,21 +100,21 @@ export async function createPersona(name: string, voice: string): Promise<Action
     .select("id")
     .single();
 
-  if (error) return { ok: false, error: friendly(error.code) };
+  if (error) return { ok: false, error: friendly(error.code, lang) };
 
   revalidatePath("/app/profile");
   return { ok: true };
 }
 
-export async function updatePersona(id: string, name: string, voice: string): Promise<ActionResult> {
-  const n = cleanName(name);
+export async function updatePersona(id: string, name: string, voice: string, lang: "id" | "en" = "id"): Promise<ActionResult> {
+  const n = cleanName(name, lang);
   if (!n.ok) return n;
-  const v = cleanVoice(voice);
+  const v = cleanVoice(voice, lang);
   if (!v.ok) return v;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: NO_SESSION };
+  if (!user) return { ok: false, error: lang === "en" ? NO_SESSION_EN : NO_SESSION_ID };
 
   // .select() + maybeSingle: an update that matched no rows is not an error to
   // PostgREST, so without reading the row back "saved" would be a guess.
@@ -98,17 +126,17 @@ export async function updatePersona(id: string, name: string, voice: string): Pr
     .select("id")
     .maybeSingle();
 
-  if (error) return { ok: false, error: friendly(error.code) };
-  if (!data) return { ok: false, error: GONE };
+  if (error) return { ok: false, error: friendly(error.code, lang) };
+  if (!data) return { ok: false, error: lang === "en" ? GONE_EN : GONE_ID };
 
   revalidatePath("/app/profile");
   return { ok: true };
 }
 
-export async function deletePersona(id: string): Promise<ActionResult> {
+export async function deletePersona(id: string, lang: "id" | "en" = "id"): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: NO_SESSION };
+  if (!user) return { ok: false, error: lang === "en" ? NO_SESSION_EN : NO_SESSION_ID };
 
   const { data, error } = await supabase
     .from("personas")
@@ -118,8 +146,8 @@ export async function deletePersona(id: string): Promise<ActionResult> {
     .select("id")
     .maybeSingle();
 
-  if (error) return { ok: false, error: WRITE_FAILED };
-  if (!data) return { ok: false, error: GONE };
+  if (error) return { ok: false, error: lang === "en" ? WRITE_FAILED_EN : WRITE_FAILED_ID };
+  if (!data) return { ok: false, error: lang === "en" ? GONE_EN : GONE_ID };
 
   revalidatePath("/app/profile");
   return { ok: true };
@@ -134,10 +162,10 @@ export async function deletePersona(id: string): Promise<ActionResult> {
  * of a half-finished switch is "no default for a moment", which the picker
  * handles by preselecting nothing. Losing the wrong row is not possible here.
  */
-export async function setDefaultPersona(id: string): Promise<ActionResult> {
+export async function setDefaultPersona(id: string, lang: "id" | "en" = "id"): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: NO_SESSION };
+  if (!user) return { ok: false, error: lang === "en" ? NO_SESSION_EN : NO_SESSION_ID };
 
   const { error: clearError } = await supabase
     .from("personas")
@@ -147,7 +175,7 @@ export async function setDefaultPersona(id: string): Promise<ActionResult> {
     .neq("id", id)
     .select("id");
 
-  if (clearError) return { ok: false, error: WRITE_FAILED };
+  if (clearError) return { ok: false, error: lang === "en" ? WRITE_FAILED_EN : WRITE_FAILED_ID };
 
   const { data, error } = await supabase
     .from("personas")
@@ -157,8 +185,8 @@ export async function setDefaultPersona(id: string): Promise<ActionResult> {
     .select("id")
     .maybeSingle();
 
-  if (error) return { ok: false, error: friendly(error.code) };
-  if (!data) return { ok: false, error: GONE };
+  if (error) return { ok: false, error: friendly(error.code, lang) };
+  if (!data) return { ok: false, error: lang === "en" ? GONE_EN : GONE_ID };
 
   revalidatePath("/app/profile");
   return { ok: true };
@@ -189,25 +217,38 @@ function normalizeUrl(raw: string): string | null {
   return parsed.toString();
 }
 
-export async function saveCta(url: string, label: string, enabled: boolean): Promise<ActionResult> {
+export async function saveCta(url: string, label: string, enabled: boolean, lang: "id" | "en" = "id"): Promise<ActionResult> {
   const rawUrl = url.trim();
   const cleanLabel = label.trim().replace(/\s+/g, " ");
 
   if (cleanLabel.length > LABEL_MAX) {
-    return { ok: false, error: `Sebutannya kepanjangan. Maksimal ${LABEL_MAX} karakter.` };
+    return {
+      ok: false,
+      error: lang === "en" ? `Display name too long. Maximum ${LABEL_MAX} characters.` : `Sebutannya kepanjangan. Maksimal ${LABEL_MAX} karakter.`,
+    };
   }
 
   const normalized = rawUrl ? normalizeUrl(rawUrl) : null;
   if (rawUrl && !normalized) {
-    return { ok: false, error: "Link-nya belum kebaca. Tulis alamat lengkapnya, misal https://tokogue.com." };
+    return {
+      ok: false,
+      error: lang === "en"
+        ? "Invalid link. Enter a full address, e.g. https://yourshop.com."
+        : "Link-nya belum kebaca. Tulis alamat lengkapnya, misal https://tokogue.com.",
+    };
   }
   if (enabled && !normalized) {
-    return { ok: false, error: "Isi link-nya dulu sebelum ajakannya dinyalain." };
+    return {
+      ok: false,
+      error: lang === "en"
+        ? "Please enter a destination link before enabling the CTA."
+        : "Isi link-nya dulu sebelum ajakannya dinyalain.",
+    };
   }
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: NO_SESSION };
+  if (!user) return { ok: false, error: lang === "en" ? NO_SESSION_EN : NO_SESSION_ID };
 
   // Upsert, because a creator who skipped onboarding has no creator_dna row yet
   // and an .update() would silently match nothing.
@@ -226,8 +267,8 @@ export async function saveCta(url: string, label: string, enabled: boolean): Pro
     .select("user_id")
     .maybeSingle();
 
-  if (error) return { ok: false, error: WRITE_FAILED };
-  if (!data) return { ok: false, error: WRITE_FAILED };
+  if (error) return { ok: false, error: lang === "en" ? WRITE_FAILED_EN : WRITE_FAILED_ID };
+  if (!data) return { ok: false, error: lang === "en" ? WRITE_FAILED_EN : WRITE_FAILED_ID };
 
   revalidatePath("/app/profile");
   return { ok: true };

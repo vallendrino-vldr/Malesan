@@ -78,7 +78,7 @@ export function AppShell({
   railRight?: ReactNode;
   children?: ReactNode;
 }) {
-  const { t, dict } = useLanguage();
+  const { t, dict, language } = useLanguage();
   const [current, setCurrent] = useState<TabKey>(active);
   const [isOmnibarOpen, setIsOmnibarOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(() => {
@@ -267,7 +267,7 @@ export function AppShell({
           <button
             type="button"
             onClick={() => setIsOmnibarOpen(true)}
-            aria-label="Buka Command Omnibar (Cmd+K)"
+            aria-label={language === "en" ? "Open Command Omnibar (Cmd+K)" : "Buka Command Omnibar (Cmd+K)"}
             className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-xs text-muted hover:border-ember/40 hover:bg-ember/10 hover:text-ink transition-all cursor-pointer shadow-xs"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5 text-ember">
@@ -287,7 +287,7 @@ export function AppShell({
                 <button
                   type="button"
                   onClick={() => setIsUpdateModalOpen(true)}
-                  title={`Pembaruan Malesan Studio v${updateInfo.latestVersion} Siap Dipasang`}
+                  title={language === "en" ? `Malesan Studio v${updateInfo.latestVersion} Update Ready` : `Pembaruan Malesan Studio v${updateInfo.latestVersion} Siap Dipasang`}
                   className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/60 bg-ember/15 px-2.5 sm:px-3 text-xs font-bold text-ember shadow-xs hover:bg-ember/25 transition-all cursor-pointer animate-pulse whitespace-nowrap shrink-0"
                 >
                   <span className="relative flex size-2 shrink-0">
@@ -299,7 +299,7 @@ export function AppShell({
                 </button>
               ) : (
                 <div
-                  title={`Malesan Studio Desktop v${nativeVersion || "2.1.0"} Aktif • Akselerasi Hardware GPU & yt-dlp Lokal`}
+                  title={language === "en" ? `Malesan Studio Desktop v${nativeVersion || "2.1.0"} Active • GPU Hardware Acceleration & Local yt-dlp` : `Malesan Studio Desktop v${nativeVersion || "2.1.0"} Aktif • Akselerasi Hardware GPU & yt-dlp Lokal`}
                   className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2.5 sm:px-3 text-xs font-semibold text-cyan-400 shadow-xs whitespace-nowrap shrink-0"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-cyan-400 shrink-0">
@@ -316,7 +316,7 @@ export function AppShell({
                 <button
                   type="button"
                   onClick={() => setIsUpdateModalOpen(true)}
-                  title={`Pembaruan Malesan v${updateInfo.latestVersion} Siap Dipasang (${updateInfo.displaySize})`}
+                  title={language === "en" ? `Malesan v${updateInfo.latestVersion} Update Ready (${updateInfo.displaySize})` : `Pembaruan Malesan v${updateInfo.latestVersion} Siap Dipasang (${updateInfo.displaySize})`}
                   className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-ember/50 bg-ember/15 px-2.5 sm:px-3 text-xs font-bold text-ember shadow-xs hover:bg-ember/25 transition-all cursor-pointer animate-pulse whitespace-nowrap shrink-0"
                 >
                   <span className="relative flex size-2 shrink-0">
@@ -328,7 +328,7 @@ export function AppShell({
                 </button>
               ) : (
                 <div
-                  title={`Malesan Native Engine Aktif (${nativeVersion ? `v${nativeVersion}` : "Terbaru"}) • 60fps Akselerasi Hardware`}
+                  title={language === "en" ? `Malesan Native Engine Active (${nativeVersion ? `v${nativeVersion}` : "Latest"}) • 60fps Hardware Acceleration` : `Malesan Native Engine Aktif (${nativeVersion ? `v${nativeVersion}` : "Terbaru"}) • 60fps Akselerasi Hardware`}
                   className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 sm:px-3 text-xs font-semibold text-emerald-400 shadow-xs whitespace-nowrap shrink-0"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-emerald-400 shrink-0">
@@ -481,7 +481,7 @@ export function AppShell({
 
       {/* ---------- bottom tab bar ---------- */}
       <nav
-        aria-label="Navigasi utama"
+        aria-label={language === "en" ? "Main navigation" : "Navigasi utama"}
         className="area-footer relative z-20 skeu-bar border-t border-hairline/70 bg-obsidian pb-[env(safe-area-inset-bottom)]"
       >
         <div className="mx-auto flex w-full max-w-3xl items-center justify-around px-2">

@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { haptic } from "@/lib/haptics";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export function CopyField({ value, label }: { value: string; label?: string }) {
+  const { dict } = useLanguage();
+  const pr = dict.profile;
   const [copied, setCopied] = useState(false);
 
   const copy = async () => {
@@ -27,7 +30,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
         <button
           type="button"
           onClick={copy}
-          aria-label={`Salin ${label ?? "nilai"}`}
+          aria-label={pr.copyAriaLabel(label ?? "link")}
           className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl border h-11 sm:h-auto px-3.5 sm:py-2 font-display text-xs font-bold transition-all cursor-pointer ${
             copied
               ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
@@ -39,7 +42,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
               <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              <span>Tersalin!</span>
+              <span>{pr.copyCopied}</span>
             </>
           ) : (
             <>
@@ -47,7 +50,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
                 <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
                 <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
               </svg>
-              <span>Salin Link</span>
+              <span>{pr.copyBtnLabel}</span>
             </>
           )}
         </button>

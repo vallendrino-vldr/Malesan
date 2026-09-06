@@ -119,7 +119,7 @@ export function ProfileTabClient({
                 </p>
                 <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.1] bg-surface px-2 py-0.5 text-[10px] font-bold text-ink">
                   <span className="size-1.5 rounded-full bg-ember" />
-                  {profile.is_pro ? "Pro" : "Free"}
+                  {profile.is_pro ? pr.memberBadgePro : pr.memberBadgeFree}
                 </span>
               </div>
               <p className="truncate text-xs text-muted">{profile.email}</p>

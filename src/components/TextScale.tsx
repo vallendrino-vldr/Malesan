@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { TEXT_KEY as KEY } from "@/lib/boot-scripts";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Lets the reader pick a comfortable text size.
@@ -20,12 +21,7 @@ import { TEXT_KEY as KEY } from "@/lib/boot-scripts";
  */
 
 type Scale = "sm" | "md" | "lg" | "xl";
-const STEPS: { id: Scale; label: string; hint: string }[] = [
-  { id: "sm", label: "Kecil", hint: "Muat lebih banyak" },
-  { id: "md", label: "Normal", hint: "Bawaan" },
-  { id: "lg", label: "Besar", hint: "Lebih enak dibaca" },
-  { id: "xl", label: "Gede", hint: "Paling jelas" },
-];
+const VALID_SCALES: Scale[] = ["sm", "md", "lg", "xl"];
 
 const TEXT_EVENT = "malesan:text-change";
 const subscribe = (notify: () => void) => {
@@ -34,10 +30,12 @@ const subscribe = (notify: () => void) => {
 };
 const currentScale = (): Scale => {
   const current = document.documentElement.getAttribute("data-text") as Scale | null;
-  return current && STEPS.some((step) => step.id === current) ? current : "md";
+  return current && VALID_SCALES.includes(current) ? current : "md";
 };
 
 export function TextScale() {
+  const { dict } = useLanguage();
+  const pr = dict.profile;
   const scale = useSyncExternalStore(subscribe, currentScale, () => "md");
 
   const pick = (next: Scale) => {
@@ -56,17 +54,17 @@ export function TextScale() {
   return (
     <div>
       <div>
-        <p className="font-display text-xs sm:text-sm font-bold text-ink">Ukuran Teks Aplikasi</p>
+        <p className="font-display text-xs sm:text-sm font-bold text-ink">{pr.textScaleTitle}</p>
         <p className="mt-0.5 text-micro text-muted">
-          Sesuaikan kenyamanan membaca tulisan di seluruh aplikasi.
+          {pr.textScaleSubtitle}
         </p>
       </div>
       <div
         role="radiogroup"
-        aria-label="Ukuran teks"
+        aria-label={pr.textScaleAria}
         className="mt-3 flex rounded-xl border border-hairline bg-obsidian p-1 gap-1"
       >
-        {STEPS.map((s) => {
+        {pr.textScaleSteps.map((s) => {
           const on = scale === s.id;
           return (
             <button

@@ -8,12 +8,16 @@ import { haptic } from "@/lib/haptics";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 function StudioSkeleton({ label }: { label: string }) {
+  const { language } = useLanguage();
+  const text = language === "en" ? `Preparing ${label}...` : `Menyiapkan ${label}...`;
+  const aria = language === "en" ? `Preparing ${label}` : `Menyiapkan ${label}`;
+
   return (
     <div
       className="relative w-full overflow-hidden rounded-2xl border border-hairline bg-surface p-5 sm:p-7"
       role="status"
       aria-live="polite"
-      aria-label={`Menyiapkan ${label}`}
+      aria-label={aria}
     >
       <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-ember/10 to-transparent animate-shimmer-sweep" />
       <div className="relative space-y-4">
@@ -31,7 +35,7 @@ function StudioSkeleton({ label }: { label: string }) {
           <div className="relative size-8 rounded-full border border-ember/30">
             <div className="absolute inset-1 rounded-full border-2 border-ember border-t-transparent animate-spin" />
           </div>
-          <span className="text-center text-micro font-semibold text-muted">Menyiapkan {label}...</span>
+          <span className="text-center text-micro font-semibold text-muted">{text}</span>
         </div>
       </div>
     </div>

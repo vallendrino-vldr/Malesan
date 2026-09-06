@@ -7,6 +7,7 @@ import {
 } from "@/app/actions/tutorial";
 import type { TutorialRewardStatus } from "@/lib/tutorial";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 interface TutorialVideoPlayerProps {
   videoSrc?: string;
@@ -25,6 +26,8 @@ export function TutorialVideoPlayer({
   className = "",
   autoPlay = false,
 }: TutorialVideoPlayerProps) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // Playback state
@@ -101,11 +104,11 @@ export function TutorialVideoPlayer({
         setClaimError(result.error);
       }
     } catch {
-      setClaimError("Jaringan lagi ngadat. Coba klik lagi ya.");
+      setClaimError(isEn ? "Network error. Please try again." : "Jaringan lagi ngadat. Coba klik lagi ya.");
     } finally {
       setIsClaiming(false);
     }
-  }, [actualWatchSeconds, duration, isClaiming, justClaimed, maxReachedTime, onRewardClaimed, rewardStatus.hasClaimed]);
+  }, [actualWatchSeconds, duration, isClaiming, isEn, justClaimed, maxReachedTime, onRewardClaimed, rewardStatus.hasClaimed]);
 
   // Video Time Update & Anti-Skip tracking
   const handleTimeUpdate = () => {
@@ -171,7 +174,7 @@ export function TutorialVideoPlayer({
         <div className="flex items-center gap-2.5">
           <span className="flex size-2 rounded-full bg-ember animate-pulse" />
           <span className="font-display text-xs sm:text-sm font-bold text-ink">
-            Demo Malesan
+            {isEn ? "Malesan Demo" : "Demo Malesan"}
           </span>
         </div>
 
@@ -182,12 +185,12 @@ export function TutorialVideoPlayer({
               <svg viewBox="0 0 20 20" fill="currentColor" className="size-3.5">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
-              +10 Kredit Sudah Masuk
+              {isEn ? "+10 Credits Claimed" : "+10 Kredit Sudah Masuk"}
             </div>
           ) : (
             <div className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 bg-ember/15 px-3 py-1 text-micro font-bold text-ember">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-3.5"><rect width="18" height="14" x="3" y="8" rx="2"/><path d="M12 8v14"/><path d="M12 8H7.5a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8z"/><path d="M12 8h4.5a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8z"/></svg>
-              <span>Tonton Selesai: +10 Kredit Gratis</span>
+              <span>{isEn ? "Watch to End: +10 Free Credits" : "Tonton Selesai: +10 Kredit Gratis"}</span>
             </div>
           )}
 
@@ -197,7 +200,7 @@ export function TutorialVideoPlayer({
               type="button"
               onClick={onClose}
               className="flex size-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-white/10 hover:text-ink cursor-pointer"
-              aria-label="Tutup"
+              aria-label={isEn ? "Close" : "Tutup"}
             >
               <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -257,7 +260,7 @@ export function TutorialVideoPlayer({
           <div
             onClick={handleSeek}
             className="group relative h-2 w-full cursor-pointer rounded-full bg-white/20 transition-all hover:h-3"
-            title="Tonton secara berurutan untuk klaim hadiah"
+            title={isEn ? "Watch sequentially to claim reward" : "Tonton secara berurutan untuk klaim hadiah"}
           >
             {/* Allowed max watch zone (dim ember) */}
             <div
@@ -278,7 +281,7 @@ export function TutorialVideoPlayer({
                 type="button"
                 onClick={togglePlay}
                 className="flex size-7 items-center justify-center rounded-lg hover:bg-white/10"
-                aria-label={isPlaying ? "Jeda" : "Putar"}
+                aria-label={isPlaying ? (isEn ? "Pause" : "Jeda") : (isEn ? "Play" : "Putar")}
               >
                 {isPlaying ? (
                   <svg viewBox="0 0 24 24" fill="currentColor" className="size-4">
@@ -301,7 +304,7 @@ export function TutorialVideoPlayer({
                   setIsMuted(newMuted);
                 }}
                 className="flex size-7 items-center justify-center rounded-lg hover:bg-white/10"
-                aria-label="Mute"
+                aria-label={isEn ? "Mute / Unmute" : "Mute"}
               >
                 {isMuted ? (
                   <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 text-muted">
@@ -321,7 +324,7 @@ export function TutorialVideoPlayer({
 
             {/* Watch Progress Badge */}
             <span className="font-display text-[10px] text-white/60">
-              {hasCompletedWatch ? "100% Selesai" : `Progress: ${Math.round(maxReachedPercent)}%`}
+              {hasCompletedWatch ? (isEn ? "100% Completed" : "100% Selesai") : (isEn ? `Progress: ${Math.round(maxReachedPercent)}%` : `Progress: ${Math.round(maxReachedPercent)}%`)}
             </span>
           </div>
         </div>
@@ -337,12 +340,16 @@ export function TutorialVideoPlayer({
               </span>
               <div>
                 <h4 className="font-display text-sm font-bold text-ink">
-                  Keren! Lo udah tonton Demo Malesan sampai habis
+                  {isEn ? "Awesome! You watched the Malesan Demo to the end" : "Keren! Lo udah tonton Demo Malesan sampai habis"}
                 </h4>
                 <p className="text-xs text-muted">
                   {rewardStatus.isLoggedIn
-                    ? "Bonus 10 kredit lo siap dimasukkan ke saldo akun."
-                    : "10 Kredit Bonus lo siap masuk. Masuk untuk langsung mulai bikin konten!"}
+                    ? (isEn
+                        ? "Your 10 bonus credits are ready to be added to your balance."
+                        : "Bonus 10 kredit lo siap dimasukkan ke saldo akun.")
+                    : (isEn
+                        ? "Your 10 bonus credits are ready. Sign in to start creating right away!"
+                        : "10 Kredit Bonus lo siap masuk. Masuk untuk langsung mulai bikin konten!")}
                 </p>
               </div>
             </div>
@@ -357,12 +364,12 @@ export function TutorialVideoPlayer({
                 {isClaiming ? (
                   <>
                     <span className="size-3.5 rounded-full border-2 border-obsidian/30 border-t-obsidian animate-spin" />
-                    Mengklaim...
+                    <span>{isEn ? "Claiming..." : "Mengklaim..."}</span>
                   </>
                 ) : (
                   <>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-obsidian"><rect width="18" height="14" x="3" y="8" rx="2"/><path d="M12 8v14"/><path d="M12 8H7.5a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8z"/><path d="M12 8h4.5a2.5 2.5 0 0 0 0-5C13 3 12 8 12 8z"/></svg>
-                    <span>Klaim +10 Kredit Sekarang</span>
+                    <span>{isEn ? "Claim +10 Credits Now" : "Klaim +10 Kredit Sekarang"}</span>
                   </>
                 )}
               </button>
@@ -371,7 +378,7 @@ export function TutorialVideoPlayer({
                 href="/masuk?next=/app"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-ember px-5 py-2.5 font-display text-xs font-bold text-obsidian shadow-xs transition-all hover:bg-ember-lo active:scale-[0.98] cursor-pointer"
               >
-                <span>Masuk & Ambil 10 Kredit</span>
+                <span>{isEn ? "Sign In & Claim 10 Credits" : "Masuk & Ambil 10 Kredit"}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="size-3.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </Link>
             )}
@@ -388,8 +395,11 @@ export function TutorialVideoPlayer({
       {/* Success Notification */}
       {justClaimed && (
         <div className="border-t border-emerald-500/30 bg-emerald-950/40 p-4 text-center">
-          <p className="font-display text-xs font-bold text-emerald-400">
-            {claimMessage || "🎉 Selamat! +10 Kredit Bonus berhasil masuk ke saldo akun lo!"}
+          <p className="font-display text-xs font-bold text-emerald-400 flex items-center justify-center gap-2">
+            <svg viewBox="0 0 20 20" fill="currentColor" className="size-4 text-emerald-400">
+              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            <span>{claimMessage || (isEn ? "Congrats! +10 Bonus Credits have been added to your account!" : "Selamat! +10 Kredit Bonus berhasil masuk ke saldo akun lo!")}</span>
           </p>
         </div>
       )}

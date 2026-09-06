@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Makes a server-rendered page react to database changes.
@@ -107,7 +108,15 @@ export function LiveRefresh({
     // dependency stable without asking callers to memoise.
   }, [router, instance, onChange, pollMs, tables.join("-")]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const { language } = useLanguage();
+
   if (!pulse || silent) return null;
+
+  const defaultLabel = language === "en" ? "New updates available" : "Data baru masuk";
+  const displayLabel =
+    language === "en" && label === "Kredit lo udah masuk"
+      ? "Credits updated"
+      : (label ?? defaultLabel);
 
   return (
     <div
@@ -116,7 +125,7 @@ export function LiveRefresh({
       className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center px-4"
     >
       <span className="rounded-full border border-ember/35 bg-ember/15 px-3 py-1.5 text-micro font-semibold text-ember-lo backdrop-blur-sm">
-        {label ?? "Data baru masuk"}
+        {displayLabel}
       </span>
     </div>
   );

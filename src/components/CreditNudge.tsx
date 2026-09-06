@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * The offer.
@@ -59,6 +60,8 @@ function markShown() {
  * same standard the product holds its own AI output to.
  */
 export function OfferAfterWin({ credits }: { credits: number }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [show, setShow] = useState(() => credits <= 120 && !alreadyShown());
 
   useEffect(() => {
@@ -70,26 +73,36 @@ export function OfferAfterWin({ credits }: { credits: number }) {
   return (
     <div className="rounded-xl border border-ember/30 bg-ember/5 p-4">
       <p className="text-sm leading-relaxed text-ink">
-        Nah, yang kayak gini yang dicari. Kalau lo mau lanjut tanpa mikirin sisa
-        kredit, seratus kredit itu <span className="font-semibold">Rp15.000</span>{" "}
-        — cukup buat sekitar 25 script.
+        {isEn ? (
+          <>
+            That&apos;s the kind of result we love to see. If you want to keep going without worrying about credit limits, 100 credits is just{" "}
+            <span className="font-semibold">Rp15,000</span> — enough for about 25 full scripts.
+          </>
+        ) : (
+          <>
+            Nah, yang kayak gini yang dicari. Kalau lo mau lanjut tanpa mikirin sisa
+            kredit, seratus kredit itu <span className="font-semibold">Rp15.000</span>{" "}
+            — cukup buat sekitar 25 script.
+          </>
+        )}
       </p>
       <p className="mt-1.5 text-micro leading-relaxed text-muted">
-        Kredit gratis harian tetep jalan. Ini cuma buat hari-hari lo lagi banyak
-        maunya. Gak buru-buru.
+        {isEn
+          ? "Your daily free credits still renew every midnight. This is just for days when you're on a roll. No rush."
+          : "Kredit gratis harian tetep jalan. Ini cuma buat hari-hari lo lagi banyak maunya. Gak buru-buru."}
       </p>
       <div className="mt-3 flex items-center gap-2">
         <Link
           href="/app/topup"
           className="btn-ember flex h-8.5 items-center rounded-lg px-3.5 font-display text-xs font-bold text-obsidian shadow-xs"
         >
-          Lihat paketnya
+          {isEn ? "View plans" : "Lihat paketnya"}
         </Link>
         <button
           onClick={() => setShow(false)}
           className="h-8.5 cursor-pointer px-2 text-xs font-semibold text-muted hover:text-ink"
         >
-          Nanti aja
+          {isEn ? "Later" : "Nanti aja"}
         </button>
       </div>
     </div>
@@ -112,6 +125,8 @@ export function LowCreditNotice({
   /** Cost of the priciest module, read from app_config by the caller. */
   mostExpensive: number;
 }) {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [dismissed, setDismissed] = useState(false);
   const threshold = Math.max(mostExpensive * 2, 6);
 
@@ -129,18 +144,18 @@ export function LowCreditNotice({
         <div className="min-w-0">
           <p className="text-mini font-semibold text-ink">
             {empty
-              ? "Kredit lo abis buat sekarang."
-              : `Sisa ${credits} kredit — cukup buat sekali dua kali lagi.`}
+              ? (isEn ? "You're out of credits for now." : "Kredit lo abis buat sekarang.")
+              : (isEn ? `${credits} credits remaining — enough for another run or two.` : `Sisa ${credits} kredit — cukup buat sekali dua kali lagi.`)}
           </p>
           <p className="mt-1 text-micro leading-relaxed text-muted">
             {empty
-              ? "Besok jam 00:00 WIB dapet jatah gratis lagi. Kalau gak mau nunggu, isi dari Rp15.000."
-              : "Jatah gratis reset tiap tengah malam. Isi ulang kalau lagi butuh banyak hari ini."}
+              ? (isEn ? "Free credits reset tomorrow at 00:00 WIB. If you can't wait, top up from Rp15,000." : "Besok jam 00:00 WIB dapet jatah gratis lagi. Kalau gak mau nunggu, isi dari Rp15.000.")
+              : (isEn ? "Free daily credits reset at midnight. Top up if you need extra volume today." : "Jatah gratis reset tiap tengah malam. Isi ulang kalau lagi butuh banyak hari ini.")}
           </p>
         </div>
         <button
           onClick={() => setDismissed(true)}
-          aria-label="Tutup"
+          aria-label={isEn ? "Close" : "Tutup"}
           className="-mr-1.5 -mt-1.5 flex h-7.5 w-7.5 shrink-0 cursor-pointer items-center justify-center text-muted hover:text-ink"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 fill-current">
@@ -156,7 +171,9 @@ export function LowCreditNotice({
             : "border border-ember/40 bg-ember/10 text-ember"
         }`}
       >
-        {empty ? "Isi kredit" : "Lihat paket"}
+        {empty
+          ? (isEn ? "Top up credits" : "Isi kredit")
+          : (isEn ? "View plans" : "Lihat paket")}
       </Link>
     </div>
   );
