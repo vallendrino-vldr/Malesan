@@ -4,6 +4,7 @@ import { LiveRefresh } from "@/components/LiveRefresh";
 import { AiHealthCard } from "@/components/AiHealthCard";
 import { AdminActivityFeed } from "@/components/admin/AdminActivityFeed";
 import { startOfJakartaDay } from "@/lib/time";
+import { getGeminiPoolQuota } from "@/lib/gemini/pool-report";
 
 /**
  * Founder Dashboard — Pusat Kendali Owner
@@ -155,6 +156,7 @@ export default async function AdminDashboardPage() {
     auditRes,
     pendingFeedbacksRes,
     recentUsageLogsRes,
+    geminiQuota,
   ] = await Promise.all([
     // Total registered users
     supabase.from("profiles").select("*", { count: "exact", head: true }),
@@ -198,6 +200,8 @@ export default async function AdminDashboardPage() {
       .select("id, feature, status, error_message, cost_idr, credits_charged, user_id, created_at")
       .order("created_at", { ascending: false })
       .limit(12),
+    // Gemini key pool quota, reset timing, and valuation
+    getGeminiPoolQuota(),
   ]);
 
   // Calculations
@@ -303,9 +307,16 @@ export default async function AdminDashboardPage() {
           </div>
 
           <div className="rounded-xl border border-hairline/80 bg-surface-raised/60 p-3">
-            <p className="text-micro text-muted">Biaya AI Server</p>
-            <p className="mt-1 font-display text-xl font-bold text-muted sm:text-2xl">{formatRp(todayAiCost)}</p>
-            <p className="text-micro text-muted">{todayAiUsage.length} request AI</p>
+            <div className="flex items-center justify-between">
+              <p className="text-micro text-muted">Biaya AI Server</p>
+              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[10px] font-semibold text-emerald-400">
+                Free Tier
+              </span>
+            </div>
+            <p className="mt-1 font-display text-xl font-bold text-emerald-400 sm:text-2xl">{formatRp(todayAiCost)}</p>
+            <p className="text-micro text-muted">
+              {todayAiUsage.length} req · Hemat ~{formatRp(geminiQuota.commercialValueSavedTodayIdr)}
+            </p>
           </div>
 
           <div className="rounded-xl border border-hairline/80 bg-surface-raised/60 p-3">
@@ -318,11 +329,44 @@ export default async function AdminDashboardPage() {
 
           <div className="rounded-xl border border-hairline/80 bg-surface-raised/60 p-3">
             <p className="text-micro text-muted">Margin Keuntungan</p>
-            <p className={`mt-1 font-display text-xl font-bold sm:text-2xl ${todayMargin >= 50 ? "text-success" : todayMargin > 0 ? "text-ember" : "text-muted"}`}>
-              {todayRevenue > 0 ? `${Math.round(todayMargin)}%` : "—"}
+            <p className="mt-1 font-display text-xl font-bold sm:text-2xl text-emerald-400">
+              {todayRevenue > 0 ? `${Math.round(todayMargin)}%` : "100%"}
             </p>
-            <p className="text-micro text-muted">Target min 60%</p>
+            <p className="text-micro text-muted">
+              {todayRevenue > 0 ? "Target min 60%" : "Bebas biaya AI server"}
+            </p>
           </div>
+        </div>
+
+        {/* Banner Logika Gemini Free Tier & Refresh Limit */}
+        <div className="mt-3 rounded-xl border border-white/[0.06] bg-obsidian/70 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+              </svg>
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-xs font-semibold text-ink">
+                  Logika Finansial AI: Valuasi Pasar ~Rp 8 – Rp 15 / generate
+                </p>
+                <span className="rounded-md bg-white/5 border border-white/10 px-1.5 py-0.5 text-[10px] font-mono text-emerald-400">
+                  Sisa {geminiQuota.remaining.toLocaleString("id-ID")} / {geminiQuota.capacity.toLocaleString("id-ID")} req ({geminiQuota.percentRemaining.toFixed(0)}%)
+                </span>
+              </div>
+              <p className="text-micro text-muted mt-0.5">
+                Biaya riil Rp 0 (Google Free Tier 4 Kunci) · Reset limit harian: 14:00 WIB ({geminiQuota.countdownText})
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/admin/ai"
+            className="shrink-0 inline-flex items-center gap-1 text-micro font-medium text-ember-lo hover:underline self-start sm:self-center"
+          >
+            <span>Detail Otak AI</span>
+            <span>&rarr;</span>
+          </Link>
         </div>
       </section>
 

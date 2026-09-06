@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { brainOverview, type Health } from "@/lib/ai/brain";
 import { getFleet } from "@/lib/ai/registry";
+import { getGeminiPoolQuota } from "@/lib/gemini/pool-report";
 
 /**
  * The AI, summarised for whoever owns the business.
@@ -23,7 +24,10 @@ const DOT: Record<Health, { cls: string; label: string }> = {
 };
 
 export async function AiHealthCard() {
-  const { routes } = await getFleet();
+  const [{ routes }, geminiQuota] = await Promise.all([
+    getFleet(),
+    getGeminiPoolQuota(),
+  ]);
   const brain = await brainOverview(
     routes.filter((r) => r.is_active).map((r) => r.feature),
   );
@@ -59,6 +63,32 @@ export async function AiHealthCard() {
           </span>
         )}
       </div>
+
+      {geminiQuota && (
+        <div className="mt-2.5 rounded-lg bg-surface-raised/60 border border-white/[0.05] p-2.5 space-y-1 text-micro">
+          <div className="flex items-center justify-between">
+            <span className="text-muted">Sisa Kuota Hari Ini:</span>
+            <span className="font-mono font-bold text-ink">
+              {geminiQuota.remaining.toLocaleString("id-ID")}
+              <span className="text-muted font-normal"> / {geminiQuota.capacity.toLocaleString("id-ID")} req</span>
+              <span className="text-emerald-400 font-medium"> ({geminiQuota.percentRemaining.toFixed(0)}%)</span>
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-muted">
+            <span>Reset Limit Harian:</span>
+            <span className="text-ink font-medium">
+              14:00 WIB <span className="text-muted font-normal">({geminiQuota.countdownText})</span>
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-muted">
+            <span>Biaya Kas / Valuasi:</span>
+            <span className="text-ink">
+              <span className="text-emerald-400 font-bold">Rp 0</span>
+              <span className="text-muted"> (~Rp 10/req pasar)</span>
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-hairline pt-3 text-micro">
         <span className="text-muted">

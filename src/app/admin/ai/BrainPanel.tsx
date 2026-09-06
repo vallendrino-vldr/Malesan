@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { saveBrain, setAdminMode, quickSwitchPrimaryModel } from "@/app/actions/ai-admin";
 import type { BrainView, Health } from "@/lib/ai/brain";
 import type { Quota } from "@/lib/ai/analytics";
+import type { GeminiPoolQuota } from "@/lib/gemini/pool-report";
 import type { AdminMode } from "@/lib/config";
 import type { ModelRow, ProviderView } from "@/lib/ai/types";
 import { formatIdr } from "@/lib/ai/cost";
@@ -80,6 +81,7 @@ export function BrainPanel({
   providers,
   mode,
   quota,
+  geminiQuota,
 }: {
   brain: BrainView;
   models: ModelRow[];
@@ -87,6 +89,8 @@ export function BrainPanel({
   mode: AdminMode;
   /** Prepaid package status for the primary model, when it has one. */
   quota: Quota | null;
+  /** Gemini pool and quota status when using Gemini / Free Tier. */
+  geminiQuota?: GeminiPoolQuota | null;
 }) {
   const active = models.filter((m) => m.is_active);
   const [editing, setEditing] = useState(false);
@@ -310,9 +314,15 @@ export function BrainPanel({
                 <span className={`rounded-full px-2 py-0.5 text-micro font-medium ${brain.healthy ? "bg-ember/15 text-ember-lo border border-ember/20" : "bg-danger/15 text-danger border border-danger/20"}`}>
                   {brain.healthy ? "Sehat" : "Perlu Cek"}
                 </span>
+                {geminiQuota && (
+                  <span className="rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 text-micro font-medium">
+                    Sisa {geminiQuota.remaining.toLocaleString("id-ID")} req ({geminiQuota.percentRemaining.toFixed(0)}%)
+                  </span>
+                )}
               </div>
               <p className="text-micro text-muted truncate mt-0.5">
                 {brain.status}
+                {geminiQuota && ` · Reset limit 14:00 WIB (${geminiQuota.countdownText})`}
               </p>
             </div>
           </div>
@@ -394,6 +404,169 @@ export function BrainPanel({
                         pastiin cadangannya nyala.
                       </p>
                     )}
+                  </div>
+                )}
+
+                {/* Dedicated Gemini Free Tier Pool & Quota Intelligence Card */}
+                {geminiQuota && (
+                  <div className="rounded-xl border border-white/[0.08] bg-surface/90 p-3.5 sm:p-4 space-y-3.5 my-2">
+                    {/* Header & Status */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 shrink-0">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                          </svg>
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-display text-xs font-bold text-ink">
+                              Kuota Google Gemini (Free Tier)
+                            </p>
+                            <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                              {geminiQuota.activeKeys} Kunci Aktif
+                            </span>
+                          </div>
+                          <p className="text-micro text-muted">
+                            Multi-project Google Cloud · Rotasi otomatis & load balancing
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 self-start sm:self-center">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-micro font-medium ${
+                          geminiQuota.guardEngaged 
+                            ? "bg-danger/15 text-danger border border-danger/30"
+                            : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                        }`}>
+                          <span className={`size-1.5 rounded-full ${geminiQuota.guardEngaged ? "bg-danger animate-ping" : "bg-emerald-400"}`} />
+                          {geminiQuota.guardEngaged ? "Guard Aktif (<20%)" : "Kapasitas Aman"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Hero Quota Bar */}
+                    <div className="rounded-lg bg-surface-raised/60 border border-white/[0.04] p-3 space-y-2">
+                      <div className="flex items-baseline justify-between gap-2 flex-wrap">
+                        <div>
+                          <p className="text-micro text-muted">Sisa Kuota Request Hari Ini</p>
+                          <p className="font-display text-base sm:text-lg font-bold text-ink">
+                            {geminiQuota.remaining.toLocaleString("id-ID")}
+                            <span className="text-xs font-normal text-muted">
+                              {" "} / {geminiQuota.capacity.toLocaleString("id-ID")} request
+                            </span>
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono text-xs font-bold text-emerald-400">
+                            {geminiQuota.percentRemaining.toFixed(1)}%
+                          </span>
+                          <p className="text-micro text-muted">tersedia hari ini</p>
+                        </div>
+                      </div>
+
+                      {/* Custom visual progress bar */}
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-obsidian border border-white/5 relative">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            geminiQuota.percentUsed > 80 ? "bg-danger" : geminiQuota.percentUsed > 50 ? "bg-ember" : "bg-emerald-400"
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(1, geminiQuota.percentUsed))}%` }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between text-micro text-muted pt-0.5">
+                        <span>Terpakai: {geminiQuota.used.toLocaleString("id-ID")} request ({geminiQuota.totalTokensToday.toLocaleString("id-ID")} token)</span>
+                        <span>Batas Guard: 20% ({Math.round(geminiQuota.capacity * 0.2)} req)</span>
+                      </div>
+                    </div>
+
+                    {/* Reset Schedule & Timing Banner */}
+                    <div className="rounded-lg bg-surface-raised/40 border border-white/[0.04] p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="size-4 text-ember shrink-0">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <div>
+                          <p className="text-xs font-semibold text-ink">
+                            Reset Harian: {geminiQuota.resetScheduleText}
+                          </p>
+                          <p className="text-micro text-muted">
+                            Sinkron tengah malam 00:00 Pacific Time (PT) Google Cloud
+                          </p>
+                        </div>
+                      </div>
+                      <div className="shrink-0 flex items-center gap-1.5 self-start sm:self-center">
+                        <span className="text-micro text-muted">Refresh limit:</span>
+                        <span className="rounded-md bg-ember/15 border border-ember/30 px-2 py-0.5 font-mono text-xs font-bold text-ember">
+                          {geminiQuota.countdownText}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Financial & Economic Logic (What 1 generation costs in Rupiah) */}
+                    <div className="rounded-lg bg-surface-raised/40 border border-white/[0.04] p-3 space-y-2.5">
+                      <p className="text-micro font-semibold uppercase tracking-wider text-ember-lo">
+                        Logika Finansial & Valuasi Rupiah per Generate
+                      </p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="rounded-md bg-surface p-2.5 border border-white/[0.04]">
+                          <p className="text-micro text-muted">Biaya Kas Riil SaaS</p>
+                          <p className="mt-0.5 font-display text-sm font-bold text-emerald-400">
+                            Rp 0
+                          </p>
+                          <p className="text-[10px] text-muted">100% Bebas Biaya Server</p>
+                        </div>
+
+                        <div className="rounded-md bg-surface p-2.5 border border-white/[0.04]">
+                          <p className="text-micro text-muted">Valuasi Komersial Pasar</p>
+                          <p className="mt-0.5 font-display text-sm font-bold text-ink">
+                            ~Rp 8 – Rp 15 <span className="text-[11px] font-normal text-muted">/ gen</span>
+                          </p>
+                          <p className="text-[10px] text-muted">Tarif resmi Google API ($0.15/$0.60)</p>
+                        </div>
+
+                        <div className="rounded-md bg-surface p-2.5 border border-white/[0.04]">
+                          <p className="text-micro text-muted">Modal Dihemat Hari Ini</p>
+                          <p className="mt-0.5 font-display text-sm font-bold text-emerald-400">
+                            Hemat {formatIdr(geminiQuota.commercialValueSavedTodayIdr)}
+                          </p>
+                          <p className="text-[10px] text-muted">Dari {geminiQuota.used} req ({geminiQuota.totalTokensToday.toLocaleString("id-ID")} token)</p>
+                        </div>
+                      </div>
+
+                      <p className="text-micro text-muted leading-relaxed">
+                        <span className="text-ink font-medium">Logika Margins: </span>
+                        User membayar via kuota kredit (contoh Script 4 kredit = Rp 600). Karena modal AI server adalah Rp 0 (Google Free Tier), seluruh pembayaran user merupakan <span className="text-emerald-400 font-semibold">100% Gross Cash Margin</span> yang langsung menjadi profit founder.
+                      </p>
+                    </div>
+
+                    {/* Per Key Status Grid */}
+                    <div className="space-y-1.5">
+                      <p className="text-micro text-muted">Status 4 Kunci API di Pool:</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                        {geminiQuota.keys.map((k) => (
+                          <div key={k.slot} className="rounded-lg bg-surface p-2 border border-white/[0.04] text-micro">
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-ink">Kunci #{k.slot}</span>
+                              <span className={`size-2 rounded-full ${
+                                k.health === "healthy" ? "bg-emerald-400" :
+                                k.health === "cooling" ? "bg-ember animate-pulse" :
+                                k.health === "idle" ? "bg-white/20" : "bg-danger"
+                              }`} />
+                            </div>
+                            <p className="mt-1 font-mono text-[11px] text-ink font-medium">
+                              {k.requests} req
+                            </p>
+                            <p className="text-[10px] text-muted">
+                              {k.tokens.toLocaleString("id-ID")} tkn · {k.health === "healthy" ? "Sehat" : k.health === "idle" ? "Siap" : k.health === "cooling" ? "Cooling" : "Cek"}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
 

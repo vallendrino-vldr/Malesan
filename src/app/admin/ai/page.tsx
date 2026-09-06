@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listProviders, listModels, brainStatus } from "@/app/actions/ai-admin";
 import { costSummary, savingsSuggestions, quotaFor } from "@/lib/ai/analytics";
+import { getGeminiPoolQuota } from "@/lib/gemini/pool-report";
 import { getAdminMode, getUsdToIdr } from "@/lib/config";
 import { verifyAdmin } from "@/lib/admin/guard";
 import { formatIdr } from "@/lib/ai/cost";
@@ -34,14 +35,22 @@ export default async function AdminAiPage() {
   const suggestions = await savingsSuggestions(summary.byFeature, models, usdToIdr);
   const providerName = (id: string) => providers.find((p) => p.id === id)?.label ?? "?";
 
-  // Prepaid package status for whatever the Brain is currently running on.
+  // Prepaid package or Gemini pool status for whatever the Brain is currently running on.
   const primaryModel = brain.primary
     ? models.find((m) => m.id === brain.primary!.modelId)
     : undefined;
-  const quota =
+
+  const isGeminiOrFree =
+    !brain.primary ||
+    primaryModel?.pricing_mode === "free_quota" ||
+    brain.primary.provider.toLowerCase().includes("gemini");
+
+  const [geminiQuota, quota] = await Promise.all([
+    isGeminiOrFree ? getGeminiPoolQuota(usdToIdr) : Promise.resolve(null),
     primaryModel && primaryModel.pricing_mode === "prepaid_package"
-      ? await quotaFor(primaryModel)
-      : null;
+      ? quotaFor(primaryModel)
+      : Promise.resolve(null),
+  ]);
 
   const margin =
     summary.today.revenueIdr > 0
@@ -62,6 +71,7 @@ export default async function AdminAiPage() {
         providers={providers}
         mode={mode}
         quota={quota}
+        geminiQuota={geminiQuota}
       />
 
       {/* ---------- today, in money ---------- */}
@@ -73,22 +83,33 @@ export default async function AdminAiPage() {
             { k: "Token", v: summary.today.tokens.toLocaleString("id-ID") },
             {
               k: "Modal AI",
-              // Rp0 next to real token usage reads as "free". Say the truth
-              // instead: we do not know, and here is why.
-              v:
-                summary.pricingUnconfigured && summary.today.tokens > 0
+              v: isGeminiOrFree
+                ? "Rp 0 (Gratis)"
+                : summary.pricingUnconfigured && summary.today.tokens > 0
                   ? "belum diset"
                   : formatIdr(summary.today.costIdr),
+              sub: isGeminiOrFree && geminiQuota ? (
+                <span className="text-[10px] text-emerald-400 font-medium block truncate mt-0.5">
+                  Hemat ~{formatIdr(geminiQuota.commercialValueSavedTodayIdr)} · ~Rp10/gen
+                </span>
+              ) : undefined,
             },
             { k: "Pendapatan", v: formatIdr(summary.today.revenueIdr) },
             {
               k: "Margin",
               v:
-                summary.pricingUnconfigured && summary.today.tokens > 0
-                  ? "—"
-                  : margin === null
+                isGeminiOrFree && summary.today.costIdr === 0
+                  ? "100%"
+                  : summary.pricingUnconfigured && summary.today.tokens > 0
                     ? "—"
-                    : `${margin.toFixed(0)}%`,
+                    : margin === null
+                      ? "—"
+                      : `${margin.toFixed(0)}%`,
+              sub: isGeminiOrFree ? (
+                <span className="text-[10px] text-emerald-400 font-medium block truncate mt-0.5">
+                  Bebas Modal AI
+                </span>
+              ) : undefined,
               bad: margin !== null && margin < 0 && !summary.pricingUnconfigured,
             },
           ].map((s) => (
@@ -101,6 +122,7 @@ export default async function AdminAiPage() {
               >
                 {s.v}
               </p>
+              {s.sub}
             </div>
           ))}
         </div>
