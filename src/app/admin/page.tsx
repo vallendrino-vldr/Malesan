@@ -54,6 +54,12 @@ const MODULE_NAMES: Record<string, string> = {
   vibe_kit: "Bikin App",
   clip: "Potong Momen",
   thread: "Bikin Thread",
+  video_cc: "Auto Subtitle Video",
+  affiliate: "Naskah Affiliate",
+  carousel: "Carousel Post",
+  lancar_bahasa: "Lancar Bahasa",
+  lancar_ngoding: "Lancar Ngoding",
+  trends_cron: "Pencarian Tren Otomatis",
 };
 
 function timeAgo(iso: string) {
@@ -339,6 +345,7 @@ export default async function AdminDashboardPage() {
           label="Konten Dibuat"
           value={todayGenerations}
           note={`Sukses: ${successRate}% (Total ${totalGenerations})`}
+          href="/admin/stats"
         />
         <StatCard
           label="Topup Menunggu"
@@ -369,7 +376,7 @@ export default async function AdminDashboardPage() {
                 <span>Ada <strong>{pendingTopups} bukti transfer topup</strong> yang belum lo approve.</span>
                 <Link
                   href="/admin/topups"
-                  className="btn-ember inline-flex min-h-8 items-center rounded-lg px-3 text-micro font-bold text-obsidian"
+                  className="btn-ember inline-flex h-9 items-center rounded-lg px-3.5 text-xs font-bold text-obsidian"
                 >
                   Review Topup Sekarang →
                 </Link>
@@ -380,7 +387,7 @@ export default async function AdminDashboardPage() {
                 <span>Ada <strong>{pendingFeedbacks} laporan / masukan baru</strong> dari kreator pengguna.</span>
                 <Link
                   href="/admin/feedback"
-                  className="inline-flex min-h-8 items-center rounded-lg border border-hairline bg-surface-raised px-3 text-micro font-semibold text-ink hover:border-ember/40"
+                  className="inline-flex h-9 items-center rounded-lg border border-hairline bg-surface-raised px-3.5 text-xs font-semibold text-ink hover:border-ember/40"
                 >
                   Tinjau Feedback →
                 </Link>
@@ -391,7 +398,7 @@ export default async function AdminDashboardPage() {
                 <span>Tercatat <strong>{errors24h} error</strong> dalam 24 jam terakhir. Cek diagnosa Masalah → Solusi.</span>
                 <Link
                   href="/admin/errors"
-                  className="inline-flex min-h-8 items-center rounded-lg border border-hairline bg-surface-raised px-3 text-micro font-semibold text-danger hover:bg-danger/10"
+                  className="inline-flex h-9 items-center rounded-lg border border-hairline bg-surface-raised px-3.5 text-xs font-semibold text-danger hover:bg-danger/10"
                 >
                   Buka Error Center →
                 </Link>

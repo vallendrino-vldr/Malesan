@@ -136,7 +136,7 @@ export function BrainPanel({
 
       {/* ---------- 1-Click Quick AI Switcher (Non-Developer Friendly) ---------- */}
       <div className="space-y-2.5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
           <p className="font-display text-xs font-bold text-ink flex items-center gap-1.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="size-3.5 text-ember"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <span>Pilih Provider AI Utama (1-Tap Langsung Aktif)</span>
