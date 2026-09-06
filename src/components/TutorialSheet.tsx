@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { TutorialVideoPlayer } from "@/components/tutorial/TutorialVideoPlayer";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Tutorial.
@@ -40,7 +41,7 @@ type Section = { q: string; a: React.ReactNode };
 const TUTORIAL_VIDEO_URL = process.env.NEXT_PUBLIC_TUTORIAL_VIDEO_URL?.trim();
 const TUTORIAL_CAPTIONS_URL = process.env.NEXT_PUBLIC_TUTORIAL_CAPTIONS_URL?.trim();
 
-const QUICK_STEPS = [
+const QUICK_STEPS_ID = [
   {
     title: "Pilih Ide Hari Ini",
     body: "Kalau kepala masih kosong, mulai dari sini. Gak perlu nulis ide.",
@@ -52,6 +53,21 @@ const QUICK_STEPS = [
   {
     title: "Salin atau simpan",
     body: "Kontennya langsung siap dipakai. Salin sekarang, atau simpan ke Alur buat dilanjutin.",
+  },
+] as const;
+
+const QUICK_STEPS_EN = [
+  {
+    title: "Pick Today's Viral Radar",
+    body: "If your mind is blank, start here. No prompt engineering needed.",
+  },
+  {
+    title: "Select platform & goal",
+    body: "TikTok, Threads, sales, or viral reach — just tap what fits.",
+  },
+  {
+    title: "Copy or save to pipeline",
+    body: "Your content is ready instantly. Copy immediately or save to Pipeline.",
   },
 ] as const;
 
@@ -183,6 +199,7 @@ const SECTIONS: Section[] = [
 ];
 
 export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" } = {}) {
+  const { t, dict, language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(0);
   // A portal cannot render during SSR — there is no document to portal into.
@@ -209,6 +226,18 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
     };
   }, [open]);
 
+  const triggerChip = dict.tutorial?.triggerChip || (language === "en" ? "Tutorial" : "Cara pakai");
+  const triggerGuide = dict.tutorial?.triggerGuide || (language === "en" ? "Guide" : "Panduan");
+  const modalTitle = dict.tutorial?.title || (language === "en" ? "Tutorial" : "Cara pakai");
+  const modalHeading = dict.tutorial?.heading || (language === "en" ? "Simple by design" : "Gak ada yang ribet di sini");
+  const quickSteps = language === "en" ? QUICK_STEPS_EN : QUICK_STEPS_ID;
+  const quickHeadingEyebrow = language === "en" ? "Fast track" : "Alur tercepat";
+  const quickHeadingTitle = language === "en" ? "Master it in 1 minute" : "1 menit langsung ngerti";
+  const faqEyebrow = language === "en" ? "Frequently asked questions" : "Kalau masih bingung";
+  const footerHelp = language === "en"
+    ? "Still have questions? Submit your questions or feedback via the Feedback menu."
+    : "Masih bingung? Kirim pertanyaan atau saran melalui menu Laporan di dashboard Malesan.";
+
   return (
     <>
       {/* WCAG 2.2's minimum comfortable target is 44-48px; the visible glyph
@@ -218,24 +247,24 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
         <button
           onClick={() => setOpen(true)}
           className="flex h-7.5 sm:h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-hairline/60 bg-surface/50 px-2.5 text-[11px] font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink cursor-pointer shadow-xs"
-          aria-label="Cara pakai"
+          aria-label={triggerChip}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current">
             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm-1 12h2v2h-2v-2Zm1-9c-1.8 0-3 1.1-3 2.8h2c0-.7.4-1 1-1s1 .3 1 .9c0 .5-.3.8-.9 1.2-.8.5-1.1 1-1.1 2.1h2c0-.6.2-.9.9-1.3.9-.6 1.4-1.2 1.4-2.3C15.2 8.1 13.9 7 12 7Z" />
           </svg>
-          <span className="truncate">Cara pakai</span>
+          <span className="truncate">{triggerChip}</span>
         </button>
       ) : (
         <button
           onClick={() => setOpen(true)}
-          aria-label="Cara pakai"
-          title="Cara pakai"
+          aria-label={triggerGuide}
+          title={triggerGuide}
           className="flex h-10 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3.5 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-3.5 fill-current text-muted">
             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16Zm-1 12h2v2h-2v-2Zm1-9c-1.8 0-3 1.1-3 2.8h2c0-.7.4-1 1-1s1 .3 1 .9c0 .5-.3.8-.9 1.2-.8.5-1.1 1-1.1 2.1h2c0-.6.2-.9.9-1.3.9-.6 1.4-1.2 1.4-2.3C15.2 8.1 13.9 7 12 7Z" />
           </svg>
-          <span className="hidden xl:inline">Panduan</span>
+          <span className="hidden xl:inline">{triggerGuide}</span>
         </button>
       )}
 
@@ -244,7 +273,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
           className="fixed inset-0 z-[60] flex cursor-pointer items-end justify-center bg-obsidian/75 backdrop-blur-sm md:items-center md:p-6"
           role="dialog"
           aria-modal="true"
-          aria-label="Cara pakai Malesan"
+          aria-label={modalTitle}
           onClick={() => setOpen(false)}
         >
           <div
@@ -256,14 +285,14 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
                 scrolled off the top and the sheet felt like a trap. */}
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-hairline px-5 pb-3.5 pt-5">
               <div className="min-w-0">
-                <p className="eyebrow text-ember">Cara pakai</p>
+                <p className="eyebrow text-ember">{modalTitle}</p>
                 <h2 className="mt-1 font-display text-xl font-bold text-ink">
-                  Gak ada yang ribet di sini
+                  {modalHeading}
                 </h2>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                aria-label="Tutup"
+                aria-label={t("actions.close", "Tutup")}
                 className="-mr-2 -mt-2 flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted hover:text-ink"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 fill-current">
@@ -274,12 +303,12 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
 
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
               <section className="rounded-xl border border-ember/30 bg-ember/5 p-4">
-                <p className="eyebrow text-ember">Alur tercepat</p>
+                <p className="eyebrow text-ember">{quickHeadingEyebrow}</p>
                 <h3 className="mt-1.5 font-display text-base font-bold text-ink">
-                  1 menit langsung ngerti
+                  {quickHeadingTitle}
                 </h3>
                 <ol className="mt-3 space-y-2.5">
-                  {QUICK_STEPS.map((step, index) => (
+                  {quickSteps.map((step, index) => (
                     <li key={step.title} className="flex gap-3">
                       <span className="tabular grid size-7 shrink-0 place-items-center rounded-full border border-ember/35 bg-obsidian font-mono text-micro font-bold text-ember">
                         {index + 1}
@@ -301,7 +330,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
                 />
               </section>
 
-              <p className="eyebrow px-1 pt-1 text-muted">Kalau masih bingung</p>
+              <p className="eyebrow px-1 pt-1 text-muted">{faqEyebrow}</p>
               {SECTIONS.map((s, i) => {
                 const on = expanded === i;
                 return (
@@ -342,7 +371,7 @@ export function TutorialSheet({ variant = "icon" }: { variant?: "icon" | "chip" 
             </div>
 
             <p className="shrink-0 border-t border-hairline px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 text-micro leading-relaxed text-muted">
-              Masih bingung? Kirim pertanyaan atau saran melalui menu Laporan di dashboard Malesan.
+              {footerHelp}
             </p>
           </div>
         </div>,

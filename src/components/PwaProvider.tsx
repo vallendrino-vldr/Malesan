@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getNativeShell } from "@/lib/native/bridge";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Registers the service worker and surfaces two things the browser will not do
@@ -182,11 +183,13 @@ export function PwaProvider() {
     window.location.reload();
   }
 
+  const { language } = useLanguage();
+
   if (updateReady) {
     return (
       <Banner
-        text="Versi sistem baru siap."
-        action="Muat ulang"
+        text={language === "en" ? "New version ready." : "Versi sistem baru siap."}
+        action={language === "en" ? "Reload" : "Muat ulang"}
         onAction={applyUpdate}
         onClose={() => setUpdateReady(false)}
       />
@@ -196,8 +199,8 @@ export function PwaProvider() {
   if (installEvent && !dismissed) {
     return (
       <Banner
-        text="Pasang Malesan ke layar utama."
-        action="Pasang"
+        text={language === "en" ? "Install Malesan to home screen." : "Pasang Malesan ke layar utama."}
+        action={language === "en" ? "Install" : "Pasang"}
         onAction={install}
         onClose={() => setDismissed(true)}
       />

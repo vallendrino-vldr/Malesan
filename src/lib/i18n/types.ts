@@ -31,6 +31,40 @@ export type TranslationDictionary = {
     categoryRepurpose: string;
     categoryVideo: string;
     categorySkills: string;
+    hero: {
+      greetingPagi: string;
+      greetingSiang: string;
+      greetingSore: string;
+      greetingMalam: string;
+      greetingDemo: string;
+      title: string;
+      subtitle: string;
+    };
+    oneClick: {
+      badge: string;
+      title: string;
+      desc: string;
+      cta: string;
+    };
+    toolsHeader: {
+      title: string;
+      subtitle: string;
+    };
+    draft: {
+      title: string;
+      subtitle: string;
+      badge: string;
+    };
+    autoClipBanner: {
+      badge: string;
+      title: string;
+      desc: string;
+      cta: string;
+    };
+    valueStrip: Array<{
+      k: string;
+      v: string;
+    }>;
     modules: Record<
       string,
       {
@@ -39,6 +73,18 @@ export type TranslationDictionary = {
         badge?: string;
       }
     >;
+  };
+  tutorial: {
+    triggerChip: string;
+    triggerGuide: string;
+    title: string;
+    heading: string;
+  };
+  refresh: {
+    trigger: string;
+    checking: string;
+    updated: string;
+    upToDate: string;
   };
   actions: {
     generate: string;

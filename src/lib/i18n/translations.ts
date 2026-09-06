@@ -32,57 +32,109 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       categoryRepurpose: "Daur Ulang Konten",
       categoryVideo: "Produksi Video",
       categorySkills: "Skill Khusus",
+      hero: {
+        greetingPagi: "PAGI",
+        greetingSiang: "SIANG",
+        greetingSore: "SORE",
+        greetingMalam: "MALAM",
+        greetingDemo: "KREATOR",
+        title: "Mau bikin konten apa hari ini?",
+        subtitle: "Pilih cara paling cepat. Tanpa mikir prompt rumit.",
+      },
+      oneClick: {
+        badge: "1-KLIK INSTAN",
+        title: "Cari 3 Ide Konten Hari Ini",
+        desc: "Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook & naskah video.",
+        cta: "Kasih 3 Ide Sekarang →",
+      },
+      toolsHeader: {
+        title: "SEMUA ALAT KREATIF",
+        subtitle: "11 fitur siap pakai",
+      },
+      draft: {
+        title: "Draf Bebas",
+        subtitle: "Nulis & AI Tab",
+        badge: "Gratis",
+      },
+      autoClipBanner: {
+        badge: "AI FLAGSHIP",
+        title: "Auto Clip YouTube",
+        desc: "Tempel link YouTube, AI otomatis potong momen viral, tempel subtitle & auto face track 9:16.",
+        cta: "Buka Studio",
+      },
+      valueStrip: [
+        { k: "NYAMBUNG", v: "Ngikutin gaya persona lo" },
+        { k: "UPDATE", v: "Tau tren kreator hari ini" },
+        { k: "PRAKTIS", v: "Langsung jadi konten siap pake" },
+      ],
       modules: {
         ide: {
           label: "Ide Hari Ini",
-          tagline: "3 ide konten siap posting lengkap",
-        },
-        idea: {
-          label: "Idea Engine",
-          tagline: "Eksplorasi ide liar & sudut pandang unik",
-        },
-        hook: {
-          label: "Hook Lab",
-          tagline: "Pembuka video anti-skip 3 detik pertama",
+          tagline: "3 ide segar siap posting",
         },
         script: {
-          label: "Script Builder",
-          tagline: "Naskah video lengkap siap baca",
-        },
-        repurpose: {
-          label: "Repurpose",
-          tagline: "Ubah konten panjang jadi klip padat",
-        },
-        clip: {
-          label: "Clip Engine",
-          tagline: "Ekstrak klip penting dari video panjang",
-        },
-        thread: {
-          label: "Thread Engine",
-          tagline: "Utas X / Threads yang memikat",
-        },
-        video: {
-          label: "Video Subtitle Auto-CC",
-          tagline: "Subtitle otomatis sinkron per kata & BGM",
+          label: "Naskah Video",
+          tagline: "Script lengkap siap syuting",
         },
         affiliate: {
-          label: "Affiliate Engine",
-          tagline: "Naskah video racun belanja berkonversi",
+          label: "Naskah Jualan",
+          tagline: "Racun belanja TikTok & Shopee",
         },
         carousel: {
-          label: "Carousel Generator",
-          tagline: "Slide Instagram & TikTok otomatis",
+          label: "Slide Karosel",
+          tagline: "Ekspor gambar IG & TikTok",
+        },
+        video: {
+          label: "Subtitle Otomatis",
+          tagline: "Auto caption per kata & BGM",
+        },
+        hook: {
+          label: "Lab Hook & Pembuka",
+          tagline: "10 pembuka video anti-skip",
+        },
+        clip: {
+          label: "Pemotong Klip",
+          tagline: "Ekstrak klip viral otomatis",
+        },
+        repurpose: {
+          label: "Daur Ulang Konten",
+          tagline: "Satu konten ke multi-platform",
+        },
+        idea: {
+          label: "Eksplorasi Ide",
+          tagline: "Ide liar jadi konsep matang",
+        },
+        thread: {
+          label: "Naskah Utas",
+          tagline: "Utas memikat di X & Threads",
         },
         lancar_bahasa: {
           label: "Lancar Inggris",
-          tagline: "Speaking AI & roleplay native",
+          tagline: "Speaking AI native & roleplay",
           badge: "AI Master",
         },
         auto_clip: {
-          label: "Auto Clip 1080p",
-          tagline: "Pemotong YouTube Full HD native",
+          label: "Auto Clip YouTube",
+          tagline: "Potong momen viral otomatis 9:16",
+          badge: "AI Flagship",
+        },
+        draft: {
+          label: "Draf Bebas",
+          tagline: "Nulis & AI Tab",
         },
       },
+    },
+    tutorial: {
+      triggerChip: "Cara pakai",
+      triggerGuide: "Panduan",
+      title: "Cara pakai",
+      heading: "Gak ada yang ribet di sini",
+    },
+    refresh: {
+      trigger: "Muat ulang",
+      checking: "Cek versi...",
+      updated: "Versi baru aktif!",
+      upToDate: "Data diperbarui",
     },
     actions: {
       generate: "Buat Sekarang",
@@ -133,57 +185,109 @@ export const TRANSLATIONS: Record<Language, TranslationDictionary> = {
       categoryRepurpose: "Omnichannel Repurpose",
       categoryVideo: "Video Production",
       categorySkills: "Specialized Skills",
+      hero: {
+        greetingPagi: "GOOD MORNING",
+        greetingSiang: "GOOD AFTERNOON",
+        greetingSore: "GOOD AFTERNOON",
+        greetingMalam: "GOOD EVENING",
+        greetingDemo: "CREATOR",
+        title: "What are you creating today?",
+        subtitle: "Pick the fastest workflow. Zero prompt engineering required.",
+      },
+      oneClick: {
+        badge: "1-CLICK INSTANT",
+        title: "Discover 3 Viral Ideas Today",
+        desc: "No prompt engineering needed. Instantly get 3 production-ready viral ideas complete with hooks & video scripts.",
+        cta: "Generate 3 Ideas Now →",
+      },
+      toolsHeader: {
+        title: "ALL CREATIVE TOOLS",
+        subtitle: "11 tools ready to use",
+      },
+      draft: {
+        title: "Freeform Draft",
+        subtitle: "Writing & AI Tab",
+        badge: "Free",
+      },
+      autoClipBanner: {
+        badge: "AI FLAGSHIP",
+        title: "Auto Clip YouTube",
+        desc: "Paste YouTube link, AI extracts viral moments, burns captions & auto-tracks face 9:16.",
+        cta: "Open Studio",
+      },
+      valueStrip: [
+        { k: "RELEVANT", v: "Matches your unique persona voice" },
+        { k: "FRESH", v: "Tapped into today's creator trends" },
+        { k: "READY", v: "Production-ready content in seconds" },
+      ],
       modules: {
         ide: {
           label: "Today's Viral Radar",
-          tagline: "3 production-ready viral content ideas",
-        },
-        idea: {
-          label: "Idea Engine",
-          tagline: "Explore contrarian angles & high-dopamine hooks",
-        },
-        hook: {
-          label: "Hook Lab",
-          tagline: "Irresistible 3-second anti-skip video openers",
+          tagline: "3 fresh ideas ready to post",
         },
         script: {
           label: "Viral Script Engine",
           tagline: "Full retention-engineered video scripts",
         },
-        repurpose: {
-          label: "Omnichannel Repurpose",
-          tagline: "Transform long-form text & videos into shorts",
-        },
-        clip: {
-          label: "Auto-Clip Engine",
-          tagline: "Extract viral highlights from long videos",
-        },
-        thread: {
-          label: "Thread & Post Engine",
-          tagline: "Captivating X & Threads viral hooks",
-        },
-        video: {
-          label: "Video Auto-CC & BGM",
-          tagline: "Word-level animated captions & studio music",
-        },
         affiliate: {
           label: "Affiliate & Sales Script",
-          tagline: "High-converting product review hooks",
+          tagline: "High-converting product reviews & ads",
         },
         carousel: {
           label: "Carousel Studio",
-          tagline: "Visual multi-slide Instagram & TikTok carousels",
+          tagline: "Instagram & TikTok slide generator",
+        },
+        video: {
+          label: "Video Auto-CC & BGM",
+          tagline: "Word-level animated captions & music",
+        },
+        hook: {
+          label: "Hook Lab",
+          tagline: "10 scroll-stopping opening hooks",
+        },
+        clip: {
+          label: "Auto-Clip Engine",
+          tagline: "Extract viral hooks from long videos",
+        },
+        repurpose: {
+          label: "Omnichannel Repurpose",
+          tagline: "Turn 1 long video into multi-platform assets",
+        },
+        idea: {
+          label: "Idea Engine",
+          tagline: "Flesh out rough concepts into gold",
+        },
+        thread: {
+          label: "Thread & Post Engine",
+          tagline: "High-engagement X & Threads posts",
         },
         lancar_bahasa: {
           label: "Fluent English AI",
-          tagline: "Speaking partner & native creator roleplay",
+          tagline: "AI voice coaching & realistic roleplays",
           badge: "AI Master",
         },
         auto_clip: {
-          label: "Auto Clip 1080p",
-          tagline: "Native Full HD YouTube clipper",
+          label: "YouTube Auto-Clip",
+          tagline: "AI extracts viral moments & face-tracks 9:16",
+          badge: "AI Flagship",
+        },
+        draft: {
+          label: "Freeform Draft",
+          tagline: "Writing & AI Tab",
         },
       },
+    },
+    tutorial: {
+      triggerChip: "Tutorial",
+      triggerGuide: "Guide",
+      title: "Tutorial",
+      heading: "Simple by design",
+    },
+    refresh: {
+      trigger: "Refresh",
+      checking: "Checking version...",
+      updated: "New version live!",
+      upToDate: "Data refreshed",
     },
     actions: {
       generate: "Generate Now",

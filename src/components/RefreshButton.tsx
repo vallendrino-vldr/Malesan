@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Refresh.
@@ -73,9 +74,12 @@ export function RefreshButton({
   variant?: "pill" | "icon" | "chip";
 }) {
   const router = useRouter();
+  const { dict, language } = useLanguage();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+
+  const refreshText = dict.refresh?.trigger || (language === "en" ? "Refresh" : "Muat ulang");
 
   const go = async () => {
     if (busy) return;
@@ -87,13 +91,13 @@ export function RefreshButton({
       // A real reload, not router.refresh() — the point is to drop the old
       // JavaScript bundle, which a soft refresh keeps.
       reg.waiting.postMessage({ type: "SKIP_WAITING" });
-      setNote("Versi baru — memuat ulang");
+      setNote(language === "en" ? "New version — reloading" : "Versi baru — memuat ulang");
       setTimeout(() => window.location.reload(), 250);
       return;
     }
 
     startTransition(() => router.refresh());
-    setNote("Data terbaru");
+    setNote(dict.refresh?.upToDate || (language === "en" ? "Data refreshed" : "Data terbaru"));
     setTimeout(() => {
       setBusy(false);
       setNote("");
@@ -118,10 +122,10 @@ export function RefreshButton({
         onClick={go}
         disabled={spinning}
         className="flex h-7.5 sm:h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-hairline/60 bg-surface/50 px-2.5 text-[11px] font-medium text-muted transition-colors hover:border-ember/30 hover:bg-surface hover:text-ink disabled:opacity-50 cursor-pointer shadow-xs"
-        aria-label="Muat ulang"
+        aria-label={refreshText}
       >
         {spinner}
-        <span className="truncate">{note || "Muat ulang"}</span>
+        <span className="truncate">{note || refreshText}</span>
       </button>
     );
   }
@@ -132,12 +136,12 @@ export function RefreshButton({
         <button
           onClick={go}
           disabled={spinning}
-          aria-label="Muat ulang"
-          title="Muat ulang"
+          aria-label={refreshText}
+          title={refreshText}
           className="flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-hairline/60 bg-surface/40 px-3 text-xs font-medium text-muted/80 transition-all duration-200 hover:border-ember/35 hover:bg-surface-raised hover:text-ink disabled:opacity-50"
         >
           {spinner}
-          <span className="hidden xl:inline">{note || "Refresh"}</span>
+          <span className="hidden xl:inline">{note || refreshText}</span>
         </button>
         {note && (
           <span
@@ -156,12 +160,12 @@ export function RefreshButton({
     <button
       onClick={go}
       disabled={spinning}
-      aria-label="Muat ulang"
-      title="Muat ulang"
+      aria-label={refreshText}
+      title={refreshText}
       className="inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border border-hairline bg-surface px-3.5 text-mini font-semibold text-muted transition-colors duration-[var(--duration-standard)] ease-heat hover:border-ember/35 hover:text-ember-lo disabled:opacity-70"
     >
       {spinner}
-      {note || label || "Refresh"}
+      {note || label || refreshText}
     </button>
   );
 }

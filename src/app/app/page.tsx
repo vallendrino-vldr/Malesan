@@ -11,6 +11,7 @@ import { HistoryList, type HistoryItem } from "@/components/HistoryList";
 import { TextScale } from "@/components/TextScale";
 import { LowCreditNotice } from "@/components/CreditNudge";
 import { StudioPanel, StudioHeroCard, StudioTile, StudioWideTile, StudioAutoClipWideTile } from "@/components/StudioPanel";
+import { StudioGreeting, StudioToolsHeader, StudioDraftTile, StudioValueStrip } from "@/components/StudioHomeSections";
 import { LiveRefresh } from "@/components/LiveRefresh";
 import { RecycleBanner } from "@/components/RecycleBanner";
 import { CopyField } from "@/components/CopyField";
@@ -378,17 +379,7 @@ export default async function AppPage({
                   <div className="size-20 sm:size-24 lg:size-28 shrink-0">
                     <MascotStage className="size-full" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="eyebrow text-ember font-bold tracking-wider">
-                      {greet().toUpperCase()}, {isDemoMode ? "KREATOR" : (profile.display_name?.split(" ")[0]?.toUpperCase() ?? "KREATOR")}
-                    </p>
-                    <h1 className="mt-0.5 font-display text-xl sm:text-2xl font-bold tracking-display-sm text-ink leading-tight">
-                      Mau bikin konten apa hari ini?
-                    </h1>
-                    <p className="mt-1 text-micro sm:text-xs text-muted leading-relaxed">
-                      Pilih cara paling cepat. Tanpa mikir prompt rumit.
-                    </p>
-                  </div>
+                  <StudioGreeting displayName={profile.display_name} isDemoMode={isDemoMode} />
                 </div>
               </div>
 
@@ -401,10 +392,7 @@ export default async function AppPage({
 
           {/* LEVEL 2: CREATIVE COMMAND TILES (10 Fitur Kompak) */}
           <section className="space-y-2">
-            <div className="flex items-center justify-between px-0.5">
-              <h2 className="eyebrow text-muted font-bold">Semua Alat Kreatif</h2>
-              <span className="text-micro font-mono text-muted">11 fitur siap pakai</span>
-            </div>
+            <StudioToolsHeader count={11} />
 
             <div className="grid grid-cols-2 gap-2 sm:gap-2.5 lg:grid-cols-5">
               <StudioTile
@@ -525,17 +513,7 @@ export default async function AppPage({
                   </svg>
                 }
               />
-              <StudioTile
-                href="/app/draft"
-                title="Draft Bebas"
-                subtitle="Nulis & AI Tab"
-                cost="Gratis"
-                icon={
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4">
-                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                  </svg>
-                }
-              />
+              <StudioDraftTile />
 
               {/* WIDE FLAGSHIP CARD: LANCAR INGGRIS (Client Component, Server/Client boundary safe) */}
               <StudioWideTile mod="lancar_bahasa" cost={costLancarBahasa} />
@@ -546,24 +524,7 @@ export default async function AppPage({
           </section>
 
           {/* LEVEL 3: VALUE STRIP */}
-          <div className="rounded-2xl border border-hairline/70 bg-surface/60 backdrop-blur-xs p-3.5 sm:p-4 shadow-xs">
-            <ul className="grid grid-cols-3 divide-x divide-hairline/60">
-              {[
-                { k: "NYAMBUNG", v: "Ngikutin gaya persona lo" },
-                { k: "UPDATE", v: "Tau tren kreator hari ini" },
-                { k: "PRAKTIS", v: "Langsung jadi konten siap pake" },
-              ].map((x) => (
-                <li key={x.k} className="flex flex-col items-center justify-center text-center px-1.5 sm:px-3 min-w-0 first:pl-0 last:pr-0">
-                  <p className="eyebrow text-ember font-bold tracking-wider text-[10px] sm:text-xs">
-                    {x.k}
-                  </p>
-                  <p className="mt-1 text-[11px] sm:text-xs leading-snug text-muted font-medium break-words text-balance">
-                    {x.v}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <StudioValueStrip />
           </div>
         </div>
             }
@@ -764,15 +725,3 @@ function Stat({ label, value }: { label: string; value: number }) {
     </div>
   );
 }
-
-function greet() {
-  const wib = new Date(Date.now() + 7 * 3600 * 1000).getUTCHours();
-  // 00:00-03:59 is not "pagi" to anyone awake at that hour — it was greeting
-  // 2am with "Pagi" because everything below 11 fell into the same branch.
-  if (wib < 4) return "Belum tidur";
-  if (wib < 11) return "Pagi";
-  if (wib < 15) return "Siang";
-  if (wib < 18) return "Sore";
-  return "Malam";
-}
-

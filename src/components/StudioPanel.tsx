@@ -189,7 +189,14 @@ export function StudioHeroCard({
   cost: number;
   mod?: Mod;
 }) {
-  const { t, language } = useLanguage();
+  const { t, language, dict } = useLanguage();
+
+  const badgeText = dict.studio?.oneClick?.badge || (language === "en" ? "1-Click Instant" : "1-Klik Instan");
+  const titleText = dict.studio?.oneClick?.title || (language === "en" ? "Discover 3 Viral Ideas Today" : "Cari 3 Ide Konten Hari Ini");
+  const descText = dict.studio?.oneClick?.desc || (language === "en"
+    ? "No prompt engineering needed. Instantly get 3 production-ready viral ideas complete with hooks & video scripts."
+    : "Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook & naskah video.");
+  const ctaText = dict.studio?.oneClick?.cta || (language === "en" ? "Generate 3 Ideas Now →" : "Kasih 3 Ide Sekarang →");
 
   return (
     <div className="w-full rounded-2xl border border-ember/45 bg-gradient-to-br from-surface via-surface to-ember/10 p-4 sm:p-5 text-left shadow-sm transition-all hover:border-ember/65">
@@ -198,7 +205,7 @@ export function StudioHeroCard({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-3 text-ember">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
           </svg>
-          {language === "en" ? "1-Click Instant" : "1-Click Instan"}
+          {badgeText}
         </span>
         <span className="rounded-md bg-surface-raised px-2.5 py-0.5 font-mono text-micro font-bold text-ember border border-hairline">
           {cost} {t("header.credits", "kredit")}
@@ -207,12 +214,10 @@ export function StudioHeroCard({
 
       <div className="mt-2">
         <h2 className="font-display text-base sm:text-lg lg:text-xl font-bold text-ink">
-          {language === "en" ? "Discover 3 Viral Ideas Today" : "Cari 3 Ide Konten Hari Ini"}
+          {titleText}
         </h2>
         <p className="mt-0.5 text-micro sm:text-xs text-muted leading-relaxed">
-          {language === "en"
-            ? "No prompt engineering needed. Instantly get 3 production-ready viral ideas complete with hooks & video scripts."
-            : "Gak usah ngetik prompt apa pun. Langsung dapet 3 ide segar siap posting lengkap dengan hook & naskah video."}
+          {descText}
         </p>
       </div>
 
@@ -223,7 +228,7 @@ export function StudioHeroCard({
         }
         className="btn-ember mt-3.5 inline-flex min-h-11 sm:min-h-12 w-full items-center justify-center rounded-xl px-5 font-display text-sm sm:text-base font-bold text-obsidian shadow-md transition-transform active:scale-[0.99] hover:brightness-105"
       >
-        {language === "en" ? "Generate 3 Ideas Now →" : "Kasih 3 Ide Sekarang →"}
+        {ctaText}
       </button>
     </div>
   );
@@ -251,12 +256,21 @@ export function StudioTile({
 
   const displayTitle = (mod && dict.studio?.modules?.[mod]?.label) || title;
   const displaySubtitle = (mod && dict.studio?.modules?.[mod]?.tagline) || subtitle;
-  const displayCost =
-    typeof cost === "number"
-      ? `${cost} ${t("header.credits", "kredit")}`
-      : cost === "Gratis" && language === "en"
-      ? "Free"
-      : cost;
+
+  let displayCost: string;
+  if (typeof cost === "number") {
+    displayCost = `${cost} ${t("header.credits", "kredit")}`;
+  } else if (cost === "Gratis" || cost === "Free") {
+    displayCost = language === "en" ? "Free" : "Gratis";
+  } else if (typeof cost === "string") {
+    if (language === "en") {
+      displayCost = cost.replace("/mnt", "/min").replace("kredit", "credits");
+    } else {
+      displayCost = cost.replace("/min", "/mnt").replace("credits", "kredit");
+    }
+  } else {
+    displayCost = String(cost);
+  }
 
   const content = (
     <div className="flex h-full flex-col justify-between">
@@ -382,6 +396,15 @@ export function StudioAutoClipWideTile({
 }: {
   cost?: number;
 }) {
+  const { t, language, dict } = useLanguage();
+
+  const title = dict.studio?.autoClipBanner?.title || (language === "en" ? "YouTube Auto-Clip" : "Auto Clip YouTube");
+  const desc = dict.studio?.autoClipBanner?.desc || (language === "en"
+    ? "Paste YouTube link, AI extracts viral moments, burns captions & auto-tracks face 9:16."
+    : "Tempel link YouTube, AI otomatis potong momen viral, tempel subtitle & auto face track 9:16.");
+  const cta = dict.studio?.autoClipBanner?.cta || (language === "en" ? "Open Studio" : "Buka Studio");
+  const badge = dict.studio?.autoClipBanner?.badge || "AI Flagship";
+
   return (
     <div className="col-span-2 lg:col-span-5 relative group">
       {/* 1. LAYER UNDERNEATH: Radiant Magma Atmosphere Glow */}
@@ -426,7 +449,7 @@ export function StudioAutoClipWideTile({
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                   <span className="font-display text-xs sm:text-sm font-bold text-white tracking-tight flex items-center gap-1 shrink truncate group-hover:text-amber-300 transition-colors">
-                    <span className="truncate">Auto Clip YouTube</span>
+                    <span className="truncate">{title}</span>
                     {/* Fiery Flame Stroke Icon (Clean SVG, No cheap emoji) */}
                     <svg viewBox="0 0 24 24" fill="url(#malesan-flame-grad)" stroke="#ff8a3d" strokeWidth="1.6" className="size-3.5 sm:size-4 shrink-0 animate-flame-flicker">
                       <defs>
@@ -440,21 +463,21 @@ export function StudioAutoClipWideTile({
                     </svg>
                   </span>
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/50 bg-gradient-to-r from-amber-500/25 to-rose-600/25 px-1.5 sm:px-2 py-0.5 text-[8.5px] sm:text-[10px] font-bold text-amber-200 uppercase tracking-wider shadow-[0_0_10px_rgba(255,120,30,0.3)]">
-                    AI Flagship
+                    {badge}
                   </span>
                   <span className="shrink-0 rounded-md bg-[#230f07] px-1.5 sm:px-2 py-0.5 font-mono text-[8.5px] sm:text-[10px] font-bold text-amber-400 border border-amber-500/40 shadow-xs">
-                    {cost} kredit
+                    {cost} {t("header.credits", "kredit")}
                   </span>
                 </div>
                 <p className="mt-0.5 text-[11px] sm:text-xs text-[#d2b4a3] leading-tight truncate sm:whitespace-normal">
-                  Tempel link YouTube, AI otomatis potong momen viral, tempel subtitle &amp; auto face track 9:16.
+                  {desc}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-micro font-bold text-amber-400/80 group-hover:text-amber-300 transition-colors hidden md:inline">
-                Buka Studio
+                {cta}
               </span>
               <span className="inline-flex size-6 sm:size-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/25 to-rose-600/25 border border-amber-500/50 text-amber-300 shadow-[0_0_12px_rgba(255,100,20,0.3)] group-hover:border-amber-400 group-hover:bg-gradient-to-r group-hover:from-amber-500 group-hover:to-rose-500 group-hover:text-obsidian group-hover:shadow-[0_0_20px_rgba(255,120,30,0.6)] transition-all">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="size-3 sm:size-3.5">
@@ -469,5 +492,6 @@ export function StudioAutoClipWideTile({
     </div>
   );
 }
+
 
 

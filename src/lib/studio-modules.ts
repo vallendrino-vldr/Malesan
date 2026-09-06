@@ -29,16 +29,16 @@ export type ModuleManifest = {
 };
 
 export const MODULE_CATALOG: readonly ModuleManifest[] = [
-  { id: "ide", label: "Ide Hari Ini", tagline: "3 ide konten siap posting lengkap", category: "ideation", costKey: "ide" },
-  { id: "idea", label: "Idea Engine", tagline: "Eksplorasi ide liar & sudut pandang unik", category: "ideation", costKey: "idea" },
-  { id: "hook", label: "Hook Lab", tagline: "Pembuka video anti-skip 3 detik pertama", category: "scripting", costKey: "hook" },
-  { id: "script", label: "Script Builder", tagline: "Naskah video lengkap siap baca", category: "scripting", costKey: "script" },
-  { id: "repurpose", label: "Repurpose", tagline: "Ubah konten panjang jadi klip padat", category: "repurpose", costKey: "repurpose" },
-  { id: "clip", label: "Clip Engine", tagline: "Ekstrak klip penting dari video panjang", category: "repurpose", costKey: "clip" },
-  { id: "thread", label: "Thread Engine", tagline: "Utas X / Threads yang memikat", category: "scripting", costKey: "thread" },
-  { id: "video", label: "Video Subtitle Auto-CC", tagline: "Subtitle otomatis sinkron per kata", category: "video", costKey: "video" },
-  { id: "affiliate", label: "Affiliate Engine", tagline: "Naskah video racun belanja berkonversi", category: "scripting", costKey: "affiliate" },
-  { id: "carousel", label: "Carousel Generator", tagline: "Slide Instagram & TikTok otomatis", category: "scripting", costKey: "carousel" },
-  { id: "lancar_bahasa", label: "Lancar Inggris", tagline: "Speaking AI & roleplay native", badge: "AI Master", category: "skills", costKey: "lancar_bahasa" },
-  { id: "auto_clip", label: "Auto Clip 1080p", tagline: "Pemotong YouTube Full HD native", category: "video", costKey: "video" },
+  { id: "ide", label: "Ide Hari Ini", tagline: "3 ide segar siap posting", category: "ideation", costKey: "ide" },
+  { id: "idea", label: "Eksplorasi Ide", tagline: "Ide liar jadi konsep matang", category: "ideation", costKey: "idea" },
+  { id: "hook", label: "Lab Hook & Pembuka", tagline: "10 pembuka video anti-skip", category: "scripting", costKey: "hook" },
+  { id: "script", label: "Naskah Video", tagline: "Script lengkap siap syuting", category: "scripting", costKey: "script" },
+  { id: "repurpose", label: "Daur Ulang Konten", tagline: "Satu konten ke multi-platform", category: "repurpose", costKey: "repurpose" },
+  { id: "clip", label: "Pemotong Klip", tagline: "Ekstrak klip viral otomatis", category: "repurpose", costKey: "clip" },
+  { id: "thread", label: "Naskah Utas", tagline: "Utas memikat di X & Threads", category: "scripting", costKey: "thread" },
+  { id: "video", label: "Subtitle Otomatis", tagline: "Auto caption per kata & BGM", category: "video", costKey: "video" },
+  { id: "affiliate", label: "Naskah Jualan", tagline: "Racun belanja TikTok & Shopee", category: "scripting", costKey: "affiliate" },
+  { id: "carousel", label: "Slide Karosel", tagline: "Ekspor gambar IG & TikTok", category: "scripting", costKey: "carousel" },
+  { id: "lancar_bahasa", label: "Lancar Inggris", tagline: "Speaking AI native & roleplay", badge: "AI Master", category: "skills", costKey: "lancar_bahasa" },
+  { id: "auto_clip", label: "Auto Clip YouTube", tagline: "Potong momen viral otomatis 9:16", badge: "AI Flagship", category: "video", costKey: "video" },
 ];
